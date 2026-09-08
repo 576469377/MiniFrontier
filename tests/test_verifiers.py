@@ -20,6 +20,8 @@ def test_pure_function_reward_and_forbidden_file_process_network_access(tmp_path
         result = check_python("def add(a,b):\n return " + body, "add", cases)
         assert result["score"] == 0
     assert not (tmp_path / "forbidden").exists()
+    malformed = check_python("import os\nos.write(1, b'[]')\nos._exit(0)", "add", cases)
+    assert malformed["score"] == 0 and malformed["reason"] == "invalid_worker_result"
 
 
 def test_structured_rewards_never_fall_back_to_arithmetic():

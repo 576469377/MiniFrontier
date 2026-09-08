@@ -29,7 +29,9 @@ Hadamard indexer QK FP4/BF16 scores；E2M1/E8M0 golden、STE、MTP BF16 CUDA
 SFT→MOPD/OPD 的教师轨迹、精确全词表 KL、response 分母与零优势跳过已接入；
 教师资格要求互异权重及留出提升，当前没有九/十二位合格教师。
 代码奖励使用独立无文件/网络/进程权限的 seccomp worker，代码不能接触标准答案；
-完整工具环境与多模态 RL 仍缺失，媒体任务会明确拒绝，避免静默丢图。
+现已增加本地结构化检索/内存文件与状态修改/Python 工具环境，及原生多模态
+rollout：图像进入学生/reference/按域 effort 选取的教师，完整工具观察屏蔽动作损失。
+这仍是本地同步短轨迹接口，未完成真实教师培养或正式 RL 训练。
 
 训练入口新增显式 Text→Vision/QAT/MTP 权重系数切换，V1 冻结文本，视觉/aligner 独立 LR；
 按实际非 padding 输入累积 batch、按 CE 的文本域与按样本的视觉域分别采样，图像和
@@ -74,8 +76,22 @@ relative L2 0.8345，尚未通过数值验收。单块对照误差较小，但�
 仍需定位，不能据微基准时间宣称训练加速。三个方案及在跑任务保持源码循环；
 实验路径增加最多四倍 route-padding 限制，超过时回退源循环且不丢 token。
 
+新增 control-v1 共享模板，训练/rollout/CLI 共用 reasoning/final/tool/effort 编码，
+导出保留模板身份。正式 SFT/RL 要求该模板，RL 前驱及教师必须模板一致；不再
+以普通提示文字冒充完整模式训练。完整轨迹按实际策略权重 hash 保存，包含工具输出、
+真实行为概率、终止与奖励分项，恢复时不复用旧策略采样。RL 的输入/视觉账本和
+验证分母已修正；quantity/box verifier 使用明确单位和容差。详见
+`docs/posttraining-adaptation.md`。
+
+GPU 测试发现并修正了 sampler 强制 BF16、调用者 FP32 的真实分布不一致。
+修正后小型原生视觉测试 Qwen/DeepSeek FP32 ratio error 为零，Kimi CUDA KDA
+不同累积路径约 0.000286；BF16 最大约 0.001468。实现分别采用 CPU FP32 2e-5、
+CUDA FP32 0.001、低精度 0.02 的显式本地上限，超限立即在更新前失败。
+这些上限与微型测试并非官方数值承诺或正式长序列 RL 的资格证明。
+完整数据见 `native-rollout-precision-v2.json`，失败的原始日志保留。
+
 待完成：正式数据规模/许可/配比/留出审计、长短上下文与批量课程、完整配方对照；
-SFT/QAT 的学习验证、9/12 教师课程、思考模式与完整工具/多模态 RL；
+SFT/QAT 的学习验证、9/12 教师课程、思考模式与工具/多模态 RL 的实际学习验收；
 三类正式草稿训练、优化与调度、端到端接受率/延迟、通过质量门槛的 demo。
 单元测试、辅助损失实现或训练预算完成不代表这些阶段已经完成。
 

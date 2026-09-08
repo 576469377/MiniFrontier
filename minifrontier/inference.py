@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -62,7 +63,16 @@ def generate_ids(
         cache = MiniDeepSeekV4Cache()
     current = all_ids
     for _ in range(max_new_tokens):
-        with torch.autocast(input_ids.device.type, dtype=torch.bfloat16, enabled=input_ids.is_cuda):
+        # On-policy behavior must use the caller's training precision. Forcing
+        # BF16 here silently changed a FP32 policy's sampling distribution.
+        precision = (
+            contextlib.nullcontext()
+            if return_behavior
+            else torch.autocast(
+                input_ids.device.type, dtype=torch.bfloat16, enabled=input_ids.is_cuda
+            )
+        )
+        with precision:
             extras = {"media": media} if media and (cache is None or cache.length == 0) else {}
             out = (
                 model(current, cache=cache, **extras)
@@ -105,10 +115,18 @@ def load_checkpoint(path, device="cpu"):
     model = build_model(saved["model_name"], saved["config"], phase=saved["phase"])
     model.load_state_dict(saved["model"], strict=True)
     configure_posttraining(model)
+    run = saved.get("run_spec", {})
+    model.chat_template = saved.get(
+        "chat_template",
+        run.get("rollout", {}).get("chat_template", run.get("chat_template", "legacy")),
+    )
     return (
         model.to(device).eval(),
         tokenizer,
-        {key: saved[key] for key in ("model_name", "stage", "step", "phase")},
+        dict(
+            {key: saved[key] for key in ("model_name", "stage", "step", "phase")},
+            chat_template=model.chat_template,
+        ),
     )
 
 
@@ -123,13 +141,61 @@ def respond(
     top_p=0.9,
     draft=None,
     draft_steps=3,
+    mode=None,
+    effort=None,
+    images=None,
+    max_image_features=64,
 ):
+    if (
+        chat
+        and mode is None
+        and effort is None
+        and getattr(model, "chat_template", "legacy") == "control-v1"
+    ):
+        mode, effort = "direct", "low"
+    if not chat and (mode is not None or effort is not None or images):
+        raise ValueError("controlled/native-media generation currently uses the chat template")
     ids = (
-        chat_tokens([{"role": "user", "content": prompt}], tokenizer, generation_prompt=True)[0]
+        chat_tokens(
+            [{"role": "user", "content": prompt}],
+            tokenizer,
+            generation_prompt=True,
+            mode=mode,
+            effort=effort,
+        )[0]
         if chat
         else [1, *tokenizer.encode(prompt).ids]
     )
-    inputs = torch.tensor([ids], device=next(model.parameters()).device)
+    device = next(model.parameters()).device
+    media = None
+    if images:
+        from minifrontier.multimodal import prepare_record
+
+        family = {
+            "MiniKimiK3ForCausalLM": "minikimik3",
+            "MiniQwen4ForCausalLM": "miniqwen4",
+            "MiniDeepSeekV4ForCausalLM": "minideepseekv4",
+        }[type(model).__name__]
+        if "<|image|>" not in prompt:
+            prompt = "<|image|>" * len(images) + "\n" + prompt
+        native = prepare_record(
+            dict(
+                stage="sft",
+                mode=mode,
+                effort=effort,
+                turns=[dict(role="user", content=prompt)],
+                media=[dict(path=str(Path(path).resolve())) for path in images],
+            ),
+            tokenizer,
+            family,
+            max_features=max_image_features,
+            generation_prompt=True,
+            model_vocab_size=model.config.vocab_size,
+        ).to(device)
+        inputs, media = native.input_ids, native.extras["media"]
+        ids = inputs[0].tolist()
+    else:
+        inputs = torch.tensor([ids], device=device)
     if draft is None:
         result = generate_ids(
             model,
@@ -138,6 +204,7 @@ def respond(
             temperature=temperature,
             top_p=top_p,
             vocab_size=tokenizer.get_vocab_size(),
+            media=media,
         )
     else:
         from minifrontier.speculative import generate_speculative
@@ -151,8 +218,19 @@ def respond(
             max_new_tokens=max_new_tokens,
             draft_steps=draft_steps,
             vocab_size=tokenizer.get_vocab_size(),
+            media=media,
         )
-    return tokenizer.decode(result[0, len(ids) :].tolist(), skip_special_tokens=True)
+    response_ids = result[0, len(ids) :].tolist()
+    if mode is not None or effort is not None:
+        from minifrontier.chat_controls import parse_action
+
+        parsed = parse_action(response_ids, tokenizer)
+        if parsed["kind"] == "final":
+            return (
+                f"<think>{parsed['reasoning']}</think>\n" if parsed["reasoning"] else ""
+            ) + parsed["text"]
+        return tokenizer.decode(response_ids, skip_special_tokens=False)
+    return tokenizer.decode(response_ids, skip_special_tokens=True)
 
 
 PAGE = """<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -317,6 +395,15 @@ def main(argv=None):
     p.add_argument("--top-p", type=float)
     p.add_argument("--draft", help="optional trained draft bound to this exact checkpoint")
     p.add_argument("--draft-steps", type=int, default=3)
+    p.add_argument(
+        "--mode",
+        choices=["direct", "thinking", "tool", "non-thinking", "thinking-high", "thinking-max"],
+    )
+    p.add_argument("--effort", choices=["low", "high", "max"])
+    p.add_argument(
+        "--image", action="append", help="local image; repeat for multiple complete images"
+    )
+    p.add_argument("--max-image-features", type=int, default=64)
     p.add_argument("--device", default="cpu")
     p.add_argument("--completion", action="store_true")
     args = p.parse_args(argv)
@@ -338,6 +425,10 @@ def main(argv=None):
             top_p=args.top_p if args.top_p is not None else (1 if draft else 0.9),
             draft=draft,
             draft_steps=args.draft_steps,
+            mode=args.mode,
+            effort=args.effort,
+            images=args.image,
+            max_image_features=args.max_image_features,
         )
     )
 

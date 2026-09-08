@@ -14,12 +14,19 @@ def model_state_hash(path):
     import torch
 
     checkpoint = torch.load(path, map_location="cpu", weights_only=True)
+    return state_hash(checkpoint["model"])
+
+
+def state_hash(state):
+    """Hash one tensor at a time, keeping the CPU staging allocation bounded."""
+    import torch
+
     digest = hashlib.sha256()
-    for name, tensor in sorted(checkpoint["model"].items()):
+    for name, tensor in sorted(state.items()):
         digest.update(f"{name}:{tensor.dtype}:{tuple(tensor.shape)}".encode())
         raw = tensor.contiguous().reshape(-1).view(torch.uint8)
         for chunk in raw.split(8 * 1024**2):
-            digest.update(chunk.numpy().tobytes())
+            digest.update(chunk.detach().cpu().numpy().tobytes())
     return digest.hexdigest()
 
 

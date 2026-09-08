@@ -61,8 +61,14 @@ def split_for(key, seed):
     )
 
 
-def chat_tokens(messages, tokenizer, *, generation_prompt=False):
+def chat_tokens(messages, tokenizer, *, generation_prompt=False, mode=None, effort=None):
     """Explicit role boundaries; only assistant contents and EOS are supervised."""
+    if mode is not None or effort is not None:
+        from minifrontier.chat_controls import encode
+
+        return encode(
+            messages, tokenizer, generation_prompt=generation_prompt, mode=mode, effort=effort
+        )
     ids, labels = [1], [-100]
     for message in messages:
         role = message["role"]

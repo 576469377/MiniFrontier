@@ -1,0 +1,33 @@
+{
+  "implementation_sha256": "2eef07b07ef94f90eb8c242f9a4e2734f023bc751ed4399227bf9b5fb83363fe",
+  "verified_at_utc": "2026-09-08T15:43:13.035239+00:00",
+  "cpu": {
+    "passed": 229,
+    "skipped": 1,
+    "log": "outputs/services/strategy-posttraining-v2-cpu-tests.log"
+  },
+  "cuda": {
+    "passed": 41,
+    "devices": [
+      2,
+      3
+    ],
+    "log": "outputs/services/strategy-posttraining-v2-cuda-tests.log",
+    "native_visual_frozen_policy_cases": 10
+  },
+  "mypy": {
+    "sources": 116,
+    "ignore_missing_external_stubs": true
+  },
+  "ruff": "check and format passed",
+  "uv_lock": "check passed",
+  "build": {
+    "artifacts": "outputs/dist-posttraining-v2",
+    "sdist": true,
+    "wheel": true,
+    "twine": "passed"
+  },
+  "scope": "engineering validation only; no new model has passed SFT/RL or dialogue capability qualification",
+  "training_source_unchanged": "75a3364f586936d764c31376e185747973d2bed6",
+  "precision_audit": "docs/audits/native-rollout-precision-v2.json"
+}

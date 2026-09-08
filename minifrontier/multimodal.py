@@ -21,6 +21,17 @@ def move(value, device):
     return value
 
 
+def select_media(media, indices):
+    """Remap complete image spans for a subset, including repeated rollout prompts."""
+    indices = indices.tolist() if isinstance(indices, torch.Tensor) else list(indices)
+    return [
+        dict(span, batch_index=new_index)
+        for new_index, old_index in enumerate(indices)
+        for span in media
+        if span["batch_index"] == old_index
+    ]
+
+
 @dataclass
 class TrainingBatch:
     input_ids: torch.Tensor
@@ -68,7 +79,13 @@ def prepare_record(
         ids = [1, *tokenizer.encode(text).ids, 2]
         labels = [-100, *ids[1:]]
     else:
-        ids, labels = chat_tokens(record["turns"], tokenizer, generation_prompt=generation_prompt)
+        ids, labels = chat_tokens(
+            record["turns"],
+            tokenizer,
+            generation_prompt=generation_prompt,
+            mode=record.get("mode"),
+            effort=record.get("effort"),
+        )
     resources = record.get("media", [])
     if ids.count(7) != len(resources):
         raise ValueError("placeholder/resource count mismatch")

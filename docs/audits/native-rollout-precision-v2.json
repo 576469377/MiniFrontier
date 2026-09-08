@@ -1,0 +1,79 @@
+{
+  "scope": "tiny native visual frozen-policy contracts; not trained-model qualification",
+  "before_fix": {
+    "cause": "generate_ids forced BF16 during a FP32 behavior request",
+    "fp32_recompute_ratio_error": {
+      "kimi": 0.0033992528915405273,
+      "qwen": 0.0029354095458984375,
+      "deepseek": 0.0013905763626098633
+    }
+  },
+  "after_fix": [
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[kimi-grpo-cuda-False]",
+      "frozen_ratio_max_error": "0.0002856254577636719",
+      "precision": "fp32",
+      "tolerance": "0.001"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[kimi-grpo-cuda-True]",
+      "frozen_ratio_max_error": "0.0014678239822387695",
+      "precision": "bf16",
+      "tolerance": "0.02"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[qwen-grpo-cuda-False]",
+      "frozen_ratio_max_error": "0.0",
+      "precision": "fp32",
+      "tolerance": "2e-05"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[qwen-grpo-cuda-True]",
+      "frozen_ratio_max_error": "0.0013704299926757812",
+      "precision": "bf16",
+      "tolerance": "0.02"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[deepseek-grpo-cuda-False]",
+      "frozen_ratio_max_error": "0.0",
+      "precision": "fp32",
+      "tolerance": "2e-05"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[deepseek-grpo-cuda-True]",
+      "frozen_ratio_max_error": "0.0",
+      "precision": "bf16",
+      "tolerance": "0.02"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[kimi-mopd-cuda-False]",
+      "frozen_ratio_max_error": "0.0002856254577636719",
+      "precision": "fp32",
+      "tolerance": "0.001"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[kimi-mopd-cuda-True]",
+      "frozen_ratio_max_error": "0.0014678239822387695",
+      "precision": "bf16",
+      "tolerance": "0.02"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[deepseek-opd-cuda-False]",
+      "frozen_ratio_max_error": "0.0",
+      "precision": "fp32",
+      "tolerance": "2e-05"
+    },
+    {
+      "test": "test_media_survives_rollout_teacher_subset_and_policy_recomputation[deepseek-opd-cuda-True]",
+      "frozen_ratio_max_error": "0.0",
+      "precision": "bf16",
+      "tolerance": "0.02"
+    }
+  ],
+  "local_runtime_limits": {
+    "cpu_fp32": 2e-05,
+    "cuda_fp32": 0.001,
+    "low_precision": 0.02
+  },
+  "limits_explanation": "Different KDA chunk/recurrent accumulation requires a separate CUDA bound; lower-precision bound is one tenth of the 0.2 clipping band. These are local engineering bounds and all stages still require their own qualification."
+}

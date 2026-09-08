@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from tokenizers import Tokenizer
 
+from minifrontier.chat_controls import record_template, update_manifest
 from minifrontier.data import sha256
 from minifrontier.data_v2 import DocumentDataset, encode_corpus
 from minifrontier.multimodal import prepare_record
@@ -35,6 +36,7 @@ def encode_native(
             path = output / f"{stage}.{split}.media.jsonl"
             offsets = []
             rejected: Counter[str] = Counter()
+            template_counts: Counter[str] = Counter()
             examples = ce = image_count = frame_count = features = 0
             records = db.execute(
                 "SELECT payload FROM samples WHERE stage=? AND split=? ORDER BY id", (stage, split)
@@ -74,6 +76,8 @@ def encode_native(
                         )
                         stream.write(serialized)
                     examples += 1
+                    if stage == "sft":
+                        template_counts[record_template(row)] += 1
                     ce += int(prepared.labels[:, 1:].ne(-100).sum())
                     image_count += prepared.image_count
                     frame_count += prepared.frame_count
@@ -92,6 +96,7 @@ def encode_native(
                 frames=frame_count,
                 image_features=features,
                 rejected=dict(rejected),
+                chat_template_counts=dict(template_counts),
             )
             manifest["stages"][stage][split] = dict(
                 format="hybrid-native-v2",
@@ -108,6 +113,7 @@ def encode_native(
         media_root=str(Path(media_root or ".").resolve()),
         model_vocab_size=vocab,
     )
+    update_manifest(manifest)
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2))
     return manifest
 

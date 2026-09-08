@@ -119,6 +119,7 @@ def parser():
     p.add_argument("--strategy-plan")
     p.add_argument("--strategy-phase")
     p.add_argument("--strategy-evidence")
+    p.add_argument("--rl-max-media-features", type=int, default=64)
     return p
 
 
@@ -240,6 +241,14 @@ def run(args, rank, world, device):
     data_hash = sha256(data_dir / "manifest.json")
     if sha256(data_dir / "tokenizer.json") != data_manifest["tokenizer"]["sha256"]:
         raise ValueError("tokenizer file differs from data manifest")
+    if (
+        args.run_kind == "strategy"
+        and args.stage == "sft"
+        and data_manifest.get("chat_template") != "control-v1"
+    ):
+        raise ValueError(
+            "formal SFT requires the shared control-v1 template for every encoded answer"
+        )
     saved = (
         torch.load(args.resume or args.init, map_location="cpu", weights_only=True)
         if args.resume or args.init
@@ -383,11 +392,37 @@ def run(args, rank, world, device):
 
         tokenizer = Tokenizer.from_file(str(data_dir / "tokenizer.json"))
         train = TaskDataset(
-            args.rl_data, "train", tokenizer, args.sequence_length - args.rollout_tokens
+            args.rl_data,
+            "train",
+            tokenizer,
+            args.sequence_length - args.rollout_tokens,
+            family=args.model,
+            model_vocab_size=model.config.vocab_size,
+            max_features=args.rl_max_media_features,
         )
         val = TaskDataset(
-            args.rl_data, "val", tokenizer, args.sequence_length - args.rollout_tokens
+            args.rl_data,
+            "val",
+            tokenizer,
+            args.sequence_length - args.rollout_tokens,
+            family=args.model,
+            model_vocab_size=model.config.vocab_size,
+            max_features=args.rl_max_media_features,
         )
+        if args.run_kind == "strategy" and (
+            train.chat_template != "control-v1" or val.chat_template != "control-v1"
+        ):
+            raise ValueError("formal RL requires the shared control-v1 prompt/action template")
+        if saved:
+            previous_run = saved.get("run_spec", {})
+            previous_template = saved.get(
+                "chat_template",
+                previous_run.get("rollout", {}).get(
+                    "chat_template", previous_run.get("chat_template", "legacy")
+                ),
+            )
+            if previous_template != train.chat_template:
+                raise ValueError("RL requires an SFT predecessor trained with the same template")
         rollout = RolloutObjective(
             model,
             reference,
@@ -425,6 +460,7 @@ def run(args, rank, world, device):
         seed=args.seed,
         data_sha256=data_hash,
         tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
+        chat_template=data_manifest.get("chat_template", "legacy"),
         steps=args.steps,
         lr=args.lr,
         muon_lr=args.muon_lr,
@@ -473,6 +509,12 @@ def run(args, rank, world, device):
         run_spec["rollout"] = dict(
             group_size=args.group_size,
             rollout_tokens=args.rollout_tokens,
+            chat_template=train.chat_template,
+            max_media_features=args.rl_max_media_features,
+            ratio_guard=dict(cpu_fp32=2e-5, cuda_fp32=0.001, low_precision=0.02),
+            tasks_manifest_sha256=sha256(Path(args.rl_data) / "manifest.json")
+            if (Path(args.rl_data) / "manifest.json").is_file()
+            else None,
             train_sha256=sha256(Path(args.rl_data) / "train.jsonl"),
             val_sha256=sha256(Path(args.rl_data) / "val.jsonl"),
             teacher_map=json.loads(Path(args.teacher_map).read_text())
@@ -630,6 +672,11 @@ def run(args, rank, world, device):
         model.eval()
         values = torch.zeros(6, device=device, dtype=torch.float64)
         random_state = rng_state(device)
+        if validation_rollout:
+            from minifrontier.training.teachers import state_hash
+            from minifrontier.training.trajectory_log import persist
+
+            validation_policy_hash = state_hash(model.state_dict())
         with torch.no_grad(), autocast():
             for i in validation_indices(
                 len(val),
@@ -640,15 +687,25 @@ def run(args, rank, world, device):
             ):
                 validation_batch = batch(val, [i], device)
                 x, y = validation_batch
-                loss, lm, _reward = (
-                    validation_rollout(model, x, y)
-                    if validation_rollout
-                    else objective(model, x, y, **validation_batch.extras)
-                )
-                # Weight by supervised tokens (DPO is a per-pair objective).
+                if validation_rollout:
+                    prepared = validation_rollout.prepare(x, y)
+                    persist(
+                        output / "trajectories",
+                        prepared,
+                        val,
+                        policy_hash=validation_policy_hash,
+                        version=dict(split="val", step=step, rank=rank, task_index=i),
+                        run_spec=run_spec,
+                    )
+                    loss, lm, _reward = validation_rollout(model, x, y, prepared=prepared)
+                else:
+                    loss, lm, _reward = objective(model, x, y, **validation_batch.extras)
+                # GRPO/MOPD average active responses; OPD averages response positions.
                 count = (
-                    1
-                    if args.stage in {"dpo", "grpo", "mopd", "opd"}
+                    validation_rollout.last_active_responses
+                    if validation_rollout
+                    else 1
+                    if args.stage == "dpo"
                     else int((y[:, 1:] != -100).sum())
                 )
                 values += torch.stack(
@@ -668,9 +725,19 @@ def run(args, rank, world, device):
         metrics = dict(
             event="validation",
             step=step,
-            loss=(values[0] / values[2]).item(),
-            lm_loss=(values[1] / values[2]).item(),
+            loss=(values[0] / values[2].clamp_min(1)).item(),
+            lm_loss=(values[1] / values[2].clamp_min(1)).item(),
+            has_learning_signal=bool(values[2] > 0),
             supervised_tokens=int(values[2]),
+            loss_denominator=(
+                "response_positions"
+                if args.stage == "opd"
+                else "active_responses"
+                if validation_rollout
+                else "pairs"
+                if args.stage == "dpo"
+                else "ce_tokens"
+            ),
             reward=(values[3] / values[4]).item(),
             examples=int(values[4].item()),
             sampling="uniform_without_replacement",
@@ -697,6 +764,9 @@ def run(args, rank, world, device):
                     step=step,
                     token_ledger=ledger.state_dict(),
                     tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
+                    chat_template=run_spec.get("rollout", {}).get(
+                        "chat_template", run_spec["chat_template"]
+                    ),
                     selection=dict(
                         metric="same-corpus-validation-lm-nll",
                         value=best_nll,
@@ -847,16 +917,40 @@ def run(args, rank, world, device):
         rollout_window = []
         active_responses = torch.zeros((), device=device, dtype=torch.int64)
         window_responses = torch.zeros((), device=device, dtype=torch.int64)
+        window_inputs = torch.zeros((), device=device, dtype=torch.int64)
         if rollout is not None:
+            from minifrontier.training.teachers import state_hash
+            from minifrontier.training.trajectory_log import persist
+
+            policy_hash = state_hash(model.state_dict())
             with autocast():
-                for cpu_batch in window:
+                for micro_index, cpu_batch in enumerate(window):
                     prepared = rollout.prepare(*cpu_batch.to(device))
                     rollout_window.append(prepared)
                     active_responses += prepared["active_responses"]
                     window_responses += prepared["labels"][:, 1:].ne(-100).sum()
+                    window_inputs += prepared["input_positions"]
+                    trace_started = time.monotonic()
+                    persist(
+                        output / "trajectories",
+                        prepared,
+                        train,
+                        policy_hash=policy_hash,
+                        version=dict(
+                            split="train",
+                            step=step,
+                            rank=rank,
+                            micro=micro_index,
+                            optimizer_updates=ledger.optimizer_updates,
+                            response_tokens_before=ledger.response_tokens,
+                        ),
+                        run_spec=run_spec,
+                    )
+                    io_seconds += time.monotonic() - trace_started
             if world > 1:
                 dist.all_reduce(active_responses)
                 dist.all_reduce(window_responses)
+                dist.all_reduce(window_inputs)
         counts = (
             window_counts(window, device, pairwise=args.stage == "dpo") if rollout is None else None
         )
@@ -873,6 +967,11 @@ def run(args, rank, world, device):
 
         media_counts = torch.tensor(
             [
+                sum(prepared["media_counts"][index] for prepared in rollout_window)
+                for index in range(4)
+            ]
+            if rollout is not None
+            else [
                 sum(getattr(item, name) for item in window)
                 for name in ("image_count", "video_count", "frame_count", "image_features")
             ],
@@ -1045,6 +1144,11 @@ def run(args, rank, world, device):
                 if world > 1:
                     dist.all_reduce(metrics)
                 ledger.response_tokens += int(metrics[2])
+                ledger.input_tokens += int(window_inputs)
+                ledger.image_occurrences += int(media_counts[0])
+                ledger.video_examples += int(media_counts[1])
+                ledger.video_frames += int(media_counts[2])
+                ledger.image_features += int(media_counts[3])
                 ledger.skipped_windows += 1
                 empty_rl_windows += 1
                 step -= 1
@@ -1098,6 +1202,7 @@ def run(args, rank, world, device):
                 ledger.ce_tokens += int(counts[0])
         else:
             ledger.response_tokens += int(metrics[2])
+            ledger.input_tokens += int(window_inputs)
         if device.type == "cuda":
             torch.cuda.synchronize(device)
         elapsed = time.monotonic() - started
@@ -1129,7 +1234,8 @@ def run(args, rank, world, device):
                     peak_reserved_gib=float(performance[4]),
                     min_device_free_gib=-float(performance[5]),
                     ce_tokens=int(counts[0]) if counts is not None else 0,
-                    input_tokens=int(counts[1]) if counts is not None else 0,
+                    input_tokens=int(counts[1]) if counts is not None else int(window_inputs),
+                    response_tokens=int(window_responses) if rollout is not None else 0,
                     images=int(media_counts[0]),
                     frames=int(media_counts[2]),
                 )
@@ -1141,6 +1247,8 @@ def run(args, rank, world, device):
                     updates=profile,
                     measured_updates=len(profile),
                     ce_tokens_per_second=sum(row["ce_tokens"] for row in profile) / seconds,
+                    response_tokens_per_second=sum(row.get("response_tokens", 0) for row in profile)
+                    / seconds,
                     images_per_second=sum(row["images"] for row in profile) / seconds,
                     frames_per_second=sum(row["frames"] for row in profile) / seconds,
                     scope="this phase, context bucket, modality mixture and device count only",
@@ -1189,6 +1297,9 @@ def run(args, rank, world, device):
                 step=step,
                 token_ledger=ledger.state_dict(),
                 tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
+                chat_template=run_spec.get("rollout", {}).get(
+                    "chat_template", run_spec["chat_template"]
+                ),
             ),
             output / "model.pt",
         )

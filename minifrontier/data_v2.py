@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
+from minifrontier.chat_controls import record_template, semantic_content, update_manifest
 from minifrontier.data import SPECIAL_TOKENS, chat_tokens, fingerprint, normalized, sha256
 from minifrontier.storage import GIB, require_space, reserve_write
 
@@ -111,7 +112,11 @@ class CorpusBuilder:
                 return False
             if any(
                 t.get("role") not in {"system", "user", "assistant", "tool"}
-                or not isinstance(t.get("content"), str)
+                or (t.get("reasoning") is not None and not isinstance(t["reasoning"], str))
+                or not (
+                    isinstance(t.get("content"), str)
+                    or (t.get("content") is None and t.get("tool_calls"))
+                )
                 for t in turns
             ):
                 self.counts["invalid_turns"] += 1
@@ -125,7 +130,7 @@ class CorpusBuilder:
                 if first
                 else ""
             )
-            text = "\n".join(t["role"] + ":" + t["content"] for t in turns)
+            text = "\n".join(t["role"] + ":" + semantic_content(t) for t in turns)
         else:
             text, question = normalized(record.get("text", "")), ""
             record = dict(record, text=text)
@@ -149,9 +154,9 @@ class CorpusBuilder:
             if len(existing) >= 3:
                 self.counts["first_question_cap"] += 1
                 return False
-            answer = text_shingles(turns[-1]["content"])
+            answer = text_shingles(semantic_content(turns[-1]))
             for (payload,) in existing:
-                other = text_shingles(json.loads(payload)["turns"][-1]["content"])
+                other = text_shingles(semantic_content(json.loads(payload)["turns"][-1]))
                 if len(answer & other) / max(1, len(answer | other)) >= 0.8:
                     self.counts["answer_template_duplicate"] += 1
                     return False
@@ -392,6 +397,7 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):
             token_path, label_path = output / f"{prefix}.bin", output / f"{prefix}.labels.bin"
             index, token_count, supervised, identity_tokens = [], 0, 0, 0
             rejected: Counter[str] = Counter()
+            template_counts: Counter[str] = Counter()
             records = db.execute(
                 "SELECT payload FROM samples WHERE stage=? AND split=? ORDER BY id", (stage, split)
             )
@@ -410,7 +416,9 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):
                         targets = ids.copy()
                         targets[0] = -100
                     else:
-                        ids, targets = chat_tokens(row["turns"], tokenizer)
+                        ids, targets = chat_tokens(
+                            row["turns"], tokenizer, mode=row.get("mode"), effort=row.get("effort")
+                        )
                         if len(ids) > max_length:
                             rejected["complete_answer_exceeds_largest_bucket"] += 1
                             continue
@@ -429,6 +437,8 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):
                         np.asarray(targets, dtype=np.int32).tofile(labels)
                         metadata.write(payload + "\n")
                     index.append((token_count, len(ids)))
+                    if stage == "sft":
+                        template_counts[record_template(row)] += 1
                     token_count += len(ids)
                     supervised += ce
             index_path = output / f"{prefix}.index.npy"
@@ -448,8 +458,10 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):
                 identity_tokens=identity_tokens,
                 metadata_file=f"{prefix}.jsonl",
                 metadata_sha256=sha256(output / f"{prefix}.jsonl"),
+                chat_template_counts=dict(template_counts),
             )
     db.close()
+    update_manifest(manifest)
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2))
     return manifest
 

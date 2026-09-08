@@ -70,6 +70,9 @@ DeepSeek：Text-v2 PT/indexer/CPT → Vision-v1接入/CPT → SFT/QAT → 12 教
 `train-draft` 提供独立的 Kimi LK、Qwen 四流 CE 和 DeepSeek DSpark 训练/恢复入口，
 目标冻结且导出绑定精确目标 hash。`generate --draft` 提供接受/拒绝与原生缓存回滚，
 目前仅作正确性路径，尚无训练后加速结论，见[草稿适应与推理](docs/draft-adaptation.md)。
+新的 control-v1 模板贯通 SFT、原生视觉/工具 rollout 和 CLI；实际行为概率、策略
+权重 hash、工具观察掩码与终态奖励分别保留。此接口尚未完成正式后训练，见
+[后训练适应与范围](docs/posttraining-adaptation.md)。
 `expert_execution="batched"` 是尚未通过完整 BF16 梯度比较的实验选项，三个方案配置
 及正在运行的训练均保持 `loop`；微基准提速不构成正式配方准入。
 
