@@ -87,6 +87,7 @@ class MiniQwen4Config:
     forbidden_action_ids: tuple[int, ...] = (0, 1)
     mtp_enabled: bool = False
     mtp_loss_coef: float = 0.1
+    expert_execution: str = "loop"
     vision_config: QwenVisionConfig | None = None
     image_token_id: int = 7
 
@@ -493,6 +494,10 @@ class MiniQwen4ForCausalLM(nn.Module):
         self.indexer_kl_coef = indexer_kl_coef
         self.indexer_loss_enabled = True
         self.mtp = QwenMTP(config, self.model._initialize) if config.mtp_enabled else None
+        if config.expert_execution != "loop":
+            from minifrontier.models.grouped_experts import configure as configure_experts
+
+            configure_experts(self, config.expert_execution)
         self._configure_training_phase(training_phase)
 
     def _configure_training_phase(self, phase: str) -> None:

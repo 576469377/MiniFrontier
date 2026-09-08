@@ -51,6 +51,17 @@ DeepSeek native vision, image layout and visibility follow
 Its original MIT LICENSE is preserved beside the snapshot. Local training-specific
 adaptations are distinguished from the original inference definitions.
 
+The local Kimi EAGLE-style conversion and Qwen draft reuse these attributed MTP
+components. Their unroll objectives, feature selection, optimizer and training
+executor are explicit mini adaptations. `minideepseekv4/dspark.py` follows the
+same pinned MIT-licensed Vision-Exp prefix/noise attention, mHC and Markov layout.
+The local DSpark loss expresses the CE/L1/overlap-confidence equations quoted in
+the repository's training strategy; the three text-MTP initializations and rank-64
+mini adaptation do not claim released flagship training weights or hyperparameters.
+The optional padded expert implementation preserves each source component's
+activation and route weighting; its Kimi-derived computation retains the Kimi
+K3 license. It remains disabled in the strategy configurations.
+
 The strategy data builder records pinned source and item provenance. Its Python-Edu
 pilot retrieves code blobs from Software Heritage and checks each content SHA1;
 the index does not resolve each original repository license. That pilot explicitly

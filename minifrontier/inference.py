@@ -112,21 +112,46 @@ def load_checkpoint(path, device="cpu"):
     )
 
 
-def respond(model, tokenizer, prompt, *, chat=True, max_new_tokens=64, temperature=0.8, top_p=0.9):
+def respond(
+    model,
+    tokenizer,
+    prompt,
+    *,
+    chat=True,
+    max_new_tokens=64,
+    temperature=0.8,
+    top_p=0.9,
+    draft=None,
+    draft_steps=3,
+):
     ids = (
         chat_tokens([{"role": "user", "content": prompt}], tokenizer, generation_prompt=True)[0]
         if chat
         else [1, *tokenizer.encode(prompt).ids]
     )
     inputs = torch.tensor([ids], device=next(model.parameters()).device)
-    result = generate_ids(
-        model,
-        inputs,
-        max_new_tokens=max_new_tokens,
-        temperature=temperature,
-        top_p=top_p,
-        vocab_size=tokenizer.get_vocab_size(),
-    )
+    if draft is None:
+        result = generate_ids(
+            model,
+            inputs,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            vocab_size=tokenizer.get_vocab_size(),
+        )
+    else:
+        from minifrontier.speculative import generate_speculative
+
+        if temperature != 1 or top_p != 1:
+            raise ValueError("the initial speculative sampler requires temperature=1 and top_p=1")
+        result, _stats = generate_speculative(
+            model,
+            draft,
+            inputs,
+            max_new_tokens=max_new_tokens,
+            draft_steps=draft_steps,
+            vocab_size=tokenizer.get_vocab_size(),
+        )
     return tokenizer.decode(result[0, len(ids) :].tolist(), skip_special_tokens=True)
 
 
@@ -288,12 +313,20 @@ def main(argv=None):
     p.add_argument("--checkpoint", required=True)
     p.add_argument("--prompt", required=True)
     p.add_argument("--max-new-tokens", type=int, default=64)
-    p.add_argument("--temperature", type=float, default=0.8)
-    p.add_argument("--top-p", type=float, default=0.9)
+    p.add_argument("--temperature", type=float)
+    p.add_argument("--top-p", type=float)
+    p.add_argument("--draft", help="optional trained draft bound to this exact checkpoint")
+    p.add_argument("--draft-steps", type=int, default=3)
     p.add_argument("--device", default="cpu")
     p.add_argument("--completion", action="store_true")
     args = p.parse_args(argv)
-    model, tokenizer, _meta = load_checkpoint(args.checkpoint, args.device)
+    draft = None
+    if args.draft:
+        from minifrontier.training.drafts import load_draft
+
+        model, draft, tokenizer, _meta = load_draft(args.draft, args.checkpoint, args.device)
+    else:
+        model, tokenizer, _meta = load_checkpoint(args.checkpoint, args.device)
     print(
         respond(
             model,
@@ -301,8 +334,10 @@ def main(argv=None):
             args.prompt,
             chat=not args.completion,
             max_new_tokens=args.max_new_tokens,
-            temperature=args.temperature,
-            top_p=args.top_p,
+            temperature=args.temperature if args.temperature is not None else (1 if draft else 0.8),
+            top_p=args.top_p if args.top_p is not None else (1 if draft else 0.9),
+            draft=draft,
+            draft_steps=args.draft_steps,
         )
     )
 

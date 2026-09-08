@@ -57,6 +57,7 @@ class MiniKimiK3Config:
     forbidden_action_ids: tuple[int, ...] = (0, 1)
     router_fp32: bool = False  # Historical runs retain their original AMP routing.
     qat_scheme: str = "bf16"
+    expert_execution: str = "loop"
     mtp_enabled: bool = False
     mtp_loss_coef: float = 0.1
     vision_config: KimiVisionConfig | None = None
@@ -158,6 +159,10 @@ class MiniKimiK3ForCausalLM(nn.Module):
             from minifrontier.training.kimi_qat import configure
 
             self.qat_recipe = configure(self)
+        if config.expert_execution != "loop":
+            from minifrontier.models.grouped_experts import configure as configure_experts
+
+            configure_experts(self, config.expert_execution)
 
     @torch.no_grad()
     def _initialize(self, module):
@@ -185,6 +190,7 @@ class MiniKimiK3ForCausalLM(nn.Module):
         media=None,
         return_hidden=False,
         return_logits=True,
+        return_taps=False,
     ):
         labels = validate_batch(input_ids, self.config, attention_mask, labels)
         b, length = input_ids.shape
@@ -220,7 +226,8 @@ class MiniKimiK3ForCausalLM(nn.Module):
         causal = torch.zeros_like(allowed, dtype=h.dtype).masked_fill(~allowed, float("-inf"))[
             None, None
         ]
-        for layer in self.layers:
+        taps = []
+        for index, layer in enumerate(self.layers):
             mask = None if layer.is_linear_attn else causal
             if self.training and self.config.gradient_checkpointing:
                 h, blocks = checkpoint(
@@ -230,6 +237,8 @@ class MiniKimiK3ForCausalLM(nn.Module):
                 h, blocks = layer(
                     h, attention_mask=mask, block_residual=blocks, past_key_values=cache
                 )
+            if return_taps and (index + 1) % self.config.attn_res_block_size == 0:
+                taps.append(h)
         h = _apply_attn_res(
             h.reshape(-1, self.config.hidden_size),
             blocks,
@@ -269,4 +278,5 @@ class MiniKimiK3ForCausalLM(nn.Module):
             hidden_states=features if return_hidden else None,
             mtp_loss=mtp_loss,
             mtp_tokens=mtp_tokens,
+            tapped_hidden_states=tuple(taps) if return_taps else None,
         )

@@ -250,6 +250,10 @@ def run(args, rank, world, device):
         if args.stage in {"dense_distill", "sparse_cpt"}
         else (saved.get("phase", "dense_pretrain") if saved else "dense_pretrain")
     )
+    if args.run_kind == "strategy":
+        from .strategy_gate import validate_runtime
+
+        validate_runtime(args.strategy_plan, args.strategy_phase, phase, world)
     if saved and saved["model_name"] != args.model:
         raise ValueError("checkpoint belongs to a different model")
     if (
@@ -581,6 +585,7 @@ def run(args, rank, world, device):
             writer = SummaryWriter(
                 str(output / "tensorboard"), purge_step=first_step + 1 if first_step else None
             )
+    profile = saved.get("performance_updates", []) if args.resume and saved else []
     del saved
 
     def autocast():
@@ -775,6 +780,7 @@ def run(args, rank, world, device):
                 token_ledger=ledger.state_dict(),
                 router_balance=balance.state_dict(),
                 qk_clip=qk_clip.state_dict() if qk_clip is not None else None,
+                performance_updates=profile,
             )
             if reference is not None:
                 payload["reference"] = reference.state_dict()
@@ -811,7 +817,6 @@ def run(args, rank, world, device):
     step = first_step
     empty_windows = 0
     empty_rl_windows = 0
-    profile = []
     while step < args.steps and not finished(step):
         next_step = step + 1
         started = time.monotonic()

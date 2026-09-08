@@ -1,0 +1,407 @@
+{
+  "checkpoint_sha256": "ff3966c19023bd968da47df28ef13341ec70cd276a6b511e223ee903b25f610a",
+  "step": 576,
+  "model": "miniqwen4",
+  "cases": [
+    {
+      "sample_id": "03736d4ce44805c45b698cb2438bf1d60cbbbe66a9678642b32755ee5216fc41",
+      "color": "green",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0005514293443411589,
+          "greedy_color_tokens": " green",
+          "expected_color_tokens": " green",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 9.03543472290039,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " green",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 4.663339138031006,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " green",
+          "exact_tokens": false
+        }
+      }
+    },
+    {
+      "sample_id": "0c67cb97bfcafbae144bafef97f16c9ad93e2c1e5505142b44daf638fd840d1d",
+      "color": "green",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0005514293443411589,
+          "greedy_color_tokens": " green",
+          "expected_color_tokens": " green",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 9.03543472290039,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " green",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 4.663339138031006,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " green",
+          "exact_tokens": false
+        }
+      }
+    },
+    {
+      "sample_id": "10d8f5e58b76ed2c5692e9aadcb09fb983741119aa68f5ca6454f98e8ce0f457",
+      "color": "green",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.000553335587028414,
+          "greedy_color_tokens": " green",
+          "expected_color_tokens": " green",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 9.03543472290039,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " green",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 4.663339138031006,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " green",
+          "exact_tokens": false
+        }
+      }
+    },
+    {
+      "sample_id": "1563a791373e273b39bf837dc71a409a27dc998ea0347b8d752bfb3c5a795aef",
+      "color": "green",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0005514293443411589,
+          "greedy_color_tokens": " green",
+          "expected_color_tokens": " green",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 9.03543472290039,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " green",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 4.663339138031006,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " green",
+          "exact_tokens": false
+        }
+      }
+    },
+    {
+      "sample_id": "067ac10e3666163f95a91824c249f6f0b04e0b552ad1992300986797e7fc3832",
+      "color": "yellow",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0005777596961706877,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 8.875955581665039,
+          "greedy_color_tokens": " green",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 0.011642958037555218,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": true
+        }
+      }
+    },
+    {
+      "sample_id": "0d2e340fab2b13a07761e9a11971ec31a01614c07718d75a26ec08c8cadc157c",
+      "color": "yellow",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0005924138822592795,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 8.875955581665039,
+          "greedy_color_tokens": " green",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 0.011642958037555218,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": true
+        }
+      }
+    },
+    {
+      "sample_id": "19b775236d31c1aa4129a35547ada978e735c50276db24c0f5906d7504acb716",
+      "color": "yellow",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.000575376907363534,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 8.875955581665039,
+          "greedy_color_tokens": " green",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 0.011642958037555218,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": true
+        }
+      }
+    },
+    {
+      "sample_id": "1f620d057c34255aed1b440c5dd3b5f2675e9c7e8745ac4bbef556e1227e0d32",
+      "color": "yellow",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0005751386051997542,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 8.875955581665039,
+          "greedy_color_tokens": " green",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 0.011642958037555218,
+          "greedy_color_tokens": " yellow",
+          "expected_color_tokens": " yellow",
+          "exact_tokens": true
+        }
+      }
+    },
+    {
+      "sample_id": "00f9d3bebb23b2836c2108c6329c0a9f08b2006a313540162bd3e3b1a470c36d",
+      "color": "红色",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0002503081923350692,
+          "greedy_color_tokens": "红色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 9.944296836853027,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 10.006901741027832,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": false
+        }
+      }
+    },
+    {
+      "sample_id": "03aa2b923faf5a97f103d005a967489b212310af6b8e6dca4cb33632ad381df3",
+      "color": "红色",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.00024971229140646756,
+          "greedy_color_tokens": "红色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 9.944296836853027,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 10.006901741027832,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": false
+        }
+      }
+    },
+    {
+      "sample_id": "08581bae665a82513c01f8cb97c395bcc1d393e150664984bb83cfd7ebcde77f",
+      "color": "红色",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.00025149996508844197,
+          "greedy_color_tokens": "红色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 9.944296836853027,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 10.006901741027832,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": false
+        }
+      }
+    },
+    {
+      "sample_id": "0b771ca1a7368652cf44a60db7f6690f92cf5ad946fd4a605fd18c3e7e20dcf1",
+      "color": "红色",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.00024911639047786593,
+          "greedy_color_tokens": "红色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 9.944296836853027,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 10.006901741027832,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "红色",
+          "exact_tokens": false
+        }
+      }
+    },
+    {
+      "sample_id": "051ec1489353239105296a081ecbbd625ca23e71ebeefda68bf207977cc41437",
+      "color": "蓝色",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0002580548170953989,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 10.209094047546387,
+          "greedy_color_tokens": "红色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 0.0002609150833450258,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": true
+        }
+      }
+    },
+    {
+      "sample_id": "07cd89c677cd6cc3745c75cbd15cd4abc424dc79932d21929fb62d265f6be486",
+      "color": "蓝色",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.00025781645672395825,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 10.209094047546387,
+          "greedy_color_tokens": "红色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 0.0002609150833450258,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": true
+        }
+      }
+    },
+    {
+      "sample_id": "0b2804bda60fdcec3ffd3a9ed5a258572e5c55a8dab7361d654e7d7049e84a51",
+      "color": "蓝色",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.0002627027570270002,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 10.209094047546387,
+          "greedy_color_tokens": "红色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 0.0002609150833450258,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": true
+        }
+      }
+    },
+    {
+      "sample_id": "0f8b627cbf56b243882fe00fb6a088e26e29a998b7738e28dd8336fa38b713ae",
+      "color": "蓝色",
+      "results": {
+        "correct_image": {
+          "color_token_nll": 0.00026127262390218675,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": true
+        },
+        "wrong_image": {
+          "color_token_nll": 10.209094047546387,
+          "greedy_color_tokens": "红色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": false
+        },
+        "masked_image": {
+          "color_token_nll": 0.0002609150833450258,
+          "greedy_color_tokens": "蓝色",
+          "expected_color_tokens": "蓝色",
+          "exact_tokens": true
+        }
+      }
+    }
+  ],
+  "summary": {
+    "correct_image": {
+      "color_token_nll": 0.0004105497628188459,
+      "exact_color_sequences": 16
+    },
+    "wrong_image": {
+      "color_token_nll": 9.516195297241211,
+      "exact_color_sequences": 0
+    },
+    "masked_image": {
+      "color_token_nll": 3.6705361880449345,
+      "exact_color_sequences": 8
+    }
+  },
+  "evaluated_images": 16,
+  "scope": "training-set color counterfactual diagnostic only; not a vision release gate"
+}

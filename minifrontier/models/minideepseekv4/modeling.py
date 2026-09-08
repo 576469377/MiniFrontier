@@ -61,6 +61,7 @@ class MiniDeepSeekV4Config:
     swiglu_limit: float = 10.0
     initializer_range: float = 0.02
     qat_scheme: str = "bf16"
+    expert_execution: str = "loop"
     pad_token_id: int = 0
     eos_token_id: int = 2
     gradient_checkpointing: bool = True
@@ -144,6 +145,10 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
             from minifrontier.training.deepseek_qat import configure
 
             self.qat_recipe = configure(self)
+        if config.expert_execution != "loop":
+            from minifrontier.models.grouped_experts import configure as configure_experts
+
+            configure_experts(self, config.expert_execution)
 
     @torch.no_grad()
     def _initialize(self, module=None):
@@ -224,6 +229,7 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
         opd_targets=None,
         opd_mask=None,
         opd_vocab_size=None,
+        return_taps=False,
     ):
         if cache is not None:
             if self.training or torch.is_grad_enabled() or labels is not None:
@@ -307,7 +313,8 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
         seq_enabled = (
             self.config.sequence_balance_coef > 0 and self.training_phase != "dense_distill"
         )
-        for raw_layer in self.layers:
+        taps = []
+        for index, raw_layer in enumerate(self.layers):
             layer = cast(Block, raw_layer)
             layer.attn.indexer_loss_enabled = self.indexer_loss_enabled
             if self.training and self.config.gradient_checkpointing:
@@ -327,6 +334,8 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
                 sequence_losses.append(seq)
             if layer.attn.indexer is not None:
                 losses.append(kl)
+            if return_taps and index >= self.config.n_layers - 3:
+                taps.append(h.mean(dim=2))
         features = self.norm(
             self.head.hc_head(h, self.hc_head_fn, self.hc_head_scale, self.hc_head_base)
         )
@@ -395,4 +404,5 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
             mtp_tokens=mtp_tokens,
             mtp_aux_loss=mtp_aux,
             mtp_aux_count=mtp_aux_count,
+            tapped_hidden_states=tuple(taps) if return_taps else None,
         )

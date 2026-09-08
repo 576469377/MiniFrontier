@@ -47,8 +47,6 @@ class QwenMTP(nn.Module):
         self.phase = phase
 
     def forward(self, multi, embedding, valid, positions):
-        from .modeling import _decoder_with_router
-
         h = self.pre_fc_norm_hidden(multi).unflatten(
             -1, (self.config.hc_count, self.config.hidden_size)
         )
@@ -56,7 +54,6 @@ class QwenMTP(nn.Module):
             -2
         )
         h = h.flatten(-2)
-        self.block.mlp.gate.valid_mask = valid
         length = h.shape[1]
         legal = (
             torch.ones((length, length), device=h.device, dtype=torch.bool).tril()[None]
@@ -68,12 +65,17 @@ class QwenMTP(nn.Module):
             position_embeddings=self.rotary_emb(h, positions),
             attention_mask=mask,
             conv_mask=valid,
+            valid=valid,
             indexer_phase=self.phase if self.phase != "dense_pretrain" else None,
         )
         if self.training and self.config.gradient_checkpointing:
-            h, router, kl = checkpoint(
-                _decoder_with_router, self.block, h, use_reentrant=False, **kwargs
-            )
+            h, router, kl = checkpoint(self._block, h, use_reentrant=False, **kwargs)
         else:
-            h, router, kl = _decoder_with_router(self.block, h, **kwargs)
+            h, router, kl = self._block(h, **kwargs)
         return self.hyper_connection_mixer(h), h, router, kl
+
+    def _block(self, h, *, valid, **kwargs):
+        from .modeling import _decoder_with_router
+
+        self.block.mlp.gate.valid_mask = valid
+        return _decoder_with_router(self.block, h, **kwargs)

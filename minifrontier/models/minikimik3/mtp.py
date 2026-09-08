@@ -36,15 +36,17 @@ class KimiMTP(nn.Module):
         )
         legal |= torch.eye(length, device=h.device, dtype=torch.bool)[None]
         mask = torch.zeros_like(legal, dtype=h.dtype).masked_fill(~legal, float("-inf"))[:, None]
-        self.block.block_sparse_moe.gate.valid_mask = valid
-        self.block.self_attn.valid_mask = valid
         if self.training and self.config.gradient_checkpointing:
-            h, blocks = checkpoint(
-                self.block, h, attention_mask=mask, block_residual=blocks, use_reentrant=False
-            )
+            h, blocks = checkpoint(self._block, h, mask, blocks, valid, use_reentrant=False)
         else:
-            h, blocks = self.block(h, attention_mask=mask, block_residual=blocks)
+            h, blocks = self._block(h, mask, blocks, valid)
         h = _apply_attn_res(
             h.reshape(-1, width), blocks, self.output_attn_res_proj, self.output_attn_res_norm
         )
         return self.norm(h.view(batch, length, width))
+
+    def _block(self, h, mask, blocks, valid):
+        # Restore each unroll step's mask during checkpoint recomputation.
+        self.block.block_sparse_moe.gate.valid_mask = valid
+        self.block.self_attn.valid_mask = valid
+        return self.block(h, attention_mask=mask, block_residual=blocks)

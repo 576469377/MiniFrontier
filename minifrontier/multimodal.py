@@ -161,6 +161,8 @@ def prepare_record(
         else:
             raise ValueError("unknown native media family")
         sample["batch_index"] = 0
+        sample["resource_kind"] = "video" if video else "image"
+        sample["source_frame_count"] = len(images) if video else 0
         media.append(sample)
         output.extend(tokens)
         targets.extend([-100] * len(tokens))

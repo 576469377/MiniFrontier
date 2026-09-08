@@ -1,0 +1,32 @@
+{
+  "model": "minikimik3",
+  "scope": "text-only forward/backward microbenchmark; no optimizer/data/DDP; background training active",
+  "measurements": {
+    "loop": {
+      "seconds_per_microbatch": 1.381871322914958,
+      "loss": 12.243062973022461,
+      "peak_allocated_gib": 1.555821418762207
+    },
+    "batched": {
+      "seconds_per_microbatch": 0.3272734755650163,
+      "loss": 12.243337631225586,
+      "peak_allocated_gib": 1.555821418762207,
+      "gradient_cosine": 0.6574856349797552,
+      "gradient_relative_l2": 0.8344653910777833
+    }
+  },
+  "qualified_for_training": false,
+  "decision": "keep source loop in all strategy configurations and running jobs",
+  "implementation": "uncommitted padded-GEMM prototype before the padding fallback guard",
+  "limitation": "full BF16 gradient discrepancy is unresolved; timing excludes data, optimizer, DDP and competes with active training; peak is cumulative across the two modes",
+  "isolated_moe_check": {
+    "model": "first routed Kimi layer",
+    "batch": 1,
+    "sequence_length": 512,
+    "input_width": 512,
+    "dtype": "BF16 autocast / FP32 master",
+    "output_relative_l2": 0.00360107421875,
+    "input_gradient_cosine": 0.9999915361404419,
+    "scope": "one random block; does not resolve full-network gradient mismatch"
+  }
+}

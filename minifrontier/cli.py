@@ -68,6 +68,11 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         train(argv[1:])
         return
+    if argv and argv[0] == "train-draft":
+        from minifrontier.training.train_draft import main as train_draft
+
+        train_draft(argv[1:])
+        return
     if argv and argv[0] == "generate":
         from minifrontier.inference import main as generate
 
@@ -136,6 +141,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "prepare-data": "construct public training data and a tokenizer",
         "prepare-rl-data": "generate tasks with verifiable arithmetic rewards",
         "train": "train or resume any text model and stage",
+        "train-draft": "adapt a target-bound Kimi, Qwen or DSpark draft",
         "generate": "generate text from a local checkpoint",
         "demo": "serve the local browser demo",
     }.items():

@@ -22,9 +22,17 @@ def main():
     p.add_argument("--workspace", type=Path, required=True)
     p.add_argument("--model", choices=["minikimik3", "miniqwen4", "minideepseekv4"], required=True)
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--diagnostic", type=Path, help="explicit reviewed diagnostic continuation")
+    p.add_argument(
+        "--source-root", type=Path, help="frozen training checkout; also set PYTHONPATH to it"
+    )
     args = p.parse_args()
     workspace, output = args.workspace.resolve(), args.output.resolve()
-    source_root = Path(__file__).resolve().parents[1]
+    source_root = (args.source_root or Path(__file__).resolve().parents[1]).resolve()
+    import minifrontier
+
+    if Path(minifrontier.__file__).resolve().parents[1] != source_root:
+        raise ValueError("imported training implementation does not match frozen source-root")
     identity = source_identity()
     if identity["dirty"] or not identity["commit"]:
         raise ValueError("recipe experiments require an immutable source checkout")
@@ -32,7 +40,9 @@ def main():
         raise FileExistsError("pilot output already exists; preserve previous experiments")
     output.mkdir(parents=True)
     gpu_ids = {"minikimik3": "0,1", "miniqwen4": "2,3", "minideepseekv4": "4,5"}[args.model]
-    diagnostic = workspace / "outputs/strategy-diagnostics-v2" / args.model
+    diagnostic = (
+        args.diagnostic or workspace / "outputs/strategy-diagnostics-v2" / args.model
+    ).resolve()
     data = (
         workspace
         / "data"
@@ -44,6 +54,8 @@ def main():
     )
     state = dict(
         source=identity,
+        controller_sha256=sha256(__file__),
+        diagnostic=str(diagnostic),
         model=args.model,
         gpu_ids=gpu_ids,
         stage="waiting_diagnostic",

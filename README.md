@@ -14,7 +14,7 @@
 
 新训练配置位于 `configs/strategies`，上表包含 MTP；DeepSeek 按方案先训练文本，再迁移原生 Vision-Exp。根目录三个配置保留文本兼容用途。原生视觉、MTP、各自 Muon/路由更新和增量缓存已接入；QAT 仿真、Kimi sampled-token MOPD、DeepSeek full-vocabulary reverse-KL OPD 有独立代码路径，仍需配方和能力验收。
 
-**完整训练与可用模型尚未完成。** 当前正在执行独立的 K0/Q0/D0 诊断，不计正式主预算。正式数据准入、配方选择、教师资格、草稿训练和发布门槛仍有待完成项，详见[方案执行记录](docs/audits/strategy-implementation-v2.md)。公开材料未披露的 mini 配方明确属于本地选择。
+**完整训练与可用模型尚未完成。** Kimi/DeepSeek 正在执行独立 20M-token 配方试验，Qwen 的首轮 Q0 算术记忆未通过，正在补充诊断；这些都不计正式主预算。正式数据准入、配方选择、教师资格、草稿训练和发布门槛仍有待完成项，详见[方案执行记录](docs/audits/strategy-implementation-v2.md)。公开材料未披露的 mini 配方明确属于本地选择。
 
 **2026-09-08 效果审计：`educational-v1` 未达到基本对话目标。** 阶段完成和损失下降不能作为模型可用的证据；SFT 已出现重复、答非所问，DPO 也未修复。见[失败复盘与纠正措施](docs/training-failure-v1.md)。当前权重用于排查与学习，不标记为可用对话模型。
 
@@ -66,6 +66,12 @@ DeepSeek：Text-v2 PT/indexer/CPT → Vision-v1接入/CPT → SFT/QAT → 12 教
 上图为目标依赖，仍有未实现和未验收的阶段，不能作为完成清单。新入口按 CE/input/response 实际 token 计费；`--run-kind strategy` 检查源码、数据、配置、依赖证据与实测性能。`scripts/run_recipe_pilot.py` 仅执行两组独立 20M-token Muon/AdamW 试验，之后仍需 LR、MTP、tokenizer 和补种子对照，不自动进入主训练。旧 `launch_training.py` 保留作历史对照，不执行新方案。DPO 默认关闭。
 
 检查点包含模型、优化器、阶段、完整配方、tokenizer 校验和、数据游标以及各 rank 随机状态；支持相同配方的精确恢复。文本域按 CE token 采样；视觉域按样本采样，同时单列图像/视频暴露预算。PT/SFT 的 `best-model.pt` 按同一验证集 LM NLL 保存，仍须生成能力验收。训练和验证记录位于每模型独立目录，TensorBoard 与 JSONL 同步保存。DDP 完成阶段前逐项核验所有 rank 的参数一致。
+
+`train-draft` 提供独立的 Kimi LK、Qwen 四流 CE 和 DeepSeek DSpark 训练/恢复入口，
+目标冻结且导出绑定精确目标 hash。`generate --draft` 提供接受/拒绝与原生缓存回滚，
+目前仅作正确性路径，尚无训练后加速结论，见[草稿适应与推理](docs/draft-adaptation.md)。
+`expert_execution="batched"` 是尚未通过完整 BF16 梯度比较的实验选项，三个方案配置
+及正在运行的训练均保持 `loop`；微基准提速不构成正式配方准入。
 
 ## 验证
 

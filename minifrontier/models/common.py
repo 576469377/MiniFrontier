@@ -19,6 +19,7 @@ class CausalLMOutput:
     mtp_tokens: int = 0
     mtp_aux_loss: Tensor | None = None
     mtp_aux_count: int = 0
+    tapped_hidden_states: tuple[Tensor, ...] | None = None
 
 
 def insert_media_embeddings(input_ids, embeddings, media, encoder, placeholder_id):

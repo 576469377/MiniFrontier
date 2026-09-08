@@ -1,0 +1,35 @@
+{
+  "implementation_sha256": "77df9251bf3ba9ba3cf1fc6688f744d5c59720c714bb58d0d48c946fb5726aaa",
+  "verified_at_utc": "2026-09-08T14:50:46.066207+00:00",
+  "cpu": {
+    "passed": 215,
+    "skipped": 1,
+    "log": "outputs/services/strategy-v2-draft-cpu-tests.log"
+  },
+  "cuda": {
+    "passed": 31,
+    "full_suite": 29,
+    "additional_qat_drafts": 2,
+    "devices": [
+      0,
+      1
+    ],
+    "logs": [
+      "outputs/services/strategy-v2-draft-cuda-tests.log",
+      "outputs/services/strategy-draft-qat-cuda-tests.log"
+    ]
+  },
+  "mypy": {
+    "sources": 112,
+    "ignore_missing_external_stubs": true
+  },
+  "ruff": "check and format passed",
+  "uv_lock": "check passed",
+  "build": {
+    "artifacts": "outputs/dist-strategy-draft-v2",
+    "sdist": true,
+    "wheel": true,
+    "twine": "passed"
+  },
+  "scope": "engineering validation only; formal targets, 10M-30M trained drafts, confidence calibration and end-to-end quality/latency are not complete"
+}

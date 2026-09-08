@@ -161,10 +161,9 @@ def validate_arguments(args):
         report["errors"].append("formal SFT needs a resumable sampler with at most two data epochs")
     if phase["budget_scope"] not in {"diagnostic", "recipe_pilot", "vision_diagnostic"}:
         evidence = json.loads(Path(args.strategy_evidence).read_text())
+        profile_path = Path(evidence.get("performance", ""))
         measured = (
-            json.loads(Path(evidence["performance"]).read_text()).get("recipe", {})
-            if evidence.get("performance")
-            else {}
+            json.loads(profile_path.read_text()).get("recipe", {}) if profile_path.is_file() else {}
         )
         for key in (
             "sequence_length",
@@ -202,3 +201,13 @@ def validate_arguments(args):
     if report["errors"]:
         raise ValueError("strategy phase blocked:\n" + "\n".join(report["errors"]))
     return report
+
+
+def validate_runtime(plan_path, phase_id, attention_phase, world_size):
+    """The phase inherited from init/resume must agree with the admitted profile."""
+    plan = json.loads(Path(plan_path).read_text())
+    phase = next(p for p in plan["phases"] if p["id"] == phase_id)
+    if attention_phase != phase["attention_phase"]:
+        raise ValueError("effective checkpoint attention phase differs from strategy")
+    if world_size != len(plan["gpu_ids"]):
+        raise ValueError("actual distributed device count differs from strategy profile")
