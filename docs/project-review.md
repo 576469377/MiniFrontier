@@ -1,48 +1,64 @@
-# 项目审查与整理（2026-09-07）
+# 项目审查与整理（2026-09-08）
 
-## 审查结论
+当前实现以 [三份训练方案](training-strategies/2026-09-08/) 为准。
+`educational-v1` 已确认没有达到基本对话目标；旧权重和
+[初版审查](legacy/project-review-educational-v1.md) 保留用于复盘。
+目前有可训练的模型和分阶段入口，还没有完成正式全流程或可用模型验收。
 
-原有工作最扎实的部分是 MiniQwen4：已经从固定 Transformers revision 提取文本计算，保留 PLE、GDN、MoE、gated residual 和 QSA，拥有源码 oracle、梯度、缓存、优化器和双 rank 恢复测试。应继续建立在这些实现之上。
+## 模型与命名
 
-原有 MiniKimiK3 只有 AttnRes，MiniDeepSeekV4 只有非量化专家。项目没有数据构建器、连续训练循环、可恢复数据位置、完整阶段命令或可体验 demo。初始 CPU 基线为 87 项通过。这些缺口使模型名称和目录看上去比实际实现更完整。
+| 名称 | 当前 strategy 配置 | 核心适应 | 参数量（含 MTP） |
+|---|---|---|---:|
+| MiniKimi-K3 | 12 层、512 hidden、32 路由专家 top-2、2 shared、64K vocab | KDA/MLA、AttnRes、QB、Per-Head Muon、MoonViT、7-step draft | 204,526,216 |
+| MiniQwen4 | 16 层、512 hidden、64 路由专家 top-4、64K vocab | PLE/GDN/GR/QSA、原生视觉、四流 MTP | 513,405,536 |
+| MiniDeepSeek-V4 | 12 层、512 hidden、32 专家、64K vocab | SWA128/CSA-HCA、mHC、hash route、文本 MTP、后接 Vision-Exp、DSpark | 243,983,472（文本） |
 
-## 命名
+名称采用 Mini + 模型/架构名。MiniQwen4 对应方案所固定的 Qwen3.8-Flash-Next
+`qwen4_exp` 源码，不能把教学项目名称当作官方 Qwen4 产品声明。包名与 Python 类
+去掉连字符，展示名保留 MiniKimi-K3 / MiniDeepSeek-V4。
 
-- `MiniQwen4`：官方 Qwen3.8-Flash-Next 介绍明确以 Qwen4 为探索架构，固定源码标识为 `qwen4_exp`；这是项目架构名，不冒充官方 Qwen4 产品。
-- `MiniKimi-K3`：保留官方仓库 Kimi-K3 的连字符。
-- `MiniDeepSeek-V4`：具体对齐 V4-Flash 的固定源码，保留系列版本名。
-- Python 类仍为 `MiniKimiK3ForCausalLM` / `MiniDeepSeekV4ForCausalLM`，包名不含连字符。
+## 目录与职责
 
-来源：[Qwen 官方介绍](https://qwen.ai/blog?id=qwen3.8-flash-next)、[Kimi-K3 官方仓库](https://github.com/MoonshotAI/Kimi-K3)、[DeepSeek-V4-Flash 官方模型卡](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash)。
-
-## 已处理的问题
-
-| 原问题 | 处理 |
+| 位置 | 作用 |
 |---|---|
-| Kimi MoE 在训练模式抛错，专家分发被 `no_grad` 包裹 | 保留门控和专家结构，接入可反传 dispatch；与独立原始推理类比较前向 |
-| Kimi `dt_bias` / 路由修正偏置没有随机初始化 | 显式初始化；K3 报告的 A_log=0 保留，其余本地选择单独标注 |
-| DeepSeek 源码全局 TP 状态、推理模式和原地缓存不适合 DDP 训练 | 固定单副本 TP=1，函数式全序列 attention，完整序列 LM head |
-| DeepSeek 整数哈希表不能打开梯度 | 保留整数路由表，梯度开关只作用于浮点参数 |
-| mHC 压缩和动态混合在 autocast 下可能降精度 | 明确 FP32 计算边界，保留 Sinkhorn 迭代和矩阵方向 |
-| 专家负载修正偏置缺训练更新 | 跨卡汇总路由计数，每优化步更新；activation checkpoint 重算不重复计数 |
-| 没有数据和 tokenizer | 下载固定公开 revision 前缀、按阶段去重、固定划分、assistant-only mask、自训 65,536 BPE |
-| 中断后无法恢复配方和数据位置 | 原子 checkpoint、全局取样游标、优化器/各 rank RNG、严格配方校验 |
-| 训练完成无法试用 | 可导出权重、CLI 生成和本地浏览器 demo |
+| `third_party/upstream`、各模型 `upstream_*.py` | 固定官方来源及提取代码；提取脚本和来源测试保留 |
+| `minifrontier/models/<family>` | 模型、原生视觉、MTP、缓存与独立草稿 |
+| `configs/strategies` | 本轮结构配置与机器可读阶段预算；根目录旧配置保留兼容用途 |
+| `data_v2.py`、`native_data.py`、`multimodal.py` | 来源/分组去重、整样本编码、原生媒体和标签对齐 |
+| `chat_controls.py` | SFT / rollout / 推理共用控制模板 |
+| `training/train.py`、`training/train_draft.py` | 主模型与独立草稿训练、DDP、账本和恢复 |
+| `training/rollouts.py`、`tool_environment.py`、`trajectory_log.py` | 原生媒体与工具轨迹、教师路由、行为概率和审计 |
+| `scripts/run_recipe_pilot.py` | 诊断通过后执行独立 20M Muon/AdamW 比较；完成不自动晋级 |
+| `scripts/training_status.py` | 读取实际在跑阶段、token 和该阶段实测 ETA |
+| `outputs/strategy-source-*` | 每批真实训练使用的冻结源码；开发不修改在跑实现 |
+| `docs/audits` | 失败复盘、数值对照、代码验证与运行快照；不能混为能力报告 |
 
-## 数据与效果边界
+## 已处理的训练问题
 
-当前语料是 MiniMind 公开数据的确定性文件前缀，含公开整理及合成数据。前缀抽样不代表总体分布。SFT/DPO 按相同用户问题分组划分，阶段内精确去重；不声称进行了跨全网模糊去重或基准污染清理。tokenizer 只见训练集文本。来源 revision、文件哈希、过滤计数和实际监督 token 数保存在数据 manifest。
+预训练使用连续文档、真实 next-token 分母；SFT 保留完整答案且仅监督 assistant。
+累计窗口和 DDP 按实际有效 token 汇总，视觉暴露、视频帧、response token 分别记录。
+空 CE/零优势窗口不做衰减或路由更新。模型、优化器、数据游标、RNG、配置、数据和
+源码身份一同恢复，写入遵守磁盘保留量。
 
-GRPO 的算术任务由本项目生成，奖励是整数字符串的精确匹配。MOPD 需要显式提供同 tokenizer 的两个以上本地教师。功能测试使用 SFT/DPO 的不同检查点充当教师，只证明计算链路；没有把它们描述为官方九个领域/推理档位专家。
+Kimi/DeepSeek 的专用优化器、路由与精度边界、原生视觉迁移已接入。QAT 是明确的
+MX 数值仿真；不宣称 3090 原生 FP4 加速。Kimi sampled-token MOPD 与 DeepSeek
+full-vocabulary reverse KL 保持独立目标。9/12 个教师槽位要求独立权重与留出提升，
+不能把同一模型复制登记。
 
-参考 MiniMind 的低门槛实践路线和 MiniMind-V 的数据/训练/demo 组织方式，但本轮主干来自上述官方固定源码，不将 MiniMind 的常规 Transformer 替换进去。[MiniMind](https://github.com/jingyaogong/minimind)、[MiniMind-V](https://github.com/jingyaogong/minimind-v)。
+草稿训练冻结主模型，导出绑定精确目标哈希；投机推理具有拒绝重采样和状态回滚。
+原生媒体进入学生/reference/对应教师；工具操作在可重置本地环境中执行，观察
+不计动作损失。GPU sampler 的强制 BF16 问题已修正，概率比超界在更新前失败。
 
-## 仍需完成
+## 尚未完成的工作
 
-1. 三模型 MTP 的训练接入与独立源码/报告对照；已有的 DeepSeek MTP 推理块提取不等于训练完成。
-2. Qwen 和 Kimi 的原生视觉编码、融合和多模态数据/训练；目前 demo 为文本。
-3. Kimi/DeepSeek 训练适配的整模型数值 oracle，以及更长序列和更多训练精度的系统验证。
-4. 原生 MXFP4/FP8 QAT 与部署优化、Kimi/DeepSeek 模型级增量缓存。
-5. 更大且更均衡的语料、领域教师、真实能力评测；旗舰未公开的数据与超参数不能编造。
+正式数据来源/许可、配比和独立留出规模还未达到方案要求；当前真实视觉池只有
+96 张，不能支撑百万图片课程。20M 配方试验正在进行，还需要 LR、MTP、32K/64K
+质量和补种子对照。三条正式主预算、长上下文课程、SFT/QAT 校准、教师培养、
+正式 RL/草稿训练与生成质量验收均未完成。
 
-因此，`training_ready=true` 的定义是“存在已验收的文本教学训练入口”；`missing` 和 `complete_model_parameters=null` 明确保留完整复现的边界。
+浏览器目前仍是文本演示；CLI 已支持原生多图和控制模式。浏览器媒体/模式范围、
+训练后草稿接受率、confidence calibration 和实际延迟仍待完成。实验性批量专家
+GEMM 未通过完整 BF16 梯度验收，实际配方保持原有专家循环。
+
+最近完整工程回归：229 项 CPU、41 项 CUDA；这些结果不能替代实际模型的语言、
+视觉、模式或工具能力。细节与剩余门槛见 [方案执行记录](audits/strategy-implementation-v2.md)。

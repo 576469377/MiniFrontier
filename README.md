@@ -14,7 +14,7 @@
 
 新训练配置位于 `configs/strategies`，上表包含 MTP；DeepSeek 按方案先训练文本，再迁移原生 Vision-Exp。根目录三个配置保留文本兼容用途。原生视觉、MTP、各自 Muon/路由更新和增量缓存已接入；QAT 仿真、Kimi sampled-token MOPD、DeepSeek full-vocabulary reverse-KL OPD 有独立代码路径，仍需配方和能力验收。
 
-**完整训练与可用模型尚未完成。** Kimi/DeepSeek 正在执行独立 20M-token 配方试验，Qwen 的首轮 Q0 算术记忆未通过，正在补充诊断；这些都不计正式主预算。正式数据准入、配方选择、教师资格、草稿训练和发布门槛仍有待完成项，详见[方案执行记录](docs/audits/strategy-implementation-v2.md)。公开材料未披露的 mini 配方明确属于本地选择。
+**完整训练与可用模型尚未完成。** 三个模型正在执行独立 20M-token 配方试验。Qwen 首轮 Q0 失败后，累计约 1M CE 的续诊断达到训练内算术 16/16，留出仍为 0/9；诊断与配方试验均不计正式主预算。正式数据准入、配方选择、教师资格、草稿训练和发布门槛仍有待完成项，详见[方案执行记录](docs/audits/strategy-implementation-v2.md)。公开材料未披露的 mini 配方明确属于本地选择。
 
 **2026-09-08 效果审计：`educational-v1` 未达到基本对话目标。** 阶段完成和损失下降不能作为模型可用的证据；SFT 已出现重复、答非所问，DPO 也未修复。见[失败复盘与纠正措施](docs/training-failure-v1.md)。当前权重用于排查与学习，不标记为可用对话模型。
 

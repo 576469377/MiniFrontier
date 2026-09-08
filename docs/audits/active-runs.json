@@ -1,9 +1,9 @@
 {
-  "observed_at_utc": "2026-09-08T14:50:46.106312+00:00",
+  "observed_at_utc": "2026-09-08T15:56:06.204610+00:00",
   "scope": "snapshot only; use scripts/training_status.py for live status",
   "historical": "docs/audits/active-runs-educational-2026-09-07.json",
   "disk": {
-    "disk_free_gib": 192.05,
+    "disk_free_gib": 184.15,
     "reserve_gib": 50
   },
   "runs": {
@@ -12,11 +12,28 @@
       "path": "/workspace/MiniFrontier/outputs/strategy-recipe-pilots-v2/minikimik3/muon-20m",
       "supervisor": "running_auto",
       "state": "running",
-      "step": 150,
-      "ce_tokens": 2502235,
+      "step": 280,
+      "ce_tokens": 4668135,
       "ce_token_budget": 20000000,
-      "ce_progress": 0.1251,
-      "image_occurrences": 126,
+      "ce_progress": 0.2334,
+      "image_occurrences": 234,
+      "sequence_length": 512,
+      "measured_ce_tokens_per_second": 561.3834668387981,
+      "estimate_remaining_update_hours": 7.586349866822536,
+      "estimate_scope": "this trial's optimizer updates only; excludes evaluation/checkpoint and later trials",
+      "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
+      "capability_status": "unassessed"
+    },
+    "miniqwen4": {
+      "model": "miniqwen4",
+      "path": "/workspace/MiniFrontier/outputs/strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/muon-20m",
+      "supervisor": "running_auto",
+      "state": "initializing",
+      "step": 0,
+      "ce_tokens": 0,
+      "ce_token_budget": 20000000,
+      "ce_progress": 0.0,
+      "image_occurrences": 0,
       "sequence_length": 512,
       "measured_ce_tokens_per_second": null,
       "estimate_remaining_update_hours": null,
@@ -24,38 +41,19 @@
       "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
       "capability_status": "unassessed"
     },
-    "miniqwen4": {
-      "model": "miniqwen4",
-      "path": "/workspace/MiniFrontier/outputs/strategy-diagnostics-v2/miniqwen4-extension-1m",
-      "supervisor": "waiting_diagnostic",
-      "state": "running",
-      "step": 120,
-      "ce_tokens": 104221,
-      "ce_token_budget": 500000,
-      "ce_progress": 0.2084,
-      "image_occurrences": 1346,
-      "sequence_length": 64,
-      "measured_ce_tokens_per_second": null,
-      "estimate_remaining_update_hours": null,
-      "estimate_scope": "this trial's optimizer updates only; excludes evaluation/checkpoint and later trials",
-      "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
-      "capability_status": "unassessed",
-      "prior_diagnostic_ce": 500450,
-      "cumulative_diagnostic_ce": 604671
-    },
     "minideepseekv4": {
       "model": "minideepseekv4",
       "path": "/workspace/MiniFrontier/outputs/strategy-recipe-pilots-v2/minideepseekv4/muon-20m",
       "supervisor": "running_auto",
       "state": "running",
-      "step": 140,
-      "ce_tokens": 2347322,
+      "step": 260,
+      "ce_tokens": 4351551,
       "ce_token_budget": 20000000,
-      "ce_progress": 0.1174,
+      "ce_progress": 0.2176,
       "image_occurrences": 0,
       "sequence_length": 512,
-      "measured_ce_tokens_per_second": null,
-      "estimate_remaining_update_hours": null,
+      "measured_ce_tokens_per_second": 516.8445481960501,
+      "estimate_remaining_update_hours": 8.41024908564975,
       "estimate_scope": "this trial's optimizer updates only; excludes evaluation/checkpoint and later trials",
       "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
       "capability_status": "unassessed"
@@ -79,5 +77,13 @@
     6,
     7
   ],
-  "trained_main_budget_eligible": false
+  "trained_main_budget_eligible": false,
+  "latest_verified_implementation": "f022b98",
+  "engineering_tests": {
+    "cpu_passed": 229,
+    "cuda_passed": 41
+  },
+  "tensorboard_strategy": "http://127.0.0.1:6007",
+  "accepted_demo_models": 0,
+  "all_formal_stages_complete": false
 }
