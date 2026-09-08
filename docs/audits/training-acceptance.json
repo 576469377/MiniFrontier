@@ -1,0 +1,187 @@
+{
+  "date": "2026-09-07",
+  "kind": "engineering_acceptance_on_real_public_corpus_not_capability_evaluation",
+  "gpu": "RTX 3090 24GB",
+  "precision": "FP32 master weights, BF16 autocast",
+  "sequence_length": 256,
+  "batch_per_gpu": 1,
+  "gradient_accumulation": 1,
+  "runs": {
+    "miniqwen4": {
+      "gpus": [
+        0,
+        1
+      ],
+      "pipeline_state": "complete",
+      "stages": {
+        "sft": {
+          "updates": 2,
+          "final_loss": 11.110573768615723,
+          "peak_allocated_mib": 7407.373046875,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/miniqwen4/acceptance-v1/sft/metrics.jsonl"
+        },
+        "dpo": {
+          "updates": 2,
+          "final_loss": 0.73829185962677,
+          "peak_allocated_mib": 9053.85791015625,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": true,
+          "log": "outputs/miniqwen4/acceptance-v1/dpo/metrics.jsonl"
+        },
+        "dense_distill": {
+          "updates": 2,
+          "final_loss": 0.7740622758865356,
+          "peak_allocated_mib": 2270.36328125,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/miniqwen4/acceptance-v1/dense_distill/metrics.jsonl"
+        },
+        "sparse_cpt": {
+          "updates": 2,
+          "final_loss": 11.800457000732422,
+          "peak_allocated_mib": 7412.3876953125,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/miniqwen4/acceptance-v1/sparse_cpt/metrics.jsonl"
+        },
+        "pretrain": {
+          "updates": 2,
+          "final_loss": 11.118684768676758,
+          "peak_allocated_mib": 7407.373046875,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/miniqwen4/acceptance-v1/pretrain/metrics.jsonl"
+        }
+      }
+    },
+    "minikimik3": {
+      "gpus": [
+        2,
+        3
+      ],
+      "pipeline_state": "complete",
+      "stages": {
+        "sft": {
+          "updates": 2,
+          "final_loss": 11.144515037536621,
+          "peak_allocated_mib": 3818.0908203125,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/minikimik3/acceptance-v1/sft/metrics.jsonl"
+        },
+        "dpo": {
+          "updates": 2,
+          "final_loss": 0.9243590235710144,
+          "peak_allocated_mib": 4451.763671875,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": true,
+          "log": "outputs/minikimik3/acceptance-v1/dpo/metrics.jsonl"
+        },
+        "pretrain": {
+          "updates": 2,
+          "final_loss": 11.19007682800293,
+          "peak_allocated_mib": 3818.0908203125,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/minikimik3/acceptance-v1/pretrain/metrics.jsonl"
+        }
+      }
+    },
+    "minideepseekv4": {
+      "gpus": [
+        4,
+        5
+      ],
+      "pipeline_state": "complete",
+      "stages": {
+        "sft": {
+          "updates": 2,
+          "final_loss": 10.748830795288086,
+          "peak_allocated_mib": 5276.5185546875,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/minideepseekv4/acceptance-v1/sft/metrics.jsonl"
+        },
+        "dpo": {
+          "updates": 2,
+          "final_loss": 0.6775065660476685,
+          "peak_allocated_mib": 6157.93505859375,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/minideepseekv4/acceptance-v1/dpo/metrics.jsonl"
+        },
+        "dense_distill": {
+          "updates": 2,
+          "final_loss": 0.043423425406217575,
+          "peak_allocated_mib": 1508.47265625,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/minideepseekv4/acceptance-v1/dense_distill/metrics.jsonl"
+        },
+        "sparse_cpt": {
+          "updates": 2,
+          "final_loss": 10.7161865234375,
+          "peak_allocated_mib": 5291.00634765625,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/minideepseekv4/acceptance-v1/sparse_cpt/metrics.jsonl"
+        },
+        "pretrain": {
+          "updates": 2,
+          "final_loss": 11.063042640686035,
+          "peak_allocated_mib": 5276.5185546875,
+          "checkpoint_written": true,
+          "export_written": true,
+          "rank_verification": false,
+          "log": "outputs/minideepseekv4/acceptance-v1/pretrain/metrics.jsonl"
+        }
+      }
+    }
+  },
+  "single_gpu_qwen_context_1024": {
+    "dense_distill": {
+      "event": "train",
+      "step": 1,
+      "loss": 0.8769052624702454,
+      "lm_loss": 11.104452133178711,
+      "grad_norm": 0.6739799976348877,
+      "lr": 0.0003,
+      "tokens_per_second": 70.9036779954573,
+      "step_seconds": 14.428024454042315,
+      "data_offset": 1,
+      "peak_allocated_mib": 2337.8203125
+    },
+    "sparse_cpt": {
+      "event": "train",
+      "step": 1,
+      "loss": 11.852640151977539,
+      "lm_loss": 11.115692138671875,
+      "grad_norm": 3.691129446029663,
+      "lr": 0.0003,
+      "tokens_per_second": 42.00010500371467,
+      "step_seconds": 97.4283278491348,
+      "data_offset": 4,
+      "peak_allocated_mib": 5784.6376953125
+    }
+  },
+  "corpus_manifest_sha256": "3d746de7bdfbc77716be1488a2d1e8878a31f5626b399b1a39fe834e47603d91",
+  "limitations": [
+    "two updates per stage establish execution only",
+    "not native vision, MTP or QAT acceptance",
+    "initial acceptance stages before final rank-verification addition are explicitly marked false"
+  ]
+}

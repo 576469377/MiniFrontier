@@ -1,0 +1,11 @@
+{
+  "max_abs": 0.00634765625,
+  "rmse": 0.0007128125289455056,
+  "reference_rms": 0.10968148708343506,
+  "greedy_agreement": 1.0,
+  "route_differences": {
+    "layers.1.block_sparse_moe.gate": 0,
+    "layers.2.block_sparse_moe.gate": 1,
+    "layers.3.block_sparse_moe.gate": 0
+  }
+}

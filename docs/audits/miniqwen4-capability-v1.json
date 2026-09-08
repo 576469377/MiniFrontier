@@ -1,0 +1,117 @@
+{
+  "model": "miniqwen4",
+  "data_sha256": "3d746de7bdfbc77716be1488a2d1e8878a31f5626b399b1a39fe834e47603d91",
+  "started_at": 1788850411.543802,
+  "checkpoints": {
+    "sft": {
+      "model_name": "miniqwen4",
+      "stage": "sft",
+      "step": 500,
+      "phase": "sparse_cpt",
+      "checkpoint": "outputs/miniqwen4/educational-v1/sft/model.pt",
+      "sha256": "81a468d81b27f3a5c74273ea374f8af7265acec2d28a2bf8c53fc133bb634729",
+      "sft_validation": {
+        "examples": 551,
+        "supervised_tokens": 75084,
+        "nll": 6.452928737067089,
+        "token_accuracy": 0.238586116882425
+      },
+      "dpo_validation_tokens": {
+        "examples": 172,
+        "supervised_tokens": 54005,
+        "nll": 8.53357840673028,
+        "token_accuracy": 0.04934728265901305
+      },
+      "preference_validation": {
+        "pairs": 172,
+        "reference": "sft",
+        "beta": 0.1,
+        "loss": 0.6931471805599454,
+        "accuracy": 0.0,
+        "ties": 1.0
+      },
+      "generations": [
+        {
+          "prompt": "你好，请用一句话介绍你能做什么。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "啊，我我想想用“我”或“我”是“我”或“我”是“我”是“我”是“我”是“我”是“我”是“我”是“"
+        },
+        {
+          "prompt": "请解释为什么下雨后地面会湿。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "是的，我看到我有我，我看到我，我看到我，我说“我”是“我”是“我”是“我”是“我”是“我”是“我”是“我"
+        },
+        {
+          "prompt": "把“今天天气很好”翻译成英文。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "“，”是“我”是“我”是“我”是“我”是“我”是“我”是“我”是“我”是“我”是“我”是“我”是"
+        },
+        {
+          "prompt": "请只回答数字：2加3等于几？",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "设1个2的2。\n\n首先，我们计算：3 + 5 = 5 + 5 = 5\n\n因此，我们需要计算：3 + 5 = 5\n\n因此，我们需要计算：3 + 5 ="
+        }
+      ]
+    },
+    "dpo": {
+      "model_name": "miniqwen4",
+      "stage": "dpo",
+      "step": 100,
+      "phase": "sparse_cpt",
+      "checkpoint": "outputs/miniqwen4/educational-v1/dpo/model.pt",
+      "sha256": "9b8952d21d4e4d7b9b05f5dab0ba99da6df8c67dce55867d714eb774e682f15d",
+      "sft_validation": {
+        "examples": 551,
+        "supervised_tokens": 75084,
+        "nll": 8.041198912556478,
+        "token_accuracy": 0.1296148313888445
+      },
+      "dpo_validation_tokens": {
+        "examples": 172,
+        "supervised_tokens": 54005,
+        "nll": 8.68802014769321,
+        "token_accuracy": 0.038163133043236735
+      },
+      "preference_validation": {
+        "pairs": 172,
+        "reference": "sft",
+        "beta": 0.1,
+        "loss": 1.305052402980819,
+        "accuracy": 0.5348837209302325,
+        "ties": 0.0
+      },
+      "generations": [
+        {
+          "prompt": "你好，请用一句话介绍你能做什么。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+        },
+        {
+          "prompt": "请解释为什么下雨后地面会湿。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+        },
+        {
+          "prompt": "把“今天天气很好”翻译成英文。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+        },
+        {
+          "prompt": "请只回答数字：2加3等于几？",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+        }
+      ]
+    }
+  },
+  "capability_status": "requires_review_of_generations",
+  "finished_at": 1788851768.2795353
+}

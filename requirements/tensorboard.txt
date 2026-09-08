@@ -1,0 +1,2 @@
+# Optional monitoring-only environment; do not upgrade a live training venv.
+tensorboard==2.21.0

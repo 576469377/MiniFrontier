@@ -1,0 +1,391 @@
+{
+  "schema_version": 1,
+  "model": "minideepseekv4",
+  "source_document": "docs/training-strategies/2026-09-08/03-MiniDeepSeek-V4-全流程训练与结构改造方案.md",
+  "source_document_sha256": "3f1c30583f17f35ab1b57ecf550f717534e6d18a12d3983e5d9dc759d868c086",
+  "config": "configs/strategies/minideepseekv4-v2.json",
+  "gpu_ids": [
+    4,
+    5
+  ],
+  "training_dtype": "bf16",
+  "optimizer_state_dtype": "fp32",
+  "min_disk_free_gib": 50,
+  "context_claims": "only lengths with completed training and evaluation",
+  "performance": {
+    "warmup_updates": 50,
+    "measured_updates": 200,
+    "reserved_device_gib": 2
+  },
+  "tokenizer": {
+    "default_vocab": 65536,
+    "candidates": [
+      32768,
+      65536
+    ],
+    "shared_training_bytes": true,
+    "freeze_before_pilot": true
+  },
+  "validation": {
+    "source_holdout_min_fraction": 0.005,
+    "periodic_ce_tokens": 5000000,
+    "sft_unique_questions": 2000,
+    "vision_unique_groups": 1000,
+    "sealed_test": true
+  },
+  "text_mixture_tokens": {
+    "zh_edu": 0.4,
+    "en_edu": 0.25,
+    "code": 0.2,
+    "verified_math_science": 0.1,
+    "dialogue": 0.05
+  },
+  "visual_mixture_samples": {
+    "caption": 0.35,
+    "ocr_document": 0.3,
+    "chart_count_spatial": 0.2,
+    "screenshot_tool": 0.1,
+    "multiimage_multipage": 0.05
+  },
+  "optional_extensions": [
+    "DPO"
+  ],
+  "phases": [
+    {
+      "id": "D0",
+      "objective": "ce_tokens",
+      "budget_min": 500000,
+      "budget_max": 2000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        64,
+        256,
+        512
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [],
+      "budget_scope": "diagnostic",
+      "required_evidence": [
+        "numerical_contracts",
+        "tokenizer_frozen"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "D-pilot",
+      "objective": "ce_tokens",
+      "budget_min": 20000000,
+      "budget_max": 50000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        512,
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "D0"
+      ],
+      "budget_scope": "recipe_pilot",
+      "required_evidence": [
+        "optimizer_comparison",
+        "mtp_coefficient_comparison"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "D1",
+      "objective": "ce_tokens",
+      "budget_min": 250000000,
+      "budget_max": 250000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        512,
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "D-pilot"
+      ],
+      "budget_scope": "main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "D2",
+      "objective": "ce_tokens",
+      "budget_min": 500000000,
+      "budget_max": 500000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024,
+        2048
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "D1"
+      ],
+      "budget_scope": "main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "D3",
+      "objective": "input_tokens",
+      "budget_min": 10000000,
+      "budget_max": 30000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        2048,
+        4096
+      ],
+      "attention_phase": "dense_distill",
+      "depends_on": [
+        "D2"
+      ],
+      "budget_scope": "indexer",
+      "required_evidence": [
+        "indexer_only_gradients",
+        "dense_teacher_quality"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "D4",
+      "objective": "ce_tokens",
+      "budget_min": 1500000000,
+      "budget_max": 1500000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        2048,
+        4096
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "D3"
+      ],
+      "budget_scope": "main",
+      "required_evidence": [
+        "dense_sparse_conversion"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "D5",
+      "objective": "ce_tokens",
+      "budget_min": 250000000,
+      "budget_max": 250000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024,
+        2048,
+        4096
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "D4"
+      ],
+      "budget_scope": "main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "V0",
+      "objective": "diagnostic_images",
+      "budget_min": 64,
+      "budget_max": 512,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "D5"
+      ],
+      "budget_scope": "vision_diagnostic",
+      "required_evidence": [
+        "text_migration_equivalence",
+        "native_media_contracts"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "V1",
+      "objective": "ce_tokens",
+      "budget_min": 10000000,
+      "budget_max": 30000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "V0"
+      ],
+      "budget_scope": "visual_warmup",
+      "required_evidence": [
+        "random_vision_trainable_text_frozen"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "V2",
+      "objective": "ce_tokens",
+      "budget_min": 240000000,
+      "budget_max": 240000000,
+      "image_occurrences": 1200000,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024,
+        2048
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "V1"
+      ],
+      "budget_scope": "vision_main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "V3",
+      "objective": "ce_tokens",
+      "budget_min": 60000000,
+      "budget_max": 60000000,
+      "image_occurrences": 300000,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024,
+        2048,
+        4096
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "V2"
+      ],
+      "budget_scope": "vision_main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "D-SFT",
+      "objective": "assistant_tokens",
+      "budget_min": 100000000,
+      "budget_max": 220000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "V3"
+      ],
+      "budget_scope": "posttraining",
+      "required_evidence": [
+        "qat_consistency",
+        "base_language_and_vision"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "D-teachers",
+      "objective": "unique_prompts_per_teacher",
+      "budget_min": 10000,
+      "budget_max": 30000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "D-SFT"
+      ],
+      "budget_scope": "teachers_12",
+      "required_evidence": [
+        "sft_to_rl",
+        "behavior_probability",
+        "tool_action_mask"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "D-OPD",
+      "objective": "response_tokens",
+      "budget_min": 30000000,
+      "budget_max": 80000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "D-teachers"
+      ],
+      "budget_scope": "posttraining",
+      "required_evidence": [
+        "qualified_teachers_12",
+        "full_vocab_reverse_kl"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "D-DSpark",
+      "objective": "draft_positions",
+      "budget_min": 10000000,
+      "budget_max": 30000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "D-OPD"
+      ],
+      "budget_scope": "draft",
+      "required_evidence": [
+        "dspark_three_stages_block5",
+        "confidence_overlap",
+        "target_frozen"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "D-demo",
+      "objective": "fixed_scenarios",
+      "budget_min": 20,
+      "budget_max": 20,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "sparse_cpt",
+      "depends_on": [
+        "D-DSpark"
+      ],
+      "budget_scope": "release",
+      "required_evidence": [
+        "incremental_cache",
+        "speculative_rollback",
+        "quality_selected_checkpoint"
+      ],
+      "status": "not_started"
+    }
+  ],
+  "visual_text_replay_ce_fraction": [
+    0.3,
+    0.5
+  ]
+}

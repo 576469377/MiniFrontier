@@ -1,0 +1,22 @@
+{
+  "date_utc": "2026-09-07",
+  "project": "MiniFrontier",
+  "purpose": "Remove retired implementations and prepare a coherent open-source project layout",
+  "removed_categories": ["retired model implementations and registry", "retired training recipes and demos", "retired experiment weights and logs", "retired datasets and tokenizer", "retired documentation and curve assets", "stale build artifacts"],
+  "removed_experiment_archive_logical_bytes": 99594594045,
+  "removed_dataset_logical_bytes": 17707622023,
+  "removed_tokenizer_logical_bytes": 5955399,
+  "backup_created": false,
+  "retained": ["current model components", "source-oracle and distributed tests", "upstream snapshots and original licenses", "small current-model acceptance evidence", "local development environment"],
+  "verification": {
+    "cpu_cuda_tests_passed": 108,
+    "mypy_source_files": 25,
+    "ruff_check": "passed",
+    "ruff_format": "passed",
+    "sdist_and_wheel_build": "passed",
+    "twine_strict_check": "passed",
+    "distribution_content_audit": "passed"
+  },
+  "formal_training_started": false,
+  "published_or_pushed": false
+}

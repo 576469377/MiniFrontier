@@ -1,0 +1,10 @@
+MiniFrontier
+Copyright 2026 MiniFrontier contributors
+
+This project combines independent training adapters with attributed,
+source-derived model components. It is not affiliated with Moonshot AI, Alibaba
+Cloud/Qwen, DeepSeek AI, or any other project cited in its documentation.
+
+Architecture names and citations are used descriptively. Model weights,
+tokenizers, datasets, and trademarks remain subject to their respective
+licenses. See THIRD_PARTY_NOTICES.md and docs/models/ for provenance and scope.

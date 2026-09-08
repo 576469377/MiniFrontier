@@ -1,0 +1,35 @@
+{
+  "observed_at": 1788852066.2499208,
+  "run": "educational-v1",
+  "capability_status": "failed",
+  "validation": {
+    "sft_examples": 551,
+    "dpo_pairs": 172,
+    "greedy_prompts_per_checkpoint": 4,
+    "all_three_models_sft_and_dpo_evaluated": true
+  },
+  "verification": {
+    "cpu_suite": "109 passed; one missing-document link failure corrected; follow-up documentation and four new sampling/budget/demo regression tests passed",
+    "ruff": "passed",
+    "format": "passed",
+    "mypy": "passed: 44 source files",
+    "demo_http": "GET / and SFT/DPO model lists 200; explicit SFT generation POST 200"
+  },
+  "changes": [
+    "uniform full-source reservoir sampling option, now default for public data preparation",
+    "uniform validation sampling and full-split option",
+    "explicit epoch/step budgets with sample coverage",
+    "automatic DPO disabled by default",
+    "SFT/DPO demo comparison and independent capability status"
+  ],
+  "formal_retraining_started": false,
+  "memorization_probes": {
+    "minikimik3": "complete: 8/8 exact recall on training questions only",
+    "minideepseekv4": "complete: 8/8 exact recall on training questions only",
+    "miniqwen4": "running: 50/100 updates at observation, no final generation result yet"
+  },
+  "remaining": [
+    "new representative corpus and full training budget",
+    "demonstrated general dialogue capability"
+  ]
+}

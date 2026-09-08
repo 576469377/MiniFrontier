@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "model": "minikimik3",
+  "source_document": "docs/training-strategies/2026-09-08/01-MiniKimi-K3-全流程训练与结构改造方案.md",
+  "source_document_sha256": "32b15a4b22ac425362d10a2b24593de688ec0004ecbd0fe5f467f9bc5d8e7ab8",
+  "config": "configs/strategies/minikimik3-v2.json",
+  "gpu_ids": [
+    0,
+    1
+  ],
+  "training_dtype": "bf16",
+  "optimizer_state_dtype": "fp32",
+  "min_disk_free_gib": 50,
+  "context_claims": "only lengths with completed training and evaluation",
+  "performance": {
+    "warmup_updates": 50,
+    "measured_updates": 200,
+    "reserved_device_gib": 2
+  },
+  "tokenizer": {
+    "default_vocab": 65536,
+    "candidates": [
+      32768,
+      65536
+    ],
+    "shared_training_bytes": true,
+    "freeze_before_pilot": true
+  },
+  "validation": {
+    "source_holdout_min_fraction": 0.005,
+    "periodic_ce_tokens": 5000000,
+    "sft_unique_questions": 2000,
+    "vision_unique_groups": 1000,
+    "sealed_test": true
+  },
+  "text_mixture_tokens": {
+    "zh_edu": 0.45,
+    "en_edu": 0.25,
+    "code": 0.15,
+    "verified_math_science": 0.1,
+    "dialogue": 0.05
+  },
+  "visual_mixture_samples": {
+    "caption": 0.45,
+    "ocr_document": 0.25,
+    "chart_count_spatial": 0.15,
+    "interleaved": 0.1,
+    "video": 0.05
+  },
+  "optional_extensions": [
+    "DPO"
+  ],
+  "phases": [
+    {
+      "id": "K0",
+      "objective": "ce_tokens",
+      "budget_min": 500000,
+      "budget_max": 2000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        64,
+        256,
+        512
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [],
+      "budget_scope": "diagnostic",
+      "required_evidence": [
+        "numerical_contracts",
+        "native_media_contracts",
+        "tokenizer_frozen"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "K-pilot",
+      "objective": "ce_tokens",
+      "budget_min": 20000000,
+      "budget_max": 20000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        512,
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K0"
+      ],
+      "budget_scope": "recipe_pilot",
+      "required_evidence": [
+        "optimizer_comparison",
+        "mtp_coefficient_comparison"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "K1",
+      "objective": "ce_tokens",
+      "budget_min": 200000000,
+      "budget_max": 200000000,
+      "image_occurrences": 200000,
+      "video_examples": 0,
+      "sequence_lengths": [
+        512,
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K-pilot"
+      ],
+      "budget_scope": "main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "K2",
+      "objective": "ce_tokens",
+      "budget_min": 1200000000,
+      "budget_max": 1200000000,
+      "image_occurrences": 1200000,
+      "video_examples": 20000,
+      "sequence_lengths": [
+        1024,
+        2048
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K1"
+      ],
+      "budget_scope": "main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "K3",
+      "objective": "ce_tokens",
+      "budget_min": 400000000,
+      "budget_max": 400000000,
+      "image_occurrences": 500000,
+      "video_examples": 10000,
+      "sequence_lengths": [
+        2048,
+        4096
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K2"
+      ],
+      "budget_scope": "main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "K4",
+      "objective": "ce_tokens",
+      "budget_min": 200000000,
+      "budget_max": 200000000,
+      "image_occurrences": 100000,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024,
+        2048,
+        4096
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K3"
+      ],
+      "budget_scope": "main",
+      "required_evidence": [],
+      "status": "not_started"
+    },
+    {
+      "id": "K-SFT",
+      "objective": "assistant_tokens",
+      "budget_min": 80000000,
+      "budget_max": 200000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K4"
+      ],
+      "budget_scope": "posttraining",
+      "required_evidence": [
+        "qat_consistency",
+        "base_language_and_vision"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "K-teachers",
+      "objective": "unique_prompts_per_teacher",
+      "budget_min": 10000,
+      "budget_max": 30000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K-SFT"
+      ],
+      "budget_scope": "teachers_9",
+      "required_evidence": [
+        "sft_to_rl",
+        "behavior_probability",
+        "tool_action_mask"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "K-MOPD",
+      "objective": "response_tokens",
+      "budget_min": 20000000,
+      "budget_max": 60000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K-teachers"
+      ],
+      "budget_scope": "posttraining",
+      "required_evidence": [
+        "qualified_teachers_9",
+        "sampled_token_mopd"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "K-draft",
+      "objective": "draft_positions",
+      "budget_min": 10000000,
+      "budget_max": 30000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K-MOPD"
+      ],
+      "budget_scope": "draft",
+      "required_evidence": [
+        "lk_overlap_loss",
+        "unroll_7",
+        "target_frozen"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "K-demo",
+      "objective": "fixed_scenarios",
+      "budget_min": 20,
+      "budget_max": 20,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024
+      ],
+      "attention_phase": "dense_pretrain",
+      "depends_on": [
+        "K-draft"
+      ],
+      "budget_scope": "release",
+      "required_evidence": [
+        "incremental_cache",
+        "speculative_rollback",
+        "quality_selected_checkpoint"
+      ],
+      "status": "not_started"
+    }
+  ]
+}

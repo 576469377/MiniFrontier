@@ -1,0 +1,117 @@
+{
+  "model": "minikimik3",
+  "data_sha256": "3d746de7bdfbc77716be1488a2d1e8878a31f5626b399b1a39fe834e47603d91",
+  "started_at": 1788850411.3922114,
+  "checkpoints": {
+    "sft": {
+      "model_name": "minikimik3",
+      "stage": "sft",
+      "step": 500,
+      "phase": "dense_pretrain",
+      "checkpoint": "outputs/minikimik3/educational-v1/sft/model.pt",
+      "sha256": "326588bafcbb2696b25ade1d13f6567039906eba9aa5becc96b878ccacac4d03",
+      "sft_validation": {
+        "examples": 551,
+        "supervised_tokens": 75084,
+        "nll": 6.867949202232042,
+        "token_accuracy": 0.21510574822865058
+      },
+      "dpo_validation_tokens": {
+        "examples": 172,
+        "supervised_tokens": 54005,
+        "nll": 8.489513838056082,
+        "token_accuracy": 0.05847606703083048
+      },
+      "preference_validation": {
+        "pairs": 172,
+        "reference": "sft",
+        "beta": 0.1,
+        "loss": 0.6931471805599454,
+        "accuracy": 0.0,
+        "ties": 1.0
+      },
+      "generations": [
+        {
+          "prompt": "你好，请用一句话介绍你能做什么。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "是的，我看到一些“我”和“我”与“存在”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”"
+        },
+        {
+          "prompt": "请解释为什么下雨后地面会湿。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "是的，我用“我”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与"
+        },
+        {
+          "prompt": "把“今天天气很好”翻译成英文。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "是的，我想“智能”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与“意识”与"
+        },
+        {
+          "prompt": "请只回答数字：2加3等于几？",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "是的，我用5分钟，所以需要5分钟，所以需要3分钟，所以3分钟，所以3。"
+        }
+      ]
+    },
+    "dpo": {
+      "model_name": "minikimik3",
+      "stage": "dpo",
+      "step": 100,
+      "phase": "dense_pretrain",
+      "checkpoint": "outputs/minikimik3/educational-v1/dpo/model.pt",
+      "sha256": "b94e98a420aed613db31219f6d7d97deebd3c4b8f7bcc3711f1eeaf255dec34e",
+      "sft_validation": {
+        "examples": 551,
+        "supervised_tokens": 75084,
+        "nll": 7.462060851221632,
+        "token_accuracy": 0.16793191625379575
+      },
+      "dpo_validation_tokens": {
+        "examples": 172,
+        "supervised_tokens": 54005,
+        "nll": 8.488383327498612,
+        "token_accuracy": 0.054402370150911955
+      },
+      "preference_validation": {
+        "pairs": 172,
+        "reference": "sft",
+        "beta": 0.1,
+        "loss": 0.9119553569940635,
+        "accuracy": 0.627906976744186,
+        "ties": 0.0
+      },
+      "generations": [
+        {
+          "prompt": "你好，请用一句话介绍你能做什么。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "最近《百年孤独》和《百年孤独》和《百年孤独》和《百年孤独》等，\n\n1. \n\n\n2. \n\n3. \n\n\n4. \n\n5. \n1."
+        },
+        {
+          "prompt": "请解释为什么下雨后地面会湿。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "最近《百年孤独》和《百年孤独》和《百年孤独》和《百年孤独》等，比如《百年孤独》和《百年孤独》等。\n\n1. \n\n1. \n\n2. \n3. \n"
+        },
+        {
+          "prompt": "把“今天天气很好”翻译成英文。",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "“智能”与“智能”与““智能”与“智能”与“智能”与“智能”与“智能”与“智能”与“智能”与“智能”与“智能”与“智能”"
+        },
+        {
+          "prompt": "请只回答数字：2加3等于几？",
+          "temperature": 0,
+          "max_new_tokens": 48,
+          "text": "是的，\n\n\n\n1. \n\n2. \n\n3. \n\n\n4. \n- \n- \n- \n- \n- \n- \n- \n-"
+        }
+      ]
+    }
+  },
+  "capability_status": "requires_review_of_generations",
+  "finished_at": 1788850568.4781213
+}

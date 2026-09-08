@@ -1,0 +1,40 @@
+name: Feature request
+description: Propose an architecture, training feature, or project improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What concrete research or engineering problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed scope
+      description: Describe the minimal useful behavior and its public interface.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Primary sources
+      description: For architecture work, link official papers, configs, or repositories and note license constraints.
+    validations:
+      required: false
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: State the CPU reference, backward, CUDA/DDP, or benchmark evidence that would establish correctness.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: This request does not require redistributing artifacts with unclear licenses.
+          required: true

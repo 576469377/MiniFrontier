@@ -1,0 +1,54 @@
+{
+  "model": "miniqwen4",
+  "kind": "memorization_only_not_capability",
+  "examples": 8,
+  "steps": 100,
+  "sequence_length": 64,
+  "initial_nll": 8.586258297874814,
+  "final_nll": 0.0002086691492877435,
+  "exact_recall": 8,
+  "answers": [
+    {
+      "prompt": "请只回答数字：2加3等于几？",
+      "expected": "5",
+      "actual": "5"
+    },
+    {
+      "prompt": "请把苹果翻译成英语。",
+      "expected": "apple",
+      "actual": "apple"
+    },
+    {
+      "prompt": "请把猫翻译成英语。",
+      "expected": "cat",
+      "actual": "cat"
+    },
+    {
+      "prompt": "请只输出数字1。",
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "prompt": "请原样输出：你好",
+      "expected": "你好",
+      "actual": "你好"
+    },
+    {
+      "prompt": "大的反义词是什么？",
+      "expected": "小",
+      "actual": "小"
+    },
+    {
+      "prompt": "请接着数数：1，2，3，",
+      "expected": "4",
+      "actual": "4"
+    },
+    {
+      "prompt": "你能做什么？",
+      "expected": "我可以回答问题、解释概念。",
+      "actual": "我可以回答问题、解释概念。"
+    }
+  ],
+  "elapsed_seconds": 740.1107215881348,
+  "checkpoint": "/workspace/MiniFrontier/outputs/miniqwen4/memorization-probe-v1/sft/model.pt"
+}

@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "scope": "new_source_reproductions_only",
+  "models": {
+    "miniqwen4": {
+      "display_name": "MiniQwen4",
+      "implementation": "miniqwen4",
+      "config": "miniqwen4.json",
+      "status": "educational_text_training_implemented",
+      "training_components": [
+        "pretrain",
+        "sft",
+        "dpo",
+        "ddp",
+        "checkpoint_resume",
+        "held_out_validation",
+        "dense_distill",
+        "sparse_cpt"
+      ],
+      "training_module": "minifrontier.models.miniqwen4.MiniQwen4ForCausalLM",
+      "training_ready": true,
+      "gpus_per_model": 2,
+      "source_revision": "4177486a9f199bd7be520eff14431071d5d41ec5",
+      "inference_components": [
+        "unpadded_text_cache"
+      ],
+      "missing": [
+        "native vision training",
+        "MTP integration",
+        "official full-scale data and training hyperparameters",
+        "quantization-aware post-training",
+        "flagship-quality evaluation"
+      ]
+    },
+    "minikimik3": {
+      "display_name": "MiniKimi-K3",
+      "implementation": "minikimik3",
+      "config": "minikimik3.json",
+      "status": "educational_text_training_implemented",
+      "training_ready": true,
+      "gpus_per_model": 2,
+      "source_revision": "c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721",
+      "missing": [
+        "native vision training",
+        "MTP integration",
+        "official full-scale data and training hyperparameters",
+        "quantization-aware post-training",
+        "flagship-quality evaluation"
+      ],
+      "training_components": [
+        "pretrain",
+        "sft",
+        "dpo",
+        "ddp",
+        "checkpoint_resume",
+        "held_out_validation"
+      ],
+      "training_module": "minifrontier.models.minikimik3.MiniKimiK3ForCausalLM"
+    },
+    "minideepseekv4": {
+      "display_name": "MiniDeepSeek-V4",
+      "implementation": "minideepseekv4",
+      "config": "minideepseekv4.json",
+      "status": "educational_text_training_implemented",
+      "training_ready": true,
+      "gpus_per_model": 2,
+      "source_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+      "missing": [
+        "native vision training",
+        "MTP integration",
+        "official full-scale data and training hyperparameters",
+        "quantization-aware post-training",
+        "flagship-quality evaluation"
+      ],
+      "training_components": [
+        "pretrain",
+        "sft",
+        "dpo",
+        "ddp",
+        "checkpoint_resume",
+        "held_out_validation",
+        "dense_distill",
+        "sparse_cpt"
+      ],
+      "training_module": "minifrontier.models.minideepseekv4.MiniDeepSeekV4ForCausalLM"
+    }
+  }
+}

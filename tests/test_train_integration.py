@@ -1,0 +1,226 @@
+"""Executable text/RL stages and recovery after an interrupted optimizer update."""
+
+import json
+import os
+import subprocess
+import sys
+from dataclasses import asdict
+
+import numpy as np
+import pytest
+import torch
+from test_miniqwen4 import tiny_config
+from test_new_backbones import tiny_deepseek, tiny_kimi
+from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
+
+from minifrontier.data import SPECIAL_TOKENS, sha256
+from minifrontier.inference import load_checkpoint, respond
+from minifrontier.training import train
+from minifrontier.training.rollouts import prepare_tasks
+
+
+@pytest.fixture
+def corpus(tmp_path):
+    root = tmp_path / "corpus"
+    root.mkdir()
+    tokenizer = Tokenizer(models.BPE())
+    tokenizer.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
+    tokenizer.decoder = decoders.ByteLevel()
+    tokenizer.train_from_iterator(
+        ["Calculate 12 + 34. Reply with the integer answer only. Reasoning effort: low. high."],
+        trainers.BpeTrainer(
+            vocab_size=300,
+            special_tokens=SPECIAL_TOKENS,
+            initial_alphabet=pre_tokenizers.ByteLevel.alphabet(),
+        ),
+    )
+    tokenizer.save(str(root / "tokenizer.json"))
+    manifest = dict(
+        sequence_length=128,
+        tokenizer=dict(
+            vocab_size=tokenizer.get_vocab_size(), sha256=sha256(root / "tokenizer.json")
+        ),
+        stages={},
+    )
+    rng = np.random.default_rng(18)
+    for stage in ("pretrain", "sft", "dpo"):
+        manifest["stages"][stage] = {}
+        for split in ("train", "val"):
+            if stage == "pretrain":
+                path = root / f"{stage}.{split}.bin"
+                rng.integers(3, 60, (2048,), dtype=np.int32).tofile(path)
+            else:
+                path = root / f"{stage}.{split}.npy"
+                values = rng.integers(
+                    3, 60, (8, 1 if stage == "sft" else 2, 2, 128), dtype=np.int32
+                )
+                values[:, :, 1, :] = values[:, :, 0, :]
+                values[:, :, 1, :32] = -100
+                np.save(path, values)
+            manifest["stages"][stage][split] = dict(file=path.name, sha256=sha256(path))
+    (root / "manifest.json").write_text(json.dumps(manifest))
+    return root
+
+
+def config_for(name, root):
+    config = {
+        "miniqwen4": lambda: tiny_config(vocab_size=300, max_position_embeddings=256),
+        "minikimik3": lambda: tiny_kimi(vocab_size=300),
+        "minideepseekv4": lambda: tiny_deepseek(vocab_size=300),
+    }[name]()
+    path = root / f"{name}.json"
+    path.write_text(json.dumps(asdict(config)))
+    return path
+
+
+def arguments(name, config, corpus, output, stage="pretrain", steps=2):
+    return [
+        "--model",
+        name,
+        "--config",
+        str(config),
+        "--data",
+        str(corpus),
+        "--output",
+        str(output),
+        "--stage",
+        stage,
+        "--steps",
+        str(steps),
+        "--batch-size",
+        "1",
+        "--grad-accum",
+        "2",
+        "--sequence-length",
+        "128",
+        "--save-every",
+        "1",
+        "--eval-every",
+        "2",
+        "--eval-batches",
+        "1",
+        "--warmup-steps",
+        "1",
+        "--device",
+        "cpu",
+        "--no-tensorboard",
+        "--run-kind",
+        "acceptance",
+    ]
+
+
+@pytest.mark.parametrize("name", ["miniqwen4", "minikimik3", "minideepseekv4"])
+def test_all_stages_export_and_generate(name, corpus, tmp_path):
+    config = config_for(name, tmp_path)
+    previous = None
+    stages = (
+        ["pretrain"]
+        + ([] if name == "minikimik3" else ["dense_distill", "sparse_cpt"])
+        + ["sft", "dpo"]
+    )
+    for stage in stages:
+        output = tmp_path / name / stage
+        args = arguments(name, config, corpus, output, stage, steps=1)
+        if previous:
+            args += ["--init", str(previous)]
+        train.main(args)
+        previous = output / "model.pt"
+        assert json.loads((output / "status.json").read_text())["state"] == "complete"
+    model, tokenizer, meta = load_checkpoint(previous)
+    text = respond(model, tokenizer, "Hello", max_new_tokens=2, temperature=0.0)
+    assert isinstance(text, str) and meta["stage"] == "dpo"
+
+
+def test_training_resume_matches_uninterrupted_run(corpus, tmp_path, monkeypatch):
+    name = "minideepseekv4"
+    config = config_for(name, tmp_path)
+    complete = tmp_path / "complete"
+    interrupted = tmp_path / "interrupted"
+    train.main(arguments(name, config, corpus, complete))
+    save = train.atomic_save
+
+    def interrupt(value, path):
+        save(value, path)
+        if value.get("step") == 1:
+            raise RuntimeError("simulated interruption after committed checkpoint")
+
+    monkeypatch.setattr(train, "atomic_save", interrupt)
+    args = arguments(name, config, corpus, interrupted)
+    with pytest.raises(RuntimeError, match="simulated interruption"):
+        train.main(args)
+    monkeypatch.setattr(train, "atomic_save", save)
+    train.main([*args, "--resume", str(interrupted / "checkpoint.pt")])
+    expected = torch.load(complete / "checkpoint.pt", weights_only=True)
+    actual = torch.load(interrupted / "checkpoint.pt", weights_only=True)
+    assert actual["data_offset"] == expected["data_offset"]
+    for key, value in expected["model"].items():
+        torch.testing.assert_close(actual["model"][key], value, atol=0, rtol=0)
+
+
+@pytest.mark.parametrize("name", ["minikimik3", "minideepseekv4"])
+@pytest.mark.distributed
+def test_two_rank_trainer_checks_parameters(name, corpus, tmp_path):
+    config = config_for(name, tmp_path)
+    args = arguments(name, config, corpus, tmp_path / "ddp")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "torch.distributed.run",
+            "--standalone",
+            "--nproc_per_node=2",
+            "-m",
+            "minifrontier.training.train",
+            *args,
+        ],
+        env=dict(os.environ, CUDA_VISIBLE_DEVICES="", OMP_NUM_THREADS="2"),
+        capture_output=True,
+        text=True,
+        timeout=90,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert '"exact_parameters": true' in result.stdout
+
+
+def test_grpo_and_multi_teacher_on_policy_stage(corpus, tmp_path):
+    name = "minikimik3"
+    config = config_for(name, tmp_path)
+    previous = None
+    for stage in ("pretrain", "sft", "dpo"):
+        args = arguments(name, config, corpus, tmp_path / stage, stage, 1)
+        if previous:
+            args += ["--init", str(previous)]
+        train.main(args)
+        previous = tmp_path / stage / "model.pt"
+    tasks = tmp_path / "tasks"
+    prepare_tasks(tasks, count=100)
+    common = ["--rl-data", str(tasks), "--group-size", "2", "--rollout-tokens", "2"]
+    # An untrained policy with a two-token answer limit gets all-zero rewards.
+    # This must preserve weights and report no optimizer updates, not apply decay.
+    with pytest.raises(ValueError, match="no RL learning signal"):
+        train.main(
+            arguments(name, config, corpus, tmp_path / "grpo", "grpo", 1)
+            + common
+            + ["--init", str(previous)]
+        )
+    skipped = torch.load(tmp_path / "grpo/checkpoint.pt", weights_only=True)
+    before = torch.load(previous, weights_only=True)
+    assert skipped["step"] == skipped["token_ledger"]["optimizer_updates"] == 0
+    assert skipped["token_ledger"]["skipped_windows"] == 32
+    for key, value in before["model"].items():
+        torch.testing.assert_close(skipped["model"][key], value, rtol=0, atol=0)
+    teachers = tmp_path / "teachers.json"
+    teachers.write_text(
+        json.dumps(
+            {
+                "arithmetic:low": str(tmp_path / "sft/model.pt"),
+                "arithmetic:high": str(tmp_path / "dpo/model.pt"),
+            }
+        )
+    )
+    train.main(
+        arguments(name, config, corpus, tmp_path / "mopd", "mopd", 1)
+        + common
+        + ["--init", str(previous), "--teacher-map", str(teachers)]
+    )
+    assert (tmp_path / "mopd/model.pt").exists()

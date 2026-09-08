@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "Please cite MiniFrontier and the relevant upstream architecture reports."
+title: "MiniFrontier: Source-Aligned Miniature Frontier Models"
+type: software
+version: 0.1.0
+authors:
+  - name: "MiniFrontier contributors"
+license: Apache-2.0
+abstract: >-
+  An independent PyTorch research project for source-aligned, capacity-scaled
+  MiniQwen4, MiniKimiK3 and MiniDeepSeekV4 implementations.
+keywords:
+  - large language models
+  - source alignment
+  - mixture of experts
+  - distributed training

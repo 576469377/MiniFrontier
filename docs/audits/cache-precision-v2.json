@@ -1,0 +1,53 @@
+{
+  "scope": "tiny random-weight numerical comparison; not trained-model capability",
+  "records": [
+    {
+      "model": "kimi",
+      "seed": 731,
+      "normalized_cache_rmse": 0.0064995549619197845,
+      "normalized_full_amp_rmse": 0.0139356330037117,
+      "max_abs": 0.00634765625,
+      "greedy_agreement": 1.0
+    },
+    {
+      "model": "kimi",
+      "seed": 947,
+      "normalized_cache_rmse": 0.006492897868156433,
+      "normalized_full_amp_rmse": 0.013564708642661572,
+      "max_abs": 0.00390625,
+      "greedy_agreement": 1.0
+    },
+    {
+      "model": "kimi",
+      "seed": 1024,
+      "normalized_cache_rmse": 0.007655938155949116,
+      "normalized_full_amp_rmse": 0.01663861982524395,
+      "max_abs": 0.005615234375,
+      "greedy_agreement": 1.0
+    },
+    {
+      "model": "deepseek",
+      "seed": 731,
+      "normalized_cache_rmse": 0.0,
+      "normalized_full_amp_rmse": 0.006200992502272129,
+      "max_abs": 0.0,
+      "greedy_agreement": 1.0
+    },
+    {
+      "model": "deepseek",
+      "seed": 947,
+      "normalized_cache_rmse": 0.0007388087688013911,
+      "normalized_full_amp_rmse": 0.005504574626684189,
+      "max_abs": 0.001953125,
+      "greedy_agreement": 1.0
+    },
+    {
+      "model": "deepseek",
+      "seed": 1024,
+      "normalized_cache_rmse": 0.0,
+      "normalized_full_amp_rmse": 0.005411080084741116,
+      "max_abs": 0.0,
+      "greedy_agreement": 1.0
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "date_utc": "2026-09-07",
+  "kind": "engineering_acceptance_not_formal_training",
+  "model": "MiniQwen4",
+  "config": "configs/miniqwen4.json",
+  "measurement_precedes_directory_reorganization": true,
+  "source_revision": "4177486a9f199bd7be520eff14431071d5d41ec5",
+  "release_config_revision": "de4b8e4d43b917e7706784d8bb445c9af86a3540",
+  "report_revision": "69885871a64393807d988b27b1b5e380e8f28526",
+  "report_sha256": "04f263446d74a35cb7cea368574e0c561f3b05c133be2c777ac884404063655d",
+  "text_backbone_parameters": 398055200,
+  "parameters_with_lm_head_without_mtp": 431609632,
+  "capacity_acceptance": {
+    "devices": "two RTX 3090",
+    "parameters_dtype": "float32",
+    "autocast_dtype": "bfloat16",
+    "sequence_length": 128,
+    "local_batch_size": 1,
+    "synthetic_tokens": true,
+    "optimizer_updates": 1,
+    "rank_results": [
+      {"rank": 0, "loss": 11.1532564163208, "update_seconds": 7.726009720936418},
+      {"rank": 1, "loss": 11.104108810424805, "update_seconds": 7.724874883890152}
+    ],
+    "per_rank_max_memory_allocated_mib": 5785.7607421875,
+    "per_rank_max_memory_reserved_mib": 5870.0,
+    "exact_rank_parameters": true
+  },
+  "qsa_component_tests_before_reorganization": {
+    "qsa_and_optimizer_tests_passed": 21,
+    "two_rank_cpu_cuda_phase_resume_tests_passed": 6,
+    "scope": "micro configuration, dense pretraining / dense distillation / sparse CPT"
+  },
+  "formal_training_started": false,
+  "checkpoint_written": false,
+  "tensorboard_written": false,
+  "limitations": ["MTP absent", "not a quality result", "not a long-context memory bound", "not complete report training"]
+}

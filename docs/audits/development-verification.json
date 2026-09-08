@@ -1,0 +1,38 @@
+{
+  "checked_at_utc": "2026-09-07T18:46:11.229503+00:00",
+  "python": "3.13.5",
+  "torch": "2.13.0+cu130",
+  "cpu_pytest": {
+    "passed": 106,
+    "deselected": 22
+  },
+  "cuda_pytest": {
+    "passed": 22,
+    "deselected": 106
+  },
+  "ruff": "passed",
+  "mypy": "passed",
+  "wheel_and_sdist_twine": "passed",
+  "executed_flows": [
+    "real two-3090 text pipelines for all three models",
+    "single 3090 Qwen sparse CPT at length 1024, batch 2, accumulation 2",
+    "CPU GRPO and two-teacher on-policy integration",
+    "interrupted training resumes to bitwise-equal parameters",
+    "Gloo two-rank Kimi and DeepSeek trainers verify exact final parameters"
+  ],
+  "not_validated": [
+    "flagship model quality",
+    "native vision, MTP or QAT",
+    "GPU GRPO/MOPD capacity",
+    "official whole-model training equivalence for Kimi/DeepSeek"
+  ],
+  "upstream_sha256": {
+    "third_party/upstream/deepseek-v4-60d8d70/kernel.py": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2",
+    "third_party/upstream/deepseek-v4-60d8d70/model.py": "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71",
+    "third_party/upstream/kimi-k3-c5d1dd4/modeling_kimi_linear.py": "9e3564c70ac21854ce5a090cc946c5dc76b70d1050ef50840449181a20fff44a",
+    "third_party/upstream/qwen4_exp-4177486/configuration_qwen4_exp.py": "b78132d8cd935437208ee281fa4569b771a63fcb58ebffe84f3e62f5b86235ca",
+    "third_party/upstream/qwen4_exp-4177486/cache_utils.py": "4b284431cb3a881b6e6f8b8c6430df6f2efdcb3366a2484c7984ae88c612c61a",
+    "third_party/upstream/qwen4_exp-4177486/modeling_qwen4_exp.py": "2e36ee6a1bc4f43fa0434ae197c2de9eba27a71aec84ee1ff111dc3a812e8283"
+  },
+  "corpus_revision": "312afb4f76391145c6902f765bb51691c09a12f5"
+}

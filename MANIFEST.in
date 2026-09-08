@@ -1,0 +1,14 @@
+include README.md CHANGELOG.md CITATION.cff CODE_OF_CONDUCT.md CONTRIBUTING.md
+include LICENSE MODEL_CARD_TEMPLATE.md NOTICE SECURITY.md THIRD_PARTY_NOTICES.md
+include uv.lock
+recursive-include configs *.json
+recursive-include minifrontier *.py py.typed
+recursive-include docs *.md *.json
+recursive-include tests *.py
+recursive-include scripts *.py
+recursive-include requirements *.txt
+recursive-include third_party/upstream *.py *.json LICENSE
+prune outputs
+prune data
+prune tokenizers
+global-exclude __pycache__ *.py[cod]
