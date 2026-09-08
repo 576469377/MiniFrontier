@@ -67,6 +67,7 @@ class Indexer(nn.Module):
         self.wq_b = Linear(args.q_lora_rank, self.n_heads * self.head_dim)
         self.weights_proj = Linear(args.dim, self.n_heads)
         self.compressor = Compressor(args, ratio, self.head_dim)
+        self.qat_enabled = False
 
     def forward(self, x, qr, freqs):
         q = self.wq_b(qr).unflatten(-1, (self.n_heads, self.head_dim))
@@ -74,6 +75,10 @@ class Indexer(nn.Module):
         q = torch.cat((q[..., :-rd], rotary(q[..., -rd:], freqs)), dim=-1)
         k = self.compressor(x, freqs)
         weights = self.weights_proj(x).float() * (self.head_dim * self.n_heads) ** -0.5
+        if getattr(self, "qat_enabled", False):
+            from minifrontier.training.deepseek_qat import index_scores
+
+            return index_scores(q, k, weights)
         # The common Hadamard rotation cancels in unquantized dot products.
         scores = torch.einsum("bthd,bcd->bthc", q.float(), k.float()).relu()
         return (scores * weights.unsqueeze(-1)).sum(2)

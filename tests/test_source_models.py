@@ -1,4 +1,5 @@
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -43,6 +44,7 @@ def test_current_entry_rejects_legacy_substitution(tmp_path, change):
     # Copy the small source capacity config so the manifest stays self-contained.
     for source in MANIFEST.parent.glob("*.json"):
         (tmp_path / source.name).write_bytes(source.read_bytes())
+    shutil.copytree(MANIFEST.parent / "strategies", tmp_path / "strategies")
     if change == "legacy_implementation":
         manifest["models"]["miniqwen4"]["implementation"] = "qwen_flash_next"
     elif change == "legacy_config":

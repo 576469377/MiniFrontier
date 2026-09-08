@@ -79,7 +79,7 @@ def build_diagnostics(output, *, seed=142, images=256, texts=2048):
                 item_id=str(index),
                 group_id=f"addition:{min(a, b)}:{max(a, b)}",
                 license="Apache-2.0",
-                lang="en" if index % 2 else "zh",
+                lang="zh" if index % 2 else "en",
                 task="diagnostic_text",
                 stage="pretrain",
                 text=text,

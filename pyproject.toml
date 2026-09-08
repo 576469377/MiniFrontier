@@ -49,6 +49,7 @@ minifrontier = ["py.typed"]
 
 [tool.setuptools.data-files]
 "share/minifrontier/configs" = ["configs/models.json", "configs/miniqwen4.json", "configs/minikimik3.json", "configs/minideepseekv4.json"]
+"share/minifrontier/configs/strategies" = ["configs/strategies/minikimik3-v2.json", "configs/strategies/miniqwen4-v2.json", "configs/strategies/minideepseekv4-v2.json", "configs/strategies/minideepseekv4-vision-v1.json", "configs/strategies/minikimik3-plan.json", "configs/strategies/miniqwen4-plan.json", "configs/strategies/minideepseekv4-plan.json"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"

@@ -56,6 +56,7 @@ class MiniKimiK3Config:
     gradient_checkpointing: bool = True
     forbidden_action_ids: tuple[int, ...] = (0, 1)
     router_fp32: bool = False  # Historical runs retain their original AMP routing.
+    qat_scheme: str = "bf16"
     mtp_enabled: bool = False
     mtp_loss_coef: float = 0.1
     vision_config: KimiVisionConfig | None = None
@@ -151,6 +152,12 @@ class MiniKimiK3ForCausalLM(nn.Module):
             for module in self.modules():
                 if isinstance(module, KimiMoEGate):
                     module.__class__ = FP32KimiGate
+        if config.qat_scheme not in {"bf16", "mxfp4-mxfp8-v1"}:
+            raise ValueError("unsupported Kimi QAT recipe")
+        if config.qat_scheme != "bf16":
+            from minifrontier.training.kimi_qat import configure
+
+            self.qat_recipe = configure(self)
 
     @torch.no_grad()
     def _initialize(self, module):

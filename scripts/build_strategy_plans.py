@@ -426,6 +426,19 @@ def main():
         ),
     ]
     for model, filename, vision, coefficient, gpus, phases in specifications:
+        for item in phases:
+            if item["budget_scope"] == "recipe_pilot":
+                # Comparisons are the pilot's output, not a prerequisite to run it.
+                item["produces_evidence"] = item["required_evidence"]
+                item["required_evidence"] = ["diagnostic_learnability"]
+            if item["id"] in {"K1", "Q1", "D1"}:
+                item["required_evidence"] += [
+                    "optimizer_comparison",
+                    "mtp_coefficient_comparison",
+                    "tokenizer_quality_comparison",
+                ]
+            if item["id"] in {"K0", "Q0", "V0"}:
+                item["unique_diagnostic_images"] = [64, 512]
         config = json.loads((ROOT / f"configs/{model}.json").read_text())
         config.update(
             mtp_enabled=True,
@@ -434,6 +447,13 @@ def main():
         )
         if model == "minikimik3":
             config["router_fp32"] = True
+        if model == "minideepseekv4":
+            config.update(
+                window_size=128,
+                route_scale=1.5,
+                compress_rope_theta=160000.0,
+                sequence_balance_coef=1e-4,
+            )
         if model != "minideepseekv4":
             config["vision_config"] = asdict(vision())
         config_name = f"{model}-v2.json"

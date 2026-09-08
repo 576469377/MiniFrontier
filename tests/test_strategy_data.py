@@ -32,7 +32,7 @@ def record(i, text, *, stage="pretrain", group=None, media=None):
     return row
 
 
-def test_split_transitively_binds_same_media_and_first_question(tmp_path):
+def test_split_binds_same_media_but_does_not_merge_unrelated_image_prompts(tmp_path):
     builder = CorpusBuilder(tmp_path / "corpus")
     a = record(
         1,
@@ -56,7 +56,12 @@ def test_split_transitively_binds_same_media_and_first_question(tmp_path):
     for row in (a, b, c):
         assert builder.add(row)
     builder.finalize()
-    assert len(set(builder.db.execute("SELECT group_root,split FROM samples"))) == 1
+    groups = {
+        json.loads(payload)["item_id"]: group
+        for payload, group in builder.db.execute("SELECT payload,group_root FROM samples")
+    }
+    assert groups["1"] == groups["2"]
+    assert groups["3"] != groups["2"]
 
 
 def test_question_cap_and_official_test_split_cannot_enter_training(tmp_path):

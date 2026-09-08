@@ -1,0 +1,219 @@
+{
+  "checkpoint_sha256": "989277f55874c4564981f40a789391f22fe1fe0f1e5cd70a8a69f3e7f774c14e",
+  "step": 576,
+  "model": "minikimik3",
+  "scope": "generated diagnostic arithmetic; training recall and tiny group-heldout validation only",
+  "main_quality_passed": false,
+  "cases": [
+    {
+      "sample_id": "000537e991e524a501ac43fc535e6b75da44cfbd44045f85b786b98d4aefd35b",
+      "split": "train",
+      "prompt": "Question: What is the sum of 2624 and 4734?\nAnswer: 2624 + 4734 =",
+      "answer": " 7358. Addition combines the two positive integers.",
+      "expected": 7358,
+      "correct": true
+    },
+    {
+      "sample_id": "0060699ec717b263782e603c60d525155f5def5b6b3116de73e93005612e9fd1",
+      "split": "train",
+      "prompt": "Question: What is the sum of 1189 and 4058?\nAnswer: 1189 + 4058 =",
+      "answer": " 5247. Addition combines the two positive integers.",
+      "expected": 5247,
+      "correct": true
+    },
+    {
+      "sample_id": "006d715c8e78d2ff4eb3affa9050592cad995aa72680ebdf0cf693892edf1e87",
+      "split": "train",
+      "prompt": "问题:1519 加 250 等于多少?\n答案:1519 + 250 =",
+      "answer": " 1769。这是两个正整数的加法运算。",
+      "expected": 1769,
+      "correct": true
+    },
+    {
+      "sample_id": "006da4e6869604b5ef42145f8d1daebd03ea37eb263b603e2c2c27255eb6f1d5",
+      "split": "train",
+      "prompt": "问题:2001 加 2496 等于多少?\n答案:2001 + 2496 =",
+      "answer": " 4497。这是两个正整数的加法运算",
+      "expected": 4497,
+      "correct": true
+    },
+    {
+      "sample_id": "0098c4b1a7a2047c7604f92d0a9027bd798cf81ac884abed6fc9692ab9695157",
+      "split": "train",
+      "prompt": "问题:1926 加 1866 等于多少?\n答案:1926 + 1866 =",
+      "answer": " 3792。这是两个正整数的加法运算",
+      "expected": 3792,
+      "correct": true
+    },
+    {
+      "sample_id": "009fea596ca287784fb04447ceec2501274f85d40a6bd56dc39b394f1c641294",
+      "split": "train",
+      "prompt": "问题:1079 加 4492 等于多少?\n答案:1079 + 4492 =",
+      "answer": " 5571。这是两个正整数的加法运算",
+      "expected": 5571,
+      "correct": true
+    },
+    {
+      "sample_id": "00abd2fb6f10c8b5b5258c1eb01522097ce43e4e89626946064fa18f51b7f078",
+      "split": "train",
+      "prompt": "问题:746 加 3022 等于多少?\n答案:746 + 3022 =",
+      "answer": " 3768。这是两个正整数的加法运算。",
+      "expected": 3768,
+      "correct": true
+    },
+    {
+      "sample_id": "00d315e089709dced04112ac7fda9caca8bfa2f286dd1a77bab5f36d45fd4701",
+      "split": "train",
+      "prompt": "Question: What is the sum of 4435 and 3080?\nAnswer: 4435 + 3080 =",
+      "answer": " 7515. Addition combines the two positive integers.",
+      "expected": 7515,
+      "correct": true
+    },
+    {
+      "sample_id": "012b2923d4a547884fef64336ece85c6ee59bcfc20248b03b8f4c19e4f58e327",
+      "split": "train",
+      "prompt": "Question: What is the sum of 3127 and 1517?\nAnswer: 3127 + 1517 =",
+      "answer": " 4644. Addition combines the two positive integers.",
+      "expected": 4644,
+      "correct": true
+    },
+    {
+      "sample_id": "01549f1ee88d4bc5a323c65dc5071358f2d8fa2167af7687a49b739ab4800ed6",
+      "split": "train",
+      "prompt": "问题:204 加 150 等于多少?\n答案:204 + 150 =",
+      "answer": " 354。这是两个正整数的加法运算。",
+      "expected": 354,
+      "correct": true
+    },
+    {
+      "sample_id": "0175fc29fd04b7abf311c1087a0a4dd7da58482c57b7fba73945658cc08c7c38",
+      "split": "train",
+      "prompt": "Question: What is the sum of 264 and 2659?\nAnswer: 264 + 2659 =",
+      "answer": " 2923. Addition combines the two positive integers.",
+      "expected": 2923,
+      "correct": true
+    },
+    {
+      "sample_id": "01a4bf5ffb2a56acd3f97685867fe8e2a5a4ec56da9ada30ace30793a4e8c356",
+      "split": "train",
+      "prompt": "问题:2228 加 3818 等于多少?\n答案:2228 + 3818 =",
+      "answer": " 6046。这是两个正整数的加法运算。",
+      "expected": 6046,
+      "correct": true
+    },
+    {
+      "sample_id": "01ab08b583981e595d19019651bd61ee9d04ddb1732f86e5f440f671642d9b2e",
+      "split": "train",
+      "prompt": "问题:2376 加 2839 等于多少?\n答案:2376 + 2839 =",
+      "answer": " 5215。这是两个正整数的加法运算。",
+      "expected": 5215,
+      "correct": true
+    },
+    {
+      "sample_id": "01ab0be58ff4727381b1d32be3dc82c94804de8056744e98bbc80539d1bb3864",
+      "split": "train",
+      "prompt": "Question: What is the sum of 1077 and 2182?\nAnswer: 1077 + 2182 =",
+      "answer": " 3259. Addition combines the two positive integers.",
+      "expected": 3259,
+      "correct": true
+    },
+    {
+      "sample_id": "01b6806f2341846cc0449225dee895be9726a1f3fd2b6b8e77d82541dcee3da8",
+      "split": "train",
+      "prompt": "问题:3809 加 4879 等于多少?\n答案:3809 + 4879 =",
+      "answer": " 8688。这是两个正整数的加法运算",
+      "expected": 8688,
+      "correct": true
+    },
+    {
+      "sample_id": "01fdb7c4602141c3bbf67086e86252b5c069d130c045926b3a59b8b8f013d725",
+      "split": "train",
+      "prompt": "问题:3876 加 3354 等于多少?\n答案:3876 + 3354 =",
+      "answer": " 7230。这是两个正整数的加法运算。",
+      "expected": 7230,
+      "correct": true
+    },
+    {
+      "sample_id": "0232300dce320609f68b207f7db10a52dea410e0e864d4bda4d3c2c87e2c44ae",
+      "split": "val",
+      "prompt": "Question: What is the sum of 1941 and 1199?\nAnswer: 1941 + 1199 =",
+      "answer": " 3197. Addition combines the two positive integers.",
+      "expected": 3140,
+      "correct": false
+    },
+    {
+      "sample_id": "02a6dafebe2561f7c6a07064f6c0f8a587d2d771c484fa941107b84cc3bdaeeb",
+      "split": "val",
+      "prompt": "问题:3373 加 3313 等于多少?\n答案:3373 + 3313 =",
+      "answer": " 4724。这是两个正整数的加法运算。",
+      "expected": 6686,
+      "correct": false
+    },
+    {
+      "sample_id": "3916f7f25ae951efea29bff3a387efa1c36f96dc502027da50977eddf7a81fe1",
+      "split": "val",
+      "prompt": "问题:2080 加 3616 等于多少?\n答案:2080 + 3616 =",
+      "answer": " 3654。这是两个正整数的加法运算。",
+      "expected": 5696,
+      "correct": false
+    },
+    {
+      "sample_id": "3b252f11fa8ee8edf423b2dcef8f80727e8a104987b2dd1e1e21ad2022cba807",
+      "split": "val",
+      "prompt": "Question: What is the sum of 2425 and 4230?\nAnswer: 2425 + 4230 =",
+      "answer": " 6568. Addition combines the two positive integers.",
+      "expected": 6655,
+      "correct": false
+    },
+    {
+      "sample_id": "76aa6aeeec3c8af6eebe1dc63c89b05dd6940a12b22aa99e915a45ca27150ed0",
+      "split": "val",
+      "prompt": "Question: What is the sum of 1306 and 4661?\nAnswer: 1306 + 4661 =",
+      "answer": " 6596. Addition combines the two positive integers.",
+      "expected": 5967,
+      "correct": false
+    },
+    {
+      "sample_id": "91637694adf0c42f3f353189e3a37396b04f1396b4a8bf6a415515b28ffd4f1b",
+      "split": "val",
+      "prompt": "问题:2295 加 972 等于多少?\n答案:2295 + 972 =",
+      "answer": " 3227。这是两个正整数的加法运算",
+      "expected": 3267,
+      "correct": false
+    },
+    {
+      "sample_id": "999c3fd7013c9b1593953663119ce45a1433978689d07c53a9ef567957bee689",
+      "split": "val",
+      "prompt": "问题:1021 加 1728 等于多少?\n答案:1021 + 1728 =",
+      "answer": " 4955。这是两个正整数的加法运算",
+      "expected": 2749,
+      "correct": false
+    },
+    {
+      "sample_id": "b36017adfa60f48e845d8a7d31db37ad15ade04616087b4fd6a9be73a2cfe3d8",
+      "split": "val",
+      "prompt": "问题:3993 加 1556 等于多少?\n答案:3993 + 1556 =",
+      "answer": " 4347。这是两个正整数的加法运算",
+      "expected": 5549,
+      "correct": false
+    },
+    {
+      "sample_id": "dc2c2baf7fbe753a73e99798262ec4c8c0791bed0b9782194e3529b723be35a6",
+      "split": "val",
+      "prompt": "Question: What is the sum of 1046 and 4529?\nAnswer: 1046 + 4529 =",
+      "answer": " 6402. Addition combines the two positive integers.",
+      "expected": 5575,
+      "correct": false
+    }
+  ],
+  "summary": {
+    "train": {
+      "total": 16,
+      "correct": 16
+    },
+    "val": {
+      "total": 9,
+      "correct": 0
+    }
+  }
+}

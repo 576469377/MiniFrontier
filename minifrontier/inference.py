@@ -136,8 +136,8 @@ body{font:16px system-ui,sans-serif;background:#101827;color:#edf2fa;margin:0}ma
 h1{font-size:36px;margin-bottom:10px}p{color:#b1bfd2;line-height:1.7}select,textarea,button,input{font:inherit;border-radius:9px;padding:12px;border:1px solid #42526a;background:#1b2940;color:#edf2fa}
 textarea{box-sizing:border-box;width:100%;height:150px;resize:vertical;margin:18px 0}button{background:#307bdf;cursor:pointer}button:disabled{opacity:.5}pre{white-space:pre-wrap;line-height:1.8;background:#17243a;border-radius:12px;padding:20px;min-height:120px}label{margin-right:12px}small{color:#93a7c0}a{color:#81b4fb}</style>
 <main><small>MiniFrontier / 单卡可运行的旗舰架构学习实验</small><h1>和你训练的模型对话</h1>
-<p>选择检查点观察生成效果。训练步骤完成不代表已经学会对话；请留意每个模型的对话验收状态。默认展示 SFT，可切换 DPO 对比。</p>
-<select id="stage" onchange="refresh()"><option value="sft">SFT</option><option value="dpo">DPO</option><option value="pretrain">预训练</option><option value="latest">最新阶段</option></select>
+<p>选择检查点观察生成效果。训练步骤完成不代表已经学会对话；请留意每个模型的对话验收状态。默认只展示通过能力验收的检查点；历史阶段可供实验对照。</p>
+<select id="stage" onchange="refresh()"><option value="accepted">通过能力验收</option><option value="sft">SFT 对照</option><option value="dpo">DPO</option><option value="pretrain">预训练</option><option value="latest">最新阶段</option></select>
 <select id="model"></select> <button onclick="refresh()">刷新检查点</button><p id="meta"></p>
 <textarea id="prompt" placeholder="输入问题或想续写的文本">请用简单的话解释什么是大语言模型。</textarea>
 <label>生成长度 <input id="length" type="number" min="1" max="256" value="64" style="width:70px"></label>
@@ -148,7 +148,18 @@ async function send(){const button=document.querySelector('#send');button.disabl
 
 
 def checkpoints(root, stage=None):
-    if stage not in {None, "pretrain", "dense_distill", "sparse_cpt", "sft", "dpo", "grpo", "mopd"}:
+    if stage not in {
+        None,
+        "pretrain",
+        "dense_distill",
+        "sparse_cpt",
+        "sft",
+        "dpo",
+        "grpo",
+        "mopd",
+        "opd",
+        "accepted",
+    }:
         raise ValueError("unknown checkpoint stage")
     names = {
         "miniqwen4": "MiniQwen4",
@@ -160,13 +171,13 @@ def checkpoints(root, stage=None):
         if not (path.parent / "run.json").exists():
             continue
         run = json.loads((path.parent / "run.json").read_text())
-        if run.get("kind") != "educational":
+        if run.get("kind") not in {"educational", "strategy"}:
             continue
         try:
             state = json.loads(path.read_text())
         except (OSError, json.JSONDecodeError):
             continue  # A live writer may be atomically committing the next status.
-        if stage is not None and state["stage"] != stage:
+        if stage not in {None, "accepted"} and state["stage"] != stage:
             continue
 
         ckpt = path.parent / "model.pt"
@@ -186,6 +197,8 @@ def checkpoints(root, stage=None):
             if reviewed.get("step") == state["step"] and reviewed.get("artifact") == artifact
             else "unassessed"
         )
+        if stage == "accepted" and capability != "passed":
+            continue
         if key not in found or modified > found[key]["modified"]:
             found[key] = dict(
                 id=key,
@@ -220,8 +233,8 @@ def serve(root="outputs", host="127.0.0.1", port=7860, device="cpu"):
                 self.end_headers()
                 self.wfile.write(raw)
             elif url.path == "/api/models":
-                stage = parse_qs(url.query).get("stage", ["sft"])[0]
-                if stage not in {"sft", "dpo", "pretrain", "latest"}:
+                stage = parse_qs(url.query).get("stage", ["accepted"])[0]
+                if stage not in {"accepted", "sft", "dpo", "pretrain", "latest"}:
                     self.reply({"error": "unknown checkpoint stage"}, 400)
                     return
                 self.reply(
@@ -242,7 +255,7 @@ def serve(root="outputs", host="127.0.0.1", port=7860, device="cpu"):
                 if not 0 < length <= 32768:
                     raise ValueError("请求长度无效")
                 data = json.loads(self.rfile.read(length))
-                stage = data.get("stage", "sft")
+                stage = data.get("stage", "accepted")
                 candidate = checkpoints(root, None if stage == "latest" else stage)[data["model"]]
                 count = int(data.get("max_new_tokens", 64))
                 if not 1 <= count <= 256:
@@ -255,7 +268,7 @@ def serve(root="outputs", host="127.0.0.1", port=7860, device="cpu"):
                         model,
                         tokenizer,
                         data["prompt"],
-                        chat=meta["stage"] in {"sft", "dpo", "grpo", "mopd"},
+                        chat=meta["stage"] in {"sft", "dpo", "grpo", "mopd", "opd", "accepted"},
                         max_new_tokens=count,
                     )
                     del model

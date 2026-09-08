@@ -60,6 +60,7 @@ class MiniDeepSeekV4Config:
     sequence_balance_coef: float = 0.0  # New Text-v2 config opts into 1e-4.
     swiglu_limit: float = 10.0
     initializer_range: float = 0.02
+    qat_scheme: str = "bf16"
     pad_token_id: int = 0
     eos_token_id: int = 2
     gradient_checkpointing: bool = True
@@ -137,6 +138,12 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
         if self.mtp is not None:
             self._initialize(self.mtp)
         self.configure_training_phase(training_phase)
+        if config.qat_scheme not in {"bf16", "mxfp4-indexer-v1"}:
+            raise ValueError("unsupported DeepSeek QAT recipe")
+        if config.qat_scheme != "bf16":
+            from minifrontier.training.deepseek_qat import configure
+
+            self.qat_recipe = configure(self)
 
     @torch.no_grad()
     def _initialize(self, module=None):
@@ -214,6 +221,9 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
         media=None,
         return_hidden=False,
         return_logits=True,
+        opd_targets=None,
+        opd_mask=None,
+        opd_vocab_size=None,
     ):
         if cache is not None:
             if self.training or torch.is_grad_enabled() or labels is not None:
@@ -359,6 +369,20 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
             loss = loss + mtp_aux
             # MTP sequence balance is normalized independently with its own active samples.
             loss = loss + self.config.mtp_loss_coef * mtp_loss
+        if opd_targets is not None:
+            if labels is not None or opd_mask is None:
+                raise ValueError("OPD uses generated response masks, not CE targets")
+            from minifrontier.training.deepseek_opd import trajectory_loss
+            from minifrontier.training.distributions import forbidden_actions
+
+            loss = trajectory_loss(
+                features,
+                self.head.weight,
+                opd_targets,
+                opd_mask,
+                vocab_size=opd_vocab_size or self.config.vocab_size,
+                forbidden_ids=forbidden_actions(self),
+            )
         return CausalLMOutput(
             logits,
             loss,

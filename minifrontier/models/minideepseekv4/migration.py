@@ -4,6 +4,8 @@ from dataclasses import asdict
 
 
 def migrate_text_state(model, text_config, state):
+    if text_config.get("vision_config") is not None:
+        raise ValueError("migration source must be a text-only model")
     if model.vision is None:
         raise ValueError("destination must have the native visual tower")
     source = asdict(type(model.config)(**text_config))

@@ -1,0 +1,19 @@
+{
+  "cpu": {
+    "passed": 171,
+    "deselected_cuda": 26,
+    "log": "outputs/services/strategy-v2-ready-cpu-tests.log"
+  },
+  "cuda": {
+    "passed": 26,
+    "devices": [
+      4,
+      5
+    ],
+    "log": "outputs/services/strategy-v2-ready-cuda-tests.log"
+  },
+  "qat_bf16_mtp_cuda": true,
+  "mypy_sources": 103,
+  "build": "sdist and wheel",
+  "scope": "engineering validation only; full strategy training, QAT calibration, teachers and drafts not complete"
+}

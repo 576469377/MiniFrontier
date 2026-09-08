@@ -95,6 +95,12 @@ class CorpusBuilder:
         for media in record.get("media", []):
             if not media.get("rgb_sha256"):
                 raise ValueError("media must be decoded and hashed before corpus admission")
+            if media.get("kind") == "video" and (
+                not media.get("video_id")
+                or not media.get("frame_rgb_sha256")
+                or len(media["frame_rgb_sha256"]) != len(media.get("frames", []))
+            ):
+                raise ValueError("video admission needs video id and decoded hash for every frame")
         if record.get("official_split", "train").startswith(("test", "validation")):
             self.counts["reserved_official_split"] += 1
             return False
@@ -209,14 +215,14 @@ class CorpusBuilder:
         keys = ["source-group:" + record["source"] + ":" + record["group_id"]]
         if question:
             keys.append("question:" + question)
-            # First-question families stay together even when their media differ;
-            # admission caps/dedup above use the complete visual context instead.
-            first = next(t["content"] for t in turns if t["role"] == "user")
-            keys.append("question-family:" + fingerprint(canonical_question(first)))
+            # The question identity above includes ordered media hashes. Generic
+            # "describe this image" prompts are different contexts on different
+            # images; merging their templates would connect the whole visual corpus.
         for media in record.get("media", []):
             if not media.get("rgb_sha256"):
                 raise ValueError("media must be decoded and hashed before corpus admission")
             keys.append("rgb:" + media["rgb_sha256"])
+            keys.extend("rgb:" + value for value in media.get("frame_rgb_sha256", []))
             if media.get("phash"):
                 code = int(media["phash"], 16)
                 # Seven disjoint bands guarantee a candidate for <=6 bit changes.
@@ -337,6 +343,29 @@ def train_tokenizer(corpus_root, output, vocab_size, *, byte_budget=64 * 1024**2
         training_byte_sha256=digest.hexdigest(),
         sha256=sha256(output),
     )
+
+
+def compare_tokenizers(corpus_root, output, *, byte_budget=64 * 1024**2):
+    output = Path(output)
+    if output.exists():
+        raise FileExistsError("tokenizer comparison is immutable; choose a new version")
+    output.mkdir(parents=True)
+    candidates = [
+        train_tokenizer(
+            corpus_root, output / f"tokenizer-{size}.json", size, byte_budget=byte_budget
+        )
+        for size in (32768, 65536)
+    ]
+    if len({row["training_byte_sha256"] for row in candidates}) != 1:
+        raise ValueError("tokenizer candidates did not use identical training bytes")
+    result = dict(
+        candidates=candidates,
+        selected=65536,
+        frozen=True,
+        reason="strategy default; no controlled quality pilot has favored 32K",
+    )
+    (output / "comparison.json").write_text(json.dumps(result, indent=2))
+    return result
 
 
 def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):

@@ -76,6 +76,12 @@ class TaskDataset:
         if not self.rows:
             raise ValueError("empty RL split")
         for row in self.rows:
+            if row.get("media"):
+                raise ValueError(
+                    "multimodal RL needs the native rollout adapter; media cannot be ignored"
+                )
+            if "verifier" not in row and row.get("domain") != "arithmetic":
+                raise ValueError("non-arithmetic tasks require an explicit verifier")
             prompt = f"Reasoning effort: {row['effort']}. " + row["prompt"]
             ids, _ = chat_tokens(
                 [{"role": "user", "content": prompt}], tokenizer, generation_prompt=True
@@ -110,6 +116,8 @@ class RolloutObjective:
         max_new_tokens=32,
         teacher_map=None,
         device="cpu",
+        method=None,
+        require_complete_teachers=False,
     ):
         self.model, self.reference, self.tokenizer, self.dataset = (
             model,
@@ -118,18 +126,24 @@ class RolloutObjective:
             dataset,
         )
         self.group_size, self.max_new_tokens = group_size, max_new_tokens
+        self.method = method or ("mopd" if teacher_map else "grpo")
+        if self.method == "opd" and model.__class__.__name__ != "MiniDeepSeekV4ForCausalLM":
+            raise ValueError("full-vocabulary OPD is the DeepSeek route")
         self.teachers: Any = {}
         if teacher_map:
-            self.teachers = TeacherRegistry(teacher_map, tokenizer, device)
+            self.teachers = TeacherRegistry(
+                teacher_map, tokenizer, device, require_complete=require_complete_teachers
+            )
             for row in dataset.rows:
                 if f"{row['domain']}:{row['effort']}" not in self.teachers:
                     raise ValueError("teacher map must cover every task domain/effort pair")
         self.last_reward = 0.0
         self.last_tokens = 0
 
-    def __call__(self, wrapped, x, task_indices):
+    def prepare(self, x, task_indices):
         training = self.model.training
         sequences, label_rows, rewards, teacher_keys, behavior_rows = [], [], [], [], []
+        opd_targets = []
         self.model.eval()
         with torch.no_grad():
             for prompt, idx in zip(x, task_indices.flatten(), strict=True):
@@ -162,7 +176,12 @@ class RolloutObjective:
                     response = self.tokenizer.decode(
                         ids[prompt.shape[1] :], skip_special_tokens=True
                     )
-                    rewards.append(exact_reward(response, row["answer"]))
+                    if row.get("verifier"):
+                        from minifrontier.training.verifiers import reward
+
+                        rewards.append(reward(response, row["verifier"]))
+                    else:
+                        rewards.append(exact_reward(response, row["answer"]))
                     teacher_keys.append(f"{row['domain']}:{row['effort']}")
             length = max(map(len, sequences))
             inputs = torch.tensor([s + [0] * (length - len(s)) for s in sequences], device=x.device)
@@ -179,16 +198,42 @@ class RolloutObjective:
                 forbidden_ids=forbidden_actions(self.model),
                 vocab_size=self.tokenizer.get_vocab_size(),
             )
-            if self.teachers:
+            if self.method == "opd":
+                for key in sorted(set(teacher_keys)):
+                    indices = torch.tensor(
+                        [i for i, item in enumerate(teacher_keys) if item == key], device=x.device
+                    )
+                    teacher = self.teachers[key]
+                    if teacher.config.qat_scheme != self.model.config.qat_scheme:
+                        raise ValueError("OPD teacher and student QAT schemes must match")
+                    features = teacher(
+                        inputs[indices],
+                        attention_mask=inputs[indices].ne(0),
+                        return_logits=False,
+                        return_hidden=True,
+                    ).hidden_states
+                    opd_targets.append(
+                        dict(
+                            indices=indices.cpu(),
+                            hidden=features.detach().cpu(),
+                            weight=teacher.head.weight.detach().cpu().clone(),
+                        )
+                    )
+                self.teachers.unload()
+                advantages, ref_logp = torch.zeros_like(old_logp), None
+            elif self.teachers:
                 teacher_logp = torch.empty_like(old_logp)
                 for key in sorted(set(teacher_keys)):
                     indices = torch.tensor(
                         [i for i, item in enumerate(teacher_keys) if item == key], device=x.device
                     )
+                    teacher = self.teachers[key]
+                    if getattr(teacher.config, "qat_scheme", "bf16") != getattr(
+                        self.model.config, "qat_scheme", "bf16"
+                    ):
+                        raise ValueError("MOPD teacher and student QAT schemes must match")
                     teacher_logp[indices] = token_log_probs(
-                        self.teachers[key](
-                            inputs[indices], attention_mask=inputs[indices].ne(0)
-                        ).logits,
+                        teacher(inputs[indices], attention_mask=inputs[indices].ne(0)).logits,
                         labels[indices],
                         actions=True,
                         forbidden_ids=forbidden_actions(self.model),
@@ -207,6 +252,48 @@ class RolloutObjective:
                     forbidden_ids=forbidden_actions(self.model),
                     vocab_size=self.tokenizer.get_vocab_size(),
                 )[0]
+        loss_mask = mask if self.teachers else mask & advantages.ne(0)[:, None]
+        self.model.train(training)
+        return dict(
+            inputs=inputs,
+            labels=labels,
+            old_logp=old_logp,
+            advantages=advantages,
+            reference_logp=ref_logp,
+            rewards=rewards,
+            loss_mask=loss_mask,
+            active_responses=int(loss_mask.sum())
+            if self.method == "opd"
+            else int(loss_mask.any(-1).sum()),
+            opd_targets=opd_targets,
+        )
+
+    def __call__(self, wrapped, x, task_indices, *, prepared=None):
+        prepared = self.prepare(x, task_indices) if prepared is None else prepared
+        inputs, labels = prepared["inputs"], prepared["labels"]
+        old_logp, advantages = prepared["old_logp"], prepared["advantages"]
+        ref_logp, rewards = prepared["reference_logp"], prepared["rewards"]
+        training = self.model.training
+        self.model.eval()
+        if self.method == "opd":
+            try:
+                mask = prepared["loss_mask"]
+                loss = wrapped(
+                    inputs,
+                    attention_mask=inputs.ne(0),
+                    return_logits=False,
+                    opd_targets=prepared["opd_targets"],
+                    opd_mask=mask,
+                    opd_vocab_size=self.tokenizer.get_vocab_size(),
+                ).loss
+            finally:
+                self.model.train(training)
+            self.last_reward = sum(rewards) / len(rewards)
+            self.last_tokens = self.last_trainable_tokens = self.last_active_responses = int(
+                mask.sum()
+            )
+            self.last_ratio_error = 0.0
+            return loss, loss.detach(), loss.new_tensor(self.last_reward)
         # Policy gradients are computed in eval mode too: dropout must not change
         # the probability model that sampled these actions. Autograd remains on.
         try:
@@ -228,4 +315,5 @@ class RolloutObjective:
         self.last_reward = sum(rewards) / len(rewards)
         self.last_tokens = int(labels[:, 1:].ne(-100).sum())
         self.last_trainable_tokens = int(mask.sum())
+        self.last_active_responses = int(mask.any(-1).sum())
         return loss, loss.detach(), loss.new_tensor(self.last_reward)

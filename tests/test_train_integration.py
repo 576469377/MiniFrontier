@@ -131,6 +131,16 @@ def test_all_stages_export_and_generate(name, corpus, tmp_path):
     assert isinstance(text, str) and meta["stage"] == "dpo"
 
 
+def test_actual_input_budget_controls_accumulation(corpus, tmp_path):
+    name = "minideepseekv4"
+    config = config_for(name, tmp_path)
+    output = tmp_path / "actual-input"
+    train.main([*arguments(name, config, corpus, output, steps=1), "--input-batch-tokens", "300"])
+    state = json.loads((output / "status.json").read_text())
+    assert state["token_ledger"]["input_tokens"] == 384
+    assert state["token_ledger"]["optimizer_updates"] == 1
+
+
 def test_training_resume_matches_uninterrupted_run(corpus, tmp_path, monkeypatch):
     name = "minideepseekv4"
     config = config_for(name, tmp_path)
@@ -224,3 +234,48 @@ def test_grpo_and_multi_teacher_on_policy_stage(corpus, tmp_path):
         + ["--init", str(previous), "--teacher-map", str(teachers)]
     )
     assert (tmp_path / "mopd/model.pt").exists()
+
+
+def test_deepseek_full_vocabulary_opd_stage_and_response_ledger(corpus, tmp_path):
+    name = "minideepseekv4"
+    config = config_for(name, tmp_path)
+    previous = None
+    for stage, folder in (("pretrain", "pt"), ("sft", "teacher1"), ("sft", "teacher2")):
+        args = arguments(name, config, corpus, tmp_path / folder, stage, 1)
+        if previous:
+            args += ["--init", str(previous)]
+        train.main(args)
+        previous = tmp_path / folder / "model.pt"
+    tasks = tmp_path / "tasks"
+    prepare_tasks(tasks, count=100)
+    registry = tmp_path / "teachers.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "arithmetic:low": str(tmp_path / "teacher1/model.pt"),
+                "arithmetic:high": str(tmp_path / "teacher2/model.pt"),
+            }
+        )
+    )
+    args = arguments(name, config, corpus, tmp_path / "opd", "opd", 10)
+    train.main(
+        [
+            *args,
+            "--init",
+            str(previous),
+            "--teacher-map",
+            str(registry),
+            "--rl-data",
+            str(tasks),
+            "--group-size",
+            "2",
+            "--rollout-tokens",
+            "2",
+            "--response-tokens",
+            "4",
+        ]
+    )
+    saved = torch.load(tmp_path / "opd/checkpoint.pt", weights_only=True)
+    assert saved["token_ledger"]["response_tokens"] >= 4
+    assert saved["token_ledger"]["ce_tokens"] == 0
+    assert saved["step"] == 1

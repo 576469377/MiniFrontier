@@ -69,6 +69,11 @@ def inspect_current_models(
             text_backbone_parameters=None,
             dense_lm_parameters_without_mtp=None,
         )
+        if entry.get("strategy_config"):
+            strategy_path = (path.parent / entry["strategy_config"]).resolve(strict=True)
+            if not strategy_path.is_relative_to(path.parent):
+                raise ValueError("strategy configuration must remain inside the catalog tree")
+            record["strategy_capacity"] = json.loads(strategy_path.read_text())
         if count_backbones:
             model = build_model(name, values)
             count = sum(p.numel() for p in model.parameters() if p.is_floating_point())

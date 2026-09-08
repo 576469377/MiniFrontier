@@ -71,7 +71,11 @@
         "native_media_contracts",
         "tokenizer_frozen"
       ],
-      "status": "not_started"
+      "status": "not_started",
+      "unique_diagnostic_images": [
+        64,
+        512
+      ]
     },
     {
       "id": "K-pilot",
@@ -90,10 +94,13 @@
       ],
       "budget_scope": "recipe_pilot",
       "required_evidence": [
+        "diagnostic_learnability"
+      ],
+      "status": "not_started",
+      "produces_evidence": [
         "optimizer_comparison",
         "mtp_coefficient_comparison"
-      ],
-      "status": "not_started"
+      ]
     },
     {
       "id": "K1",
@@ -111,7 +118,11 @@
         "K-pilot"
       ],
       "budget_scope": "main",
-      "required_evidence": [],
+      "required_evidence": [
+        "optimizer_comparison",
+        "mtp_coefficient_comparison",
+        "tokenizer_quality_comparison"
+      ],
       "status": "not_started"
     },
     {

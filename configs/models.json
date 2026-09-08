@@ -6,7 +6,7 @@
       "display_name": "MiniQwen4",
       "implementation": "miniqwen4",
       "config": "miniqwen4.json",
-      "status": "educational_text_training_implemented",
+      "status": "strategy_v2_foundation_implemented_quality_unassessed",
       "training_components": [
         "pretrain",
         "sft",
@@ -15,37 +15,46 @@
         "checkpoint_resume",
         "held_out_validation",
         "dense_distill",
-        "sparse_cpt"
+        "sparse_cpt",
+        "native_vision",
+        "mtp",
+        "actual_token_budgets",
+        "global_accumulation_normalization",
+        "semantic_muon"
       ],
       "training_module": "minifrontier.models.miniqwen4.MiniQwen4ForCausalLM",
       "training_ready": true,
       "gpus_per_model": 2,
       "source_revision": "4177486a9f199bd7be520eff14431071d5d41ec5",
       "inference_components": [
-        "unpadded_text_cache"
+        "incremental_text_cache",
+        "native_image_prefill",
+        "cache_snapshot_rollback"
       ],
       "missing": [
-        "native vision training",
-        "MTP integration",
-        "official full-scale data and training hyperparameters",
-        "quantization-aware post-training",
-        "flagship-quality evaluation"
-      ]
+        "formal_training_data_admission",
+        "recipe_pilot_selection",
+        "base_and_posttraining_quality_gates",
+        "qualified_domain_teachers",
+        "draft_training_and_speculative_speed_acceptance"
+      ],
+      "strategy_config": "strategies/miniqwen4-v2.json"
     },
     "minikimik3": {
       "display_name": "MiniKimi-K3",
       "implementation": "minikimik3",
       "config": "minikimik3.json",
-      "status": "educational_text_training_implemented",
+      "status": "strategy_v2_foundation_implemented_quality_unassessed",
       "training_ready": true,
       "gpus_per_model": 2,
       "source_revision": "c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721",
       "missing": [
-        "native vision training",
-        "MTP integration",
-        "official full-scale data and training hyperparameters",
-        "quantization-aware post-training",
-        "flagship-quality evaluation"
+        "formal_training_data_admission",
+        "recipe_pilot_selection",
+        "base_and_posttraining_quality_gates",
+        "qualified_domain_teachers",
+        "draft_training_and_speculative_speed_acceptance",
+        "qat_calibration_on_trained_sft"
       ],
       "training_components": [
         "pretrain",
@@ -53,24 +62,39 @@
         "dpo",
         "ddp",
         "checkpoint_resume",
-        "held_out_validation"
+        "held_out_validation",
+        "native_vision",
+        "mtp",
+        "actual_token_budgets",
+        "global_accumulation_normalization",
+        "semantic_muon",
+        "mx_qat_simulation",
+        "grpo",
+        "mopd"
       ],
-      "training_module": "minifrontier.models.minikimik3.MiniKimiK3ForCausalLM"
+      "training_module": "minifrontier.models.minikimik3.MiniKimiK3ForCausalLM",
+      "strategy_config": "strategies/minikimik3-v2.json",
+      "inference_components": [
+        "incremental_text_cache",
+        "native_image_prefill",
+        "cache_snapshot_rollback"
+      ]
     },
     "minideepseekv4": {
       "display_name": "MiniDeepSeek-V4",
       "implementation": "minideepseekv4",
       "config": "minideepseekv4.json",
-      "status": "educational_text_training_implemented",
+      "status": "strategy_v2_foundation_implemented_quality_unassessed",
       "training_ready": true,
       "gpus_per_model": 2,
       "source_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
       "missing": [
-        "native vision training",
-        "MTP integration",
-        "official full-scale data and training hyperparameters",
-        "quantization-aware post-training",
-        "flagship-quality evaluation"
+        "formal_training_data_admission",
+        "recipe_pilot_selection",
+        "base_and_posttraining_quality_gates",
+        "qualified_domain_teachers",
+        "draft_training_and_speculative_speed_acceptance",
+        "qat_calibration_on_trained_sft"
       ],
       "training_components": [
         "pretrain",
@@ -80,9 +104,23 @@
         "checkpoint_resume",
         "held_out_validation",
         "dense_distill",
-        "sparse_cpt"
+        "sparse_cpt",
+        "native_vision",
+        "mtp",
+        "actual_token_budgets",
+        "global_accumulation_normalization",
+        "semantic_muon",
+        "mx_qat_simulation",
+        "grpo",
+        "full_vocab_reverse_kl_opd"
       ],
-      "training_module": "minifrontier.models.minideepseekv4.MiniDeepSeekV4ForCausalLM"
+      "training_module": "minifrontier.models.minideepseekv4.MiniDeepSeekV4ForCausalLM",
+      "strategy_config": "strategies/minideepseekv4-v2.json",
+      "inference_components": [
+        "incremental_text_cache",
+        "native_image_prefill",
+        "cache_snapshot_rollback"
+      ]
     }
   }
 }

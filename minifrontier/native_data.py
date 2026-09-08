@@ -133,6 +133,8 @@ class NativeDataset:
         self.domains = list(self.text.domains)
         self.ce_counts = list(self.text.ce_counts)
         self.input_counts = list(self.text.input_counts)
+        self.image_counts = [0] * len(self.text)
+        self.video_counts = [0] * len(self.text)
         with self.path.open("rb") as source:
             for offset, size, positions in self.index:
                 source.seek(int(offset))
@@ -140,6 +142,9 @@ class NativeDataset:
                 self.domains.append(row["record"]["task"])
                 self.ce_counts.append(sum(value != -100 for value in row["expected_labels"][1:]))
                 self.input_counts.append(int(positions))
+                resources = row["record"].get("media", [])
+                self.image_counts.append(sum(m.get("kind", "image") != "video" for m in resources))
+                self.video_counts.append(sum(m.get("kind") == "video" for m in resources))
 
     def __len__(self):
         return len(self.text) + len(self.index)

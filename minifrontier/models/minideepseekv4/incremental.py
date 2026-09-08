@@ -66,6 +66,10 @@ def decode(attn, x, state):
                     torch.einsum("bthd,bcd->bthc", iq.float(), state["index_keys"].float()).relu()
                     * weights[..., None]
                 ).sum(2)
+                if getattr(idx, "qat_enabled", False):
+                    from minifrontier.training.deepseek_qat import index_scores
+
+                    scores = index_scores(iq, state["index_keys"], weights)
                 choice = scores[:, 0].argsort(dim=-1, descending=True, stable=True)[
                     ..., : min(attn.index_topk, compressed.shape[1])
                 ]

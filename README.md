@@ -4,15 +4,17 @@
 
 [中文训练指南](docs/training.md) · [项目梳理](docs/project-review.md) · [架构与目录](docs/architecture.md) · [来源与许可证](THIRD_PARTY_NOTICES.md)
 
-| 模型 | 当前文本实现 | 浮点参数（不含 MTP） |
+| 模型 | strategy-v2 实现 | 当前诊断配置参数量 |
 |---|---|---:|
-| [MiniQwen4](docs/models/miniqwen4.md) | GDN / gated residual / PLE / MoE / QSA，源码语义分块 Muon | 431,609,632 |
-| [MiniKimi-K3](docs/models/minikimik3.md) | KDA / gated MLA / LatentMoE / SiTU / AttnRes | 166,109,480 |
-| [MiniDeepSeek-V4](docs/models/minideepseekv4.md) | 滑窗 / CSA-HCA / indexer / hash-MoE / mHC | 229,996,877 |
+| [MiniQwen4](docs/models/miniqwen4.md) | GDN / GR / PLE / MoE / QSA + 原生视觉 + 四流 MTP | 513,405,536 |
+| [MiniKimi-K3](docs/models/minikimik3.md) | KDA / MLA / LatentMoE / AttnRes + MoonViT + MTP | 204,526,216 |
+| [MiniDeepSeek-V4](docs/models/minideepseekv4.md) | SWA128 / CSA-HCA / hash-MoE / mHC + 文本 MTP | 243,983,472 |
 
 名称采用 `Mini` + 官方模型/架构名；包名为 `miniqwen4`、`minikimik3`、`minideepseekv4`。MiniQwen4 对应 Qwen3.8-Flash-Next 发布所用的 `qwen4_exp` 源码，属于独立教学项目。DeepSeek 以 V4-Flash 为具体来源。
 
-**现已提供可执行的文本训练链路，不代表旗舰模型完整复现。** 原生视觉、MTP 训练接入、量化感知后训练和完整官方规模评测仍未完成。公开推理源码没有披露的初始化、数据和训练超参数均标记为本地选择。Kimi/DeepSeek 的源码对照目前覆盖关键组件，不能等同于整模型与官方训练数值等价。
+新训练配置位于 `configs/strategies`，上表包含 MTP；DeepSeek 按方案先训练文本，再迁移原生 Vision-Exp。根目录三个配置保留文本兼容用途。原生视觉、MTP、各自 Muon/路由更新和增量缓存已接入；QAT 仿真、Kimi sampled-token MOPD、DeepSeek full-vocabulary reverse-KL OPD 有独立代码路径，仍需配方和能力验收。
+
+**完整训练与可用模型尚未完成。** 当前正在执行独立的 K0/Q0/D0 诊断，不计正式主预算。正式数据准入、配方选择、教师资格、草稿训练和发布门槛仍有待完成项，详见[方案执行记录](docs/audits/strategy-implementation-v2.md)。公开材料未披露的 mini 配方明确属于本地选择。
 
 **2026-09-08 效果审计：`educational-v1` 未达到基本对话目标。** 阶段完成和损失下降不能作为模型可用的证据；SFT 已出现重复、答非所问，DPO 也未修复。见[失败复盘与纠正措施](docs/training-failure-v1.md)。当前权重用于排查与学习，不标记为可用对话模型。
 
@@ -21,45 +23,49 @@
 Python 3.11+；当前锁定环境使用 PyTorch 2.13。3090 上的 Kimi CUDA 训练使用 FLA 0.5.2。
 
 ```bash
-uv sync --locked --extra dev --extra training --extra monitoring
+uv sync --locked --extra dev --extra training --extra monitoring --extra data
 uv run minifrontier models
 uv run minifrontier doctor
 
-# 对固定 revision 的完整源文件做均匀抽样，再清洗、划分和训练 tokenizer
-# 必须读完整源文件；快速工程检查可显式指定 --sampling prefix
-uv run minifrontier prepare-data --output data/educational-v1
+# 受磁盘预算约束的公开来源试验池，不代表正式数据规模
+uv run minifrontier prepare-public-data --output data/public-pilot \
+  --limits-mib '{"zh_edu":96,"en_edu":64,"python_edu":16,"ultrachat":32}' --max-gib 8
+uv run minifrontier prepare-tokenizers --corpus-root data/public-pilot \
+  --output data/tokenizers-v2
+uv run minifrontier encode-data --corpus-root data/public-pilot \
+  --tokenizer-path data/tokenizers-v2/tokenizer-65536.json --output data/text-v2
 
 # 单卡训练；也可用 torchrun 启动同一个入口
 CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=2 uv run minifrontier train \
-  --model minikimik3 --data data/educational-v1 \
-  --output outputs/minikimik3/my-run/pretrain --steps 1000
+  --model minideepseekv4 --config configs/strategies/minideepseekv4-v2.json \
+  --data data/text-v2 --output outputs/text-diagnostic \
+  --ce-tokens 500000 --sequence-length 64 --run-kind acceptance
 
-# 显式指定数据覆盖量；这里一轮仅演示预算方式，不保证对话能力
-uv run python scripts/launch_training.py --run coverage-example \
-  --gpu-groups 0,1 2,3 4,5 --batch-size 2 --grad-accum 2 \
-  --pretrain-epochs 1 --sft-epochs 1 --save-every 100
+# 正式方案使用 configs/strategies/*-plan.json；先完成诊断与配方比较
+# 实际输入 batch：--input-batch-tokens 16384（按各卡非 padding 输入累计）
+# 显式阶段变更：--init-transition text-to-vision / qat / mtp-weight
+# DeepSeek V1 另加 --visual-warmup；视觉与投影 LR 分别设置
 
 uv run python scripts/training_status.py
 uv run minifrontier demo --root outputs --device cpu
 ```
 
-浏览器 demo 默认地址为 `http://127.0.0.1:7860`，默认展示 SFT，可切换 DPO、预训练和最新阶段进行比较，并显示对话验收状态。GPU 推理可指定 `--device cuda:0`。通过 SSH 使用时转发对应端口。
+浏览器 demo 默认地址为 `http://127.0.0.1:7860`，默认只展示通过能力验收的检查点；可切换历史 SFT/DPO/预训练作对照。诊断 run 不进入默认列表。GPU 推理可指定 `--device cuda:0`。
+
+工作盘写入默认预留 50 GiB，数据和权重使用独立目录并校验 hash；不要把大型缓存放在空间紧张的根分区。当前双卡诊断使用独立源码 checkout，GPU 分配为 Kimi 0–1、Qwen 2–3、DeepSeek 4–5。
 
 ## 训练流程
 
 ```text
-公开文本 → 清洗 / 去重 / 固定划分 → 自训 ByteLevel BPE → 预训练
-                                                     ↓
-Qwen / DeepSeek：dense indexer distillation → sparse CPT
-                                                     ↓
-                                             SFT → 对话效果评估 → 可选 DPO
-                                              └→ GRPO（可验证任务）
-                                              └→ MOPD（显式提供多教师）
+固定源码与词表 → 数值/原生视觉/MTP诊断 → 等预算配方比较 → 正式数据准入
+Kimi：联合 PT → SFT/QAT → 9 位领域/模式教师 → MOPD → 7-step draft → demo
+Qwen：dense 联合 PT → indexer → sparse CPT → SFT/GRPO → MTP draft → demo
+DeepSeek：Text-v2 PT/indexer/CPT → Vision-v1接入/CPT → SFT/QAT → 12 教师 → OPD → DSpark → demo
 ```
 
-自动管线现在要求显式指定预训练和 SFT 的步数或 epoch 预算，并在 recipe 中记录样本覆盖量。DPO 默认关闭。原先 1,000 步预训练、500 步 SFT、100 步 DPO 的 `educational-v1` 仅完成执行链路，基本对话效果验收失败，不能作为复现可用模型的推荐配方。Qwen/DeepSeek 保留索引器蒸馏与稀疏 CPT；GRPO/MOPD 是独立可选入口，详见[训练指南](docs/training.md)。
+上图为目标依赖，仍有未实现和未验收的阶段，不能作为完成清单。新入口按 CE/input/response 实际 token 计费；`--run-kind strategy` 检查源码、数据、配置、依赖证据与实测性能。`scripts/run_recipe_pilot.py` 仅执行两组独立 20M-token Muon/AdamW 试验，之后仍需 LR、MTP、tokenizer 和补种子对照，不自动进入主训练。旧 `launch_training.py` 保留作历史对照，不执行新方案。DPO 默认关闭。
 
-检查点包含模型、优化器、阶段、完整配方、tokenizer 校验和、数据游标以及各 rank 随机状态；支持相同配方的精确恢复。训练和验证记录位于每模型独立目录，TensorBoard 与 JSONL 同步保存。DDP 完成阶段前逐项核验所有 rank 的参数一致。
+检查点包含模型、优化器、阶段、完整配方、tokenizer 校验和、数据游标以及各 rank 随机状态；支持相同配方的精确恢复。文本域按 CE token 采样；视觉域按样本采样，同时单列图像/视频暴露预算。PT/SFT 的 `best-model.pt` 按同一验证集 LM NLL 保存，仍须生成能力验收。训练和验证记录位于每模型独立目录，TensorBoard 与 JSONL 同步保存。DDP 完成阶段前逐项核验所有 rank 的参数一致。
 
 ## 验证
 
@@ -75,6 +81,6 @@ uv run mypy minifrontier scripts --ignore-missing-imports
 
 ## 数据与许可
 
-公开语料来自 [MiniMind 数据集](https://huggingface.co/datasets/jingyaogong/minimind_dataset)，本地重新处理并训练 tokenizer；它不是任何旗舰模型的官方训练数据。数据卡标注 Apache-2.0 / CC-BY-NC-2.0，不能随项目代码统一标成 Apache-2.0。原始语料、权重和训练产物不进入源码或 wheel。
+旧语料来自 [MiniMind 数据集](https://huggingface.co/datasets/jingyaogong/minimind_dataset)。strategy-v2 使用固定版本的中文教育文本、FineWeb-Edu、SmolLM Python-Edu、UltraChat 及逐来源审核的视觉候选池；来源许可分别记录，Python-Edu 原代码许可未解决的行明确标记为试验数据。它们不是旗舰官方训练数据，不能随项目代码统一标成 Apache-2.0。原始语料、权重和训练产物不进入源码或 wheel。
 
 项目原创代码为 Apache-2.0。Qwen Transformers 源码、Kimi 自定义许可源码、DeepSeek MIT 源码分别保留原始条款；见[第三方说明](THIRD_PARTY_NOTICES.md)。

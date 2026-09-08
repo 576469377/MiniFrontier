@@ -40,7 +40,7 @@ def parser():
     p.add_argument("--output", required=True)
     p.add_argument(
         "--stage",
-        choices=["pretrain", "sft", "dpo", "dense_distill", "sparse_cpt", "grpo", "mopd"],
+        choices=["pretrain", "sft", "dpo", "dense_distill", "sparse_cpt", "grpo", "mopd", "opd"],
         default="pretrain",
     )
     p.add_argument("--steps", type=int, help="explicit update budget or token-budget safety limit")
@@ -48,6 +48,9 @@ def parser():
     tokens.add_argument("--ce-tokens", type=int, help="actual next-token supervision budget")
     tokens.add_argument(
         "--input-tokens", type=int, help="valid input-position budget for frozen indexer training"
+    )
+    tokens.add_argument(
+        "--response-tokens", type=int, help="actual student-generated response budget"
     )
     p.add_argument("--warmup-tokens", type=int)
     p.add_argument("--schedule", choices=["cosine", "wsd"], default="cosine")
@@ -71,12 +74,33 @@ def parser():
     p.add_argument("--log-every", type=int, default=5)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--token-mixture", help="JSON domain-to-token proportions; all domains required")
+    p.add_argument(
+        "--media-mixture",
+        help="JSON with text CE weights, visual sample weights and phase media quotas",
+    )
     p.add_argument("--max-data-epochs", type=int, help="cap per-domain reuse in a token mixture")
+    p.add_argument(
+        "--input-batch-tokens",
+        type=int,
+        help="accumulate until this many actual global non-padding inputs (PT/SFT/indexer)",
+    )
     p.add_argument("--profile-warmup", type=int, default=50)
     p.add_argument("--profile-updates", type=int, default=200)
     p.add_argument("--min-device-free-gib", type=float, default=0)
     p.add_argument("--init", help="weights/checkpoint from the preceding stage")
     p.add_argument("--resume", help="exact checkpoint to resume, including optimizer/data/RNG")
+    p.add_argument(
+        "--init-transition",
+        choices=["exact", "qat", "text-to-vision", "mtp-weight"],
+        default="exact",
+    )
+    p.add_argument(
+        "--visual-warmup",
+        action="store_true",
+        help="DeepSeek V1: freeze text, train random native vision and aligner",
+    )
+    p.add_argument("--vision-lr", type=float)
+    p.add_argument("--projector-lr", type=float)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument(
         "--optimizer",
@@ -89,7 +113,12 @@ def parser():
     p.add_argument("--rollout-tokens", type=int, default=32)
     p.add_argument("--teacher-map", help="JSON mapping domain:effort to local teacher checkpoint")
     p.add_argument("--no-tensorboard", action="store_true")
-    p.add_argument("--run-kind", choices=["educational", "acceptance"], default="educational")
+    p.add_argument(
+        "--run-kind", choices=["educational", "acceptance", "strategy"], default="educational"
+    )
+    p.add_argument("--strategy-plan")
+    p.add_argument("--strategy-phase")
+    p.add_argument("--strategy-evidence")
     return p
 
 
@@ -102,13 +131,31 @@ def batch(dataset, indices, device):
 
 def main(argv=None):
     args = parser().parse_args(argv)
-    token_budget = args.ce_tokens or args.input_tokens
+    if args.run_kind == "strategy":
+        from minifrontier.training.strategy_gate import validate_arguments
+
+        validate_arguments(args)
+    token_budget = args.ce_tokens or args.input_tokens or args.response_tokens
     if args.steps is None and token_budget is None:
         raise ValueError("set an explicit --steps, --ce-tokens or --input-tokens budget")
-    if any(value is not None and value < 1 for value in (args.ce_tokens, args.input_tokens)):
+    if any(
+        value is not None and value < 1
+        for value in (args.ce_tokens, args.input_tokens, args.response_tokens)
+    ):
         raise ValueError("token budgets must be positive")
-    if token_budget is not None and args.stage in {"dpo", "grpo", "mopd"}:
+    if (args.ce_tokens or args.input_tokens) is not None and args.stage in {
+        "dpo",
+        "grpo",
+        "mopd",
+        "opd",
+    }:
         raise ValueError("CE/input budgets do not describe preference or RL response budgets")
+    if args.response_tokens is not None and args.stage not in {"grpo", "mopd", "opd"}:
+        raise ValueError("response budgets are reserved for on-policy stages")
+    if args.stage == "mopd" and args.model != "minikimik3":
+        raise ValueError("sampled-token MOPD is reserved for the Kimi route")
+    if args.stage == "opd" and args.model != "minideepseekv4":
+        raise ValueError("full-vocabulary reverse-KL OPD is reserved for DeepSeek")
     if args.input_tokens is not None and args.stage != "dense_distill":
         raise ValueError("input-position budget is reserved for frozen indexer distillation")
     if args.ce_tokens is not None and args.stage == "dense_distill":
@@ -130,17 +177,38 @@ def main(argv=None):
         raise ValueError("step counts and capacities must be positive")
     if args.eval_batches < 0:
         raise ValueError("eval-batches must be nonnegative (0 means the whole validation split)")
-    if args.stage in {"grpo", "mopd"}:
+    if args.stage in {"grpo", "mopd", "opd"}:
         if (
             not args.rl_data
             or args.group_size < 2
             or not 1 <= args.rollout_tokens < args.sequence_length
         ):
             raise ValueError("RL requires --rl-data, group size >= 2 and a valid rollout budget")
-        if args.stage == "mopd" and not args.teacher_map:
+        if args.stage in {"mopd", "opd"} and not args.teacher_map:
             raise ValueError("MOPD requires --teacher-map")
     if args.resume and args.init:
         raise ValueError("--init and --resume are mutually exclusive")
+    if args.media_mixture and (
+        args.token_mixture
+        or not args.ce_tokens
+        or args.stage not in {"pretrain", "sparse_cpt", "sft"}
+    ):
+        raise ValueError("media mixture replaces token mixture for CE-budget PT/SFT")
+    if args.input_batch_tokens is not None and (
+        not 1 <= args.input_batch_tokens <= 1048576 or args.stage in {"dpo", "grpo", "mopd", "opd"}
+    ):
+        raise ValueError("actual input batch budget must be 1-1048576, for PT/SFT/indexer only")
+    if args.init_transition != "exact" and not (args.init or args.resume):
+        raise ValueError("an initialization transition requires a preceding checkpoint")
+    if args.visual_warmup and (
+        args.model != "minideepseekv4" or args.stage != "pretrain" or not (args.init or args.resume)
+    ):
+        raise ValueError(
+            "visual warmup requires DeepSeek continued PT from a text/vision checkpoint"
+        )
+    for rate in (args.vision_lr, args.projector_lr):
+        if rate is not None and (not math.isfinite(rate) or rate <= 0):
+            raise ValueError("vision/projector learning rates must be finite and positive")
     for key in ("lr", "muon_lr", "clip_grad"):
         if not math.isfinite(getattr(args, key)) or getattr(args, key) <= 0:
             raise ValueError(f"{key} must be finite and positive")
@@ -184,7 +252,10 @@ def run(args, rank, world, device):
     )
     if saved and saved["model_name"] != args.model:
         raise ValueError("checkpoint belongs to a different model")
-    if args.stage in {"sft", "dpo", "dense_distill", "sparse_cpt", "grpo", "mopd"} and not saved:
+    if (
+        args.stage in {"sft", "dpo", "dense_distill", "sparse_cpt", "grpo", "mopd", "opd"}
+        and not saved
+    ):
         raise ValueError("this stage requires --init or --resume from a trained checkpoint")
     if args.init:
         assert saved is not None
@@ -195,6 +266,7 @@ def run(args, rank, world, device):
             "dpo": {"sft", "dpo"},
             "grpo": {"sft", "dpo", "grpo"},
             "mopd": {"sft", "dpo", "grpo", "mopd"},
+            "opd": {"sft", "grpo", "opd"},
         }
         if args.stage in allowed and saved["stage"] not in allowed[args.stage]:
             raise ValueError(
@@ -211,11 +283,23 @@ def run(args, rank, world, device):
     if saved:
         if saved.get("tokenizer_sha256") != data_manifest["tokenizer"]["sha256"]:
             raise ValueError("checkpoint tokenizer differs from training corpus")
-        if asdict(model.config) != asdict(type(model.config)(**saved["config"])):
-            raise ValueError("checkpoint capacity differs from requested configuration")
-        model.load_state_dict(saved["model"], strict=True)
-    if args.stage in {"sft", "dpo", "grpo", "mopd"}:
+        from .transitions import load_previous
+
+        transition_report = load_previous(
+            model,
+            saved,
+            transition=args.init_transition,
+            stage=args.stage,
+            resume=bool(args.resume),
+        )
+        if rank == 0 and args.init:
+            (output / "initialization.json").write_text(json.dumps(transition_report, indent=2))
+    if args.stage in {"sft", "dpo", "grpo", "mopd", "opd"}:
         configure_posttraining(model)
+    if args.visual_warmup:
+        from minifrontier.models.minideepseekv4.migration import configure_visual_warmup
+
+        configure_visual_warmup(model)
     optimizer: torch.optim.Optimizer
     optimizer_kind = args.optimizer
     if optimizer_kind == "auto":
@@ -270,6 +354,9 @@ def run(args, rank, world, device):
             betas=(0.9, 0.95),
             eps=args.adam_eps,
         )
+    from .transitions import set_visual_rates
+
+    set_visual_rates(optimizer, model, vision_lr=args.vision_lr, projector_lr=args.projector_lr)
     reference: Any = None
     if args.stage in {"dpo", "grpo"}:
         assert saved is not None
@@ -285,7 +372,7 @@ def run(args, rank, world, device):
     train: Any = StageDataset(data_dir, dataset_stage, "train", args.sequence_length)
     val: Any = StageDataset(data_dir, dataset_stage, "val", args.sequence_length)
     rollout = validation_rollout = None
-    if args.stage in {"grpo", "mopd"}:
+    if args.stage in {"grpo", "mopd", "opd"}:
         from tokenizers import Tokenizer
 
         from .rollouts import RolloutObjective, TaskDataset
@@ -305,6 +392,8 @@ def run(args, rank, world, device):
             group_size=args.group_size,
             max_new_tokens=args.rollout_tokens,
             teacher_map=args.teacher_map,
+            method=args.stage,
+            require_complete_teachers=args.run_kind == "strategy",
             device=device,
         )
         # Share the same one-resident-teacher registry with validation.
@@ -313,6 +402,7 @@ def run(args, rank, world, device):
             reference,
             tokenizer,
             val,
+            method=args.stage,
             group_size=args.group_size,
             max_new_tokens=args.rollout_tokens,
         )
@@ -326,6 +416,7 @@ def run(args, rank, world, device):
         world_size=world,
         batch_size=args.batch_size,
         grad_accum=args.grad_accum,
+        input_batch_tokens=args.input_batch_tokens,
         sequence_length=args.sequence_length,
         seed=args.seed,
         data_sha256=data_hash,
@@ -339,12 +430,20 @@ def run(args, rank, world, device):
         router_bias_rate=args.router_bias_rate,
         ce_token_budget=args.ce_tokens,
         input_token_budget=args.input_tokens,
+        response_token_budget=args.response_tokens,
         warmup_tokens=args.warmup_tokens,
         schedule=args.schedule,
         adam_eps=args.adam_eps,
+        init_transition=args.init_transition,
+        visual_warmup=args.visual_warmup,
+        vision_lr=args.vision_lr,
+        projector_lr=args.projector_lr,
         normalization="global-accumulation-ce-sum-v2",
         token_mixture=json.loads(Path(args.token_mixture).read_text())
         if args.token_mixture
+        else None,
+        media_mixture=json.loads(Path(args.media_mixture).read_text())
+        if args.media_mixture
         else None,
         max_data_epochs=args.max_data_epochs,
         performance_profile=dict(
@@ -359,7 +458,13 @@ def run(args, rank, world, device):
     from minifrontier.provenance import source_identity
 
     run_spec["source"] = source_identity()
-    if args.stage in {"grpo", "mopd"}:
+    if args.run_kind == "strategy":
+        run_spec["strategy"] = dict(
+            phase=args.strategy_phase,
+            plan_sha256=sha256(args.strategy_plan),
+            evidence_sha256=sha256(args.strategy_evidence),
+        )
+    if args.stage in {"grpo", "mopd", "opd"}:
         assert rollout is not None
         run_spec["rollout"] = dict(
             group_size=args.group_size,
@@ -390,7 +495,24 @@ def run(args, rank, world, device):
         restore_rng(saved["rng"][rank], device)
         ledger = TokenLedger(**saved["token_ledger"])
     cursor: Any
-    if args.token_mixture:
+    if args.media_mixture:
+        from .media_mixture import MediaMixtureCursor
+
+        if run_spec["media_mixture"]["ce_token_budget"] != args.ce_tokens:
+            raise ValueError("media sampler and training CE budgets disagree")
+        cursor = MediaMixtureCursor(
+            train,
+            run_spec["media_mixture"],
+            batch_size=args.batch_size,
+            rank=rank,
+            world_size=world,
+            seed=args.seed,
+            max_epochs=args.max_data_epochs,
+        )
+        if args.resume:
+            assert saved is not None
+            cursor.load_state_dict(saved["data_cursor"])
+    elif args.token_mixture:
         from .mixture import TokenMixtureCursor
 
         cursor = TokenMixtureCursor(
@@ -466,9 +588,9 @@ def run(args, rank, world, device):
             device_type=device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"
         )
 
-    def objective(module, x, y, **extras):
+    def objective(module, x, y, prepared=None, **extras):
         if rollout is not None:
-            return rollout(module, x, y)
+            return rollout(module, x, y, prepared=prepared)
         if args.stage == "dpo":
             x, y = x.flatten(0, 1), y.flatten(0, 1)
             with torch.no_grad():
@@ -491,7 +613,15 @@ def run(args, rank, world, device):
                         writer.add_scalar(f"{value['event']}/{key}", v, value["step"])
                 writer.flush()
 
+    best_path = output / "best-validation.json"
+    best_nll = (
+        json.loads(best_path.read_text())["lm_loss"]
+        if args.resume and best_path.exists()
+        else float("inf")
+    )
+
     def evaluate(step):
+        nonlocal best_nll
         model.eval()
         values = torch.zeros(6, device=device, dtype=torch.float64)
         random_state = rng_state(device)
@@ -512,7 +642,9 @@ def run(args, rank, world, device):
                 )
                 # Weight by supervised tokens (DPO is a per-pair objective).
                 count = (
-                    1 if args.stage in {"dpo", "grpo", "mopd"} else int((y[:, 1:] != -100).sum())
+                    1
+                    if args.stage in {"dpo", "grpo", "mopd", "opd"}
+                    else int((y[:, 1:] != -100).sum())
                 )
                 values += torch.stack(
                     [
@@ -541,16 +673,69 @@ def run(args, rank, world, device):
         if args.stage == "dpo":
             metrics["preference_accuracy"] = (values[5] / values[4]).item()
         record(metrics)
+        if (
+            rank == 0
+            and step > 0
+            and args.stage in {"pretrain", "sparse_cpt", "sft"}
+            and values[2] > 0
+            and metrics["lm_loss"] < best_nll
+        ):
+            best_nll = metrics["lm_loss"]
+            atomic_save(
+                dict(
+                    schema_version=1,
+                    model_name=args.model,
+                    config=asdict(model.config),
+                    phase=phase,
+                    stage=args.stage,
+                    model=model.state_dict(),
+                    step=step,
+                    token_ledger=ledger.state_dict(),
+                    tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
+                    selection=dict(
+                        metric="same-corpus-validation-lm-nll",
+                        value=best_nll,
+                        data_sha256=data_hash,
+                        capability_status="unassessed",
+                    ),
+                ),
+                output / "best-model.pt",
+            )
+            best_path.write_text(
+                json.dumps(
+                    dict(
+                        metrics,
+                        data_sha256=data_hash,
+                        checkpoint="best-model.pt",
+                        capability_status="unassessed",
+                    ),
+                    indent=2,
+                )
+            )
         restore_rng(random_state, device)
         model.train()
 
-    token_budget = args.ce_tokens or args.input_tokens
+    token_budget = args.ce_tokens or args.input_tokens or args.response_tokens
 
     def budget_used():
-        return ledger.ce_tokens if args.ce_tokens is not None else ledger.input_tokens
+        return (
+            ledger.response_tokens
+            if args.response_tokens is not None
+            else (ledger.ce_tokens if args.ce_tokens is not None else ledger.input_tokens)
+        )
 
     def finished(step):
-        return budget_used() >= token_budget if token_budget is not None else step == args.steps
+        tokens_done = (
+            budget_used() >= token_budget if token_budget is not None else step == args.steps
+        )
+        if args.media_mixture:
+            quotas = run_spec["media_mixture"]
+            return (
+                tokens_done
+                and ledger.image_occurrences >= quotas.get("image_occurrences", 0)
+                and ledger.video_examples >= quotas.get("video_examples", 0)
+            )
+        return tokens_done
 
     def save(step):
         if world > 1 and finished(step):
@@ -581,7 +766,9 @@ def run(args, rank, world, device):
                 optimizer_kind=optimizer_kind,
                 step=step,
                 data_offset=cursor.offset,
-                data_cursor=cursor.state_dict() if args.token_mixture else None,
+                data_cursor=cursor.state_dict()
+                if args.token_mixture or args.media_mixture
+                else None,
                 rng=states,
                 run_spec=run_spec,
                 tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
@@ -625,15 +812,46 @@ def run(args, rank, world, device):
     empty_windows = 0
     empty_rl_windows = 0
     profile = []
-    while step < args.steps and not (token_budget is not None and budget_used() >= token_budget):
+    while step < args.steps and not finished(step):
         next_step = step + 1
         started = time.monotonic()
         optimizer.zero_grad(set_to_none=True)
         metrics = torch.zeros(3, device=device)
         trainable_response = torch.zeros((), device=device, dtype=torch.int64)
         # Keep only token tensors (not activations) for this accumulation window.
-        window = [batch(train, cursor.next(), torch.device("cpu")) for _ in range(args.grad_accum)]
+        window = []
+        accumulated_inputs = 0
+        while True:
+            item = batch(train, cursor.next(), torch.device("cpu"))
+            window.append(item)
+            if args.input_batch_tokens is None:
+                if len(window) >= args.grad_accum:
+                    break
+            else:
+                actual = item.input_ids.ne(0).sum().to(device)
+                if world > 1:
+                    dist.all_reduce(actual)
+                accumulated_inputs += int(actual)
+                if accumulated_inputs >= args.input_batch_tokens:
+                    break
+                if len(window) >= 1024:
+                    raise ValueError(
+                        "actual input target needs more than 1024 microbatches; revise the recipe"
+                    )
         io_seconds = time.monotonic() - started
+        rollout_window = []
+        active_responses = torch.zeros((), device=device, dtype=torch.int64)
+        window_responses = torch.zeros((), device=device, dtype=torch.int64)
+        if rollout is not None:
+            with autocast():
+                for cpu_batch in window:
+                    prepared = rollout.prepare(*cpu_batch.to(device))
+                    rollout_window.append(prepared)
+                    active_responses += prepared["active_responses"]
+                    window_responses += prepared["labels"][:, 1:].ne(-100).sum()
+            if world > 1:
+                dist.all_reduce(active_responses)
+                dist.all_reduce(window_responses)
         counts = (
             window_counts(window, device, pairwise=args.stage == "dpo") if rollout is None else None
         )
@@ -678,10 +896,12 @@ def run(args, rank, world, device):
             )
         )
         if token_budget is not None:
-            assert counts is not None
-            progress = min(
-                1.0, (budget_used() + int(counts[0 if args.ce_tokens else 1])) / token_budget
-            )
+            if rollout is not None:
+                incoming = window_responses
+            else:
+                assert counts is not None
+                incoming = counts[0 if args.ce_tokens else 1]
+            progress = min(1.0, (budget_used() + int(incoming)) / token_budget)
             warmup = (
                 args.warmup_tokens
                 if args.warmup_tokens is not None
@@ -700,6 +920,10 @@ def run(args, rank, world, device):
             ) * factor
             if optimizer_kind in {"qwen_muon", "kimi_muon", "deepseek_muon"}:
                 group["adam_lr"] = args.lr * factor
+            if "visual_base_lr" in group:
+                group["lr"] = group["visual_base_lr"] * factor
+                if "adam_lr" in group:
+                    group["adam_lr"] = group["visual_base_lr"] * factor
         window_balance = None
         if (
             args.model == "miniqwen4"
@@ -725,12 +949,12 @@ def run(args, rank, world, device):
                         )
             restore_rng(before, device)
             window_balance.finalize()
-        for micro in range(args.grad_accum):
+        for micro in range(len(window)):
             local_batch = window[micro].to(device)
             x, y = local_batch
             sync = (
                 wrapped.no_sync()
-                if world > 1 and micro < args.grad_accum - 1
+                if world > 1 and micro < len(window) - 1
                 else contextlib.nullcontext()
             )
             with sync:
@@ -748,11 +972,21 @@ def run(args, rank, world, device):
                     else contextlib.nullcontext()
                 )
                 with autocast(), capture, clip_capture:
-                    loss, lm, _auxiliary = objective(wrapped, x, y, **local_batch.extras)
+                    loss, lm, _auxiliary = objective(
+                        wrapped,
+                        x,
+                        y,
+                        prepared=rollout_window[micro] if rollout_window else None,
+                        **local_batch.extras,
+                    )
                 if not torch.isfinite(loss):
                     raise FloatingPointError(f"nonfinite loss at step {step}, rank {rank}")
-                if rollout is not None or args.stage == "dpo":
-                    weighted = loss / args.grad_accum
+                if rollout is not None:
+                    weighted = scaled_ce(
+                        loss, rollout.last_active_responses, active_responses, world
+                    )
+                elif args.stage == "dpo":
+                    weighted = loss / len(window)
                 elif args.stage == "dense_distill":
                     assert counts is not None
                     index_term = loss
@@ -794,7 +1028,7 @@ def run(args, rank, world, device):
             metrics[1] += (
                 scaled_ce(lm.detach(), y[:, 1:].ne(-100).sum(), counts[0], world)
                 if counts is not None and args.stage != "dpo"
-                else lm.detach() / args.grad_accum
+                else lm.detach() / len(window)
             )
             metrics[2] += rollout.last_tokens if rollout else (y[..., 1:] != -100).sum()
         if window_balance is not None:
@@ -839,7 +1073,12 @@ def run(args, rank, world, device):
             clip_metrics = qk_clip.update()
             if step % args.log_every == 0:
                 record(dict(event="qk_clip", step=step, layers=clip_metrics))
-        if phase != "dense_distill" and rollout is None and args.stage != "dpo":
+        if (
+            phase != "dense_distill"
+            and rollout is None
+            and args.stage != "dpo"
+            and not args.visual_warmup
+        ):
             balance.update(args.router_bias_rate)
         if world > 1:
             dist.all_reduce(metrics)
@@ -915,6 +1154,7 @@ def run(args, rank, world, device):
                     tokens_per_second=metrics[2].item() / elapsed,
                     step_seconds=elapsed,
                     data_offset=cursor.offset,
+                    micro_batches=len(window),
                     token_ledger=ledger.state_dict(),
                     peak_allocated_mib=torch.cuda.max_memory_allocated(device) / 2**20
                     if device.type == "cuda"
@@ -927,7 +1167,7 @@ def run(args, rank, world, device):
             save(step)
         if finished(step):
             break
-    if token_budget is not None and budget_used() < token_budget:
+    if token_budget is not None and not finished(step):
         save(step)
         raise RuntimeError(
             "update safety limit reached before actual token budget; checkpoint retained"
