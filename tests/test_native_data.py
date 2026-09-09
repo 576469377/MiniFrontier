@@ -10,8 +10,8 @@ from test_miniqwen4 import tiny_config
 from test_new_backbones import tiny_deepseek, tiny_kimi
 from tokenizers import Tokenizer
 
-from minifrontier.data_v2 import CorpusBuilder, train_tokenizer
-from minifrontier.media_hash import decoded_hashes
+from minifrontier.data.corpus import CorpusBuilder, train_tokenizer
+from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.models.minideepseekv4 import MiniDeepSeekV4ForCausalLM
 from minifrontier.models.minideepseekv4.vision import DeepSeekVisionConfig
 from minifrontier.models.minikimik3 import MiniKimiK3ForCausalLM

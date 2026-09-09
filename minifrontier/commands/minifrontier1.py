@@ -8,15 +8,14 @@ from pathlib import Path
 
 import torch
 
+from minifrontier.data.minifrontier1 import RecordDataset, make_fixture, write_json
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
-
-from .data import RecordDataset, make_fixture, write_json
-from .optim import parameter_report
-from .strategy import PHASES, budget_report
+from minifrontier.training.minifrontier1_optim import parameter_report
+from minifrontier.training.minifrontier1_strategy import PHASES, budget_report
 
 
 def quickstart(output, device="cpu", updates=8):
-    from .training import train
+    from minifrontier.training.minifrontier1 import train
 
     root = Path(output)
     manifest = make_fixture(root / "data")
@@ -199,7 +198,7 @@ def main(argv=None):
     elif command == "prepare-fixture":
         result = make_fixture(**args)
     elif command == "prepare-data":
-        from .data import prepare_records
+        from minifrontier.data.minifrontier1 import prepare_records
 
         result = prepare_records(
             args["input"],
@@ -209,8 +208,7 @@ def main(argv=None):
         )
     elif command == "tokenizer":
         from minifrontier.data import sha256
-
-        from .data import train_tokenizer
+        from minifrontier.data.minifrontier1 import train_tokenizer
 
         root = Path(args["data"])
         if (root / "tokenizer.json").exists():
@@ -229,44 +227,43 @@ def main(argv=None):
     elif command == "quickstart":
         result = quickstart(**args)
     elif command == "encode":
-        from .encoding import encode_dataset
+        from minifrontier.data.minifrontier1_encoding import encode_dataset
 
         args["config"] = MiniFrontier1Config(**json.loads(Path(args["config"]).read_text()))
         result = encode_dataset(**args)
     elif command == "train":
-        from .training import train
+        from minifrontier.training.minifrontier1 import train
 
         mixture = args.pop("mixture")
         result = train(**args, weights=json.loads(mixture) if mixture else None)
     elif command == "posttrain":
-        from .posttraining import train_post
+        from minifrontier.training.minifrontier1_posttrain import train_post
 
         result = train_post(**args)
     elif command == "export":
-        from .export import export_checkpoint
+        from minifrontier.inference.minifrontier1_export import export_checkpoint
 
         result = export_checkpoint(**args)
     elif command == "demo":
-        from .demo import serve
+        from minifrontier.inference.minifrontier1_demo import serve
 
         serve(**args)
         return
     elif command == "train-teachers":
-        from .teachers import train_teachers
+        from minifrontier.training.minifrontier1_teachers import train_teachers
 
         result = train_teachers(**args)
     elif command == "qualify-teacher":
-        from .teachers import qualify_teacher
+        from minifrontier.training.minifrontier1_teachers import qualify_teacher
 
         result = qualify_teacher(**args)
     elif command == "evaluate":
         from minifrontier.data import sha256
-        from minifrontier.inference import load_checkpoint
-
-        from .training import evaluate
+        from minifrontier.inference.runtime import load_checkpoint
+        from minifrontier.training.minifrontier1 import evaluate
 
         if args["generation"]:
-            from .evaluation import generation_suite
+            from minifrontier.evaluation.minifrontier1 import generation_suite
 
             result = generation_suite(
                 args["checkpoint"], args["data"], device=args["device"], split=args["split"]
@@ -281,7 +278,7 @@ def main(argv=None):
             )
         write_json(args["output"], result)
     else:
-        from .generation import respond
+        from minifrontier.inference.minifrontier1 import respond
 
         result = respond(**args)
     print(json.dumps(result, ensure_ascii=False, indent=2))

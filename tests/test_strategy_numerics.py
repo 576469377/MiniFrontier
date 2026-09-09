@@ -8,7 +8,7 @@ import torch
 from test_new_backbones import tiny_deepseek, tiny_kimi
 from torch import nn
 
-from minifrontier.inference import generate_ids
+from minifrontier.inference.runtime import generate_ids
 from minifrontier.models.minideepseekv4 import MiniDeepSeekV4ForCausalLM
 from minifrontier.models.minideepseekv4.attention import Attention
 from minifrontier.models.minideepseekv4.expert import sequence_balance_loss

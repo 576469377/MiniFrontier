@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Group model workflows by data, training, evaluation, inference and commands; retire the separate MF1 workflow directory, preserve CLI/checkpoint formats and shared import facades. Split browser serving from the common inference runtime.
+- Record cleanup of 31 completed legacy optimizer checkpoints (85.16 GiB), retaining weight-only exports and experiment evidence.
+
 - Add the independent 228,235,809-parameter MiniFrontier1.0 native fusion model: KDA, CSA-4, QSA-MLA, four-stream GR, LatentMoE, shallow lookup, random ViT and shared-head MTP.
 - Add the `mf1` data, training/resume, stage gate, RL/teacher/OPD/DPO/draft, export and diagnostic demo entry points. Formal training remains gated on actual data and evaluation evidence.
 - Publish CPU numerical checks and a bounded text/image/video learning experiment with token ledgers and redrawable curves; retain the three source models as independent baselines.

@@ -14,16 +14,18 @@ from typing import Any, cast
 import torch
 
 from minifrontier.data import sha256
+from minifrontier.data.minifrontier1 import RecordDataset, digest, write_json
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
 from minifrontier.models.minifrontier1.mtp import mtp_targets
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, token_metadata
 from minifrontier.multimodal import move
-from minifrontier.training.runtime import atomic_save, cpu_tree, restore_rng, rng_state
-
-from .curriculum import context_length, pack_records
-from .data import RecordDataset, digest, write_json
-from .optim import QuantileBalance, make_optimizer, parameter_report
-from .strategy import (
+from minifrontier.training.minifrontier1_curriculum import context_length, pack_records
+from minifrontier.training.minifrontier1_optim import (
+    QuantileBalance,
+    make_optimizer,
+    parameter_report,
+)
+from minifrontier.training.minifrontier1_strategy import (
     PHASES,
     SFT_MIX,
     TEXT_MIX,
@@ -32,6 +34,7 @@ from .strategy import (
     scheduler_factor,
     validate_gate,
 )
+from minifrontier.training.runtime import atomic_save, cpu_tree, restore_rng, rng_state
 
 
 class Sampler:

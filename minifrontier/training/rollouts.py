@@ -13,7 +13,7 @@ from typing import Any
 import torch
 
 from minifrontier.data import chat_tokens, fingerprint, split_for
-from minifrontier.inference import generate_ids
+from minifrontier.inference.runtime import generate_ids
 from minifrontier.training.distributions import forbidden_actions
 from minifrontier.training.posttrain import (
     grouped_advantages,

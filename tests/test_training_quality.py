@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from minifrontier.data import download_prefix
-from minifrontier.inference import checkpoints
+from minifrontier.inference.demo import checkpoints
 from minifrontier.training.runtime import validation_indices
 
 budget_steps = runpy.run_path(

@@ -9,7 +9,7 @@ import sqlite3
 import torch
 from tokenizers import Tokenizer
 
-from minifrontier.inference import generate_ids
+from minifrontier.inference.runtime import generate_ids
 from minifrontier.models.factory import build_model
 
 

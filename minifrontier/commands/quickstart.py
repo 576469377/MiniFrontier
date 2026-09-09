@@ -12,8 +12,8 @@ from pathlib import Path
 import torch
 
 from minifrontier.data import sha256
-from minifrontier.data_v2 import encode_corpus, train_tokenizer
-from minifrontier.inference import load_checkpoint, respond
+from minifrontier.data.corpus import encode_corpus, train_tokenizer
+from minifrontier.inference.runtime import load_checkpoint, respond
 from minifrontier.storage import GIB, require_space
 from minifrontier.training import train
 

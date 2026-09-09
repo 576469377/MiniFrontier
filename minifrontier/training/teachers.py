@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from minifrontier.data import sha256
-from minifrontier.inference import load_checkpoint
+from minifrontier.inference.runtime import load_checkpoint
 
 
 def model_state_hash(path):

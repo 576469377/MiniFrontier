@@ -8,7 +8,7 @@ import torch
 from PIL import Image
 
 from minifrontier.data import chat_tokens
-from minifrontier.media_hash import decoded_hashes
+from minifrontier.data.media_hash import decoded_hashes
 
 
 def move(value, device):

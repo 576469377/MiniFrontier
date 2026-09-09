@@ -14,7 +14,7 @@ from test_new_backbones import tiny_deepseek, tiny_kimi
 from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
 from minifrontier.data import SPECIAL_TOKENS, sha256
-from minifrontier.inference import load_checkpoint, respond
+from minifrontier.inference.runtime import load_checkpoint, respond
 from minifrontier.training import train
 from minifrontier.training.rollouts import prepare_tasks
 

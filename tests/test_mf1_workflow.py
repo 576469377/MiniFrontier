@@ -9,19 +9,19 @@ import pytest
 import torch
 
 from minifrontier.data import sha256
-from minifrontier.mf1.data import (
+from minifrontier.data.minifrontier1 import (
     RecordDataset,
     encode_record,
     make_fixture,
     safe_text,
     validate_record,
 )
-from minifrontier.mf1.posttraining import grpo_objective, opd_objective
-from minifrontier.mf1.strategy import bindings, validate_gate
-from minifrontier.mf1.training import train
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
 from minifrontier.models.minifrontier1.draft import MF1Draft
 from minifrontier.speculative import Proposal, SpeculativeSession, generate_speculative, probability
+from minifrontier.training.minifrontier1 import train
+from minifrontier.training.minifrontier1_posttrain import grpo_objective, opd_objective
+from minifrontier.training.minifrontier1_strategy import bindings, validate_gate
 
 
 @pytest.fixture
@@ -207,8 +207,8 @@ def local_checkpoint(fixture_data, tmp_path):
 
 
 def test_export_roundtrip_and_int8_storage(local_checkpoint, tmp_path):
-    from minifrontier.inference import load_checkpoint
-    from minifrontier.mf1.export import Int8Linear, export_checkpoint
+    from minifrontier.inference.minifrontier1_export import Int8Linear, export_checkpoint
+    from minifrontier.inference.runtime import load_checkpoint
 
     model, _, _ = load_checkpoint(local_checkpoint)
     ids = torch.tensor([[30, 31, 32, 33, 34, 35]])
@@ -234,7 +234,7 @@ def test_export_roundtrip_and_int8_storage(local_checkpoint, tmp_path):
 
 
 def test_encoded_binary_masks_positions_and_checksums(fixture_data, tmp_path):
-    from minifrontier.mf1.encoding import encode_dataset
+    from minifrontier.data.minifrontier1_encoding import encode_dataset
     from minifrontier.models.minifrontier1.processing import token_metadata
 
     config = MiniFrontier1Config.tiny()
@@ -262,7 +262,7 @@ def test_encoded_binary_masks_positions_and_checksums(fixture_data, tmp_path):
 
 
 def test_native_packing_equivalence_with_independent_media_budgets(fixture_data):
-    from minifrontier.mf1.curriculum import context_length, pack_records
+    from minifrontier.training.minifrontier1_curriculum import context_length, pack_records
 
     config = MiniFrontier1Config.tiny()
     config.protected_media_tokens = 8
@@ -283,7 +283,7 @@ def test_native_packing_equivalence_with_independent_media_budgets(fixture_data)
 
 @pytest.mark.parametrize("phase", ["dense_pretrain", "sparse_cpt"])
 def test_greedy_draft_matches_target_with_image_and_replay(fixture_data, phase):
-    from minifrontier.inference import generate_ids
+    from minifrontier.inference.runtime import generate_ids
 
     torch.manual_seed(123)
     c = MiniFrontier1Config.tiny()
@@ -307,7 +307,7 @@ def test_greedy_draft_matches_target_with_image_and_replay(fixture_data, phase):
 
 
 def test_rollout_keeps_actual_behavior_logp_and_tool_prompt(fixture_data):
-    from minifrontier.mf1.posttraining import response_logp, rollout
+    from minifrontier.training.minifrontier1_posttrain import response_logp, rollout
 
     model = MiniFrontier1ForCausalLM(MiniFrontier1Config.tiny()).eval()
     dataset = RecordDataset(fixture_data, "train", model.config)
@@ -326,7 +326,7 @@ def test_rollout_keeps_actual_behavior_logp_and_tool_prompt(fixture_data):
 
 
 def test_rl_window_accumulates_fresh_prompts_once(local_checkpoint, fixture_data, tmp_path):
-    from minifrontier.mf1.posttraining import train_post
+    from minifrontier.training.minifrontier1_posttrain import train_post
 
     report = train_post(
         phase="rl",
@@ -347,7 +347,7 @@ def test_rl_window_accumulates_fresh_prompts_once(local_checkpoint, fixture_data
 
 
 def test_demo_preflight_preserves_real_video_timestamps(fixture_data):
-    from minifrontier.mf1.demo import prepare_request
+    from minifrontier.inference.minifrontier1_demo import prepare_request
 
     c = MiniFrontier1Config.tiny()
     model = MiniFrontier1ForCausalLM(c)
@@ -427,7 +427,7 @@ def test_fixture_content_groups_do_not_overlap_across_evaluation_splits(fixture_
 def test_qualified_registry_auto_opd_and_mismatched_slot_rejection(
     local_checkpoint, fixture_data, tmp_path
 ):
-    from minifrontier.mf1.posttraining import qualified_teacher, train_post
+    from minifrontier.training.minifrontier1_posttrain import qualified_teacher, train_post
 
     # Synthetic qualification evidence exercises artifact binding, not model capability.
     base = torch.load(local_checkpoint, weights_only=True)

@@ -7,7 +7,7 @@ import string
 import torch
 
 from minifrontier.data import StageDataset
-from minifrontier.data_v2 import CorpusBuilder, encode_corpus, train_tokenizer
+from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokenizer
 
 
 def record(i, text, *, stage="pretrain", group=None, media=None):

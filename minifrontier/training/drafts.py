@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from minifrontier.data import sha256
-from minifrontier.inference import generate_ids, load_checkpoint
+from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.models.minideepseekv4.dspark import DSparkDraft
 from minifrontier.models.minikimik3.draft import KimiDraft
 from minifrontier.models.miniqwen4.draft import QwenDraft

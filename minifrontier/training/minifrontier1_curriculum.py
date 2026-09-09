@@ -4,7 +4,7 @@ from typing import Any
 
 import torch
 
-from .strategy import PHASES
+from minifrontier.training.minifrontier1_strategy import PHASES
 
 
 def context_length(phase, rng, phase_ce, maximum):

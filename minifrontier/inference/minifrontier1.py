@@ -9,11 +9,10 @@ import torch
 from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.inference import generate_ids, load_checkpoint
+from minifrontier.data.minifrontier1 import safe_text
+from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.models.minifrontier1.processing import process_frames
 from minifrontier.multimodal import move
-
-from .data import safe_text
 
 
 def prepare_prompt(

@@ -9,7 +9,7 @@ from minifrontier.models.miniqwen4 import MiniQwen4ForCausalLM
 
 
 def test_loaded_template_is_used_automatically_for_inference(tokenizer, monkeypatch):
-    from minifrontier.inference import respond
+    from minifrontier.inference.runtime import respond
 
     model = MiniQwen4ForCausalLM(tiny_config(vocab_size=512))
     model.chat_template = "control-v1"
@@ -25,7 +25,7 @@ def test_loaded_template_is_used_automatically_for_inference(tokenizer, monkeypa
         assert inputs.tolist() == [expected]
         return torch.cat((inputs, inputs.new_tensor([[17, *tokenizer.encode("Hi").ids, 2]])), 1)
 
-    monkeypatch.setattr("minifrontier.inference.generate_ids", generate)
+    monkeypatch.setattr("minifrontier.inference.runtime.generate_ids", generate)
     assert respond(model, tokenizer, "Hello") == "Hi"
 
 

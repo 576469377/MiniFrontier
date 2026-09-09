@@ -14,7 +14,7 @@ from test_new_backbones import tiny_deepseek, tiny_kimi
 from tokenizers import Tokenizer, models, trainers
 
 from minifrontier.data import sha256
-from minifrontier.data_v2 import STRATEGY_SPECIAL_TOKENS
+from minifrontier.data.corpus import STRATEGY_SPECIAL_TOKENS
 from minifrontier.models.factory import build_model
 from minifrontier.training.drafts import load_draft
 from minifrontier.training.train_draft import main

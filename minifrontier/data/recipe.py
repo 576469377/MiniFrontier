@@ -15,7 +15,7 @@ from fractions import Fraction
 from pathlib import Path
 
 from minifrontier.data import sha256
-from minifrontier.data_v2 import CorpusBuilder
+from minifrontier.data.corpus import CorpusBuilder
 from minifrontier.storage import reserve_write
 
 

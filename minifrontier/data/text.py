@@ -339,12 +339,12 @@ class StageDataset:
         record = manifest["stages"][stage][split]
         self.documents: Any = None
         if record.get("format") == "hybrid-native-v2":
-            from minifrontier.native_data import NativeDataset
+            from minifrontier.data.native import NativeDataset
 
             self.documents = NativeDataset(root, record, stage, self.length)
             return
         if record.get("format") == "document-ragged-v2":
-            from minifrontier.data_v2 import DocumentDataset
+            from minifrontier.data.corpus import DocumentDataset
 
             self.documents = DocumentDataset(root, record, stage, self.length)
             return

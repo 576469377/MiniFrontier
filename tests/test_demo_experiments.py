@@ -6,7 +6,7 @@ import os
 import pytest
 
 from minifrontier.hardware import GPUInfo
-from minifrontier.inference import checkpoints, demo_device, serve
+from minifrontier.inference.demo import checkpoints, demo_device, serve
 
 
 def make_run(root, variant, *, step=200, saved=True):
@@ -106,7 +106,7 @@ def test_demo_cli_gpu_and_device_are_mutually_exclusive(monkeypatch):
     from minifrontier.cli import main
 
     calls = []
-    monkeypatch.setattr("minifrontier.inference.serve", lambda **kwargs: calls.append(kwargs))
+    monkeypatch.setattr("minifrontier.inference.demo.serve", lambda **kwargs: calls.append(kwargs))
     main(
         [
             "demo",

@@ -5,7 +5,7 @@ import sqlite3
 import pytest
 
 from minifrontier import provenance
-from minifrontier.quickstart import prepare
+from minifrontier.commands.quickstart import prepare
 from minifrontier.training.strategy_gate import check
 
 

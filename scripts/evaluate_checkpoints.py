@@ -16,7 +16,7 @@ from pathlib import Path
 import torch
 
 from minifrontier.data import StageDataset, sha256
-from minifrontier.inference import load_checkpoint, respond
+from minifrontier.inference.runtime import load_checkpoint, respond
 from minifrontier.training.posttrain import token_log_probs
 
 PROMPTS = [

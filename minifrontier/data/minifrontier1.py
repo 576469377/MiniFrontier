@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw
 from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
 from minifrontier.data import sha256
-from minifrontier.data_v2 import STRATEGY_SPECIAL_TOKENS
+from minifrontier.data.corpus import STRATEGY_SPECIAL_TOKENS
 from minifrontier.models.minifrontier1.processing import (
     CONTROL_VERSION,
     PROCESSOR_VERSION,

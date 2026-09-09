@@ -14,11 +14,10 @@ import torch
 from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.inference import generate_ids, load_checkpoint
+from minifrontier.data.minifrontier1 import safe_text
+from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.models.minifrontier1.processing import process_frames
 from minifrontier.multimodal import move
-
-from .data import safe_text
 
 PAGE = """<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MiniFrontier1.0</title><style>body{font:16px system-ui;background:#121a29;color:#e8edf5;max-width:820px;margin:4vh auto;padding:24px}p{line-height:1.7;color:#b8c6d9}textarea,button,select,input{font:inherit;background:#203047;color:inherit;border:1px solid #56708d;border-radius:7px;padding:10px;margin:7px 0}textarea{box-sizing:border-box;width:100%;height:120px}pre{white-space:pre-wrap;background:#1b293d;padding:20px;border-radius:8px}button{cursor:pointer}label{display:block}</style>

@@ -8,8 +8,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-from minifrontier.data_v2 import CorpusBuilder
-from minifrontier.media_hash import decoded_hashes
+from minifrontier.data.corpus import CorpusBuilder
+from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.storage import require_space
 
 

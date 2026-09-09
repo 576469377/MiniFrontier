@@ -5,10 +5,9 @@ from collections import Counter
 from pathlib import Path
 
 from minifrontier.data import sha256
+from minifrontier.data.minifrontier1 import RecordDataset, digest, write_json
 from minifrontier.models.minifrontier1.processing import token_metadata
 from minifrontier.storage import require_space
-
-from .data import RecordDataset, digest, write_json
 
 
 def encode_dataset(data, output, config, *, max_gib=16):

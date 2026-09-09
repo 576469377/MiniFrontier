@@ -1,0 +1,226 @@
+{
+  "status": "complete",
+  "created_at": "2026-09-09T13:28:48Z",
+  "completed_at": "2026-09-09T13:29:12Z",
+  "total_bytes": 91441646202,
+  "preserved": "All model.pt exports, tokenizer, configs, metrics, TensorBoard events, source snapshots, strategy-v2 and MF1 runs",
+  "files": [
+    {
+      "path": "outputs/miniqwen4/acceptance-context/dense_distill/checkpoint.pt",
+      "bytes": 1729212141,
+      "retained_model": "outputs/miniqwen4/acceptance-context/dense_distill/model.pt",
+      "step": 1,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/acceptance-context/sparse_cpt/checkpoint.pt",
+      "bytes": 3899479136,
+      "retained_model": "outputs/miniqwen4/acceptance-context/sparse_cpt/model.pt",
+      "step": 1,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/acceptance-v1/sft/checkpoint.pt",
+      "bytes": 3896855990,
+      "retained_model": "outputs/miniqwen4/acceptance-v1/sft/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/acceptance-v1/dpo/checkpoint.pt",
+      "bytes": 5623429747,
+      "retained_model": "outputs/miniqwen4/acceptance-v1/dpo/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/acceptance-v1/dense_distill/checkpoint.pt",
+      "bytes": 1729221609,
+      "retained_model": "outputs/miniqwen4/acceptance-v1/dense_distill/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/acceptance-v1/sparse_cpt/checkpoint.pt",
+      "bytes": 3899488606,
+      "retained_model": "outputs/miniqwen4/acceptance-v1/sparse_cpt/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/acceptance-v1/pretrain/checkpoint.pt",
+      "bytes": 3896855990,
+      "retained_model": "outputs/miniqwen4/acceptance-v1/pretrain/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/educational-v1/sft/checkpoint.pt",
+      "bytes": 3896856374,
+      "retained_model": "outputs/miniqwen4/educational-v1/sft/model.pt",
+      "step": 500,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/educational-v1/dpo/checkpoint.pt",
+      "bytes": 5623429747,
+      "retained_model": "outputs/miniqwen4/educational-v1/dpo/model.pt",
+      "step": 100,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/educational-v1/dense_distill/checkpoint.pt",
+      "bytes": 1729221609,
+      "retained_model": "outputs/miniqwen4/educational-v1/dense_distill/model.pt",
+      "step": 100,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/educational-v1/sparse_cpt/checkpoint.pt",
+      "bytes": 3899488606,
+      "retained_model": "outputs/miniqwen4/educational-v1/sparse_cpt/model.pt",
+      "step": 200,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/educational-v1/pretrain/checkpoint.pt",
+      "bytes": 3896856374,
+      "retained_model": "outputs/miniqwen4/educational-v1/pretrain/model.pt",
+      "step": 1000,
+      "deleted": true
+    },
+    {
+      "path": "outputs/miniqwen4/memorization-probe-v1/sft/checkpoint.pt",
+      "bytes": 3896846520,
+      "retained_model": "outputs/miniqwen4/memorization-probe-v1/sft/model.pt",
+      "step": 100,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minikimik3/acceptance-v1/sft/checkpoint.pt",
+      "bytes": 1994893570,
+      "retained_model": "outputs/minikimik3/acceptance-v1/sft/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minikimik3/acceptance-v1/dpo/checkpoint.pt",
+      "bytes": 2659780900,
+      "retained_model": "outputs/minikimik3/acceptance-v1/dpo/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minikimik3/acceptance-v1/pretrain/checkpoint.pt",
+      "bytes": 1994893570,
+      "retained_model": "outputs/minikimik3/acceptance-v1/pretrain/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minikimik3/educational-v1/sft/checkpoint.pt",
+      "bytes": 1994893570,
+      "retained_model": "outputs/minikimik3/educational-v1/sft/model.pt",
+      "step": 500,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minikimik3/educational-v1/dpo/checkpoint.pt",
+      "bytes": 2659780900,
+      "retained_model": "outputs/minikimik3/educational-v1/dpo/model.pt",
+      "step": 100,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minikimik3/educational-v1/pretrain/checkpoint.pt",
+      "bytes": 1994893570,
+      "retained_model": "outputs/minikimik3/educational-v1/pretrain/model.pt",
+      "step": 1000,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minikimik3/memorization-probe-v1/sft/checkpoint.pt",
+      "bytes": 1994884100,
+      "retained_model": "outputs/minikimik3/memorization-probe-v1/sft/model.pt",
+      "step": 100,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/acceptance-v1/sft/checkpoint.pt",
+      "bytes": 2759304753,
+      "retained_model": "outputs/minideepseekv4/acceptance-v1/sft/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/acceptance-v1/dpo/checkpoint.pt",
+      "bytes": 3680804841,
+      "retained_model": "outputs/minideepseekv4/acceptance-v1/dpo/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/acceptance-v1/dense_distill/checkpoint.pt",
+      "bytes": 924914289,
+      "retained_model": "outputs/minideepseekv4/acceptance-v1/dense_distill/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/acceptance-v1/sparse_cpt/checkpoint.pt",
+      "bytes": 2762699479,
+      "retained_model": "outputs/minideepseekv4/acceptance-v1/sparse_cpt/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/acceptance-v1/pretrain/checkpoint.pt",
+      "bytes": 2759304753,
+      "retained_model": "outputs/minideepseekv4/acceptance-v1/pretrain/model.pt",
+      "step": 2,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/educational-v1/sft/checkpoint.pt",
+      "bytes": 2759304753,
+      "retained_model": "outputs/minideepseekv4/educational-v1/sft/model.pt",
+      "step": 500,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/educational-v1/dpo/checkpoint.pt",
+      "bytes": 3680804841,
+      "retained_model": "outputs/minideepseekv4/educational-v1/dpo/model.pt",
+      "step": 100,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/educational-v1/dense_distill/checkpoint.pt",
+      "bytes": 924914289,
+      "retained_model": "outputs/minideepseekv4/educational-v1/dense_distill/model.pt",
+      "step": 100,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/educational-v1/sparse_cpt/checkpoint.pt",
+      "bytes": 2762699479,
+      "retained_model": "outputs/minideepseekv4/educational-v1/sparse_cpt/model.pt",
+      "step": 200,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/educational-v1/pretrain/checkpoint.pt",
+      "bytes": 2759304753,
+      "retained_model": "outputs/minideepseekv4/educational-v1/pretrain/model.pt",
+      "step": 1000,
+      "deleted": true
+    },
+    {
+      "path": "outputs/minideepseekv4/memorization-probe-v1/sft/checkpoint.pt",
+      "bytes": 2756327343,
+      "retained_model": "outputs/minideepseekv4/memorization-probe-v1/sft/model.pt",
+      "step": 100,
+      "deleted": true
+    }
+  ]
+}

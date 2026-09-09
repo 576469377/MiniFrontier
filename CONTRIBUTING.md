@@ -8,6 +8,7 @@ MiniFrontier develops the MiniFrontier1.0 native fusion model and three source-a
 4. Update the model catalog and per-model documentation without overstating training readiness.
 5. Keep raw datasets, weights, credentials and full local outputs out of commits and distributions. Small, reviewed numeric records and plots belong in `docs/experiments/`; remove machine identifiers and sample contents.
 6. Put reusable instructions in `docs/guides/` and machine-specific scheduling notes in `docs/operations/`. Preserve dated evidence and SHA-bound strategy originals; create a new version for a changed strategy. Do not move active run directories or edit their frozen source copies.
+7. Organize Python code by responsibility: `models/`, `data/`, `training/`, `evaluation/`, `inference/` and `commands/`. Keep model-specific behavior in explicitly named modules under those directories. Reuse shared runtime utilities and keep training algorithms out of command/browser modules; follow the [extension and migration rules](docs/architecture.md#扩展与迁移约定).
 
 Local checks:
 

@@ -52,8 +52,11 @@ wheel 支持最小示例、模型清单、显式配置 acceptance 训练与 CLI 
 
 ```text
 minifrontier/models/       融合模型与三条来源架构；每个模型独立子目录
-minifrontier/mf1/          MF1 数据、训练、评估、后训练、导出和 Demo
-minifrontier/training/     来源模型训练器及共用损失、优化器、工具环境
+minifrontier/data/         四个模型的数据准备、清洗、编码和数据集
+minifrontier/training/     训练、恢复、优化器、阶段配方和后训练
+minifrontier/evaluation/   生成评测、媒体对照和能力指标
+minifrontier/inference/    共用权重加载、生成，以及导出和浏览器 Demo
+minifrontier/commands/     最小示例与模型专用命令编排
 configs/                  模型清单、容量配置；mf1 配方在 minifrontier1/
 scripts/                  数据提取、实验调度、状态查询与分发验收
 tests/                    数值、训练、缓存、来源与安装回归
@@ -69,7 +72,7 @@ third_party/upstream/     固定的官方源码快照
 LICENSES/                 各上游组件许可正文
 ```
 
-详细职责见[架构与目录](docs/architecture.md)、[脚本导航](scripts/README.md)。`data/`、`outputs/`、环境、缓存和构建文件是本地产物，不进入 Git；新增可分享结果应整理到 `docs/experiments/`。历史文档保留原日期与证据边界。
+详细职责和扩展约定见[架构与目录](docs/architecture.md)、[脚本导航](scripts/README.md)。包内代码按功能归位，模型专用模块使用完整模型名；`minifrontier mf1 ...` 命令保持兼容。`data/`、`outputs/`、环境、缓存和构建文件是本地产物，不进入 Git；新增可分享结果应整理到 `docs/experiments/`。历史文档保留原日期与证据边界。
 
 ## 训练流程
 

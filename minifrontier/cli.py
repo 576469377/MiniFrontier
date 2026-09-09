@@ -12,22 +12,22 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv and argv[0] == "mf1":
-        from minifrontier.mf1.cli import main as mf1
+        from minifrontier.commands.minifrontier1 import main as mf1
 
         mf1(argv[1:])
         return
     if argv and argv[0] == "quickstart":
-        from minifrontier.quickstart import main as quickstart
+        from minifrontier.commands.quickstart import main as quickstart
 
         quickstart(argv[1:])
         return
     if argv and argv[0] == "prepare-public-data":
-        from minifrontier.public_sources import main as public_data
+        from minifrontier.data.public_sources import main as public_data
 
         public_data(argv[1:])
         return
     if argv and argv[0] == "prepare-diagnostics":
-        from minifrontier.diagnostic_data import build_diagnostics
+        from minifrontier.data.diagnostics import build_diagnostics
 
         p = argparse.ArgumentParser(
             description="Generated K0/Q0/D0 diagnostics, excluded from formal data"
@@ -39,7 +39,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(json.dumps(build_diagnostics(**vars(p.parse_args(argv[1:]))), indent=2))
         return
     if argv and argv[0] == "prepare-tokenizers":
-        from minifrontier.data_v2 import compare_tokenizers
+        from minifrontier.data.corpus import compare_tokenizers
 
         p = argparse.ArgumentParser(
             description="Compare 32K/64K on identical bytes and freeze strategy default"
@@ -50,8 +50,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(json.dumps(compare_tokenizers(**vars(p.parse_args(argv[1:]))), indent=2))
         return
     if argv and argv[0] == "encode-data":
-        from minifrontier.data_v2 import encode_corpus
-        from minifrontier.native_data import encode_native
+        from minifrontier.data.corpus import encode_corpus
+        from minifrontier.data.native import encode_native
 
         p = argparse.ArgumentParser(
             description="Immutable text or native multimodal token encoding"
@@ -84,7 +84,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         train_draft(argv[1:])
         return
     if argv and argv[0] == "generate":
-        from minifrontier.inference import main as generate
+        from minifrontier.inference.cli import main as generate
 
         generate(argv[1:])
         return
@@ -118,7 +118,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         prepare_data(**vars(data_parser.parse_args(argv[1:])))
         return
     if argv and argv[0] == "demo":
-        from minifrontier.inference import serve
+        from minifrontier.inference.demo import serve
 
         demo_parser = argparse.ArgumentParser(description="Run the local MiniFrontier browser demo")
         demo_parser.add_argument("--root", default="outputs")

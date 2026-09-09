@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
-from minifrontier.data_v2 import CorpusBuilder
+from minifrontier.data.corpus import CorpusBuilder
 from minifrontier.storage import GIB, require_space
 
 SOURCES = {

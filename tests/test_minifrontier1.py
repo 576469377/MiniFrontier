@@ -7,8 +7,6 @@ import pytest
 import torch
 from PIL import Image
 
-from minifrontier.mf1.optim import QuantileBalance, make_optimizer, parameter_report
-from minifrontier.mf1.strategy import budget_report
 from minifrontier.models.minifrontier1 import (
     MiniFrontier1Cache,
     MiniFrontier1Config,
@@ -27,6 +25,12 @@ from minifrontier.models.minifrontier1.moe import LatentMoE
 from minifrontier.models.minifrontier1.mtp import mtp_targets
 from minifrontier.models.minifrontier1.processing import process_frames, token_metadata
 from minifrontier.models.minifrontier1.residual import GatedResidual
+from minifrontier.training.minifrontier1_optim import (
+    QuantileBalance,
+    make_optimizer,
+    parameter_report,
+)
+from minifrontier.training.minifrontier1_strategy import budget_report
 
 
 @pytest.fixture

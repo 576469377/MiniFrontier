@@ -10,19 +10,23 @@ from typing import Any, cast
 import torch
 
 from minifrontier.data import sha256
-from minifrontier.inference import generate_ids, load_checkpoint
+from minifrontier.data.minifrontier1 import RecordDataset, encode_record, safe_text, write_json
+from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM
 from minifrontier.models.minifrontier1.draft import MF1Draft
 from minifrontier.multimodal import move
 from minifrontier.training.deepseek_opd import full_vocab_reverse_kl
 from minifrontier.training.distributions import forbidden_actions
+from minifrontier.training.minifrontier1_optim import make_optimizer
+from minifrontier.training.minifrontier1_strategy import (
+    PHASES,
+    TEACHER_SLOTS,
+    bindings,
+    validate_gate,
+)
 from minifrontier.training.posttrain import dpo_loss, grouped_advantages, token_log_probs
 from minifrontier.training.runtime import atomic_save, restore_rng, rng_state
 from minifrontier.training.tool_environment import ToolEnvironment
-
-from .data import RecordDataset, encode_record, safe_text, write_json
-from .optim import make_optimizer
-from .strategy import PHASES, TEACHER_SLOTS, bindings, validate_gate
 
 
 def verify_answer(record, text, tool_trace=None):
@@ -329,7 +333,7 @@ def train_post(
         raise ValueError("invalid diagnostic posttraining budget")
     if phase == "teacher" and teacher_slot not in TEACHER_SLOTS:
         raise ValueError("teacher run must identify its actual domain/effort slot")
-    from .teachers import slot_for
+    from minifrontier.training.minifrontier1_teachers import slot_for
 
     eligible = [
         i

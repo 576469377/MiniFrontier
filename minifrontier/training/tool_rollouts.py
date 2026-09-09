@@ -5,7 +5,7 @@ import json
 import torch
 
 from minifrontier.chat_controls import parse_action, resolve
-from minifrontier.inference import generate_ids
+from minifrontier.inference.runtime import generate_ids
 from minifrontier.training.tool_environment import ToolEnvironment
 
 

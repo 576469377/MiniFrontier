@@ -6,10 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from minifrontier.data import sha256
+from minifrontier.data.minifrontier1 import digest
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, PROCESSOR_VERSION
 from minifrontier.provenance import checkout_root, require_source_checkout, source_identity
-
-from .data import digest
 
 PLAN_PATH = (
     "docs/training-strategies/2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md"

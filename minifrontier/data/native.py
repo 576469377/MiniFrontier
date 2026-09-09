@@ -10,7 +10,7 @@ from tokenizers import Tokenizer
 
 from minifrontier.chat_controls import record_template, update_manifest
 from minifrontier.data import sha256
-from minifrontier.data_v2 import DocumentDataset, encode_corpus
+from minifrontier.data.corpus import DocumentDataset, encode_corpus
 from minifrontier.multimodal import prepare_record
 from minifrontier.storage import reserve_write
 

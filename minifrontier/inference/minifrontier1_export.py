@@ -10,10 +10,9 @@ from torch import nn
 from torch.nn import functional as F
 
 from minifrontier.data import sha256
+from minifrontier.data.minifrontier1 import write_json
 from minifrontier.models.factory import build_model
 from minifrontier.training.runtime import atomic_save
-
-from .data import write_json
 
 
 def export_licenses(output):

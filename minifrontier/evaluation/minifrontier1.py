@@ -5,12 +5,11 @@ from collections import defaultdict
 import torch
 
 from minifrontier.data import sha256
-from minifrontier.inference import generate_ids, load_checkpoint
+from minifrontier.data.minifrontier1 import RecordDataset, encode_record
+from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.multimodal import move
 from minifrontier.provenance import source_identity
-
-from .data import RecordDataset, encode_record
-from .posttraining import verify_answer
+from minifrontier.training.minifrontier1_posttrain import verify_answer
 
 
 def media_controls(spans, generator):

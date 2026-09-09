@@ -7,9 +7,9 @@ from pathlib import Path
 
 from PIL import Image
 
-from minifrontier.data_v2 import CorpusBuilder
-from minifrontier.media_hash import decoded_hashes
-from minifrontier.remote_data import RangeFile
+from minifrontier.data.corpus import CorpusBuilder
+from minifrontier.data.media_hash import decoded_hashes
+from minifrontier.data.remote import RangeFile
 from minifrontier.storage import GIB, require_space, reserve_write
 
 REPO = "HuggingFaceM4/FineVision"

@@ -20,7 +20,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from minifrontier.data import StageDataset, sha256
-from minifrontier.inference import load_checkpoint
+from minifrontier.inference.runtime import load_checkpoint
 from minifrontier.provenance import source_identity
 from minifrontier.storage import require_space, reserve_write
 from minifrontier.training.drafts import DraftObjective, build_draft, target_trajectory

@@ -7,18 +7,32 @@ MiniFrontier1.0 是独立融合主线，原三模型保留为来源实现与实�
 | 路径 | 职责 |
 |---|---|
 | `minifrontier/models/minifrontier1/` | KDA / CSA / QSA-MLA、四流 GR、LatentMoE、lookup、随机 ViT、MTP、缓存与草稿 |
-| `minifrontier/mf1/` | 融合模型独立的数据 contract、课程、优化器、阶段门禁、训练/恢复、评测、后训练、导出与 Demo |
 | `minifrontier/models/miniqwen4/` | 固定 Qwen 计算与原生视觉、PLE/GDN/QSA、四流 MTP 和缓存 |
 | `minifrontier/models/minikimik3/` | 固定 Kimi decoder、KDA/MLA、LatentMoE、AttnRes、原生视觉与 MTP |
 | `minifrontier/models/minideepseekv4/` | 固定 DeepSeek block、压缩注意力、MoE/mHC、视觉迁移、MTP 与 DSpark |
-| `minifrontier/training/` | 原三模型训练器，以及共用损失、路由/优化器、预算、工具环境和检查点工具 |
-| `minifrontier/cli.py` | 顶层命令；`mf1` 委派给 `minifrontier/mf1/cli.py` |
-| `minifrontier/inference.py` | 共用检查点加载/生成，以及原三模型的实验 Demo |
-| `minifrontier/data*.py`、`native_data.py` | 原三模型的数据来源、清洗、分组、tokenizer 和媒体编码 |
+| `minifrontier/data/` | 四个模型的数据来源、清洗、分组、tokenizer、媒体和训练编码；`text.py` 保留旧文本流程，`corpus.py` 执行 strategy-v2，`minifrontier1*.py` 执行融合数据规则 |
+| `minifrontier/training/` | 四个模型的训练、恢复与后训练；`runtime.py` 等共用基础能力，`minifrontier1*.py` 保存融合配方差异，与已有模型专用优化器并列 |
+| `minifrontier/evaluation/` | 独立生成评测、视觉/时序对照；训练中的验证损失仍由训练器调用 |
+| `minifrontier/inference/` | `runtime.py` 统一加载四模型权重并生成；`demo.py` 负责来源模型实验页，`minifrontier1*.py` 负责融合媒体生成、导出和 Demo |
+| `minifrontier/commands/` | 命令编排和离线示例；`minifrontier1.py` 承接现有 `mf1` 子命令，`quickstart.py` 承接原三模型最小示例 |
+| `minifrontier/cli.py` | 顶层命令解析与委派，保留已有用户命令 |
 | `configs/minifrontier1/` | 融合配置、各阶段预算、数据/教师/评测规则及来源映射 |
 | `configs/strategies/` | 原三模型机器计划与策略配置 |
 
 MF1 的阶段累计和恢复由自己的训练器管理，主干 moments 跨 indexer 阶段保留。原三模型的阶段迁移仍按各自入口与方案执行，不能把不同训练器的 `--init` / `--resume` 语义混用。操作入口集中在 [guides](guides/README.md)。
+
+## 扩展与迁移约定
+
+1. 包目录按功能划分；新增模型的结构放在 `models/<完整模型名>/`，训练、数据或推理差异放入对应功能目录。专用模块使用 `minifrontier1_*` 等完整模型名前缀。
+2. 模型结构、数据处理和训练计算不依赖命令解析或浏览器服务。`commands/` 组合各模块；Demo 调用共用推理，命令文件不新增训练算法。
+3. 可共用的检查点保存、随机状态、存储预算、分布计算等继续复用已有模块。阶段状态和损失含义不同的训练器显式区分，整合前验证行为一致。
+4. 根包仅保留入口、模型清单和硬件/存储/来源等跨功能模块。数据处理不再新增根层 `data_v3.py` 一类文件，也不再新增包含整套数据/训练/Demo 的模型专属根目录。
+
+2026-09-09 的迁移移除了根包下的 `mf1/`：数据与编码进入 `data/minifrontier1*.py`，六个训练模块进入 `training/minifrontier1*.py`，评测进入 `evaluation/minifrontier1.py`，生成/导出/Demo 进入 `inference/minifrontier1*.py`，命令进入 `commands/minifrontier1.py`。旧数据模块归入 `data/`，原 `inference.py` 拆成运行时、浏览器和参数解析。
+
+`minifrontier mf1 ...`、`train`、`generate`、`demo`、`quickstart` 命令及检查点存储字段保持原有语义；`minifrontier.data`、`minifrontier.inference` 的常用函数导入仍可用。原 `minifrontier.mf1.*`、`data_v2` 等内部 Python 路径已迁移，开发脚本应使用上表的新路径。
+
+目录与源码改动会改变源码校验值。旧实验需要精确恢复时继续使用各自的冻结源码；新 checkout 不绕过来源绑定检查。已有检查点可通过共用加载器用于推理或作为新实验初始化。当前运行目录、tokenizer、数据清单和冻结源码保持原位。
 
 ## 来源与工程边界
 
@@ -39,5 +53,7 @@ MF1 的阶段累计和恢复由自己的训练器管理，主干 moments 跨 ind
 | `data/`、`tokenizers/` | 本地数据与独立训练产物；不提交 |
 | `outputs/` | 训练状态、检查点、完整日志、冻结源码、TensorBoard 与本地构建结果；不提交 |
 | `.venv/`、缓存、`dist/`、`build/` | 可重新生成的环境与构建产物；不提交 |
+
+已结束旧实验的产物保留与清理记录见[本地产物保留规则](operations/artifact-retention.md)。
 
 wheel 提供模型代码、配置与参考入口，sdist 另保留开发/文档资源。正式策略训练要求 Git checkout、原策略和实际数据/前驱证据，完整范围见[分发说明](releases/v0.1.0.md)。

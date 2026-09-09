@@ -5,11 +5,10 @@ from pathlib import Path
 import torch
 
 from minifrontier.data import sha256
-from minifrontier.inference import load_checkpoint
-
-from .data import RecordDataset, write_json
-from .evaluation import generation_suite
-from .strategy import TEACHER_SLOTS
+from minifrontier.data.minifrontier1 import RecordDataset, write_json
+from minifrontier.evaluation.minifrontier1 import generation_suite
+from minifrontier.inference.runtime import load_checkpoint
+from minifrontier.training.minifrontier1_strategy import TEACHER_SLOTS
 
 DOMAINS = dict(
     general_tools={"general", "tools", "structured", "zh_general", "en_general"},
@@ -148,7 +147,7 @@ def qualify_teacher(checkpoint, baseline, data, slot, output, *, device="cpu", l
 
 
 def train_teachers(checkpoint, data, output, *, device="cpu", steps=2, max_tokens=32):
-    from .posttraining import train_post
+    from minifrontier.training.minifrontier1_posttrain import train_post
 
     model, _, _ = load_checkpoint(checkpoint, "cpu")
     dataset = RecordDataset(data, "train", model.config)

@@ -8,7 +8,7 @@ from test_miniqwen4 import tiny_config
 from test_native_data import tokenizer as tokenizer
 from test_new_backbones import tiny_deepseek, tiny_kimi
 
-from minifrontier.media_hash import decoded_hashes
+from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.models.factory import configure_posttraining
 from minifrontier.models.minideepseekv4 import MiniDeepSeekV4ForCausalLM
 from minifrontier.models.minideepseekv4.vision import DeepSeekVisionConfig
