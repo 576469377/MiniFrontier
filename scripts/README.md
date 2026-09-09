@@ -1,11 +1,13 @@
 # 脚本导航
 
-在仓库根目录执行脚本。日常 MF1 数据、训练、评估、导出和 Demo 使用 `minifrontier mf1`，入口见[操作指南](../docs/guides/minifrontier1.md)。下表中的调度器服务于原三模型的独立实验。
+在仓库根目录执行脚本。日常 MF1 数据、训练、评估、导出和 Demo 使用 `minifrontier mf1`，入口见[操作指南](../docs/guides/minifrontier1.md)。下表区分融合模型与三个来源模型的实验工具。
 
 | 用途 | 脚本 |
 |---|---|
 | 提取和核对固定上游来源 | `extract_training_sources.py`、`extract_vision_sources.py` |
 | 从冻结方案生成原三模型机器计划 | `build_strategy_plans.py` |
+| MF1 完整配置的短程 GPU 资源探测 | `profile_mf1.py`；不作为完整性能验收 |
+| MF1 候选词表与机制数据、受资源保护的学习试验 | `prepare_mf1_mechanism_data.py`、`run_mf1_trial.py`；见[实验记录](../docs/experiments/mf1-gpu-mechanism-v1/README.md) |
 | 来源模型容量与机制检查 | `accept_miniqwen4_capacity.py`、`launch_strategy_diagnostics.py` |
 | 原三模型的配方、单卡与共卡试验 | `run_recipe_pilot.py`、`run_single_gpu_queue.py`、`run_shared_gpu_queue.py`、`run_shared_gpu_trial.py` |
 | 读取训练进度、等待设备可用 | `training_status.py`、`wait_for_gpus.py` |

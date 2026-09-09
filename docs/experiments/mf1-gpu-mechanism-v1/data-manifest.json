@@ -1,0 +1,85 @@
+{
+  "format": "mf1-native-records-v1",
+  "kind": "public-text-and-generated-media-mechanism",
+  "formal_admission": false,
+  "main_budget_eligible": false,
+  "seed": 42,
+  "media_root": ".",
+  "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+  "vocab_size": 32768,
+  "tokenizer_scope": "candidate built on selected training records only; not the formal 5-10GB tokenizer comparison",
+  "control_template": "mf1-control-v1",
+  "processor": "mf1-native-v1",
+  "source_database_sha256": "1760281b3f4c8832062bea26be124ea0eeef300ff3a0b022742be6869dd0faa8",
+  "source_manifest_sha256": "ce079a00d54c19b0cc9b235c52bbc44b446cb0c7877d35a2007de2ff089249ea",
+  "preparation_script_sha256": "acf4ac2e7725984a217a0699e022cb98eb9d6bf76dd0c68030b65756fe571dee",
+  "counts": {
+    "train": {
+      "records": 12659,
+      "source_documents": 6000,
+      "normalized_duplicate_chunks_removed": 38,
+      "domains": {
+        "en_general": 5265,
+        "zh_general": 4931,
+        "math": 2207,
+        "video": 128,
+        "vision": 128
+      }
+    },
+    "val": {
+      "records": 232,
+      "source_documents": 96,
+      "normalized_duplicate_chunks_removed": 0,
+      "domains": {
+        "en_general": 66,
+        "zh_general": 97,
+        "math": 37,
+        "vision": 16,
+        "video": 16
+      }
+    }
+  },
+  "ce_tokens": {
+    "train": {
+      "en_general": 2192243,
+      "zh_general": 2042004,
+      "math": 972103,
+      "video": 384,
+      "vision": 384
+    },
+    "val": {
+      "en_general": 25058,
+      "zh_general": 41819,
+      "math": 15738,
+      "vision": 48,
+      "video": 48
+    }
+  },
+  "input_tokens": {
+    "train": {
+      "en_general": 2202773,
+      "zh_general": 2051866,
+      "math": 976517,
+      "video": 3840,
+      "vision": 2560
+    },
+    "val": {
+      "en_general": 25190,
+      "zh_general": 42013,
+      "math": 15812,
+      "vision": 320,
+      "video": 480
+    }
+  },
+  "files": {
+    "train": "e94a766c525647078ac40a3bbb20de64f7e66614eb08ee0385df95242e888871",
+    "val": "6369cb9cce5768c8f86a4c64dec0d0b814724e5264435a300edc0b034262e0af"
+  },
+  "limitations": [
+    "bounded mechanism experiment only",
+    "original train/val split inherited; sealed test not read",
+    "source-level formal review and formal tokenizer comparison incomplete",
+    "generated colour tasks do not measure general vision/video capability",
+    "Python-Edu and externally sourced visual candidates excluded"
+  ]
+}
