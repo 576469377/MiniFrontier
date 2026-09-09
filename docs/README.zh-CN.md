@@ -11,3 +11,8 @@
 模型显示名统一为 **MiniQwen4、MiniKimi-K3、MiniDeepSeek-V4**，Python 包名使用无连字符小写形式。
 
 当前可执行的是文本教学训练。原生视觉、MTP、量化感知训练及完整旗舰效果复现仍待完成；不能将可启动训练与完整官方训练复现混为一谈。
+
+- [离线 CPU／3090 最小示例](quickstart.md)
+- [v0.1.0 研究预览范围](releases/v0.1.0.md)
+- [实验记录与公开档案](experiments.md)
+- [本机调度记录](operations/local-training.md)

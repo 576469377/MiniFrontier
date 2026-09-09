@@ -1,103 +1,30 @@
 # MiniQwen4
 
-MiniQwen4 是从固定官方实现派生的缩小文本模型，不是官方发布的模型名称。
-目前完成文本主干、无 MTP 的语言模型适配器、基础优化与推理缓存验收；
-**已提供文本教学训练管线并启动持续预训练；完整旗舰复现仍未完成。**
+v0.1.0 研究预览实现。固定来源与逐组件许可见[第三方说明](../../THIRD_PARTY_NOTICES.md)，[历史文本版本](../legacy/miniqwen4-text-v1.md)只保留作演进记录。
 
-## 来源与容量
+## 当前研究配置
 
-计算源码固定为 Hugging Face Transformers
-[`4177486a9f199bd7be520eff14431071d5d41ec5`](https://github.com/huggingface/transformers/tree/4177486a9f199bd7be520eff14431071d5d41ec5/src/transformers/models/qwen4_exp)。
-发布配置核对的是 Qwen3.8-Flash-Next
-[`de4b8e4d43b917e7706784d8bb445c9af86a3540`](https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/de4b8e4d43b917e7706784d8bb445c9af86a3540/config.json)。
-名称中的 Qwen4 对应该源码的 `qwen4_exp` 架构标识，不代表声称复刻其他未核验版本。
+[configs/strategies/miniqwen4-v2.json](../../configs/strategies/miniqwen4-v2.json)：16 层、hidden 512、64K 词表，3 GDN : 1 注意力；64 路由专家、Top-4、4 路残差、PLE、QSA；原生视觉与四流 MTP。
 
-| 项目 | 当前缩小配置 |
+当前配置浮点参数 **513,405,536**；Kimi/Qwen 包含视觉与 MTP，DeepSeek 此数为 Text-v2 与 MTP，后接 Vision-v1 需重新计量。根目录文本兼容配置和[离线极小示例](../quickstart.md)的参数量不同。默认单卡独立训练；长上下文与新模态阶段必须重新测显存和吞吐。
+
+## 实现、验证与训练状态
+
+| 状态 | 范围 |
 |---|---|
-| 层数 / 隐藏宽度 / 词表 | 16 / 512 / 65,536 |
-| 混合层 | 3 层 GDN : 1 层注意力 |
-| 注意力 Q / KV / head_dim | 8 / 2 / 64 |
-| GDN key / value 头数 | 4 / 12，各头维度 64 |
-| MoE | 64 专家、Top-4、专家中间宽度 192 |
-| 共享专家 | 中间宽度 192，保留与路由专家 1:1 的宽度关系 |
-| 多路残差 | 4 路、门控低秩宽度 128 |
-| PLE | 第 2 层，2/3-gram，每种 2 头，完整投影/门控/归一化/膨胀卷积 |
-| QSA indexer | 4 头 × 32，压缩比 4，token budget 512 |
-| 输出门控 / RoPE theta | sigmoid / 10,000,000 |
-| 配置最大长度 | 4,096；不是已通过该长度的显存验收 |
-| 文本主干参数 | 398,055,200 |
-| 主干 + 未绑定 LM 头 | 431,609,632；**不含 MTP** |
+| 已实现 | 文本主干、原生视觉适配、MTP、对应 Muon/路由更新、增量缓存；QAT 仿真和后训练/草稿入口 |
+| 已验证 | 固定 Transformers 文本整栈同权重前向/梯度、PLE/GDN/QSA、语义分块 Muon、原生视觉和 MTP；GDN/PLE/KV/QSA 增量状态及草稿回滚、阶段冻结和恢复。 |
+| 已训练 | 可学习性诊断与 20M-token 配方试验，详见[带时间边界的实验档案](../experiments.md) |
+| 待完成 | 完整主预算、正式数据准入、配方与教师资格、独立语言/视觉能力、量化部署与草稿加速验收 |
 
-本次核对纠正了早期新配置的 GDN 头比例、共享专家宽度、indexer 头数/维度/
-压缩比、输出门控和 RoPE theta。此前记录的 408,283,072 是修正前的主干计数，
-已被上述数值取代；不删除原审计记录。
+dense 联合 PT → indexer 蒸馏 → sparse CPT/cooldown → SFT/GRPO → 四流 MTP 草稿 → 能力验收。
 
-## 训练与缓存实现边界
+公开源码没有披露的初始化、LR、loss 聚合和容量比例属于显式 mini 适配，不声称完整复现官方训练栈。PyTorch 参考后端的长上下文内存与速度不代表官方融合内核表现。
 
-训练适配器使用官方文本层、未绑定 LM 头、next-token CE 和直接提取的官方
-router auxiliary loss。基础预训练使用 full attention，indexer 保留原参数布局但冻结。
-QSA 已接入两个训练目标：冻结主干的 indexer 蒸馏，以及主干/indexer 联合稀疏 CPT。
-KL 按报告完成跨头求和/L1、完整块 max-pooling/L1；第二阶段只在已选块上重新归一化。
-分母为全部有效 query，无完整块的早期 query 贡献零；padding 和 incomplete tail 不进入教师块目标。
-教师概率和 indexer 输入 stop-gradient、跨层取平均、KL 系数属于显式本地集成选择。
-评分保留固定 HF 源码的 1/sqrt(head_dim)，该尺度没有写在报告公式 15 中。
+## 使用与边界
 
-根据[固定报告 §3.1](https://github.com/QwenLM/Qwen3.8-Flash-Next/blob/69885871a64393807d988b27b1b5e380e8f28526/tech_report.pdf)
-实现语义分块 Muon：8 步 Polar Express、0.95 Nesterov 动量、按 Q/K/V 头拆分、
-按专家拆分 gate/up；融合 Q/output-gate 中的门控行走 AdamW。PLE key/value 投影走
-Muon，embedding、LM 头、router、门控等走 AdamW，n-gram 表不做 weight decay。
-LR、Adam 参数和其他 decay 是明确的本地验收设置，不声称官方未公开值；
-当前为复制式 DDP，未实现 Canzona/ZeRO/TP 的完整官方工程栈。
+[最小示例](../quickstart.md)覆盖离线数据、PT、暂停恢复、SFT、验证和 CLI 生成；[通用训练指南](../training.md)说明策略门槛和阶段迁移。[原生视觉/MTP与方案审计](../audits/strategy-implementation-v2.md)、[后训练适应](../posttraining-adaptation.md)、[草稿适应](../draft-adaptation.md)记录更细的实现与测试范围。
 
-缓存覆盖 GDN 卷积/递归状态、PLE 词组/膨胀卷积历史、KV 与 QSA 索引历史。
-状态更新与同一 HF revision 的原始 `cache_utils.py` 对照。
-只支持 eval + no-grad 的无填充文本批次；不声称支持 beam search、rollback、
-offloading、缓存序列化或训练反传。部分 forward 失败后缓存必须 reset，不能继续复用。
+当前没有通过能力验收的可用聊天权重。训练集算术记忆、loss 下降、工程测试成功均不能代表泛化或对话能力。旧 educational-v1 失败见[复盘](../training-failure-v1.md)。
 
-## 工程验收，不是训练曲线
-
-原始官方 TextModel 与本地同权重的整栈前向、梯度已经测试；LM/router loss、
-融合优化器分块以及微型双卡更新/恢复另有独立测试。缓存比较同时覆盖 CPU/CUDA、
-FP32/BF16、逐 token 与分段输入、跨 EOS，以及非零 PLE 卷积权重。
-
-实际 431,609,632 参数配置也执行了双卡一次更新，使用合成 token，**不用于评估效果**：
-
-| 条件 / 结果 | 数值 |
-|---|---|
-| 设备 | 2 张 RTX 3090，物理 GPU 0 / 1 |
-| 参数 / 计算 | FP32 参数，BF16 autocast，activation checkpointing |
-| 每卡 batch / 序列长度 | 1 / 128 |
-| 更新次数 | 1，仅验收前向、反向与优化器 |
-| 单步时间 | 约 7.7 秒，不是稳定吞吐基准 |
-| 每卡峰值 allocated / reserved | 5,785.76 / 5,870 MiB，不含全部驱动/NCCL 显存 |
-| 更新后两卡参数 | 全部逐项精确一致 |
-| 大检查点 / TensorBoard 写入 | 无 / 无 |
-
-数值保存在[验收记录](../audits/miniqwen4-acceptance.json)，
-测量发生在本轮目录整理前。长上下文、更大 batch、MTP 和其他训练阶段
-必须单独测显存，不可外推此结果。
-
-当前教学训练及 TensorBoard 位于 `outputs/miniqwen4/educational-v1/`。
-较早的合成 token 单步记录作为历史审计保留；本轮真实语料的双卡阶段验收单独汇总，
-不会混入教学训练曲线。见[本轮验收](../audits/training-acceptance.json)。
-
-## 尚未完成
-
-- MTP 的完整官方训练依据、训练接入与对照验证。
-- MTP、原生视觉和量化感知后训练仍待接入。
-- 更大语料、领域后训练和真实能力评测；当前配方仅为文本教学规模。
-
-公开代码没有披露的训练细节将单独记录，不能用历史模型的简化实现替代。
-
-
-## 当前可执行流程
-
-统一入口提供 `pretrain → dense_distill → sparse_cpt → sft → dpo`，以及可选 GRPO/MOPD。
-每阶段独立重建优化器和 DDP，检查点包含数据游标、调度配方及各 rank RNG；精确恢复
-拒绝更改总步数、batch、卡数或数据。SFT/DPO 保留 QSA 的稀疏模式，冻结离散 indexer。
-CLI 和浏览器生成使用已有 Qwen cache。[操作指南](../training.md)。
-
-本轮真实语料上完成双 3090、每阶段两步的基础流程；另外在单 3090 上验证了长度
-1,024、batch 2、累积 2 的 sparse CPT 更新，峰值 allocated 约 5,785 MiB。
-该序列长度超过 512 token 的 indexer budget，会实际触发稀疏选择。
-这项显存实测只覆盖所述配置，不代表更长上下文或加入 MTP 后的开销。
+采用固定 Transformers/vLLM 的 Apache-2.0 源码；Qwen 发布权重等独立产物的许可不由此覆盖。

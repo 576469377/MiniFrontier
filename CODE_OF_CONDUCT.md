@@ -4,3 +4,5 @@ We are committed to a respectful, harassment-free community. Be constructive, as
 
 Report conduct issues privately to the maintainers. Reports will be reviewed promptly and handled with discretion.
 
+
+A concrete private contact channel is pending maintainer input and must be filled before public release; see [release preparation](docs/releases/v0.1.0.md).

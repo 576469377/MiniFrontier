@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "seed": 42,
+  "limits_bytes": {
+    "zh_edu": 100663296,
+    "en_edu": 67108864,
+    "python_edu": 16777216,
+    "ultrachat": 33554432
+  },
+  "sources": {
+    "zh_edu": {
+      "repo": "opencsg/Fineweb-Edu-Chinese-V2.1",
+      "revision": "a5b574efa48beb3a8f6887ef0b093becf004328b",
+      "prefix": "4_5",
+      "license": "apache-2.0; retain original CCI subsource",
+      "task": "zh_edu",
+      "lang": "zh",
+      "accepted_rows": 19987,
+      "accepted_bytes": 100667210,
+      "rejected_rows": 103,
+      "catalog_files": 9745,
+      "catalog_sha256": "4e59c5deb3b634c9d4e15d94c1f922e7a070da21e52fa057ebad19ded6d13da8",
+      "sampling": "uniform file permutation, uniform row-group permutation, uniform rows within each group",
+      "reads": [
+        {
+          "file": "4_5/009300.parquet",
+          "row_group": 0,
+          "rows": 1545
+        },
+        {
+          "file": "4_5/000658.parquet",
+          "row_group": 0,
+          "rows": 1770
+        },
+        {
+          "file": "4_5/000544.parquet",
+          "row_group": 0,
+          "rows": 1792
+        },
+        {
+          "file": "4_5/001702.parquet",
+          "row_group": 0,
+          "rows": 8738
+        },
+        {
+          "file": "4_5/006363.parquet",
+          "row_group": 0,
+          "rows": 1593
+        },
+        {
+          "file": "4_5/001465.parquet",
+          "row_group": 0,
+          "rows": 6705
+        }
+      ]
+    },
+    "en_edu": {
+      "repo": "HuggingFaceFW/fineweb-edu",
+      "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+      "prefix": "sample/10BT",
+      "license": "odc-by; original CommonCrawl page rights retained",
+      "task": "en_edu",
+      "lang": "en",
+      "accepted_rows": 12616,
+      "accepted_bytes": 67111295,
+      "rejected_rows": 8,
+      "catalog_files": 14,
+      "catalog_sha256": "712507b3cd7f0043f9ae5194e5cdf051817bcccc7d80e2779a84d4d9d288a964",
+      "sampling": "uniform file permutation, uniform row-group permutation, uniform rows within each group",
+      "reads": [
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 562,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 485,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 249,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 342,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 437,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 658,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 627,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 265,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 86,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 644,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 649,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 601,
+          "rows": 1000
+        },
+        {
+          "file": "sample/10BT/005_00000.parquet",
+          "row_group": 13,
+          "rows": 1000
+        }
+      ]
+    },
+    "python_edu": {
+      "repo": "HuggingFaceTB/smollm-corpus",
+      "revision": "3ba9d605774198c5868892d7a8deda78031a781f",
+      "prefix": "python-edu",
+      "license": "The Stack v2 per-repository terms; index lacks original license field",
+      "task": "code",
+      "lang": "code",
+      "accepted_rows": 6756,
+      "accepted_bytes": 16777356,
+      "rejected_rows": 158,
+      "catalog_files": 2,
+      "catalog_sha256": "2e2802bc1398a81226410d08c273990070d49f6525fe46e45b06df31b18af73a",
+      "sampling": "uniform file permutation, uniform row-group permutation, uniform rows within each group",
+      "reads": [
+        {
+          "file": "python-edu/train-00001-of-00002.parquet",
+          "row_group": 1207,
+          "rows": 1000
+        },
+        {
+          "file": "python-edu/train-00001-of-00002.parquet",
+          "row_group": 2137,
+          "rows": 1000
+        },
+        {
+          "file": "python-edu/train-00001-of-00002.parquet",
+          "row_group": 3275,
+          "rows": 1000
+        },
+        {
+          "file": "python-edu/train-00001-of-00002.parquet",
+          "row_group": 3778,
+          "rows": 1000
+        },
+        {
+          "file": "python-edu/train-00001-of-00002.parquet",
+          "row_group": 3405,
+          "rows": 1000
+        },
+        {
+          "file": "python-edu/train-00001-of-00002.parquet",
+          "row_group": 2497,
+          "rows": 1000
+        },
+        {
+          "file": "python-edu/train-00001-of-00002.parquet",
+          "row_group": 2054,
+          "rows": 1000
+        },
+        {
+          "file": "python-edu/train-00001-of-00002.parquet",
+          "row_group": 418,
+          "rows": 1000
+        }
+      ]
+    },
+    "ultrachat": {
+      "repo": "HuggingFaceH4/ultrachat_200k",
+      "revision": "8049631c405ae6576f93f445c6b8166f76f5505a",
+      "prefix": "data",
+      "file_prefix": "train_sft-",
+      "license": "mit",
+      "task": "dialogue",
+      "lang": "en",
+      "accepted_rows": 5336,
+      "accepted_bytes": 33561967,
+      "rejected_rows": 97,
+      "catalog_files": 3,
+      "catalog_sha256": "06b4e0f764c1528608f2e1b2d595a7cc225a7bb09eabed7e819e8fcd62814aa6",
+      "sampling": "uniform file permutation, uniform row-group permutation, uniform rows within each group",
+      "reads": [
+        {
+          "file": "data/train_sft-00000-of-00003-a3ecf92756993583.parquet",
+          "row_group": 24,
+          "rows": 1000
+        },
+        {
+          "file": "data/train_sft-00000-of-00003-a3ecf92756993583.parquet",
+          "row_group": 11,
+          "rows": 1000
+        },
+        {
+          "file": "data/train_sft-00000-of-00003-a3ecf92756993583.parquet",
+          "row_group": 32,
+          "rows": 1000
+        },
+        {
+          "file": "data/train_sft-00000-of-00003-a3ecf92756993583.parquet",
+          "row_group": 66,
+          "rows": 1000
+        },
+        {
+          "file": "data/train_sft-00000-of-00003-a3ecf92756993583.parquet",
+          "row_group": 39,
+          "rows": 1000
+        },
+        {
+          "file": "data/train_sft-00000-of-00003-a3ecf92756993583.parquet",
+          "row_group": 25,
+          "rows": 1000
+        }
+      ]
+    }
+  },
+  "status": "complete",
+  "corpus": {
+    "schema_version": 2,
+    "seed": 42,
+    "counts": {
+      "accepted": 44695,
+      "invalid_text": 87,
+      "repeated_boilerplate": 157,
+      "near_duplicates": 20
+    },
+    "splits": {
+      "train": 44193,
+      "val": 248,
+      "test": 254
+    },
+    "split_rule": "connected groups; sha256 buckets val 0.5%, sealed test 0.5%",
+    "dedup": "exact hash, first-question cap3, answer shingles0.8, simhash64+Jaccard0.85",
+    "database_sha256": "e5f11cf9334b4af20f52f7cca744d26bd5f4ba5c3261c2f39979cb3feb0d47c0"
+  }
+}

@@ -24,7 +24,7 @@
       ],
       "training_module": "minifrontier.models.miniqwen4.MiniQwen4ForCausalLM",
       "training_ready": true,
-      "gpus_per_model": 2,
+      "gpus_per_model": 1,
       "source_revision": "4177486a9f199bd7be520eff14431071d5d41ec5",
       "inference_components": [
         "incremental_text_cache",
@@ -38,7 +38,11 @@
         "qualified_domain_teachers",
         "draft_training_and_speculative_speed_acceptance"
       ],
-      "strategy_config": "strategies/miniqwen4-v2.json"
+      "strategy_config": "strategies/miniqwen4-v2.json",
+      "training_ready_scope": "engineering entry points; formal data and capability gates pending",
+      "release_status": "v0.1.0_research_preview",
+      "trained_status": "diagnostics_and_recipe_pilots_only",
+      "usable_chat_checkpoint": false
     },
     "minikimik3": {
       "display_name": "MiniKimi-K3",
@@ -46,7 +50,7 @@
       "config": "minikimik3.json",
       "status": "strategy_v2_foundation_implemented_quality_unassessed",
       "training_ready": true,
-      "gpus_per_model": 2,
+      "gpus_per_model": 1,
       "source_revision": "c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721",
       "missing": [
         "formal_training_data_admission",
@@ -78,7 +82,11 @@
         "incremental_text_cache",
         "native_image_prefill",
         "cache_snapshot_rollback"
-      ]
+      ],
+      "training_ready_scope": "engineering entry points; formal data and capability gates pending",
+      "release_status": "v0.1.0_research_preview",
+      "trained_status": "diagnostics_and_recipe_pilots_only",
+      "usable_chat_checkpoint": false
     },
     "minideepseekv4": {
       "display_name": "MiniDeepSeek-V4",
@@ -86,7 +94,7 @@
       "config": "minideepseekv4.json",
       "status": "strategy_v2_foundation_implemented_quality_unassessed",
       "training_ready": true,
-      "gpus_per_model": 2,
+      "gpus_per_model": 1,
       "source_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
       "missing": [
         "formal_training_data_admission",
@@ -120,7 +128,11 @@
         "incremental_text_cache",
         "native_image_prefill",
         "cache_snapshot_rollback"
-      ]
+      ],
+      "training_ready_scope": "engineering entry points; formal data and capability gates pending",
+      "release_status": "v0.1.0_research_preview",
+      "trained_status": "diagnostics_and_recipe_pilots_only",
+      "usable_chat_checkpoint": false
     }
   }
 }

@@ -1,27 +1,30 @@
 # MiniDeepSeek-V4
 
-具体来源为 [DeepSeek-V4-Flash 固定 revision 60d8d70](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/tree/60d8d70770c6776ff598c94bb586a859a38244f1/inference)。原始 model.py、kernel.py 及 MIT 许可位于[源码快照](../../third_party/upstream/deepseek-v4-60d8d70)。
+v0.1.0 研究预览实现。固定来源与逐组件许可见[第三方说明](../../THIRD_PARTY_NOTICES.md)，[历史文本版本](../legacy/minideepseekv4-text-v1.md)只保留作演进记录。
 
-## 当前容量
+## 当前研究配置
 
-12 层、hidden 512、65,536 词表、8 attention heads；head_dim 64、RoPE 16、Q/O 低秩 128、2 个输出组。32 路由专家、Top-2、1 个共享专家，前两层保留 token-ID hash routing。
+[configs/strategies/minideepseekv4-v2.json](../../configs/strategies/minideepseekv4-v2.json)：12 层、hidden 512、64K 词表，8 attention heads；SWA 窗口 128，CSA/HCA 压缩比 4/128；32 路由专家、Top-2、共享专家，前两层 hash routing；4 路 mHC 与文本 MTP。
 
-前两层使用纯滑窗，之后压缩比 4 / 128 交替；窗口 64。CSA indexer 为 4 heads × 32，Top-8 压缩块；mHC 为 4 streams、20 次 Sinkhorn。共 **229,996,877** 个浮点参数，另有 **262,144** 个整数哈希路由项；不含 MTP。
+当前配置浮点参数 **243,983,472**；Kimi/Qwen 包含视觉与 MTP，DeepSeek 此数为 Text-v2 与 MTP，后接 Vision-v1 需重新计量。根目录文本兼容配置和[离线极小示例](../quickstart.md)的参数量不同。默认单卡独立训练；长上下文与新模态阶段必须重新测显存和吞吐。
 
-## 训练适配
+## 实现、验证与训练状态
 
-固定源码提供的是推理实现。保留专家、门控、mHC block 和 head 的计算布局，关闭 TP 分片（每 rank 是完整副本），去掉推理模式限制，输出完整序列 logits。压缩注意力用函数式 PyTorch 张量替换可变 KV cache，确保池化、压缩 KV、RoPE 和 attention 可反传。
+| 状态 | 范围 |
+|---|---|
+| 已实现 | 文本主干、原生视觉适配、MTP、对应 Muon/路由更新、增量缓存；QAT 仿真和后训练/草稿入口 |
+| 已验证 | 非量化专家/Compressor 原始源码对照、mHC、因果性和梯度、索引阶段冻结、Muon/QAT 仿真、增量缓存、原生 Vision-Exp 适配和 DSpark 正确性路径；尚无官方整模型数值 oracle。 |
+| 已训练 | 可学习性诊断与 20M-token 配方试验，详见[带时间边界的实验档案](../experiments.md) |
+| 待完成 | 完整主预算、正式数据准入、配方与教师资格、独立语言/视觉能力、量化部署与草稿加速验收 |
 
-Compressor 保留学习式 gated pooling、比例 4 的前一窗口重叠、位置偏置、RMSNorm、RoPE；attention 保留共享 KV、attention sink、Q normalization、输出 inverse RoPE 与分组低秩输出。mHC 保持 FP32 动态混合和固定源码 Sinkhorn 次序。
+Text-v2 PT/indexer/CPT → 冻结文本接原生 Vision-Exp → Vision CPT → SFT/QAT → 12 教师 full-vocabulary reverse-KL OPD → DSpark → 能力验收。
 
-训练使用 FP32 master weights / BF16 autocast，不模拟 FP8/FP4。indexer 的共同 Hadamard 旋转在无量化 dot product 中抵消，因此该后端不执行旋转/量化。它不等价于官方量化推理数值。
+公开源码没有披露的初始化、LR、loss 聚合和容量比例属于显式 mini 适配，不声称完整复现官方训练栈。PyTorch 参考后端的长上下文内存与速度不代表官方融合内核表现。
 
-随机初始化是本地选择：投影 Normal(.02)，修正偏置置零，mHC dynamic scale .01，静态混合使用对角偏置；官方加载检查点的代码未提供这些从零训练数值。默认 AdamW、路由计数平衡更新率 .001 也属于本地配方。
+## 使用与边界
 
-## 阶段与证据
+[最小示例](../quickstart.md)覆盖离线数据、PT、暂停恢复、SFT、验证和 CLI 生成；[通用训练指南](../training.md)说明策略门槛和阶段迁移。[原生视觉/MTP与方案审计](../audits/strategy-implementation-v2.md)、[后训练适应](../posttraining-adaptation.md)、[草稿适应](../draft-adaptation.md)记录更细的实现与测试范围。
 
-`pretrain` 使用全部可见压缩块，冻结 indexer；`dense_distill` 冻结主干，以 attention 的压缩块分布指导 indexer；`sparse_cpt` 联合训练。KL 的头汇总、压缩块重新归一化及层平均是显式本地集成，不能标为已公开的官方训练代码。
+当前没有通过能力验收的可用聊天权重。训练集算术记忆、loss 下降、工程测试成功均不能代表泛化或对话能力。旧 educational-v1 失败见[复盘](../training-failure-v1.md)。
 
-SFT/DPO/GRPO/MOPD 保留稀疏选择并冻结 indexer。短双卡流程已完成全部文本基础阶段。独立原始源码对照包括非量化专家和比例 4/128 Compressor；另有 mHC 随机矩阵归一化、因果性、梯度、索引器阶段冻结、断点恢复和双 rank 参数一致测试。
-
-尚未完成整模型官方数值 oracle、MTP 接入、QAT、长上下文系统验收和模型级缓存。生成采用完整前缀重算；PyTorch 教学注意力的 O(T²) 张量物化不能外推至官方百万上下文能力。
+文本及 Vision-Exp 来源组件保留 [MIT 许可](../../LICENSES/MIT-DeepSeek.txt)。

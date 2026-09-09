@@ -20,39 +20,25 @@
 
 ## 开始使用
 
-Python 3.11+；当前锁定环境使用 PyTorch 2.13。3090 上的 Kimi CUDA 训练使用 FLA 0.5.2。
+**v0.1.0 研究预览版正在准备，尚未公开发布。** 首版提供三条架构、可复现的小规模流程与实验记录；完整训练和可用聊天权重仍在推进。
+
+Python 3.11+。在 Git checkout 中安装依赖后，运行完全离线的微型示例：
 
 ```bash
-uv sync --locked --extra dev --extra training --extra monitoring --extra data
+uv sync --locked --extra dev
 uv run minifrontier models
-uv run minifrontier doctor
-
-# 受磁盘预算约束的公开来源试验池，不代表正式数据规模
-uv run minifrontier prepare-public-data --output data/public-pilot \
-  --limits-mib '{"zh_edu":96,"en_edu":64,"python_edu":16,"ultrachat":32}' --max-gib 8
-uv run minifrontier prepare-tokenizers --corpus-root data/public-pilot \
-  --output data/tokenizers-v2
-uv run minifrontier encode-data --corpus-root data/public-pilot \
-  --tokenizer-path data/tokenizers-v2/tokenizer-65536.json --output data/text-v2
-
-# 单卡训练；也可用 torchrun 启动同一个入口
-CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=2 uv run minifrontier train \
-  --model minideepseekv4 --config configs/strategies/minideepseekv4-v2.json \
-  --data data/text-v2 --output outputs/text-diagnostic \
-  --ce-tokens 500000 --sequence-length 64 --run-kind acceptance
-
-# 正式方案使用 configs/strategies/*-plan.json；先完成诊断与配方比较
-# 实际输入 batch：--input-batch-tokens 16384（按各卡非 padding 输入累计）
-# 显式阶段变更：--init-transition text-to-vision / qat / mtp-weight
-# DeepSeek V1 另加 --visual-warmup；视觉与投影 LR 分别设置
-
-uv run python scripts/training_status.py
-uv run minifrontier demo --root outputs --device cpu
+CUDA_VISIBLE_DEVICES='' MINIFRONTIER_MIN_FREE_GIB=1 uv run minifrontier quickstart \
+  --model all --device cpu --output outputs/quickstart-cpu
+uv run minifrontier generate \
+  --checkpoint outputs/quickstart-cpu/minideepseekv4/sft/model.pt \
+  --prompt 'What is 10 + 2?' --max-new-tokens 12 --temperature 0 --device cpu
 ```
 
-浏览器 demo 默认地址为 `http://127.0.0.1:7860`，默认只展示通过能力验收的检查点；可切换历史 SFT/DPO/预训练作对照。诊断 run 不进入默认列表。GPU 推理可指定 `--device cuda:0`。
+示例生成数据和小词表，执行 PT、暂停恢复、SFT、验证及显式权重生成。三模型 CPU 实测每个约 4–8 秒（不含安装与导入），**可能生成空文本或乱码，不代表具备对话能力**。单张 3090 命令、完整输出和计时条件见[最小示例](docs/quickstart.md)。实际研究容量配置的训练另见[训练指南](docs/training.md)。
 
-工作盘写入默认预留 50 GiB，数据和权重使用独立目录并校验 hash；不要把大型缓存放在空间紧张的根分区。当前双卡诊断使用独立源码 checkout，GPU 分配为 Kimi 0–1、Qwen 2–3、DeepSeek 4–5。
+wheel 支持最小示例、模型清单、显式配置 acceptance 训练与 CLI 推理；正式策略训练首版要求 Git checkout。浏览器默认只展示能力验收通过的检查点，当前没有合格聊天权重，quickstart 不会产生默认可选模型。见[版本范围、状态与路线图](docs/releases/v0.1.0.md)。
+
+当前 checkout 尚未配置正式仓库地址、文档/Issues URL 和私下反馈渠道；维护者需在公开发布前补齐。
 
 ## 训练流程
 

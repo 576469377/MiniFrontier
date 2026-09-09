@@ -22,7 +22,7 @@ def test_current_targets_never_report_old_model_counts():
     for item in result.values():
         assert item["complete_model_parameters"] is None
         assert item["training_ready"] is True
-        assert item["gpus_per_model"] == 2
+        assert item["gpus_per_model"] == 1
     for name in ("minikimik3", "minideepseekv4"):
         assert result[name]["config"] == name + ".json"
         assert result[name]["implementation"] == name

@@ -1,0 +1,38 @@
+{
+  "scope": "v0.1.0 local research-preview preparation; no external publication or model release",
+  "checked_at": "2026-09-09T08:26:01.166591+00:00",
+  "checks": {
+    "ruff_check": "passed",
+    "ruff_format": "194 files formatted",
+    "mypy": "121 source files passed",
+    "dependency_lock": "uv lock --check --no-sources --no-python-downloads passed",
+    "offline_cpu": "all three models: generated data, PT pause/resume, SFT, validation and generation executed",
+    "offline_cuda": "all three models on one shared RTX 3090; performance is not an exclusive benchmark",
+    "resume": "graceful pause and simulated interruption each match uninterrupted parameters and token/data cursors",
+    "distribution": "wheel and sdist built; Twine strict passed; standalone license texts verified",
+    "installed_wheel": "separate venv reusing existing dependency packages; outside checkout; models, three CPU examples, CLI generation, license metadata and formal-checkout guard passed",
+    "archive": "9 started runs have commands, seed, source/data/tokenizer hashes; numeric metrics, profiles, CSV and SVG; pending single-GPU queue included",
+    "archive_privacy": "new JSON archive scanned for original workspace path, GPU UUID, pid, hostname and container_id: none",
+    "credentials": "working-tree tracked/release files: checked private-key headers and common GitHub/HF/AWS token patterns; no match; not an exhaustive security audit",
+    "history_size": "all reachable Git objects: no blob over 10 MiB",
+    "markdown_links": "changed/new Markdown local links resolve",
+    "original_strategy_documents": "all three hashes unchanged",
+    "cpu_regression": {
+      "command": "CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 MINIFRONTIER_MIN_FREE_GIB=1 python -m pytest -q -m 'not cuda'",
+      "passed": 237,
+      "skipped": 1,
+      "cuda_deselected": 41,
+      "seconds": 89.22
+    }
+  },
+  "pending_public_release": [
+    "maintainer repository/docs/issues URLs and private contact channel"
+  ],
+  "limitations": [
+    "no capable chat weights",
+    "formal strategy training requires a Git checkout",
+    "large trial datasets have not been independently reconstructed outside this workspace",
+    "historical operation paths and original hash-bound strategies remain explicitly historical",
+    "full CUDA regression suite was not rerun for this release-preparation change"
+  ]
+}

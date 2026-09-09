@@ -141,7 +141,8 @@ def test_actual_input_budget_controls_accumulation(corpus, tmp_path):
     assert state["token_ledger"]["optimizer_updates"] == 1
 
 
-def test_training_resume_matches_uninterrupted_run(corpus, tmp_path, monkeypatch):
+@pytest.mark.parametrize("graceful_pause", [False, True])
+def test_training_resume_matches_uninterrupted_run(corpus, tmp_path, monkeypatch, graceful_pause):
     name = "minideepseekv4"
     config = config_for(name, tmp_path)
     complete = tmp_path / "complete"
@@ -154,15 +155,21 @@ def test_training_resume_matches_uninterrupted_run(corpus, tmp_path, monkeypatch
         if value.get("step") == 1:
             raise RuntimeError("simulated interruption after committed checkpoint")
 
-    monkeypatch.setattr(train, "atomic_save", interrupt)
     args = arguments(name, config, corpus, interrupted)
-    with pytest.raises(RuntimeError, match="simulated interruption"):
-        train.main(args)
+    if graceful_pause:
+        train.main([*args, "--stop-after-updates", "1"])
+        assert json.loads((interrupted / "status.json").read_text())["state"] == "paused"
+        assert not (interrupted / "model.pt").exists()
+    else:
+        monkeypatch.setattr(train, "atomic_save", interrupt)
+        with pytest.raises(RuntimeError, match="simulated interruption"):
+            train.main(args)
     monkeypatch.setattr(train, "atomic_save", save)
     train.main([*args, "--resume", str(interrupted / "checkpoint.pt")])
     expected = torch.load(complete / "checkpoint.pt", weights_only=True)
     actual = torch.load(interrupted / "checkpoint.pt", weights_only=True)
     assert actual["data_offset"] == expected["data_offset"]
+    assert actual["token_ledger"] == expected["token_ledger"]
     for key, value in expected["model"].items():
         torch.testing.assert_close(actual["model"][key], value, atol=0, rtol=0)
 

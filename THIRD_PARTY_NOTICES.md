@@ -2,6 +2,22 @@
 
 MiniFrontier-authored code is Apache-2.0. Attributed upstream components and snapshots retain their original licenses; the project license does not override them. No upstream model weights are distributed.
 
+
+## Distribution license mapping
+
+The wheel and sdist declare `Apache-2.0 AND MIT AND LicenseRef-Kimi-K3` for their combined contents. This preserves the individual component terms and does not relicense the Kimi derivatives as Apache-2.0. Per the [PyPA License-Expression specification](https://packaging.python.org/en/latest/specifications/core-metadata/#license-expression), this field describes the containing distribution archive.
+
+| Distributed component | Applicable terms | Standalone license |
+|---|---|---|
+| Original MiniFrontier integration, scripts and authored documentation | Apache-2.0 | [Apache-2.0](LICENSES/Apache-2.0.txt) |
+| Qwen Transformers and vLLM derived computational/vision/MTP files | Apache-2.0; retained attribution | [Apache-2.0](LICENSES/Apache-2.0.txt) |
+| Kimi attributed text, AttnRes, vision/processing, MTP and related derived computation, including its grouped-expert branch | LicenseRef-Kimi-K3; full custom terms, including commercial-use conditions | [Kimi K3](LICENSES/LicenseRef-Kimi-K3.txt) |
+| DeepSeek attributed text, compression, vision and DSpark-derived computation | MIT; retained attribution | [MIT](LICENSES/MIT-DeepSeek.txt) |
+| Upstream snapshots (sdist; not wheel reference resources) | Each snapshot's original license as listed below | Original LICENSE beside each snapshot |
+| Dependencies installed separately | Their own licenses; not relicensed by this package | Refer to each dependency distribution |
+
+Full standalone license texts and these notices are included in distribution license files. File-level notices and the pinned sources below provide the finer-grained mapping. Source-derived modifications keep the applicable upstream terms. Data and model weights are not distributed in this release; any later artifacts require their own provenance and license declarations.
+
 ## Qwen
 
 Source: [Hugging Face Transformers, 4177486a9f199bd7be520eff14431071d5d41ec5](https://github.com/huggingface/transformers/tree/4177486a9f199bd7be520eff14431071d5d41ec5/src/transformers/models/qwen4_exp).

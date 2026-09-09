@@ -4,13 +4,13 @@ import json
 from pathlib import Path
 
 from minifrontier.data import sha256
-from minifrontier.provenance import source_identity
+from minifrontier.provenance import require_source_checkout, source_identity
 from minifrontier.storage import GIB, require_space
 
 
 def check(plan_path, phase_id, evidence_path, *, data, config, output):
     plan_path, data = Path(plan_path).resolve(), Path(data).resolve()
-    root = Path(__file__).resolve().parents[2]
+    root = require_source_checkout()
     plan = json.loads(plan_path.read_text())
     if sha256(root / plan["source_document"]) != plan["source_document_sha256"]:
         raise ValueError("strategy document changed; review and regenerate its plan")

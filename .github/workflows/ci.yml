@@ -39,9 +39,13 @@ jobs:
       - run: uv run python -m build --no-isolation
       - run: uv run twine check --strict dist/*
       - name: Inspect the installed wheel outside the checkout
+        env:
+          CUDA_VISIBLE_DEVICES: ""
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+          MINIFRONTIER_MIN_FREE_GIB: "1"
         run: |
           uv pip install --python .venv/bin/python --no-deps --force-reinstall dist/*.whl
           export PATH="$GITHUB_WORKSPACE/.venv/bin:$PATH"
           cd "$RUNNER_TEMP"
-          minifrontier models
-          python -c 'from minifrontier.models.miniqwen4 import MiniQwen4Config; print(MiniQwen4Config.__name__)'
+          python "$GITHUB_WORKSPACE/scripts/check_installed_wheel.py" --output "$RUNNER_TEMP/wheel-quickstart"

@@ -5,7 +5,7 @@ type: software
 version: 0.1.0
 authors:
   - name: "MiniFrontier contributors"
-license: Apache-2.0
+# Per-component terms and custom Kimi license: THIRD_PARTY_NOTICES.md.
 abstract: >-
   An independent PyTorch research project for source-aligned, capacity-scaled
   MiniQwen4, MiniKimiK3 and MiniDeepSeekV4 implementations.

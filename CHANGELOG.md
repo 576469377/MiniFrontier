@@ -2,20 +2,15 @@
 
 ## Unreleased
 
-- Standardized display names to MiniQwen4, MiniKimi-K3 and MiniDeepSeek-V4.
-- Added source-derived Kimi KDA/MLA/LatentMoE/AttnRes and DeepSeek compression/indexer/mHC text backbones with explicit floating-point training adaptations.
-- Added reproducible public-corpus processing, tokenizer training, pretraining, SFT, DPO and sparse-indexer stages; optional verifiable GRPO and multi-teacher on-policy distillation.
-- Added deterministic single-GPU/DDP training, atomic checkpoints, exact resume, validation, TensorBoard, stage controllers, CLI generation and a local browser demo.
-- Executed real two-GPU short pipelines for all three models and launched separate educational training runs.
-- Added source-component, causality, gradient, multi-stage, recovery and distributed training tests.
+Changes after the prepared research preview will be recorded here.
 
-### Earlier source audit
+## 0.1.0 — Research preview (prepared; not published)
 
+- Source-derived MiniQwen4, MiniKimi-K3 and MiniDeepSeek-V4 text, native vision and MTP implementations, with pinned upstream snapshots and numerical tests.
+- Offline CPU and single-GPU examples covering generated data, PT, checkpoint pause/resume, SFT, validation and explicit CLI generation.
+- Single-GPU/DDP training, actual-token accounting, atomic checkpoints, native inference caches and experimental posttraining/draft entry points.
+- Public numeric experiment snapshots and redrawable curves, retaining failure reports and explicit incomplete states.
+- Updated architecture/capability documentation, single-GPU defaults, per-component license mapping and distribution license files.
+- Installed-wheel acceptance and an actionable Git-checkout requirement for formal strategy training.
 
-- Organized current model code as MiniQwen4, MiniKimiK3 and MiniDeepSeekV4 packages.
-- Kept source-verified components, tests, immutable upstream snapshots and licenses.
-- Connected MiniQwen4 dense pretraining, indexer distillation and sparse CPT objectives, with explicit phase boundaries.
-- Removed retired model implementations, recipes, services, datasets, tokenizer, weights and reports.
-- Consolidated the model catalog and public CLI, and refreshed packaging and CI.
-
-All models remain research implementations; no complete formal training reproduction is claimed.
+No capable chat weights, completed billion-token training, qualified multi-teacher RL or measured trained-draft acceleration are released. Diagnostic completion and declining NLL do not establish model capability. Repository/contact metadata remains a public-release prerequisite; see [release scope](docs/releases/v0.1.0.md).

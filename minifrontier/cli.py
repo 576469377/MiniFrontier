@@ -11,6 +11,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     import sys
 
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "quickstart":
+        from minifrontier.quickstart import main as quickstart
+
+        quickstart(argv[1:])
+        return
     if argv and argv[0] == "prepare-public-data":
         from minifrontier.public_sources import main as public_data
 
@@ -134,6 +139,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     commands.add_parser("doctor", help="inspect the local GPU environment")
     for name, help_text in {
+        "quickstart": "run the offline tiny data/train/resume/evaluate/generate example",
         "prepare-public-data": "sample pinned public sources with a storage budget",
         "prepare-tokenizers": "train same-byte 32K/64K tokenizer candidates",
         "prepare-diagnostics": "construct the separate correctness corpus",

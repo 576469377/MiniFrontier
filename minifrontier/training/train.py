@@ -44,6 +44,11 @@ def parser():
         default="pretrain",
     )
     p.add_argument("--steps", type=int, help="explicit update budget or token-budget safety limit")
+    p.add_argument(
+        "--stop-after-updates",
+        type=int,
+        help="pause with a resumable checkpoint at this absolute update; does not change the planned budget",
+    )
     tokens = p.add_mutually_exclusive_group()
     tokens.add_argument("--ce-tokens", type=int, help="actual next-token supervision budget")
     tokens.add_argument(
@@ -132,6 +137,8 @@ def batch(dataset, indices, device):
 
 def main(argv=None):
     args = parser().parse_args(argv)
+    if args.stop_after_updates is not None and args.stop_after_updates < 1:
+        raise ValueError("stop-after-updates must be positive")
     if args.run_kind == "strategy":
         from minifrontier.training.strategy_gate import validate_arguments
 
@@ -812,7 +819,7 @@ def run(args, rank, world, device):
             )
         return tokens_done
 
-    def save(step):
+    def save(step, *, paused=False):
         if world > 1 and finished(step):
             disagreement = torch.zeros((), device=device)
             for parameter in model.parameters():
@@ -862,7 +869,7 @@ def run(args, rank, world, device):
                         target_steps=args.steps,
                         stage=args.stage,
                         phase=phase,
-                        state="complete" if finished(step) else "running",
+                        state="complete" if finished(step) else "paused" if paused else "running",
                         token_budget=token_budget,
                         token_ledger=ledger.state_dict(),
                         capability_status="unassessed",
@@ -1276,6 +1283,16 @@ def run(args, rank, world, device):
             )
         if step % args.eval_every == 0 or finished(step):
             evaluate(step)
+        if (
+            args.stop_after_updates is not None
+            and step >= args.stop_after_updates
+            and not finished(step)
+        ):
+            record(dict(event="paused", step=step, token_ledger=ledger.state_dict()))
+            save(step, paused=True)
+            if writer:
+                writer.close()
+            return
         if step % args.save_every == 0 or finished(step):
             save(step)
         if finished(step):

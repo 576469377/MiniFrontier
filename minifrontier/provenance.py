@@ -5,6 +5,25 @@ import subprocess
 from pathlib import Path
 
 
+def checkout_root():
+    root = Path(__file__).resolve().parents[1]
+    if not (root / "pyproject.toml").is_file() or not (root / ".git").exists():
+        return None
+    return root
+
+
+def require_source_checkout():
+    root = checkout_root()
+    if root is None:
+        raise ValueError(
+            "Formal strategy training in v0.1.0 requires a Git checkout installed with "
+            "`uv sync` or `pip install -e .`. The wheel supports quickstart, models, "
+            "explicit-config acceptance training and CLI inference; it does not bundle "
+            "the strategy source documents or Git provenance."
+        )
+    return root
+
+
 def source_identity():
     root = Path(__file__).resolve().parents[1]
     paths = sorted(
@@ -18,6 +37,8 @@ def source_identity():
         digest.update(str(path.relative_to(root)).encode() + b"\0")
         digest.update(path.read_bytes())
     try:
+        if checkout_root() is None:
+            raise FileNotFoundError("not a source checkout")
         commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=root, stderr=subprocess.DEVNULL, text=True
         ).strip()

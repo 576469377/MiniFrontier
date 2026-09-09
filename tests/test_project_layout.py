@@ -41,7 +41,10 @@ def test_repository_has_only_current_model_packages():
         if p.is_dir() and p.name != "__pycache__"
     }
     assert folders == {"miniqwen4", "minikimik3", "minideepseekv4"}
-    assert not (ROOT / "docs/legacy").exists()
+    # Historical documentation is retained as evidence; executable retired
+    # model packages/configurations must still stay out of current entry points.
+    assert (ROOT / "docs/training-failure-v1.md").is_file()
+    assert all(p.suffix == ".md" for p in (ROOT / "docs/legacy").rglob("*") if p.is_file())
     assert not (ROOT / "configs/current").exists()
     assert set(p.name for p in (ROOT / "configs").iterdir()) == {
         "models.json",
