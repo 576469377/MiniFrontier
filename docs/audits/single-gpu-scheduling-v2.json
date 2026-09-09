@@ -10,37 +10,37 @@
     {
       "id": "minikimik3/reference",
       "gpu_id": 0,
-      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/minikimik3/reference",
+      "output": "${WORKSPACE}/outputs/strategy-single-gpu-v2/minikimik3/reference",
       "state": "waiting_predecessor"
     },
     {
       "id": "minikimik3/lower-lr",
       "gpu_id": 1,
-      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/minikimik3/lower-lr",
+      "output": "${WORKSPACE}/outputs/strategy-single-gpu-v2/minikimik3/lower-lr",
       "state": "waiting_predecessor"
     },
     {
       "id": "miniqwen4/reference",
       "gpu_id": 2,
-      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/miniqwen4/reference",
+      "output": "${WORKSPACE}/outputs/strategy-single-gpu-v2/miniqwen4/reference",
       "state": "waiting_predecessor"
     },
     {
       "id": "miniqwen4/lower-lr",
       "gpu_id": 3,
-      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/miniqwen4/lower-lr",
+      "output": "${WORKSPACE}/outputs/strategy-single-gpu-v2/miniqwen4/lower-lr",
       "state": "waiting_predecessor"
     },
     {
       "id": "minideepseekv4/reference",
       "gpu_id": 4,
-      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/minideepseekv4/reference",
+      "output": "${WORKSPACE}/outputs/strategy-single-gpu-v2/minideepseekv4/reference",
       "state": "waiting_predecessor"
     },
     {
       "id": "minideepseekv4/lower-lr",
       "gpu_id": 5,
-      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/minideepseekv4/lower-lr",
+      "output": "${WORKSPACE}/outputs/strategy-single-gpu-v2/minideepseekv4/lower-lr",
       "state": "waiting_predecessor"
     }
   ],
@@ -52,5 +52,13 @@
     "single_vs_two_rank_global_sample_stream_equal": true
   },
   "single_gpu_throughput_measured": false,
-  "main_budget_eligible": false
+  "main_budget_eligible": false,
+  "publication": {
+    "original_sha256": "74f82d0c4104150358fb95535bc99b84a44665b97992855db1cc7b299e38da27",
+    "changes": [
+      "Replace the local checkout prefix with ${WORKSPACE}."
+    ],
+    "metrics_unchanged": true,
+    "scope": "Historical snapshot; status and progress are not live."
+  }
 }

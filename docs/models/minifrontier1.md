@@ -22,4 +22,4 @@ MTP 用最终四流状态与下一 token embedding 预测再下一 token；仅�
 
 已完成 CPU 模块、融合前后向、缓存及恢复测试；正式训练和可用语言、OCR、视频、工具能力均待验收。没有公开可用权重，没有宣称优于三个来源模型。具体证据及未完成项见[实现记录](../audits/minifrontier1-implementation.md)。
 
-源码来源、原语与本地组合的边界见[来源映射](../../configs/minifrontier1/source-map.json)。Kimi 派生计算继续受其自定义许可约束，融合后不能统一宣称 Apache-2.0。
+各模块的来源版本和校验值见[来源映射](../../configs/minifrontier1/source-map.json)。本项目原创部分采用 Apache-2.0，使用的 Kimi、Qwen 和 DeepSeek 组件分别保留上游许可，详见[第三方说明](../../THIRD_PARTY_NOTICES.md)。

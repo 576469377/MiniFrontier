@@ -2,6 +2,7 @@
 
 - [MiniFrontier1.0](minifrontier1.md)：融合主线的离线多模态示例、数据、训练、后训练、导出及 Demo。
 - [来源模型最小示例](quickstart.md)：MiniQwen4、MiniKimi-K3、MiniDeepSeek-V4 的 CPU / 3090 闭环。
+- [数据来源](data-sources.md)：各实验实际使用的数据、处理方法、版本及许可。
 - [来源模型训练](training.md)：原三模型的策略入口和阶段迁移。
 - [来源模型后训练](posttraining-adaptation.md)、[草稿适应](draft-adaptation.md)：目标与执行边界。
 - [实验 Demo](demo-experiments.md)：观察原三模型的独立试验检查点。

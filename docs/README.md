@@ -1,12 +1,13 @@
 # 文档导航
 
-MiniFrontier1.0 是当前融合主线，MiniQwen4、MiniKimi-K3、MiniDeepSeek-V4 保留为来源架构对照。模型系列的 “1.0” 与软件包的 `v0.1.0` 研究预览版本分开计。
+这里汇总安装、训练、模型结构和实验结果。首次使用建议先运行 MiniFrontier1.0 的离线示例；希望对照上游架构学习时，可以选择 MiniQwen4、MiniKimi-K3 或 MiniDeepSeek-V4。
 
 ## 开始实践
 
 | 需要做什么 | 入口 |
 |---|---|
 | 安装并跑通融合模型的数据、训练、恢复和生成 | [MiniFrontier1.0 操作指南](guides/minifrontier1.md) |
+| 了解实际使用的数据、处理方法和数据许可 | [数据来源说明](guides/data-sources.md) |
 | 理解融合架构和当前能力边界 | [模型说明](models/minifrontier1.md)、[实现与验收](audits/minifrontier1-implementation.md) |
 | 跑原三个模型的离线 CPU / 3090 示例 | [来源模型最小示例](guides/quickstart.md) |
 | 查看原三个模型的训练、后训练与草稿流程 | [训练](guides/training.md)、[后训练](guides/posttraining-adaptation.md)、[草稿](guides/draft-adaptation.md) |
@@ -20,13 +21,13 @@ MiniFrontier1.0 是当前融合主线，MiniQwen4、MiniKimi-K3、MiniDeepSeek-V
 |---|---|
 | `guides/` | 可在其他机器执行的安装、数据、训练、推理操作指南 |
 | `models/` | 四条模型的结构、来源及能力状态 |
-| `training-strategies/` | 按日期保存的原始方案；正文 SHA 与训练绑定，修订另建版本 |
+| `training-strategies/` | 按日期保存的研究方案；描述目标设计和预算，阅读方式见[方案索引](training-strategies/README.md) |
 | `experiments/` | 可分享的小型配置、指标、CSV、图表和解释；不包含权重和原始语料 |
-| `audits/` | 数值检查、阶段验收与历史运行快照；按对应日期和源码理解 |
-| `operations/` | 当前工作站的调度、端口和目录记录 |
+| `audits/` | 数值检查和历史运行快照；时间与脱敏约定见[记录说明](audits/README.md) |
+| `operations/` | 某次工作站实验的调度、端口和资源安排，供参考 |
 | `releases/` | 软件分发支持范围、发布准备与验收记录 |
 | `legacy/` | 历史设计和失败对照；不作为当前操作入口 |
 
 旧的根层指南链接保留短入口，实际内容集中在 `guides/`。[2026-09-08 项目审查](project-review.md)与[训练失败复盘](training-failure-v1.md)保留其历史背景。
 
-正式训练数据、3090 全阶段性能及模型能力仍需验收。具体判断以模型页和绑定权重的评测为准；代码可执行、阶段结束或 loss 下降均不能单独证明模型可用。
+当前项目处于研究预览阶段。模型页说明已实现的功能，实验报告说明实际训练结果；具体训练效果请结合报告日期、配置、数据和检查点阅读。

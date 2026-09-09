@@ -88,6 +88,8 @@ formal code corpus. Data source terms do not become the project's code license.
 
 ## Training data and kernel dependencies
 
+The [data source guide](docs/guides/data-sources.md) lists the datasets actually used in experiments, their pinned versions and remaining review work. The MiniFrontier1.0 examples use generated fixtures; its full training corpus is not yet prepared.
+
 The optional CUDA KDA backend uses `fla-core==0.5.2`, from the MIT-licensed
 [Flash Linear Attention project](https://github.com/fla-org/flash-linear-attention).
 The local CPU recurrence is independently expressed from the KDA equations and

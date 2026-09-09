@@ -20,9 +20,10 @@ body:
     attributes:
       label: Architecture
       options:
-        - MiniKimiK3
+        - MiniFrontier1.0
+        - MiniKimi-K3
         - MiniQwen4
-        - MiniDeepSeekV4
+        - MiniDeepSeek-V4
         - Shared training components / packaging
     validations:
       required: true

@@ -9,7 +9,7 @@
   "runs": {
     "minikimik3": {
       "model": "minikimik3",
-      "path": "/workspace/MiniFrontier/outputs/strategy-recipe-pilots-v2/minikimik3/muon-20m",
+      "path": "${WORKSPACE}/outputs/strategy-recipe-pilots-v2/minikimik3/muon-20m",
       "supervisor": "running_auto",
       "state": "running",
       "step": 280,
@@ -26,7 +26,7 @@
     },
     "miniqwen4": {
       "model": "miniqwen4",
-      "path": "/workspace/MiniFrontier/outputs/strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/muon-20m",
+      "path": "${WORKSPACE}/outputs/strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/muon-20m",
       "supervisor": "running_auto",
       "state": "initializing",
       "step": 0,
@@ -43,7 +43,7 @@
     },
     "minideepseekv4": {
       "model": "minideepseekv4",
-      "path": "/workspace/MiniFrontier/outputs/strategy-recipe-pilots-v2/minideepseekv4/muon-20m",
+      "path": "${WORKSPACE}/outputs/strategy-recipe-pilots-v2/minideepseekv4/muon-20m",
       "supervisor": "running_auto",
       "state": "running",
       "step": 260,
@@ -85,5 +85,13 @@
   },
   "tensorboard_strategy": "http://127.0.0.1:6007",
   "accepted_demo_models": 0,
-  "all_formal_stages_complete": false
+  "all_formal_stages_complete": false,
+  "publication": {
+    "original_sha256": "59018fe4f2d40516b5798cb691261ab491fc204a75e5ae639eded6e6b2db7395",
+    "changes": [
+      "Replace the local checkout prefix with ${WORKSPACE}."
+    ],
+    "metrics_unchanged": true,
+    "scope": "Historical snapshot; status and progress are not live."
+  }
 }

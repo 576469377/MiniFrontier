@@ -1,16 +1,16 @@
-# 训练与推理
+# 三个来源模型的训练与推理
 
-先运行[离线 CPU／单张 3090 示例](quickstart.md)，验证安装、数据生成、PT、暂停恢复、SFT、评估和 CLI 生成。完整模型训练使用 Git checkout，按[原始策略](../training-strategies/2026-09-08)与机器计划执行。当前能力状态见[研究预览版说明](../releases/v0.1.0.md)。
+本页适用于 MiniKimi-K3、MiniQwen4 和 MiniDeepSeek-V4；融合模型请阅读 [MiniFrontier1.0 指南](minifrontier1.md)。首次使用先运行[离线 CPU／单张 3090 示例](quickstart.md)，熟悉数据生成、预训练、恢复、监督微调和生成。完整配置的训练按[研究方案](../training-strategies/README.md)及对应配置执行。
 
 ## 数据与配置
 
 `configs/strategies/*-v2.json` 是当前研究容量配置，默认单卡；DeepSeek 接入视觉另用 `minideepseekv4-vision-v1.json`。根目录三个配置保留文本兼容用途，不应与当前图文/MTP 参数量混淆。
 
-真实来源的试验数据通过 `prepare-public-data`、`prepare-tokenizers`、`encode-data` 构造；各命令的 `--help` 给出可配置来源、限制和输出路径。下载、tokenizer 训练与编码是三个独立步骤，记录来源版本、清洗、分组切分及校验值。试验池不能自动作为正式训练数据；数据条款见[第三方说明](../../THIRD_PARTY_NOTICES.md)。
+公开语料通过 `prepare-public-data`、`prepare-tokenizers`、`encode-data` 构造；各命令的 `--help` 说明参数与输出路径。下载、词表训练与编码是三个独立步骤，分别记录来源版本、清洗、分组划分及校验值。已用数据和审核进展见[数据来源说明](data-sources.md)。
 
 工作盘默认保留 50 GiB，原子检查点的临时重叠空间也要计入。将数据、下载缓存与训练产物放在容量充足的工作盘。各模型先单卡测量；多卡 DDP 每张卡都保存完整模型与优化器，实际吞吐需要测量。
 
-## 阶段与正式准入
+## 训练阶段与启动条件
 
 ```text
 Kimi：诊断 → 配方比较 → 联合 PT 2B CE → SFT/QAT → 9 教师 → MOPD → 草稿 → 验收
@@ -20,7 +20,7 @@ DeepSeek：Text-v2 2.5B CE → 冻结文本接视觉 → Vision CPT 300M CE → 
 
 这描述目标依赖，不是完成清单。`--run-kind strategy` 必须提供 `--strategy-plan`、`--strategy-phase`、`--strategy-evidence`，通过固定源码、数据准入、配置、前驱和对应长度/模态/卡数的性能检查。正式流程目前要求 Git checkout；wheel 的显式 acceptance 路径适用于工程验证。
 
-诊断和 20M-token 配方比较均为 `--run-kind acceptance`，不计正式主预算。只完成 Muon/AdamW 两组还不够，学习率、MTP、tokenizer 与补种子对照仍须完成。新队列按单卡独立试验调度，允许六组并发；不自动启动正式主训练。
+小规模诊断和 20M-token 配方比较使用 `--run-kind acceptance`，单独记录预算。进入完整训练前还需比较学习率、MTP、词表及不同随机种子的结果。多组试验可以各用一张卡独立运行，具体并发数量根据可用资源安排。
 
 ## 保存、恢复与评估
 

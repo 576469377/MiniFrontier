@@ -1,12 +1,7 @@
 # Security
 
-A concrete private reporting address has not yet been supplied by the maintainers. Public release is pending this contact detail; see [release preparation](docs/releases/v0.1.0.md). Do not include secrets or exploit payloads in public issues.
+No private reporting contact is currently listed in this repository. General bugs without sensitive details can be reported in [Issues](https://github.com/576469377/MiniFrontier/issues). Please keep credentials, personal data and exploit details out of public reports. This page will list the private channel when it is available.
 
-- Do not execute untrusted Python model code, plugins or generated commands.
-- Do not load unknown pickle checkpoints. Prefer safetensors for eventual published weights.
-- Keep datasets, credentials, tokens, private paths and large training artifacts out of Git and release bundles.
-- The retained upstream snapshots are reference material. Importing a snapshot may require dependencies and capabilities not provided by MiniFrontier.
-- Dependency pinning and source-oracle tests do not make third-party code or model outputs trustworthy.
-- GPU selection is a point-in-time check, not an exclusive resource reservation; memory use must still be monitored.
+MiniFrontier currently provides research code and local training tools. Use checkpoints from known sources and review code before executing it. The loaders use `torch.load(weights_only=True)`; the project has not published model weights or completed a security audit of a deployed service.
 
-The browser demo binds to 127.0.0.1 by default and lists only locally discovered checkpoints with passing, weight-bound capability evidence by default. It is intended for local use or SSH forwarding; it has no public-service authentication. Checkpoints are loaded with torch.load(weights_only=True), and generated text is rendered as text content. The demo does not execute generated code.
+The browser demo binds to `127.0.0.1` by default and is intended for local use or SSH forwarding. It has no public-service authentication. Generated text is displayed as text, and the demo does not execute generated code. The separate training verifier can run code tasks in its restricted worker; see the [posttraining guide](docs/guides/posttraining-adaptation.md) for that scope.

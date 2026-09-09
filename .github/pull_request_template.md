@@ -4,9 +4,9 @@ Describe the user-visible behavior and why the change is needed.
 
 ## Evidence
 
-- [ ] Focused tests added or updated
+- [ ] Relevant existing checks passed; tests added or updated when behavior changes
 - [ ] `ruff check .`
-- [ ] `pytest -q -m 'not cuda and not distributed and not slow'`
+- [ ] `pytest -q -m 'not cuda'` for runtime changes (documentation-only changes may use link/layout checks)
 - [ ] CUDA/DDP evidence attached when the change affects kernels or distributed state
 - [ ] Documentation and provenance ledger updated when behavior or architecture fidelity changes
 

@@ -50,5 +50,13 @@
     }
   ],
   "elapsed_seconds": 148.9356927871704,
-  "checkpoint": "/workspace/MiniFrontier/outputs/minikimik3/memorization-probe-v1/sft/model.pt"
+  "checkpoint": "${WORKSPACE}/outputs/minikimik3/memorization-probe-v1/sft/model.pt",
+  "publication": {
+    "original_sha256": "13ef6701f5a23d65528149a574cc4bb9abf5a33c4f8f52b5bf09a13a64ddffe0",
+    "changes": [
+      "Replace the local checkout prefix with ${WORKSPACE}."
+    ],
+    "metrics_unchanged": true,
+    "scope": "Historical snapshot; status and progress are not live."
+  }
 }

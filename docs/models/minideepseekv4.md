@@ -6,7 +6,7 @@ v0.1.0 研究预览实现。固定来源与逐组件许可见[第三方说明](.
 
 [configs/strategies/minideepseekv4-v2.json](../../configs/strategies/minideepseekv4-v2.json)：12 层、hidden 512、64K 词表，8 attention heads；SWA 窗口 128，CSA/HCA 压缩比 4/128；32 路由专家、Top-2、共享专家，前两层 hash routing；4 路 mHC 与文本 MTP。
 
-当前配置浮点参数 **243,983,472**；Kimi/Qwen 包含视觉与 MTP，DeepSeek 此数为 Text-v2 与 MTP，后接 Vision-v1 需重新计量。根目录文本兼容配置和[离线极小示例](../guides/quickstart.md)的参数量不同。默认单卡独立训练；长上下文与新模态阶段必须重新测显存和吞吐。
+这份文本配置共有 **243,983,472** 个参数，包含 MTP；接入视觉编码器后参数量会增加。根目录的兼容配置与[微型示例](../guides/quickstart.md)采用不同容量。训练默认使用单卡，接入视觉或增加序列长度时需重新测量显存和速度。
 
 ## 实现、验证与训练状态
 
@@ -14,10 +14,10 @@ v0.1.0 研究预览实现。固定来源与逐组件许可见[第三方说明](.
 |---|---|
 | 已实现 | 文本主干、原生视觉适配、MTP、对应 Muon/路由更新、增量缓存；QAT 仿真和后训练/草稿入口 |
 | 已验证 | 非量化专家/Compressor 原始源码对照、mHC、因果性和梯度、索引阶段冻结、Muon/QAT 仿真、增量缓存、原生 Vision-Exp 适配和 DSpark 正确性路径；尚无官方整模型数值 oracle。 |
-| 已训练 | 可学习性诊断与 20M-token 配方试验，详见[带时间边界的实验档案](../experiments.md) |
+| 实验 | 已进行小样本学习诊断，并开展每组 20M-token 的文本配方比较；各组完成情况见[实验档案](../experiments.md) |
 | 待完成 | 完整主预算、正式数据准入、配方与教师资格、独立语言/视觉能力、量化部署与草稿加速验收 |
 
-Text-v2 PT/indexer/CPT → 冻结文本接原生 Vision-Exp → Vision CPT → SFT/QAT → 12 教师 full-vocabulary reverse-KL OPD → DSpark → 能力验收。
+计划路线：文本预训练与索引器训练 → 接入 Vision-Exp 视觉编码器 → 多模态继续预训练 → SFT/QAT → 12 个教师模型的全词表反向 KL 蒸馏 → DSpark 草稿模型 → 能力评估。当前文本试验不能作为后续视觉与教师阶段的完成证据。
 
 公开源码没有披露的初始化、LR、loss 聚合和容量比例属于显式 mini 适配，不声称完整复现官方训练栈。PyTorch 参考后端的长上下文内存与速度不代表官方融合内核表现。
 

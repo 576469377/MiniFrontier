@@ -27,7 +27,7 @@
             100
           ]
         ],
-        "data": "/workspace/MiniFrontier/data/educational-v1",
+        "data": "${WORKSPACE}/data/educational-v1",
         "sequence_length": 256,
         "indexer_sequence_length": 1024,
         "batch_size": 2,
@@ -78,7 +78,7 @@
             100
           ]
         ],
-        "data": "/workspace/MiniFrontier/data/educational-v1",
+        "data": "${WORKSPACE}/data/educational-v1",
         "sequence_length": 256,
         "indexer_sequence_length": 1024,
         "batch_size": 2,
@@ -137,7 +137,7 @@
             100
           ]
         ],
-        "data": "/workspace/MiniFrontier/data/educational-v1",
+        "data": "${WORKSPACE}/data/educational-v1",
         "sequence_length": 256,
         "indexer_sequence_length": 1024,
         "batch_size": 2,
@@ -170,5 +170,13 @@
         "reward": 0.0
       }
     }
+  },
+  "publication": {
+    "original_sha256": "36da5cbdd0f2ab58f8857bcda69847e7fbc43e89ffc7a4a0b862c1cab2ac435f",
+    "changes": [
+      "Replace the local checkout prefix with ${WORKSPACE}."
+    ],
+    "metrics_unchanged": true,
+    "scope": "Historical snapshot; status and progress are not live."
   }
 }

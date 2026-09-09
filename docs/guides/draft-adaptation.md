@@ -1,8 +1,6 @@
-# 草稿训练与投机推理
+# 三个来源模型的草稿训练与投机推理
 
-草稿入口已实现，但三个正式目标模型和 10M–30M 草稿训练尚未完成。
-当前 demo 仍以通过能力验收的主模型为准；单元测试与随机小模型的双卡更新
-不能证明草稿接受率、语言能力或端到端加速。
+草稿模型用于先提出若干候选 token，再由主模型验证，希望减少生成开销。本页说明 MiniKimi-K3、MiniQwen4 和 MiniDeepSeek-V4 的训练接口与采样规则；MiniFrontier1.0 的入口见[融合模型指南](minifrontier1.md)。当前已验证训练更新和采样正确性，完整草稿训练及实际加速效果尚未完成。
 
 | 模型 | 目标冻结后的训练路径 | mini 结构与适配 |
 | --- | --- | --- |
@@ -21,11 +19,10 @@ Kimi/Qwen 的未来特征自回馈，DSpark 的噪声 backbone 不接触未来 t
 Markov head 仅接触前一个 token。EOS 终止监督，预算截断不会增加 EOS 标签。
 实际部署建议使用经过来源、领域、模式和视觉覆盖审核的 prompt 池。
 
-下面是未来选定最终目标后的小型适应试验命令，**不是目前后台训练的阶段**：
+选定主模型检查点并准备数据后，可用下面的单卡命令进行小规模草稿训练。`/path/to/` 需要替换为本地文件：
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1 .venv/bin/torchrun --standalone --nproc_per_node=2 \
-  -m minifrontier train-draft \
+CUDA_VISIBLE_DEVICES=0 uv run minifrontier train-draft \
   --target /path/to/selected-final/model.pt \
   --data /path/to/audited-native-sft \
   --output outputs/draft-pilot \
@@ -33,7 +30,7 @@ CUDA_VISIBLE_DEVICES=0,1 .venv/bin/torchrun --standalone --nproc_per_node=2 \
   --rollout-tokens 64 --grad-accum 4 --run-kind acceptance
 ```
 
-省略 torchrun，改用 `.venv/bin/python -m minifrontier train-draft` 即为单卡入口。
+需要双卡 DDP 时，可改用 `CUDA_VISIBLE_DEVICES=0,1 uv run torchrun --standalone --nproc_per_node=2 -m minifrontier train-draft`，其余参数保持对应配方要求。
 默认本地 AdamW LR=1e-4，norm/bias 无 decay，按有效草稿位置 warmup/cosine；
 需要按方案进行 LR、模态和长度试验。正式执行另需 `--run-kind strategy`、
 `--strategy-plan`、`--strategy-phase`、`--strategy-evidence` 和 `--config`。

@@ -1,5 +1,7 @@
 # 项目审查与整理（2026-09-08）
 
+> 历史记录：以下进度与路径描述对应 2026-09-08。当前结构和训练状态请查看[文档导航](README.md)与[实验档案](experiments.md)。
+
 当前实现以 [三份训练方案](training-strategies/2026-09-08/) 为准。
 `educational-v1` 已确认没有达到基本对话目标；旧权重和
 [初版审查](legacy/project-review-educational-v1.md) 保留用于复盘。

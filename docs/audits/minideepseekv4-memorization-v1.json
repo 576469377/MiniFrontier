@@ -50,5 +50,13 @@
     }
   ],
   "elapsed_seconds": 164.6159827709198,
-  "checkpoint": "/workspace/MiniFrontier/outputs/minideepseekv4/memorization-probe-v1/sft/model.pt"
+  "checkpoint": "${WORKSPACE}/outputs/minideepseekv4/memorization-probe-v1/sft/model.pt",
+  "publication": {
+    "original_sha256": "16180809f0db453ba062b24f853fe93763bb42b884e4f05cfccae9fcd400f74c",
+    "changes": [
+      "Replace the local checkout prefix with ${WORKSPACE}."
+    ],
+    "metrics_unchanged": true,
+    "scope": "Historical snapshot; status and progress are not live."
+  }
 }

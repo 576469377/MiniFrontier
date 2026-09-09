@@ -1,8 +1,8 @@
 # MiniFrontier1.0 使用与训练
 
-本页对应 `minifrontier mf1` 独立入口。完整架构、reference 训练和诊断链路可以执行；正式数据、配方与能力门禁仍须逐项取得证据，详见[验收记录](../audits/minifrontier1-implementation.md)。
+本页介绍 `minifrontier mf1` 的数据准备、训练、评估和推理命令。建议先运行下面的离线示例，再阅读自定义数据和分阶段训练部分。当前实现与训练进展见[模型说明](../models/minifrontier1.md)。
 
-## 完全离线的小闭环
+## 离线最小示例
 
 ```bash
 uv sync --locked --extra dev --extra monitoring
@@ -20,7 +20,7 @@ quickstart 顺序执行 pilot 暂停/恢复、indexer 两步、sparse 两步与 
 
 ## 数据和 tokenizer
 
-原生样本使用方案第 7 节的 `sample_id/source/split_group/messages/media/supervision/provenance` schema。媒体必须在输入 JSONL 所在树内，包含真实 SHA256、尺寸；视频逐帧 hash 与单调 source timestamps 缺失时拒绝。文件名、URL、期望答案与 verifier 不进入模型输入。
+样本使用方案第 7 节定义的 `sample_id/source/split_group/messages/media/supervision/provenance` 字段。媒体文件放在输入 JSONL 的目录范围内，并记录尺寸和 SHA256；视频还需记录逐帧校验值和递增时间戳。编码时仅将训练内容送入模型，来源地址、独立的评测答案字段和评测规则作为元数据保存。已有实验的数据来源见[数据说明](data-sources.md)。
 
 ```bash
 uv run minifrontier mf1 prepare-data --input data/candidate/records.jsonl \

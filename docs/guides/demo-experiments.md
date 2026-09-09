@@ -1,14 +1,14 @@
 # 在指定 GPU 上查看实验检查点
 
+下面以物理 GPU 0 为例。`--root` 指向你保存训练结果的目录；需要先有本地检查点。
+
 ```bash
-uv run minifrontier demo --root outputs --gpu 6 --include-experiments \
-  --experiment-root strategy-single-gpu-v2 \
-  --experiment-root strategy-recipe-pilots-v2 --port 7860
+uv run minifrontier demo --root outputs --gpu 0 --include-experiments --port 7860
 ```
 
-`--gpu` 使用 `nvidia-smi` 的物理卡号，并通过 GPU UUID 固定到单卡。它与 `--device` 互斥；也可以用 `--device cpu` 或设置 `CUDA_VISIBLE_DEVICES` 后指定可见的 `--device cuda:0`。更换显卡时重新启动服务，例如 `--gpu 7 --port 7861`。
+`--gpu` 使用 `nvidia-smi` 的物理卡号。它与 `--device` 互斥；没有 GPU 时可以改用 `--device cpu`。已经设置 `CUDA_VISIBLE_DEVICES` 时，也可以使用可见设备编号 `--device cuda:0`。
 
-`--experiment-root` 指定本轮试验目录，相对于 `--root`，可重复传入。上面的命令默认打开“本轮实验（未验收）”，只展示这两个目录下的运行；其他 acceptance 检查点放在“历史实验 / 工程验证”入口。它只控制展示范围，不移动、删除权重，也不修改训练记录。更换实验批次时调整启动参数即可；不传此参数时，“实验检查点”仍展示全部 acceptance 运行。
+如需只观察某几组试验，可追加 `--experiment-root <相对目录>`，此参数可重复传入。例如检查点位于 `outputs/my-experiment/` 时使用 `--experiment-root my-experiment`。页面会将选中的试验与其他历史试验分开；不传此参数则展示全部实验检查点。
 
 页面支持按模型筛选，分别保留 Muon、AdamW、reference、lower-lr 等试验，每个试验只显示最新保存的一份 `model.pt` / `checkpoint.pt`。每次刷新或生成都会重新发现新保存的权重，无需复制；未完成首次保存的运行还不能选择。详情显示完整目录、训练阶段、保存时间，以及记录中的 step 和 CE token 进度；这些是保存时的进度，不是实时训练计数。“本次实验已结束”只表示该次运行结束，不表示完整预训练或能力验收完成。生成后显示实际载入的 step 和 GPU。
 
