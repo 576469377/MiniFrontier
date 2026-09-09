@@ -22,6 +22,23 @@ uv run python scripts/training_status.py
 `outputs/strategy-source-posttraining-v2` 是后训练接口的独立验证快照，尚未用于正式 RL。
 新版配方曲线在 `http://127.0.0.1:6007`；6006 保留旧 educational-v1 对照。
 
+6007 通过 `outputs/tensorboard-strategy-v2` 的两个目录链接同时读取：
+`dual-gpu/` 对应 `strategy-recipe-pilots-v2`，`single-gpu/` 对应
+`strategy-single-gpu-v2`。看板每 5 秒扫描日志，新实验首次写入事件后自动出现。
+只排队、尚未启动的实验没有曲线。浏览器若保留旧 run 筛选，清空后选择
+`single-gpu/minikimik3/reference/tensorboard` 或 `lower-lr/tensorboard`。
+
+重新启动看板时沿用服务记录 `outputs/services/tensorboard-strategy-v2.json`
+中的命令，或在对应端口空闲时运行：
+
+```bash
+uv run tensorboard --logdir outputs/tensorboard-strategy-v2 \
+  --host 127.0.0.1 --port 6007 --reload_interval 5
+```
+
+两个链接只组织看板目录，不复制日志、数据或权重。更换看板读取目录只需重启
+TensorBoard，不需要重启训练。
+
 工作盘写入默认保留 50 GiB，单卡预留 2 GiB 显存；数据、下载缓存和 kernel 缓存
 都位于 `/workspace/MiniFrontier`。每个原子 checkpoint 的临时重叠空间也计入估算。
 既有失败权重保留，没有靠删除旧实验释放空间。
