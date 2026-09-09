@@ -61,6 +61,7 @@ def strategy_status(root):
         )
         budget = run.get("ce_token_budget", state.get("token_budget"))
         profile = read_json(current / "performance.json")
+        sharing = read_json(current / "co_residency.json")
         speed = profile.get("ce_tokens_per_second")
         row = dict(
             model=family,
@@ -91,6 +92,7 @@ def strategy_status(root):
             estimate_scope="this trial's optimizer updates only; excludes evaluation/checkpoint and later trials",
             source_commit=run.get("source", {}).get("commit"),
             capability_status="unassessed",
+            hardware_scope="shared_gpu_during_run" if sharing else "original_device_allocation",
         )
         if supervisor.get("error"):
             row["error"] = supervisor["error"]
@@ -100,11 +102,19 @@ def strategy_status(root):
             row["cumulative_diagnostic_ce"] = row["prior_diagnostic_ce"] + row["ce_tokens"]
         print(json.dumps(row, ensure_ascii=False))
 
-    for queue_path in sorted(root.glob("strategy-single-gpu*/queue.json")):
+    seen_outputs = set()
+    queues = [
+        *root.glob("strategy-single-gpu*/queue.json"),
+        *root.glob("strategy-shared-gpu*/queue.json"),
+    ]
+    for queue_path in sorted(queues):
         queue = read_json(queue_path)
         plan = read_json(queue_path.parent / "queue-plan.json")
         specs = {job["id"]: job for job in plan.get("jobs", [])}
         for job in queue.get("jobs", []):
+            if job["output"] in seen_outputs:
+                continue
+            seen_outputs.add(job["output"])
             current = Path(job["output"])
             state = read_json(current / "status.json")
             train = latest_train(current / "metrics.jsonl")
@@ -114,6 +124,7 @@ def strategy_status(root):
                 else train.get("token_ledger", {})
             )
             profile = read_json(current / "performance.json")
+            sharing = read_json(current / "co_residency.json")
             spec = specs.get(job["id"], {})
             reference = (
                 read_json(Path(spec["reference_performance"]))
@@ -135,8 +146,11 @@ def strategy_status(root):
                 ce_token_budget=20_000_000,
                 measured_ce_tokens_per_second=single,
                 capability_status="unassessed",
+                role=job.get("role", spec.get("role", "primary")),
+                hardware_scope="shared_gpu_during_run" if sharing else "original_device_allocation",
+                mtp_weight=spec.get("mtp_weight"),
             )
-            if single and dual and spec.get("variant") == "reference":
+            if single and dual and spec.get("variant") == "reference" and not sharing:
                 row["single_vs_dual_run_throughput"] = single / dual
                 row["estimated_two_single_runs_vs_one_dual"] = 2 * single / dual
                 row["comparison_scope"] = (

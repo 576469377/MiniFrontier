@@ -39,6 +39,9 @@ uv run tensorboard --logdir outputs/tensorboard-strategy-v2 \
 两个链接只组织看板目录，不复制日志、数据或权重。更换看板读取目录只需重启
 TensorBoard，不需要重启训练。
 
+2026-09-09 追加六组 MTP 共卡对照，6007 另有 `shared-gpu/` 前缀。
+每卡最多两个实验、原队列接管方式和资源上限见[共卡实验记录](shared-gpu-experiments.md)。
+
 工作盘写入默认保留 50 GiB，单卡预留 2 GiB 显存；数据、下载缓存和 kernel 缓存
 都位于 `/workspace/MiniFrontier`。每个原子 checkpoint 的临时重叠空间也计入估算。
 既有失败权重保留，没有靠删除旧实验释放空间。

@@ -54,6 +54,7 @@ minifrontier = ["py.typed"]
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = [
   "cuda: requires a CUDA device",
   "distributed: exercises torch.distributed",

@@ -98,13 +98,20 @@ def export(workspace, output):
         commands[command[command.index("--output") + 1]] = command
     paths = sorted(parents.glob("*/*/run.json"))
     paths += sorted((workspace / "outputs/strategy-diagnostics-v2").glob("*/run.json"))
-    queue_plan = read(workspace / "outputs/strategy-single-gpu-v2/queue-plan.json")
-    queue_state = read(workspace / "outputs/strategy-single-gpu-v2/queue.json")
-    for job in queue_plan.get("jobs", []):
-        commands[job["output"]] = job["command"]
-        path = Path(job["output"]) / "run.json"
-        if path.is_file():
-            paths.append(path)
+    queue_plans, queue_jobs = {}, {}
+    for queue_path in sorted((workspace / "outputs").glob("strategy-*gpu*/queue-plan.json")):
+        queue_plan = read(queue_path)
+        queue_plans[queue_path.parent.name] = {
+            k: queue_plan[k] for k in ("scope", "jobs") if k in queue_plan
+        }
+        for job in read(queue_path.parent / "queue.json").get("jobs", []):
+            queue_jobs[job["output"]] = {k: job[k] for k in ("id", "state") if k in job}
+        for job in queue_plan.get("jobs", []):
+            commands[job["output"]] = job["command"]
+            path = Path(job["output"]) / "run.json"
+            if path.is_file():
+                paths.append(path)
+    paths = sorted(set(paths))
     entries = []
     for path in paths:
         root = path.parent
@@ -125,6 +132,7 @@ def export(workspace, output):
         )
         name = "--".join(root.relative_to(workspace / "outputs").parts)
         profile = read(root / "performance.json")
+        sharing = read(root / "co_residency.json")
         record = dict(
             id=name,
             state=status.get("state", "running"),
@@ -134,6 +142,8 @@ def export(workspace, output):
             run={k: run[k] for k in RUN_KEYS if k in run},
             command=commands.get(str(root)),
             token_ledger=ledger,
+            co_residency=sharing,
+            hardware_scope="shared_gpu_during_run" if sharing else "original_device_allocation",
             metrics=metrics,
             performance={
                 k: profile[k]
@@ -186,12 +196,8 @@ def export(workspace, output):
     snapshot = dict(
         captured_at=datetime.now(UTC).isoformat(),
         runs=entries,
-        pending_jobs=[
-            {k: job[k] for k in ("id", "state") if k in job} for job in queue_state.get("jobs", [])
-        ],
-        portable_queue_plan=portable(
-            {k: queue_plan[k] for k in ("scope", "jobs") if k in queue_plan}, workspace
-        ),
+        pending_jobs=list(queue_jobs.values()),
+        portable_queue_plans=portable(queue_plans, workspace),
         scope="numeric records only; no training samples, media, checkpoints, hostname, device UUID or process IDs",
         recipe_selection="not frozen; complete optimizer, LR, MTP, tokenizer and seed comparisons first",
     )
