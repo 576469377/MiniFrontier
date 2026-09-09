@@ -2,7 +2,7 @@
 
 本页记录 2026-09-09 的工作站实验安排，供研究复盘参考。目录、端口和设备编号对应当时的环境，实时状态以本机日志为准。通用操作见[训练指南](../guides/training.md)。
 
-当前按 [2026-09-08 三份方案](../training-strategies/2026-09-08/) 执行。
+三个来源模型按 [2026-09-08 三份方案](../training-strategies/2026-09-08/) 执行；随后增加的融合模型实验见 [MF1 共卡记录](mf1-mechanism-experiments.md)。
 旧 educational-v1 的训练量、数据和生成效果未达到目标，
 [旧接口说明](../legacy/training-educational-v1.md) 保留作历史对照，不能作为本轮配方。
 
@@ -14,8 +14,8 @@ uv run minifrontier doctor
 uv run python scripts/training_status.py
 ```
 
-当前双卡试验为 Kimi GPU 0–1、Qwen 2–3、DeepSeek 4–5。
-按 2026-09-09 用户调整，后续每个 run 使用一张卡，GPU 0–5 最多并发六组；
+最初双卡分配为 Kimi GPU 0–1、Qwen 2–3、DeepSeek 4–5。
+按 2026-09-09 用户调整，后续每个 run 使用一张卡，首先安排 GPU 0–5 并发六组；
 6、7 上的既有任务不动。正式计划的默认 GPU 为 Kimi 0、Qwen 2、DeepSeek 4，
 对应 `experiment_gpu_ids` 提供每个模型的两张独立试验卡。
 真实训练从 `outputs/strategy-source-pilot-v2` 冻结源码运行，开发根目录可以继续迭代。
@@ -25,7 +25,7 @@ uv run python scripts/training_status.py
 6007 不展示 smoke / quickstart 的工程检查曲线。`mf1-quickstart-v2` 的原始日志仍保留，
 但不在 `outputs/tensorboard-strategy-v2` 下建立展示链接；后续工程冒烟检查也不要接入此看板。
 
-6007 通过 `outputs/tensorboard-strategy-v2` 的两个目录链接同时读取：
+6007 通过 `outputs/tensorboard-strategy-v2` 的目录链接读取：
 `dual-gpu/` 对应 `strategy-recipe-pilots-v2`，`single-gpu/` 对应
 `strategy-single-gpu-v2`。看板每 5 秒扫描日志，新实验首次写入事件后自动出现。
 只排队、尚未启动的实验没有曲线。浏览器若保留旧 run 筛选，清空后选择
@@ -39,15 +39,19 @@ uv run tensorboard --logdir outputs/tensorboard-strategy-v2 \
   --host 127.0.0.1 --port 6007 --reload_interval 5
 ```
 
-两个链接只组织看板目录，不复制日志、数据或权重。更换看板读取目录只需重启
+这些链接只组织看板目录，不复制日志、数据或权重。更换看板读取目录只需重启
 TensorBoard，不需要重启训练。
 
 2026-09-09 追加六组 MTP 共卡对照，6007 另有 `shared-gpu/` 前缀。
 每卡最多两个实验、原队列接管方式和资源上限见[共卡实验记录](shared-gpu-experiments.md)。
 
+同日再在 GPU 4、5 各增加一组完整 228M MF1 机制实验，这两张卡各三组并行，
+另由 MF1 监督进程执行显存和磁盘保护。6007 的 `mf1-mechanism/` 展示新增两组，
+`mf1-reference/` 保留此前小配置学习曲线；随机输入的显存探测不接入看板。
+
 工作盘写入默认保留 50 GiB，单卡预留 2 GiB 显存；数据、下载缓存和 kernel 缓存
 都位于 `${WORKSPACE}`。每个原子 checkpoint 的临时重叠空间也计入估算。
-既有失败权重保留，没有靠删除旧实验释放空间。
+失败复盘及保留产物见[权重清理记录](artifact-retention.md)；当前可恢复点不会按中间权重清理。
 
 ## 数据与配置
 

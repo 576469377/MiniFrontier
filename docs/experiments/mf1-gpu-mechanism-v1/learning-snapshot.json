@@ -1,0 +1,157 @@
+{
+  "as_of_utc": "2026-09-09T17:27:30.180584+00:00",
+  "state": "running",
+  "scope": "bounded shared-GPU full-size MF1 mechanism learning; not formal pretraining",
+  "source_commit": "f2e96ca22fa5122d6520d932a1e70e2eee00fef6",
+  "seed": 42,
+  "configuration_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8",
+  "dataset_manifest_sha256": "460c78731e3842c7dc2cbeec651e57ba234a0c93fec6af29a2e41154fece2db1",
+  "runs": {
+    "adamw-lr1.5e-4": {
+      "state": "running",
+      "gpu_index_in_local_plan": 5,
+      "main_matrix_lr": 0.00015,
+      "token_budget": 500000,
+      "run_spec_sha256": "7f54bf1e93f2b5858432bfa5e196e991ea50b975c93ba0a9eb0cceedeb596133",
+      "optimizer_groups_sha256": "093eb849aeb912fc2f2b59850be10bdbf84815b70d12d9dd9871129c2e5521ac",
+      "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+      "initial_checkpoint": {
+        "sha256": "00d07e5ea15cae8209c934bebf4c49c357d37827e3c930e4bc5dd72175bc44ad",
+        "state": "paused",
+        "step": 2,
+        "ledger": {
+          "input_tokens": 2186,
+          "ce_tokens": 2020,
+          "generated_tokens": 0,
+          "vision_tokens": 90,
+          "mtp_target_tokens": 1999,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 8,
+          "main_ce_tokens": 0,
+          "phase_tokens": 2020,
+          "optimizer_updates": 2
+        },
+        "resumable": true,
+        "capability_qualified": false
+      },
+      "resume_check": "new CUDA process loaded the bound checkpoint and continued at step 3 without resetting counters; no uninterrupted GPU trajectory comparison in this trial",
+      "latest_update": {
+        "step": 4,
+        "train_lm_loss": 10.089091126674576,
+        "grad_norm": 4.2894415855407715,
+        "step_seconds": 42.31519847549498,
+        "ce_per_second": 32.06885584586937,
+        "input_per_second": 35.49552061937789,
+        "input_tokens": 4755,
+        "ce_tokens": 4301,
+        "generated_tokens": 0,
+        "vision_tokens": 252,
+        "mtp_target_tokens": 4247,
+        "index_query_tokens": 0,
+        "replay_ce_tokens": 0,
+        "media_exposures": 22,
+        "main_ce_tokens": 0,
+        "phase_tokens": 4301,
+        "optimizer_updates": 4,
+        "peak_allocated_gib": 4.160719394683838,
+        "peak_reserved_gib": 4.380859375
+      },
+      "initial_validation": {
+        "checkpoint_sha256": "00d07e5ea15cae8209c934bebf4c49c357d37827e3c930e4bc5dd72175bc44ad",
+        "metrics": {
+          "nll": 10.231833134386113,
+          "ce_tokens": 2299,
+          "per_domain": {
+            "en_general": 10.234412404700091,
+            "zh_general": 10.338233229970763,
+            "math": 10.127076629549265,
+            "vision": 9.31251335144043,
+            "video": 9.533576011657715
+          },
+          "black_media_nll": {
+            "vision": 10.042730331420898,
+            "video": 10.10531997680664
+          },
+          "capability_qualified": false
+        },
+        "split": "val",
+        "diagnostic_only": true
+      },
+      "curves": "adamw-lr1.5e-4.metrics.jsonl"
+    },
+    "adamw-lr3e-4": {
+      "state": "running",
+      "gpu_index_in_local_plan": 4,
+      "main_matrix_lr": 0.0003,
+      "token_budget": 500000,
+      "run_spec_sha256": "fa0c8ad73be96b8c59b7635217bb719cc80b64b7e0c8d396770825352de56261",
+      "optimizer_groups_sha256": "000e0dc2007c7aa4019c74b8c10b08105f628d362ef49b3e2e3ebae70ce3e4c8",
+      "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+      "initial_checkpoint": {
+        "sha256": "5c81b2a29580be31d130af605b3131e43d32b8e8618d8fd56904bd7b9742ca71",
+        "state": "paused",
+        "step": 2,
+        "ledger": {
+          "input_tokens": 2186,
+          "ce_tokens": 2020,
+          "generated_tokens": 0,
+          "vision_tokens": 90,
+          "mtp_target_tokens": 1999,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 8,
+          "main_ce_tokens": 0,
+          "phase_tokens": 2020,
+          "optimizer_updates": 2
+        },
+        "resumable": true,
+        "capability_qualified": false
+      },
+      "resume_check": "new CUDA process loaded the bound checkpoint and continued at step 3 without resetting counters; no uninterrupted GPU trajectory comparison in this trial",
+      "latest_update": {
+        "step": 4,
+        "train_lm_loss": 10.070140577188377,
+        "grad_norm": 3.6720924377441406,
+        "step_seconds": 41.33729217201471,
+        "ce_per_second": 32.82750099723965,
+        "input_per_second": 36.33522954889754,
+        "input_tokens": 4755,
+        "ce_tokens": 4301,
+        "generated_tokens": 0,
+        "vision_tokens": 252,
+        "mtp_target_tokens": 4247,
+        "index_query_tokens": 0,
+        "replay_ce_tokens": 0,
+        "media_exposures": 22,
+        "main_ce_tokens": 0,
+        "phase_tokens": 4301,
+        "optimizer_updates": 4,
+        "peak_allocated_gib": 4.122264862060547,
+        "peak_reserved_gib": 4.345703125
+      },
+      "initial_validation": {
+        "checkpoint_sha256": "5c81b2a29580be31d130af605b3131e43d32b8e8618d8fd56904bd7b9742ca71",
+        "metrics": {
+          "nll": 10.159574375094513,
+          "ce_tokens": 2299,
+          "per_domain": {
+            "en_general": 10.199671357993354,
+            "zh_general": 10.27802198093266,
+            "math": 9.949694331735373,
+            "vision": 9.474984169006348,
+            "video": 9.500828742980957
+          },
+          "black_media_nll": {
+            "vision": 9.860121726989746,
+            "video": 9.973966598510742
+          },
+          "capability_qualified": false
+        },
+        "split": "val",
+        "diagnostic_only": true
+      },
+      "curves": "adamw-lr3e-4.metrics.jsonl"
+    }
+  }
+}

@@ -4,9 +4,11 @@
 
 ## MiniFrontier1.0
 
-当前离线示例和小规模学习实验使用程序生成的数据：整数算术、纯色色块图片，以及带时间戳的色块视频帧。训练部分包含 32 条算术、32 条图片和 8 条视频记录，另设独立的验证、测试和演示分组。生成方法见 [data/minifrontier1.py](../../minifrontier/data/minifrontier1.py)，实际结果见[学习实验](../experiments/mf1-reference-v2/README.md)。
+离线示例和已完成的小配置学习实验使用程序生成的数据：整数算术、纯色色块图片，以及带时间戳的色块视频帧。训练部分包含 32 条算术、32 条图片和 8 条视频记录，另设独立的验证、测试和演示分组。生成方法见 [data/minifrontier1.py](../../minifrontier/data/minifrontier1.py)，实际结果见[学习实验](../experiments/mf1-reference-v2/README.md)。
 
-这些数据用于检查模型能否学习、视觉输入是否参与预测，以及训练恢复是否正确。完整模型的正式数据尚未准备完成；[数据计划](../../configs/minifrontier1/data_manifest.json)中的文本、图像和视频数量是目标值，来源名单仍为空。
+2026-09-09 启动的完整 228M GPU 机制实验增加了已有的 Fineweb-Edu-Chinese-V2.1、FineWeb-Edu 和本项目生成数学，各抽取 2,000 个训练文档。继承原语料分组，仅用训练部分训练独立的 32K 候选 BPE，按字符边界分块并删除 38 条新增重复片段。加上各 128 条新生成图像、视频记录，训练集共 12,659 条、约 5.21M 可用 CE；验证集 232 条，未读取封存测试样本。每组实际训练预算为 500K CE，领域采样会重复暴露生成媒体，不能把暴露次数当成独立媒体数量。生成媒体与文本保留独立来源、处理记录和校验值，详见 [manifest](../experiments/mf1-gpu-mechanism-v1/data-manifest.json) 和[构造脚本](../../scripts/prepare_mf1_mechanism_data.py)。
+
+这些数据用于检查模型能否学习、视觉输入是否参与预测，以及训练恢复是否正确。32K 候选尚未完成方案要求的词表对照，机制数据也未完成正式来源及质量验收；[正式数据计划](../../configs/minifrontier1/data_manifest.json)中的文本、图像和视频数量仍是目标值，来源名单尚待填写。
 
 ## 三个来源模型的实验数据
 

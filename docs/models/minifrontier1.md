@@ -20,6 +20,8 @@ QSA 的 top-block、local window 和 protected media 取并集；索引候选先
 
 MTP 用最终四流状态与下一 token embedding 预测再下一 token；仅保留同 segment、相邻未来位置均受监督且不跨媒体/控制边界的目标。输出 head 使用主模型权重，不额外计一个词表矩阵。draft 是独立固定目标、使用草稿自身前缀的适应路径，不把 teacher-forced MTP 当成已训练草稿。
 
-已完成 CPU 模块、融合前后向、缓存及恢复测试；正式训练和可用语言、OCR、视频、工具能力均待验收。没有公开可用权重，没有宣称优于三个来源模型。具体证据及未完成项见[实现记录](../audits/minifrontier1-implementation.md)。
+已完成 CPU 模块、融合前后向、缓存及恢复测试。完整 228M 配置另在共享 RTX 3090 上完成文本、图像、视频的短程优化器更新检查，峰值 reserved 约 4.20 GiB；该数字来自最多 512 输入 token 的短测量，不能覆盖完整性能矩阵。现已启动两组各 500K CE 的机制学习实验，见 [GPU 实验记录](../experiments/mf1-gpu-mechanism-v1/README.md)。
+
+正式训练和可用语言、OCR、视频、工具能力均待验收。没有公开可用权重，没有宣称优于三个来源模型。具体证据及未完成项见[实现记录](../audits/minifrontier1-implementation.md)。
 
 各模块的来源版本和校验值见[来源映射](../../configs/minifrontier1/source-map.json)。本项目原创部分采用 Apache-2.0，使用的 Kimi、Qwen 和 DeepSeek 组件分别保留上游许可，详见[第三方说明](../../THIRD_PARTY_NOTICES.md)。

@@ -29,7 +29,7 @@
 | 对照固定版本的上游源码，理解注意力、MoE、缓存与 MTP 的实现。 | 从数据生成开始，亲手跑通训练、断点恢复、评估和生成。 | 在同一模型中接入文字、图片和视频帧，检查模型是否使用了视觉信息。 |
 
 > [!NOTE]
-> 当前为 **v0.1.0 研究预览**：已提供可运行代码、CPU 微型示例和实验记录，尚未发布可用的聊天权重。项目以单张 RTX 3090 上的训练实践为目标，MF1 完整配置的 3090 性能测试和正式训练仍在计划中。
+> 当前为 **v0.1.0 研究预览**：已提供可运行代码、CPU 微型示例和实验记录，尚未发布可用的聊天权重。MF1 完整 228M 配置已通过 RTX 3090 短程资源探测，并启动两组独立单卡的共卡机制学习实验；完整性能验收和正式训练仍待完成。
 
 ## 快速开始
 
@@ -122,14 +122,14 @@ MiniFrontier1.0 的组合方案由本项目设计；MiniQwen4 的名称来自所
 
 | 截至 2026-09-09 | 进展与证据 |
 |:---|:---|
-| ✅ 架构实现 | 四个模型均有可运行代码；MF1 完整 228M 配置完成 CPU 前后向检查。[实现记录](docs/audits/minifrontier1-implementation.md) |
+| ✅ 架构实现 | 四个模型均有可运行代码；MF1 完整 228M 配置完成 CPU 前后向及 CUDA 文本、图像、视频优化器更新检查。[实现记录](docs/audits/minifrontier1-implementation.md)、[GPU 探测](docs/experiments/mf1-gpu-mechanism-v1/README.md) |
 | ✅ 最小训练流程 | 微型示例跑通数据生成、训练、恢复、评估和生成。[使用指南](docs/guides/minifrontier1.md) |
-| 🧪 学习与配方实验 | 三个来源模型开展小规模配方比较；MF1 在合成数据上完成学习实验。[实验档案](docs/experiments.md) |
+| 🧪 学习与配方实验 | 三个来源模型开展小规模配方比较；MF1 已有合成数据学习记录，并启动完整 228M 的两组 500K CE 学习率对照。[实验档案](docs/experiments.md) |
 | ⬜ 正式预训练 | 完成 MF1 数据准备、词表选择、3090 性能测试、架构对照后，推进 **30 亿 token** 主预训练。 |
 | ⬜ 后训练与权重发布 | 已有后训练与导出参考实现；正式 SFT、RL、教师蒸馏、草稿训练和能力验收仍待完成。 |
 
 <details>
-<summary><b>最近一次 MF1 学习实验，学到了什么？</b></summary>
+<summary><b>已完成的 MF1 小配置学习实验，学到了什么？</b></summary>
 
 约 132K 参数的小配置，在 CPU 两线程上训练 600 updates，耗时约 242 秒。留出集上的结果如下：
 
@@ -190,7 +190,7 @@ uv run mypy minifrontier scripts --ignore-missing-imports
 
 ## 数据与许可
 
-MF1 当前示例使用程序生成的算术、色块图像和视频帧，正式训练数据尚未准备完成。三个来源模型的实验使用过 MiniMind、Fineweb-Edu-Chinese、FineWeb-Edu、Python-Edu、UltraChat 及少量 ALLaVA 图文样本。具体版本、处理方法和核查状态见[数据来源说明](docs/guides/data-sources.md)。
+MF1 离线示例使用程序生成的算术、色块图像和视频帧；228M 机制实验另加入已有的中英文教育文本，正式训练数据尚未准备完成。三个来源模型的实验使用过 MiniMind、Fineweb-Edu-Chinese、FineWeb-Edu、Python-Edu、UltraChat 及少量 ALLaVA 图文样本。具体版本、处理方法和核查状态见[数据来源说明](docs/guides/data-sources.md)。
 
 本项目原创代码采用 [Apache-2.0](LICENSE)。Qwen 的 Transformers / vLLM 组件保留 Apache-2.0，DeepSeek 组件保留 [MIT](LICENSES/MIT-DeepSeek.txt)，Kimi 组件保留含特定商业使用条件的 [Kimi K3 License](LICENSES/LicenseRef-Kimi-K3.txt)。组件对应关系见[第三方说明](THIRD_PARTY_NOTICES.md)，数据按各自来源条款管理。
 

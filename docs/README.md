@@ -12,7 +12,7 @@
 | 跑原三个模型的离线 CPU / 3090 示例 | [来源模型最小示例](guides/quickstart.md) |
 | 查看原三个模型的训练、后训练与草稿流程 | [训练](guides/training.md)、[后训练](guides/posttraining-adaptation.md)、[草稿](guides/draft-adaptation.md) |
 | 在浏览器中观察原模型实验权重 | [实验 Demo](guides/demo-experiments.md) |
-| 阅读实验结果及重画曲线 | [实验索引](experiments.md)、[MF1 学习探测](experiments/mf1-reference-v2/README.md) |
+| 阅读实验结果及重画曲线 | [实验索引](experiments.md)、[MF1 小配置学习](experiments/mf1-reference-v2/README.md)、[MF1 228M GPU 实验](experiments/mf1-gpu-mechanism-v1/README.md) |
 | 参与代码开发或了解分发范围 | [架构与目录](architecture.md)、[贡献指南](../CONTRIBUTING.md)、[研究预览范围](releases/v0.1.0.md) |
 
 ## 目录约定
