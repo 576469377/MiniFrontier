@@ -1,0 +1,5 @@
+# Keep the upstream custom license byte-for-byte, including its original spaces.
+LICENSES/LicenseRef-Kimi-K3.txt -whitespace
+# Standard csv.writer output uses CRLF; matplotlib SVG paths include spaces.
+docs/experiments/**/*.csv whitespace=cr-at-eol
+docs/experiments/**/*.svg -whitespace
