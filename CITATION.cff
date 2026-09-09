@@ -3,6 +3,7 @@ message: "Please cite MiniFrontier and the relevant upstream architecture report
 title: "MiniFrontier: Native Multimodal Fusion and Miniature Frontier Models"
 type: software
 version: 0.1.0
+repository-code: "https://github.com/576469377/MiniFrontier"
 authors:
   - name: "MiniFrontier contributors"
 # Per-component terms and custom Kimi license: THIRD_PARTY_NOTICES.md.

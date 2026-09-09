@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add the GitHub repository, documentation and issue tracker to project metadata and source checkout instructions.
 - Group model workflows by data, training, evaluation, inference and commands; retire the separate MF1 workflow directory, preserve CLI/checkpoint formats and shared import facades. Split browser serving from the common inference runtime.
 - Record cleanup of 31 completed legacy optimizer checkpoints (85.16 GiB), retaining weight-only exports and experiment evidence.
 
@@ -20,4 +21,4 @@
 - Updated architecture/capability documentation, single-GPU defaults, per-component license mapping and distribution license files.
 - Installed-wheel acceptance and an actionable Git-checkout requirement for formal strategy training.
 
-No capable chat weights, completed billion-token training, qualified multi-teacher RL or measured trained-draft acceleration are released. Diagnostic completion and declining NLL do not establish model capability. Repository/contact metadata remains a public-release prerequisite; see [release scope](docs/releases/v0.1.0.md).
+No capable chat weights, completed billion-token training, qualified multi-teacher RL or measured trained-draft acceleration are released. Diagnostic completion and declining NLL do not establish model capability. A private reporting contact remains to be specified before a formal release; see [release scope](docs/releases/v0.1.0.md).

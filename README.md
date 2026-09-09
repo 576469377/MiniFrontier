@@ -27,11 +27,13 @@ MiniFrontier1.0 是本项目提出的融合架构，不是任何一家官方模�
 
 ## 开始使用
 
-**v0.1.0 研究预览版尚未公开发布。** “MiniFrontier1.0”是模型系列名称，不表示软件已发布 1.0 正式版。
+**当前为 v0.1.0 研究预览代码，尚未发布正式 Release 或模型权重。** “MiniFrontier1.0”是模型系列名称，不表示软件已发布 1.0 正式版。
 
 Python 3.11+。在 Git checkout 中安装依赖后，运行完全离线的微型示例：
 
 ```bash
+git clone https://github.com/576469377/MiniFrontier.git
+cd MiniFrontier
 uv sync --locked --extra dev
 uv run minifrontier models
 uv run minifrontier mf1 params
@@ -46,7 +48,7 @@ uv run minifrontier mf1 generate \
 
 wheel 支持最小示例、模型清单、显式配置 acceptance 训练与 CLI 推理；正式策略训练首版要求 Git checkout。浏览器默认只展示能力验收通过的检查点，当前没有合格聊天权重，quickstart 不会产生默认可选模型。见[版本范围、状态与路线图](docs/releases/v0.1.0.md)。
 
-当前 checkout 尚未配置正式仓库地址、文档/Issues URL 和私下反馈渠道；维护者需在公开发布前补齐。
+项目托管于 [GitHub](https://github.com/576469377/MiniFrontier)，文档见[文档导航](docs/README.md)，问题和建议可提交到 [Issues](https://github.com/576469377/MiniFrontier/issues)。私下反馈渠道仍待维护者指定，见[安全说明](SECURITY.md)。
 
 ## 项目目录
 
