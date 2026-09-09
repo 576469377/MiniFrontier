@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add a MiniFrontier cover and vector identity, illustrate the fusion architecture, and reorganize the README around hands-on examples, model navigation and experiment evidence.
 - Rewrite the public overview, document actual dataset sources, correct model-specific QAT/parameter statements, and clarify dated experiment reports. Normalize local paths in public audit copies while preserving metrics and original report hashes.
 
 - Add the GitHub repository, documentation and issue tracker to project metadata and source checkout instructions.

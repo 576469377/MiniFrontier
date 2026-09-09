@@ -5,6 +5,7 @@ recursive-include configs *.json
 recursive-include minifrontier *.py py.typed
 recursive-include docs *.md *.json
 recursive-include docs/experiments *.csv *.svg
+recursive-include docs/assets *.png *.svg
 recursive-include LICENSES *
 recursive-include tests *.py
 recursive-include scripts *.py *.md

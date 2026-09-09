@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="456" viewBox="0 0 1120 456" role="img" aria-labelledby="title desc">
+  <title id="title">MiniFrontier1.0 architecture overview</title>
+  <desc id="desc">Text embeddings and image or video features from a randomly initialized ViT enter a 16-layer decoder. Attention is selected by layer: twelve KDA layers, two CSA-4 layers and two QSA-MLA layers. The model uses four-stream GR, LatentMoE with 32 experts and top-4 routing, a shared FFN, and shallow lookup. It generates text and has an auxiliary MTP branch. This is a research configuration, not a claim of trained capability.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#738797" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="1118" height="454" rx="20" fill="#f7f8fa" stroke="#dce4eb"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+    <rect x="32" y="32" width="4" height="48" rx="2" fill="#ddab59"/>
+    <text x="50" y="53" font-size="24" font-weight="750" fill="#142e3e">MiniFrontier1.0</text>
+    <text x="50" y="78" font-size="13" letter-spacing="1.5" fill="#597080">NATIVE MULTIMODAL · ARCHITECTURE OVERVIEW</text>
+    <rect x="898" y="34" width="188" height="34" rx="17" fill="#e9eef2"/>
+    <text x="992" y="56" text-anchor="middle" font-size="11" font-weight="600" fill="#526675">RESEARCH CONFIGURATION</text>
+
+    <rect x="32" y="112" width="228" height="238" rx="14" fill="#fff" stroke="#dce4eb"/>
+    <text x="52" y="143" font-size="17" font-weight="700" fill="#142e3e">Multimodal input</text>
+    <g stroke="#287f8e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M54 170 H71 M54 177 H68 M54 184 H71"/>
+      <rect x="52" y="210" width="21" height="17" rx="3"/>
+      <path d="M54 224 L59 219 L63 222 L67 217 L71 221"/>
+      <circle cx="58" cy="215" r="1"/>
+      <rect x="52" y="254" width="21" height="17" rx="3"/>
+      <path d="M60 258 L66 262.5 L60 267 Z"/>
+    </g>
+    <text x="87" y="181" font-size="16" fill="#213e50">Text</text>
+    <text x="87" y="225" font-size="16" fill="#213e50">Images</text>
+    <text x="87" y="269" font-size="16" fill="#213e50">Video frames</text>
+    <line x1="52" y1="288" x2="240" y2="288" stroke="#e6ebef"/>
+    <text x="52" y="311" font-size="12" fill="#597080">Text embeddings · ViT + projector</text>
+    <text x="52" y="333" font-size="12" fill="#597080">Random initialization</text>
+
+    <path d="M267 231 H297" stroke="#738797" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+    <rect x="308" y="112" width="504" height="238" rx="14" fill="#fff" stroke="#a9c0ce"/>
+    <text x="330" y="143" font-size="17" font-weight="700" fill="#142e3e">16-layer fusion decoder</text>
+    <text x="330" y="169" font-size="13" fill="#597080">Attention varies by layer</text>
+    <rect x="330" y="185" width="140" height="61" rx="10" fill="#eaf3f7"/>
+    <text x="400" y="211" text-anchor="middle" font-size="17" font-weight="700" fill="#245672">KDA</text>
+    <text x="400" y="233" text-anchor="middle" font-size="12" fill="#476c80">12 layers</text>
+    <rect x="480" y="185" width="140" height="61" rx="10" fill="#edf3f0"/>
+    <text x="550" y="211" text-anchor="middle" font-size="17" font-weight="700" fill="#36756b">CSA-4</text>
+    <text x="550" y="233" text-anchor="middle" font-size="12" fill="#4e756e">Layers 4, 12</text>
+    <rect x="630" y="185" width="160" height="61" rx="10" fill="#fbf2e3"/>
+    <text x="710" y="211" text-anchor="middle" font-size="17" font-weight="700" fill="#946525">QSA-MLA</text>
+    <text x="710" y="233" text-anchor="middle" font-size="12" fill="#8c714b">Layers 8, 16</text>
+    <rect x="330" y="258" width="460" height="38" rx="8" fill="#f1f5f8"/>
+    <text x="560" y="282" text-anchor="middle" font-size="14" font-weight="600" fill="#36576a">4-stream GR · LatentMoE 32 / top-4 · Shared FFN</text>
+    <text x="330" y="326" font-size="13" fill="#597080">Shallow lookup before layer 2 · Stateful inference cache</text>
+
+    <path d="M819 231 H849" stroke="#738797" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+    <rect x="860" y="112" width="228" height="133" rx="14" fill="#142e3e"/>
+    <text x="880" y="145" font-size="17" font-weight="700" fill="#fff">Text generation</text>
+    <text x="880" y="173" font-size="14" fill="#c5d5df">Shared vocabulary head</text>
+    <path d="M881 200 H946 M954 200 H991 M999 200 H1065" stroke="#ddab59" stroke-width="6" stroke-linecap="round"/>
+    <path d="M819 316 H849" stroke="#738797" stroke-width="1.7" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow)"/>
+    <rect x="860" y="280" width="228" height="70" rx="12" fill="#fff" stroke="#b3c3cd" stroke-dasharray="5 4"/>
+    <text x="880" y="307" font-size="16" font-weight="700" fill="#36576a">MTP branch</text>
+    <text x="880" y="330" font-size="13" fill="#597080">Auxiliary · Shared head</text>
+
+    <line x1="32" y1="375" x2="1088" y2="375" stroke="#dce4eb"/>
+    <text x="32" y="406" font-size="18" font-weight="700" fill="#142e3e">228M</text>
+    <text x="101" y="406" font-size="13" fill="#597080">total parameters</text>
+    <text x="295" y="406" font-size="18" font-weight="700" fill="#142e3e">16 × 512</text>
+    <text x="390" y="406" font-size="13" fill="#597080">layers × hidden size</text>
+    <text x="605" y="406" font-size="18" font-weight="700" fill="#142e3e">32K</text>
+    <text x="655" y="406" font-size="13" fill="#597080">configured vocabulary</text>
+    <text x="1088" y="406" text-anchor="end" font-size="12" fill="#597080">Formal training pending</text>
+    <text x="32" y="433" font-size="11" fill="#738797">Module overview; see the model documentation for exact ordering, routing and training status.</text>
+  </g>
+</svg>

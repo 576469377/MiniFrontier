@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">MiniFrontier mark</title>
+  <desc id="desc">Three angular paths form an M-shaped mountain horizon, on a dark rounded square.</desc>
+  <rect width="128" height="128" rx="28" fill="#142e3e"/>
+  <path d="M16 89 L42 34 L64 76 L53 96 L41 70 L32 89 Z" fill="#84b4cb"/>
+  <path d="M51 54 L64 76 L86 34 L112 89 L96 89 L85 66 L64 106 L43 65 Z" fill="#e8b970"/>
+  <path d="M32 89 L51 54 L64 76 L85 66 L74 86 L62 93 L51 76 L44 89 Z" fill="#eef2f4"/>
+</svg>
