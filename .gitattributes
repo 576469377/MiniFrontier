@@ -3,3 +3,8 @@ LICENSES/LicenseRef-Kimi-K3.txt -whitespace
 # Standard csv.writer output uses CRLF; matplotlib SVG paths include spaces.
 docs/experiments/**/*.csv whitespace=cr-at-eol
 docs/experiments/**/*.svg -whitespace
+# Strategy gates and source oracles hash the original bytes, including on
+# checkouts whose Git configuration would otherwise convert line endings.
+docs/training-strategies/** -text
+third_party/upstream/** -text
+LICENSES/** -text

@@ -1,0 +1,38 @@
+{
+  "status": "not_prepared",
+  "formal_admission": false,
+  "text_pool_candidate_tokens": 5000000000,
+  "unique_image_target": 1500000,
+  "image_exposures_target": 5000000,
+  "video_exposures_target": 120000,
+  "text_ce_mix": {
+    "zh_general": 0.42,
+    "en_general": 0.28,
+    "code": 0.12,
+    "math": 0.1,
+    "structured": 0.08
+  },
+  "vision_ce_mix": {
+    "caption": 0.3,
+    "ocr_document": 0.35,
+    "vqa": 0.2,
+    "chart_table": 0.1,
+    "video": 0.05
+  },
+  "sft_ce_mix": {
+    "general": 0.3,
+    "tools": 0.1,
+    "code": 0.15,
+    "math": 0.15,
+    "ocr_document": 0.15,
+    "vqa": 0.1,
+    "multiimage_video": 0.05
+  },
+  "source_allowlist": [],
+  "split_group_ratios": {
+    "train": 0.985,
+    "val": 0.005,
+    "test": 0.01
+  },
+  "disk_reserve_gib": 50
+}

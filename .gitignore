@@ -1,3 +1,4 @@
+# Python environments, caches and generated build metadata.
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -8,9 +9,20 @@ __pycache__/
 htmlcov/
 .venv/
 venv/
+# Local configuration and credentials. Reviewed templates remain publishable.
 .env
 .env.*
 !.env.example
+/secrets/
+/credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+# Data, experiments and build artifacts stay local. Publish reviewed lightweight
+# reports under docs/experiments/ instead of copying whole run directories.
 /dist/
 /build/
 /wandb/
@@ -21,8 +33,11 @@ venv/
 /weights/
 /data/
 /tokenizers/
-/secrets/
-/credentials/
+/tmp/
+/scratch/
+/.cache/
+# Weight/data payloads and runtime logs, including files accidentally written
+# outside the standard local directories.
 *.pt
 *.pth
 *.bin
@@ -30,6 +45,12 @@ venv/
 *.gguf
 *.onnx
 *.safetensors
-*.pem
+*.parquet
+*.arrow
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+events.out.tfevents.*
 *.log
 .DS_Store

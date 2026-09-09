@@ -1,0 +1,14 @@
+# MF1 reference 与学习闭环
+
+此为保留的早期记录。fixture v1 的 val/test/demo 算术输入存在重复，不能当成三份独立泛化证据；修正后的分组、同源训练与评测见 [v2 档案](../mf1-reference-v2/README.md)。训练集与留出算术没有重叠，v1 的失败结果仍保留。
+
+完整 228.24M 结构完成 CPU 随机图像前后向与缓存对照；约 132K 参数小配置用 32 条算术、32 条色块图片、8 条色块视频训练 600 次更新。两项不能混作一个模型能力结果。
+
+- 小配置实际 9,404 CE / 42,732 input token，600 步约 239 秒。
+- 训练生成：算术 32/32、图像 32/32、视频 8/8。
+- 留出生成：算术 0/6、图像 4/4、视频 2/2；媒体置黑后图像 1/4、视频 0/2。样本太少、任务过于简单，不属于公开能力基准。
+- 视频时间组倒序/只重复首组为 1/2；不能宣称已具备一般时序理解。
+
+[机器可读报告](report.json) 保存配置、预算、hash、梯度和限制；[可重画曲线](overfit-curve.csv) 保存逐步 loss、梯度、token 与耗时。原始权重与诊断图片不进入源码分发。
+
+复现结构与数据链路可运行 README 的 mf1 quickstart；此处过拟合实验使用相同 tiny 配置，`mf1 train --phase pilot --steps 600 --input-batch-tokens 64 --lr 0.001 --vision-lr 0.001 --save-every 100 --eval-every 100`，seed 42、CPU 两线程。训练源码冻结在本机 `outputs/mf1-source-reference-v1`；精确 implementation hash 见报告。

@@ -1,0 +1,17 @@
+# 脚本导航
+
+在仓库根目录执行脚本。日常 MF1 数据、训练、评估、导出和 Demo 使用 `minifrontier mf1`，入口见[操作指南](../docs/guides/minifrontier1.md)。下表中的调度器服务于原三模型的独立实验。
+
+| 用途 | 脚本 |
+|---|---|
+| 提取和核对固定上游来源 | `extract_training_sources.py`、`extract_vision_sources.py` |
+| 从冻结方案生成原三模型机器计划 | `build_strategy_plans.py` |
+| 来源模型容量与机制检查 | `accept_miniqwen4_capacity.py`、`launch_strategy_diagnostics.py` |
+| 原三模型的配方、单卡与共卡试验 | `run_recipe_pilot.py`、`run_single_gpu_queue.py`、`run_shared_gpu_queue.py`、`run_shared_gpu_trial.py` |
+| 读取训练进度、等待设备可用 | `training_status.py`、`wait_for_gpus.py` |
+| 检查点、算术、视觉与专家执行评估 | `evaluate_checkpoints.py`、`evaluate_arithmetic_diagnostics.py`、`evaluate_visual_diagnostics.py`、`benchmark_expert_execution.py` |
+| 整理实验数值和重画曲线 | `export_experiments.py`、`plot_experiments.py` |
+| 安装后的 wheel 验收 | `check_installed_wheel.py`；按脚本说明在 checkout 外运行 |
+| 历史 educational-v1 启动器 | `launch_training.py`；保留兼容与复盘，不执行新融合方案 |
+
+调度记录和冻结执行约定见 [operations](../docs/operations/local-training.md)。正在运行的任务按自己的源码副本和输出路径继续；更新开发目录不会自动迁移它们。

@@ -1,0 +1,19 @@
+{
+  "vocab_candidates": [
+    32768,
+    65536
+  ],
+  "default_vocab": 32768,
+  "special_tokens_included": true,
+  "byte_fallback": true,
+  "training_bytes_min": 5000000000,
+  "training_bytes_max": 10000000000,
+  "byte_mix": {
+    "zh": 0.45,
+    "en": 0.25,
+    "code": 0.15,
+    "math": 0.1,
+    "structured_ocr": 0.05
+  },
+  "formal_frozen": false
+}

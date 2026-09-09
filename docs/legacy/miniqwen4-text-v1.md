@@ -97,7 +97,7 @@ FP32/BF16、逐 token 与分段输入、跨 EOS，以及非零 PLE 卷积权重�
 统一入口提供 `pretrain → dense_distill → sparse_cpt → sft → dpo`，以及可选 GRPO/MOPD。
 每阶段独立重建优化器和 DDP，检查点包含数据游标、调度配方及各 rank RNG；精确恢复
 拒绝更改总步数、batch、卡数或数据。SFT/DPO 保留 QSA 的稀疏模式，冻结离散 indexer。
-CLI 和浏览器生成使用已有 Qwen cache。[操作指南](../training.md)。
+CLI 和浏览器生成使用已有 Qwen cache。[操作指南](../guides/training.md)。
 
 本轮真实语料上完成双 3090、每阶段两步的基础流程；另外在单 3090 上验证了长度
 1,024、batch 2、累积 2 的 sparse CPT 更新，峰值 allocated 约 5,785 MiB。

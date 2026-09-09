@@ -7,7 +7,7 @@ recursive-include docs *.md *.json
 recursive-include docs/experiments *.csv *.svg
 recursive-include LICENSES *
 recursive-include tests *.py
-recursive-include scripts *.py
+recursive-include scripts *.py *.md
 recursive-include requirements *.txt
 recursive-include third_party/upstream *.py *.json LICENSE
 prune outputs

@@ -1,0 +1,20 @@
+{
+  "phase": "indexer",
+  "budget": 40000000,
+  "unit": "input_tokens",
+  "attention": "dense_distill",
+  "predecessor": [
+    "p1"
+  ],
+  "lengths": {
+    "1024": 0.2,
+    "2048": 0.5,
+    "4096": 0.3
+  },
+  "run_kind": "strategy",
+  "device_policy": "single_gpu_first",
+  "input_batch_tokens": 16384,
+  "optimizer": "adamw",
+  "requires_artifact_bound_gate": true,
+  "formal_started": false
+}

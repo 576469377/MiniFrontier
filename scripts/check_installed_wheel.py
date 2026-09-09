@@ -42,6 +42,33 @@ def main():
     for path in reports:
         report = json.loads(path.read_text())
         assert report["resume_executed"] and report["final_sft"]["state"] == "complete"
+    mf1_output = args.output / "minifrontier1"
+    subprocess.run(
+        [sys.executable, "-m", "minifrontier", "mf1", "quickstart", "--output", str(mf1_output)],
+        check=True,
+    )
+    report = json.loads((mf1_output / "report.json").read_text())
+    assert report["results"][0]["state"] == "paused"
+    assert report["results"][1]["step"] == 8
+    assert report["results"][-1]["state"] == "budget_complete_unqualified"
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "minifrontier",
+            "mf1",
+            "generate",
+            "--checkpoint",
+            str(mf1_output / "sft/checkpoint.pt"),
+            "--prompt",
+            "Color?",
+            "--image",
+            str(mf1_output / "data/media/train-32-0.png"),
+            "--max-new-tokens",
+            "4",
+        ],
+        check=True,
+    )
     subprocess.run(
         [
             sys.executable,
@@ -70,7 +97,7 @@ def main():
     else:
         raise AssertionError("wheel accepted formal strategy training without Git resources")
     print(
-        "Installed wheel: models, three offline runs, CLI generation, licenses and formal gate passed"
+        "Installed wheel: four models, four offline runs, native CLI generation, licenses and formal gate passed"
     )
 
 

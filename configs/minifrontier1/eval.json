@@ -1,0 +1,27 @@
+{
+  "fixed_prompt_counts": {
+    "general": 100,
+    "code_math": 80,
+    "vision": 80,
+    "tools": 40
+  },
+  "lengths": [
+    1024,
+    2048,
+    4096,
+    8192
+  ],
+  "media_controls": [
+    "matched",
+    "mismatched",
+    "black",
+    "patch_shuffle"
+  ],
+  "video_controls": [
+    "ordered",
+    "reversed",
+    "first_frame",
+    "shuffled"
+  ],
+  "checkpoint_bound": true
+}

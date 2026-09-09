@@ -100,15 +100,18 @@ class SpeculativeSession:
         ):
             raise ValueError("speculative inference requires eval and an unpadded batch-one prefix")
         from minifrontier.models.minideepseekv4 import MiniDeepSeekV4Cache
+        from minifrontier.models.minifrontier1 import MiniFrontier1Cache
         from minifrontier.models.minikimik3 import MiniKimiK3Cache
         from minifrontier.models.miniqwen4 import MiniQwen4Cache
 
         caches = {
+            "minifrontier1": MiniFrontier1Cache,
             "minikimik3": MiniKimiK3Cache,
             "miniqwen4": MiniQwen4Cache,
             "minideepseekv4": MiniDeepSeekV4Cache,
         }
         self.family = {
+            "MiniFrontier1ForCausalLM": "minifrontier1",
             "MiniKimiK3ForCausalLM": "minikimik3",
             "MiniQwen4ForCausalLM": "miniqwen4",
             "MiniDeepSeekV4ForCausalLM": "minideepseekv4",
@@ -139,12 +142,12 @@ class SpeculativeSession:
     @torch.no_grad()
     def forward(self, ids, *, media=None):
         kwargs = dict(cache=self.cache, media=media, return_hidden=True)
-        if self.family != "miniqwen4":
+        if self.family not in {"miniqwen4", "minifrontier1"}:
             kwargs["return_taps"] = True
         return self.model(ids, **kwargs)
 
     @torch.no_grad()
-    def advance(self, proposer, maximum):
+    def advance(self, proposer, maximum, *, greedy=False):
         if maximum < 1:
             raise ValueError("remaining token budget must be positive")
         proposal = proposer(self.context, maximum)
@@ -174,9 +177,16 @@ class SpeculativeSession:
                 draft_index = index - proposal.anchor_count
                 if draft_index >= 0:
                     self.stats["draft_position_attempts"][draft_index] += 1
-                if not accepts(p[:, index], q[:, index], token, torch.rand((), device=ids.device)):
-                    replacement = torch.multinomial(
-                        residual_probability(p[:, index], q[:, index]), 1
+                accepted_token = (
+                    bool(token.eq(p[:, index].argmax(-1, keepdim=True)).all())
+                    if greedy
+                    else accepts(p[:, index], q[:, index], token, torch.rand((), device=ids.device))
+                )
+                if not accepted_token:
+                    replacement = (
+                        p[:, index].argmax(-1, keepdim=True)
+                        if greedy
+                        else torch.multinomial(residual_probability(p[:, index], q[:, index]), 1)
                     )
                     self.stats["rejections"] += 1
                     break
@@ -192,7 +202,11 @@ class SpeculativeSession:
             if count == ids.shape[1]:
                 self.context = original.append(ids, verified, self.model, self.vocab_size)
                 if not ended and count < maximum:
-                    replacement = torch.multinomial(p[:, -1], 1)
+                    replacement = (
+                        p[:, -1].argmax(-1, keepdim=True)
+                        if greedy
+                        else torch.multinomial(p[:, -1], 1)
+                    )
                     extra = self.forward(replacement)
                     self.stats["target_forwards"] += 1
                     self.context = self.context.append(

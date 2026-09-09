@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-09T12:58:12.053022+00:00",
+  "source": {
+    "commit": "c8db5c9e700ccd23311d7f43e76b727a87106a09",
+    "dirty": true,
+    "implementation_sha256": "77c8b0e87c092aa469c1d157b4e3f9112c225d46f975cc7aa5bde196193651fb"
+  },
+  "cpu": {
+    "passed": 293,
+    "skipped": 1,
+    "cuda_deselected": 41,
+    "seconds": 111.33,
+    "command": "CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 pytest -q -m 'not cuda'"
+  },
+  "static": {
+    "ruff": true,
+    "format": true,
+    "mypy_source_files": 153,
+    "uv_lock_check": true
+  },
+  "wheel": {
+    "built": true,
+    "twine_strict": true,
+    "outside_checkout": true,
+    "four_offline_runs": true,
+    "native_image_cli": true,
+    "license_export": true,
+    "dependencies": "Reuses the locked local dependencies through a separate environment; no source-package import"
+  },
+  "numerical": {
+    "full_configuration_cpu_forward_backward": true,
+    "cache_max_error": 6.556510925292969e-07,
+    "packed_multimodal_equivalence": true,
+    "exact_resume": true,
+    "greedy_draft_target_equal": true,
+    "forced_rejection_rollback": true,
+    "lossless_export": true,
+    "int8_reference_roundtrip": true
+  },
+  "demo": {
+    "api_checked": true,
+    "unqualified_explicit": true,
+    "server_stopped_after_check": true
+  },
+  "strategy_document_sha256": "e0840c97bc5c23823e723af79b27ddb69c6067e74af1fa06fd294b0cc4791ef7",
+  "formal_training_started": false,
+  "single_3090_qualified": false,
+  "capability_qualified": false,
+  "external_release": false
+}

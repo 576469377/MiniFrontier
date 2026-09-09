@@ -1,0 +1,443 @@
+{
+  "kind": "CPU mechanism acceptance",
+  "full_model": {
+    "model": "MiniFrontier1.0",
+    "config": {
+      "model_version": "1.0-reference-v1",
+      "vocab_size": 32768,
+      "hidden_size": 512,
+      "num_hidden_layers": 16,
+      "attention_schedule": [
+        "kda",
+        "kda",
+        "kda",
+        "csa4",
+        "kda",
+        "kda",
+        "kda",
+        "qsa_mla",
+        "kda",
+        "kda",
+        "kda",
+        "csa4",
+        "kda",
+        "kda",
+        "kda",
+        "qsa_mla"
+      ],
+      "hc_count": 4,
+      "hc_lowrank": 64,
+      "num_attention_heads": 8,
+      "kda_head_dim": 64,
+      "conv_size": 4,
+      "kda_backend": "auto",
+      "q_lora_rank": 128,
+      "kv_lora_rank": 128,
+      "qk_nope_head_dim": 64,
+      "qk_rope_head_dim": 32,
+      "v_head_dim": 64,
+      "mrope_sections": [
+        4,
+        6,
+        6
+      ],
+      "rope_theta": 10000.0,
+      "csa_head_dim": 64,
+      "csa_rope_dim": 16,
+      "index_heads": 4,
+      "index_dim": 32,
+      "index_rope_dim": 16,
+      "block_size": 4,
+      "top_blocks": 64,
+      "window_size": 128,
+      "protected_media_tokens": 1024,
+      "protect_media": true,
+      "query_chunk_size": 64,
+      "index_query_count": 64,
+      "indexer_loss_coef": 0.01,
+      "num_experts": 32,
+      "num_experts_per_token": 4,
+      "routed_expert_hidden_size": 256,
+      "moe_intermediate_size": 256,
+      "shared_intermediate_size": 768,
+      "activation": "situ",
+      "routed_scale": 1.0,
+      "lookup_layer": 2,
+      "lookup_enabled": true,
+      "lookup_rows": 32768,
+      "lookup_dim": 64,
+      "lookup_seed": 1729,
+      "mtp_enabled": true,
+      "mtp_loss_coef": 0.1,
+      "max_position_embeddings": 8192,
+      "rms_norm_eps": 1e-05,
+      "initializer_range": 0.02,
+      "gradient_checkpointing": true,
+      "pad_token_id": 0,
+      "eos_token_id": 2,
+      "image_token_id": 7,
+      "control_token_count": 24,
+      "forbidden_action_ids": [
+        0,
+        1,
+        7
+      ],
+      "vision_config": {
+        "depth": 12,
+        "hidden_size": 384,
+        "num_heads": 6,
+        "intermediate_size": 1536,
+        "patch_size": 16,
+        "temporal_patch_size": 2,
+        "spatial_merge_size": 2,
+        "output_size": 512,
+        "gradient_checkpointing": true
+      }
+    },
+    "total": 228235809,
+    "trainable": 228235809,
+    "frozen": 0,
+    "categories": {
+      "embedding_and_head": 33554432,
+      "gr": 8980480,
+      "kda": 16644960,
+      "moe": 123998208,
+      "csa": 1382464,
+      "qsa_mla": 1970688,
+      "lookup": 8783873,
+      "vision": 22934144,
+      "mtp": 9986560
+    },
+    "expert_details": {
+      "routed": 106954752,
+      "shared": 20054016
+    },
+    "main_without_vision_and_mtp": 195315105,
+    "mtp_output_head": "shared by passing main lm_head.weight; no duplicate module",
+    "bf16_weight_bytes": 456471618,
+    "fp32_weight_bytes": 912943236,
+    "conservative_state_bytes": 3651772944,
+    "optimizer_parameters": null,
+    "measured_gpu_peak": null,
+    "lm_loss": 10.359188079833984,
+    "mtp_loss": 10.409809112548828,
+    "vision_gradient": 5.594752788543701,
+    "projector_gradient": 5.9125518798828125,
+    "seconds": 7.6048005018383265,
+    "peak_cpu_rss_gib": 2.3580703735351562,
+    "scope": "CPU full 16-layer random multimodal forward/backward; not a 3090 qualification",
+    "cache_max_error": 6.556510925292969e-07
+  },
+  "overfit": {
+    "config": {
+      "model_version": "1.0-reference-v1",
+      "vocab_size": 320,
+      "hidden_size": 32,
+      "num_hidden_layers": 4,
+      "attention_schedule": [
+        "kda",
+        "csa4",
+        "kda",
+        "qsa_mla"
+      ],
+      "hc_count": 4,
+      "hc_lowrank": 8,
+      "num_attention_heads": 2,
+      "kda_head_dim": 8,
+      "conv_size": 4,
+      "kda_backend": "auto",
+      "q_lora_rank": 8,
+      "kv_lora_rank": 8,
+      "qk_nope_head_dim": 8,
+      "qk_rope_head_dim": 8,
+      "v_head_dim": 8,
+      "mrope_sections": [
+        2,
+        1,
+        1
+      ],
+      "rope_theta": 10000.0,
+      "csa_head_dim": 16,
+      "csa_rope_dim": 8,
+      "index_heads": 2,
+      "index_dim": 8,
+      "index_rope_dim": 4,
+      "block_size": 4,
+      "top_blocks": 2,
+      "window_size": 8,
+      "protected_media_tokens": 64,
+      "protect_media": true,
+      "query_chunk_size": 64,
+      "index_query_count": 8,
+      "indexer_loss_coef": 0.01,
+      "num_experts": 4,
+      "num_experts_per_token": 2,
+      "routed_expert_hidden_size": 16,
+      "moe_intermediate_size": 16,
+      "shared_intermediate_size": 48,
+      "activation": "situ",
+      "routed_scale": 1.0,
+      "lookup_layer": 2,
+      "lookup_enabled": true,
+      "lookup_rows": 64,
+      "lookup_dim": 8,
+      "lookup_seed": 1729,
+      "mtp_enabled": true,
+      "mtp_loss_coef": 0.1,
+      "max_position_embeddings": 512,
+      "rms_norm_eps": 1e-05,
+      "initializer_range": 0.02,
+      "gradient_checkpointing": false,
+      "pad_token_id": 0,
+      "eos_token_id": 2,
+      "image_token_id": 7,
+      "control_token_count": 24,
+      "forbidden_action_ids": [
+        0,
+        1,
+        7
+      ],
+      "vision_config": {
+        "depth": 1,
+        "hidden_size": 24,
+        "num_heads": 2,
+        "intermediate_size": 48,
+        "patch_size": 4,
+        "temporal_patch_size": 2,
+        "spatial_merge_size": 2,
+        "output_size": 32,
+        "gradient_checkpointing": false
+      }
+    },
+    "run_spec": {
+      "format": "mf1-run-v1",
+      "model_name": "minifrontier1",
+      "kind": "acceptance",
+      "mf1_phase": "pilot",
+      "model_config_sha256": "1d0caba7ccb253a4ed79f29950bb9cb76a73d8e63f348e954dce442fb93e0592",
+      "tokenizer_sha256": "98709625a9b309859e514a0e45f934025d45fa50fbb94af5d43245a4bb150dcf",
+      "processor_sha256": "587901bce785c4d21522d60ce41ed79085667d4266819988001bca8fd08ac614",
+      "template_sha256": "8586a7024d1d130060f63a1e1e4b38373e0566a0b21bf1f7bdc68b2b0776066b",
+      "dataset_manifest_sha256": "3b38695209490bac0051f9d5f957f288b858faf176b46a45460e803e7e42815f",
+      "actual_init_checkpoint_sha256": null,
+      "source": {
+        "commit": null,
+        "dirty": true,
+        "implementation_sha256": "80c970782e47d48eb0634573982c24e3c62fe7a6e3939f4bdeccd2aa2a9e576f"
+      },
+      "seed": 42,
+      "steps": 600,
+      "token_budget": null,
+      "unit": "ce_tokens",
+      "input_batch_tokens": 64,
+      "optimizer_kind": "adamw",
+      "optimizer_groups_sha256": "6daaea1090e02e05cc1df90ff59abae314093bfb23aa9df4f10ef90b2897b177",
+      "mixture": null,
+      "chat_template": "mf1-control-v1"
+    },
+    "ledger": {
+      "input_tokens": 42732,
+      "ce_tokens": 9404,
+      "generated_tokens": 0,
+      "vision_tokens": 8248,
+      "mtp_target_tokens": 3220,
+      "index_query_tokens": 0,
+      "replay_ce_tokens": 0,
+      "media_exposures": 1718,
+      "main_ce_tokens": 0,
+      "phase_tokens": 9404,
+      "optimizer_updates": 600
+    },
+    "unique_media": 40,
+    "checkpoint_sha256": "29295f51f654abedb291525fc24e83501e9e2faa7c0bee406b4e8edda3843044",
+    "evaluation": {
+      "checkpoint_sha256": "29295f51f654abedb291525fc24e83501e9e2faa7c0bee406b4e8edda3843044",
+      "metrics": {
+        "nll": 2.2011243320469345,
+        "ce_tokens": 42,
+        "per_domain": {
+          "math": 3.848494291305542,
+          "vision": 0.00531102332752198,
+          "video": 0.0032711124513298273
+        },
+        "black_media_nll": {
+          "vision": 0.5999144017696381,
+          "video": 1.7086176872253418
+        },
+        "capability_qualified": false
+      },
+      "split": "val",
+      "diagnostic_only": true
+    },
+    "elapsed_seconds": 239.1710294522345,
+    "generation_summary": {
+      "train/math/matched": {
+        "correct": 32,
+        "total": 32
+      },
+      "train/vision/matched": {
+        "correct": 32,
+        "total": 32
+      },
+      "train/vision/black": {
+        "correct": 9,
+        "total": 32
+      },
+      "train/vision/inverted_colors": {
+        "correct": 0,
+        "total": 32
+      },
+      "train/video/matched": {
+        "correct": 8,
+        "total": 8
+      },
+      "train/video/black": {
+        "correct": 1,
+        "total": 8
+      },
+      "train/video/inverted_colors": {
+        "correct": 0,
+        "total": 8
+      },
+      "val/math/matched": {
+        "correct": 0,
+        "total": 6
+      },
+      "val/vision/matched": {
+        "correct": 4,
+        "total": 4
+      },
+      "val/vision/black": {
+        "correct": 1,
+        "total": 4
+      },
+      "val/vision/inverted_colors": {
+        "correct": 0,
+        "total": 4
+      },
+      "val/video/matched": {
+        "correct": 2,
+        "total": 2
+      },
+      "val/video/black": {
+        "correct": 0,
+        "total": 2
+      },
+      "val/video/inverted_colors": {
+        "correct": 0,
+        "total": 2
+      },
+      "test/math/matched": {
+        "correct": 0,
+        "total": 6
+      },
+      "test/vision/matched": {
+        "correct": 4,
+        "total": 4
+      },
+      "test/vision/black": {
+        "correct": 1,
+        "total": 4
+      },
+      "test/vision/inverted_colors": {
+        "correct": 0,
+        "total": 4
+      },
+      "test/video/matched": {
+        "correct": 2,
+        "total": 2
+      },
+      "test/video/black": {
+        "correct": 0,
+        "total": 2
+      },
+      "test/video/inverted_colors": {
+        "correct": 0,
+        "total": 2
+      },
+      "demo/math/matched": {
+        "correct": 0,
+        "total": 8
+      },
+      "demo/vision/matched": {
+        "correct": 6,
+        "total": 6
+      },
+      "demo/vision/black": {
+        "correct": 1,
+        "total": 6
+      },
+      "demo/vision/inverted_colors": {
+        "correct": 0,
+        "total": 6
+      },
+      "demo/video/matched": {
+        "correct": 2,
+        "total": 2
+      },
+      "demo/video/black": {
+        "correct": 1,
+        "total": 2
+      },
+      "demo/video/inverted_colors": {
+        "correct": 0,
+        "total": 2
+      }
+    },
+    "media_controls": {
+      "math/matched": {
+        "correct": 0,
+        "total": 6,
+        "generated_tokens": 12
+      },
+      "vision/matched": {
+        "correct": 4,
+        "total": 4,
+        "generated_tokens": 8
+      },
+      "vision/black": {
+        "correct": 1,
+        "total": 4,
+        "generated_tokens": 8
+      },
+      "vision/patch_shuffle": {
+        "correct": 4,
+        "total": 4,
+        "generated_tokens": 8
+      },
+      "video/matched": {
+        "correct": 2,
+        "total": 2,
+        "generated_tokens": 4
+      },
+      "video/black": {
+        "correct": 0,
+        "total": 2,
+        "generated_tokens": 4
+      },
+      "video/patch_shuffle": {
+        "correct": 2,
+        "total": 2,
+        "generated_tokens": 4
+      },
+      "video/reversed_time_groups": {
+        "correct": 1,
+        "total": 2,
+        "generated_tokens": 4
+      },
+      "video/first_time_group_repeated": {
+        "correct": 1,
+        "total": 2,
+        "generated_tokens": 4
+      }
+    }
+  },
+  "limits": [
+    "not a trained 228M model",
+    "not a 3090 profile",
+    "not evidence for general video/OCR/chat capability",
+    "held-out arithmetic 0/6",
+    "color-based generated fixtures only",
+    "no formal 3B tokens consumed"
+  ]
+}

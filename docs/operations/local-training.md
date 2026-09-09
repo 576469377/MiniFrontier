@@ -1,6 +1,6 @@
 # 本机 strategy-v2 调度记录
 
-本页保留当前研究工作站的目录、端口与设备安排，不是外部用户安装说明。通用操作见[训练指南](../training.md)。
+本页保留当前研究工作站的目录、端口与设备安排，不是外部用户安装说明。通用操作见[训练指南](../guides/training.md)。
 
 当前按 [2026-09-08 三份方案](../training-strategies/2026-09-08/) 执行。
 旧 educational-v1 的训练量、数据和生成效果未达到目标，
@@ -21,6 +21,9 @@ uv run python scripts/training_status.py
 真实训练从 `outputs/strategy-source-pilot-v2` 冻结源码运行，开发根目录可以继续迭代。
 `outputs/strategy-source-posttraining-v2` 是后训练接口的独立验证快照，尚未用于正式 RL。
 新版配方曲线在 `http://127.0.0.1:6007`；6006 保留旧 educational-v1 对照。
+
+6007 不展示 smoke / quickstart 的工程检查曲线。`mf1-quickstart-v2` 的原始日志仍保留，
+但不在 `outputs/tensorboard-strategy-v2` 下建立展示链接；后续工程冒烟检查也不要接入此看板。
 
 6007 通过 `outputs/tensorboard-strategy-v2` 的两个目录链接同时读取：
 `dual-gpu/` 对应 `strategy-recipe-pilots-v2`，`single-gpu/` 对应
@@ -124,8 +127,8 @@ DeepSeek：Text-v2 2.5B CE → 冻结文本接视觉 → Vision CPT 300M CE → 
 `--visual-warmup`，只更新视觉、aligner 和新视觉标记。
 
 SFT 的 control-v1 编码、原生媒体与同步工具 RL 见
-[后训练适应说明](../posttraining-adaptation.md)；独立目标冻结草稿和投机推理见
-[草稿适应说明](../draft-adaptation.md)。这些入口已有工程验证，正式学习预算还未完成。
+[后训练适应说明](../guides/posttraining-adaptation.md)；独立目标冻结草稿和投机推理见
+[草稿适应说明](../guides/draft-adaptation.md)。这些入口已有工程验证，正式学习预算还未完成。
 
 ## 生成与效果验收
 

@@ -1,0 +1,20 @@
+{
+  "phase": "p2",
+  "budget": 1400000000,
+  "unit": "ce_tokens",
+  "attention": "sparse_cpt",
+  "predecessor": [
+    "indexer"
+  ],
+  "visual_ce": 0.2,
+  "lengths": {
+    "2048": 0.7,
+    "4096": 0.3
+  },
+  "run_kind": "strategy",
+  "device_policy": "single_gpu_first",
+  "input_batch_tokens": 16384,
+  "optimizer": "adamw",
+  "requires_artifact_bound_gate": true,
+  "formal_started": false
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scope": "new_source_reproductions_only",
+  "scope": "source_reproductions_and_fusion",
   "models": {
     "miniqwen4": {
       "display_name": "MiniQwen4",
@@ -133,6 +133,46 @@
       "release_status": "v0.1.0_research_preview",
       "trained_status": "diagnostics_and_recipe_pilots_only",
       "usable_chat_checkpoint": false
+    },
+    "minifrontier1": {
+      "display_name": "MiniFrontier1.0",
+      "implementation": "minifrontier1",
+      "config": "minifrontier1.json",
+      "source_revision": "minifrontier1-native-fusion-v1",
+      "status": "native_fusion_reference_implemented",
+      "training_ready": true,
+      "training_ready_scope": "CPU reference and diagnostic workflows; formal data, 3090 profiling and quality gates pending",
+      "gpus_per_model": 1,
+      "usable_chat_checkpoint": false,
+      "trained_status": "mechanism_checks_only",
+      "training_components": [
+        "native_vision",
+        "short_video_frames",
+        "gr",
+        "kda",
+        "csa4",
+        "qsa_mla",
+        "latent_moe",
+        "ngram_lookup",
+        "mtp",
+        "indexer_distillation",
+        "exact_resume"
+      ],
+      "inference_components": [
+        "three_path_cache",
+        "media_prefill",
+        "snapshot_replay",
+        "batch_reorder"
+      ],
+      "missing": [
+        "tokenizer_32k_64k_admission",
+        "formal_dataset",
+        "3090_stage_profiling",
+        "20m_200m_ablations",
+        "trained_language_and_visual_quality",
+        "qualified_teachers",
+        "draft_speedup"
+      ]
     }
   }
 }

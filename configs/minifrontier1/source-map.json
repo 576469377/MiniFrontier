@@ -1,0 +1,116 @@
+{
+  "revisions": {
+    "kimi": "c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721",
+    "qwen": "4177486a9f199bd7be520eff14431071d5d41ec5",
+    "deepseek": "60d8d70770c6776ff598c94bb586a859a38244f1"
+  },
+  "local_adapters": [
+    {
+      "path": "minifrontier/models/minikimik3/upstream_layers.py",
+      "sha256": "0541b319780a957f779b97f3f25259ebc6472b73518f9dcea254eecd082c2305"
+    },
+    {
+      "path": "minifrontier/models/minikimik3/kernels.py",
+      "sha256": "1d5934b5a00436abde59c59605beb839a3f328b0583c1f4e17f501d5e284d5bb"
+    },
+    {
+      "path": "minifrontier/models/miniqwen4/upstream_core.py",
+      "sha256": "0ee90804a2e20bfe898c0d11f744082cd2a65f20bcd9a900abc5dd4f64af62ee"
+    },
+    {
+      "path": "minifrontier/models/miniqwen4/upstream_vision.py",
+      "sha256": "320d1d2ae9659626e84b41c1530128e84b310e1facec9e4df51ffff5f7410674"
+    },
+    {
+      "path": "minifrontier/models/miniqwen4/upstream_processing.py",
+      "sha256": "2bc55e3d1951ea50fb93efff7279f1d68bb8843fe4e362680ae6bfb66a1ae07c"
+    },
+    {
+      "path": "minifrontier/models/minideepseekv4/attention.py",
+      "sha256": "fc7b2aef9c8aefedc2bfd0bc317f53e419111e47ee4284626c4de71eaa6c9705"
+    }
+  ],
+  "new_designs": [
+    "QSA-MLA integration",
+    "segment-aware CSA",
+    "four-stream fusion decoder",
+    "single-point text-only lookup",
+    "native recipe and training gates"
+  ],
+  "license_expression": "Apache-2.0 AND MIT AND LicenseRef-Kimi-K3",
+  "evidence": "pinned local adaptations; original files retain upstream attribution",
+  "strategy_document": {
+    "path": "docs/training-strategies/2026-09-09/04-MiniFrontier1.0-\u539f\u751f\u591a\u6a21\u6001\u878d\u5408\u67b6\u6784\u4e0e\u5168\u6d41\u7a0b\u5b9e\u73b0\u65b9\u6848.md",
+    "sha256": "e0840c97bc5c23823e723af79b27ddb69c6067e74af1fa06fd294b0cc4791ef7"
+  },
+  "upstream_files": [
+    {
+      "path": "third_party/upstream/kimi-k3-c5d1dd4/LICENSE",
+      "sha256": "3954a4048bb5735c7dcd7f869ea452395d4c12abd0be8d1177c8fae899b3363b"
+    },
+    {
+      "path": "third_party/upstream/kimi-k3-c5d1dd4/configuration_kimi_k3.py",
+      "sha256": "735eb9ebe593e17d231e08e1df7f7be9b5ee0e079f511aa201f9572077b416ae"
+    },
+    {
+      "path": "third_party/upstream/kimi-k3-c5d1dd4/kimi_k3_processor.py",
+      "sha256": "ec9f7e86d2ab0eee07a8e7e7c037046e77ac3c25a710ad1298ec13be3b585b54"
+    },
+    {
+      "path": "third_party/upstream/kimi-k3-c5d1dd4/kimi_k3_vision_processing.py",
+      "sha256": "d122b30bfd3a51a6f05d4bfcfda1e657827322b1353f7caefeebc2835d7736b5"
+    },
+    {
+      "path": "third_party/upstream/kimi-k3-c5d1dd4/media_utils.py",
+      "sha256": "78403540328f9847d6b7ebc5c44eb2e6a752863de0afb7d0710728bb161dc60d"
+    },
+    {
+      "path": "third_party/upstream/kimi-k3-c5d1dd4/modeling_kimi_k3.py",
+      "sha256": "b9171c96726eda55234c92ac8dfae7e24c512fda68968ae8f2c3782b42665ea2"
+    },
+    {
+      "path": "third_party/upstream/kimi-k3-c5d1dd4/modeling_kimi_linear.py",
+      "sha256": "9e3564c70ac21854ce5a090cc946c5dc76b70d1050ef50840449181a20fff44a"
+    },
+    {
+      "path": "third_party/upstream/qwen4_exp-4177486/LICENSE",
+      "sha256": "77fd4710def9ec3c0f6225800e0235f15a425abd4a8b03559127fcd782612049"
+    },
+    {
+      "path": "third_party/upstream/qwen4_exp-4177486/cache_utils.py",
+      "sha256": "4b284431cb3a881b6e6f8b8c6430df6f2efdcb3366a2484c7984ae88c612c61a"
+    },
+    {
+      "path": "third_party/upstream/qwen4_exp-4177486/configuration_qwen4_exp.py",
+      "sha256": "b78132d8cd935437208ee281fa4569b771a63fcb58ebffe84f3e62f5b86235ca"
+    },
+    {
+      "path": "third_party/upstream/qwen4_exp-4177486/image_processing_qwen2_vl.py",
+      "sha256": "4e1da45f9e7e157ca08aa88243fcc1495ea6a333e40e0c5035ef17ef2747a97d"
+    },
+    {
+      "path": "third_party/upstream/qwen4_exp-4177486/modeling_qwen4_exp.py",
+      "sha256": "2e36ee6a1bc4f43fa0434ae197c2de9eba27a71aec84ee1ff111dc3a812e8283"
+    },
+    {
+      "path": "third_party/upstream/qwen4_exp-4177486/processing_qwen3_vl.py",
+      "sha256": "8ce525e56e0ddade5a665a70f0727b5576f6f51610d068ddfaf4cc60333415f0"
+    },
+    {
+      "path": "third_party/upstream/qwen4_exp-4177486/vision_utils.py",
+      "sha256": "bcecd5a92b3266b9926272a549d2b1a0f1fe7646c698c0fa19bd96f976085356"
+    },
+    {
+      "path": "third_party/upstream/deepseek-v4-60d8d70/LICENSE",
+      "sha256": "6e4c38e1172f42fdbff13edf9a7a017679fb82b0fde415a3e8b3c31c6ed4a4e4"
+    },
+    {
+      "path": "third_party/upstream/deepseek-v4-60d8d70/kernel.py",
+      "sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2"
+    },
+    {
+      "path": "third_party/upstream/deepseek-v4-60d8d70/model.py",
+      "sha256": "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71"
+    }
+  ]
+}

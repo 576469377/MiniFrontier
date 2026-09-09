@@ -1,0 +1,46 @@
+{
+  "slots": {
+    "general_tools:direct": {
+      "status": "unqualified",
+      "checkpoint": null,
+      "evaluation": null
+    },
+    "general_tools:thinking": {
+      "status": "unqualified",
+      "checkpoint": null,
+      "evaluation": null
+    },
+    "code:direct": {
+      "status": "unqualified",
+      "checkpoint": null,
+      "evaluation": null
+    },
+    "code:thinking": {
+      "status": "unqualified",
+      "checkpoint": null,
+      "evaluation": null
+    },
+    "math:direct": {
+      "status": "unqualified",
+      "checkpoint": null,
+      "evaluation": null
+    },
+    "math:thinking": {
+      "status": "unqualified",
+      "checkpoint": null,
+      "evaluation": null
+    },
+    "vision:direct": {
+      "status": "unqualified",
+      "checkpoint": null,
+      "evaluation": null
+    },
+    "vision:thinking": {
+      "status": "unqualified",
+      "checkpoint": null,
+      "evaluation": null
+    }
+  },
+  "placement": "sequential_same_device",
+  "qualification_required": true
+}

@@ -1,16 +1,17 @@
 cff-version: 1.2.0
 message: "Please cite MiniFrontier and the relevant upstream architecture reports."
-title: "MiniFrontier: Source-Aligned Miniature Frontier Models"
+title: "MiniFrontier: Native Multimodal Fusion and Miniature Frontier Models"
 type: software
 version: 0.1.0
 authors:
   - name: "MiniFrontier contributors"
 # Per-component terms and custom Kimi license: THIRD_PARTY_NOTICES.md.
 abstract: >-
-  An independent PyTorch research project for source-aligned, capacity-scaled
-  MiniQwen4, MiniKimiK3 and MiniDeepSeekV4 implementations.
+  An independent PyTorch research project for MiniFrontier1.0 native multimodal
+  fusion, with source-aligned MiniQwen4, MiniKimiK3 and MiniDeepSeekV4 baselines.
 keywords:
   - large language models
   - source alignment
   - mixture of experts
-  - distributed training
+  - native multimodal models
+  - reproducible training

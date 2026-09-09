@@ -1,0 +1,34 @@
+{
+  "main_ce_tokens": 3000000000,
+  "visual_ce_tokens": 630000000,
+  "text_ce_tokens": 2370000000,
+  "indexer_input_tokens": 40000000,
+  "sft_assistant_ce_tokens": 120000000,
+  "p0_visual_mix": {
+    "caption": 0.35,
+    "ocr_document": 0.35,
+    "vqa": 0.2,
+    "chart_table": 0.1,
+    "video": 0.0
+  },
+  "teacher_slots": [
+    "general_tools:direct",
+    "general_tools:thinking",
+    "code:direct",
+    "code:thinking",
+    "math:direct",
+    "math:thinking",
+    "vision:direct",
+    "vision:thinking"
+  ],
+  "separate_ledgers": [
+    "input_tokens",
+    "ce_tokens",
+    "generated_tokens",
+    "vision_tokens",
+    "mtp_target_tokens",
+    "index_query_tokens",
+    "replay_ce_tokens",
+    "media_exposures"
+  ]
+}

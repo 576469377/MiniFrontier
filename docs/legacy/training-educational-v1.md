@@ -1,4 +1,4 @@
-> 历史 educational-v1 文档，保留作失败对照。当前入口见 [训练指南](../training.md)。
+> 历史 educational-v1 文档，保留作失败对照。当前入口见 [训练指南](../guides/training.md)。
 
 # 训练与 demo
 

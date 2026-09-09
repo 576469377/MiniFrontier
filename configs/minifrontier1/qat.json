@@ -1,0 +1,19 @@
+{
+  "phase": "qat",
+  "budget": 10000000,
+  "unit": "ce_tokens",
+  "attention": "sparse_cpt",
+  "predecessor": [
+    "opd",
+    "dpo",
+    "rl",
+    "sft"
+  ],
+  "optional": true,
+  "run_kind": "strategy",
+  "device_policy": "single_gpu_first",
+  "input_batch_tokens": 16384,
+  "optimizer": "adamw",
+  "requires_artifact_bound_gate": true,
+  "formal_started": false
+}

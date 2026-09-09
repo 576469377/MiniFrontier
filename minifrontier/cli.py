@@ -11,6 +11,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     import sys
 
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "mf1":
+        from minifrontier.mf1.cli import main as mf1
+
+        mf1(argv[1:])
+        return
     if argv and argv[0] == "quickstart":
         from minifrontier.quickstart import main as quickstart
 
@@ -119,7 +124,23 @@ def main(argv: Sequence[str] | None = None) -> None:
         demo_parser.add_argument("--root", default="outputs")
         demo_parser.add_argument("--host", default="127.0.0.1")
         demo_parser.add_argument("--port", type=int, default=7860)
-        demo_parser.add_argument("--device", default="cpu")
+        devices = demo_parser.add_mutually_exclusive_group()
+        devices.add_argument("--device", default="cpu", help="CPU or a visible CUDA device")
+        devices.add_argument(
+            "--gpu", type=int, help="physical GPU index from nvidia-smi; use one GPU"
+        )
+        demo_parser.add_argument(
+            "--include-experiments",
+            action="store_true",
+            help="enable a separate browser view for unassessed acceptance checkpoints",
+        )
+        demo_parser.add_argument(
+            "--experiment-root",
+            dest="experiment_roots",
+            action="append",
+            help="current experiment directory relative to --root; repeat for multiple groups; "
+            "other acceptance runs appear only in history",
+        )
         serve(**vars(demo_parser.parse_args(argv[1:])))
         return
     from minifrontier import __version__

@@ -1,0 +1,7 @@
+{
+  "batch_size": 1,
+  "primary": "bf16_target_only",
+  "max_media_tokens": 1024,
+  "fixed_examples": 16,
+  "usable_checkpoint": null
+}

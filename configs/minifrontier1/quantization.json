@@ -1,0 +1,19 @@
+{
+  "status": "not_selected",
+  "reason": "no capability-qualified BF16 checkpoint or PTQ evaluation",
+  "primary": "bf16",
+  "candidates": [
+    "int8_weight_only",
+    "int4_weight_only"
+  ],
+  "group_sizes": [
+    64,
+    128
+  ],
+  "qat_assistant_ce_range": [
+    5000000,
+    20000000
+  ],
+  "quality_required": true,
+  "speedup_measured": false
+}

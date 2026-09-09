@@ -13,6 +13,7 @@ The wheel and sdist declare `Apache-2.0 AND MIT AND LicenseRef-Kimi-K3` for thei
 | Qwen Transformers and vLLM derived computational/vision/MTP files | Apache-2.0; retained attribution | [Apache-2.0](LICENSES/Apache-2.0.txt) |
 | Kimi attributed text, AttnRes, vision/processing, MTP and related derived computation, including its grouped-expert branch | LicenseRef-Kimi-K3; full custom terms, including commercial-use conditions | [Kimi K3](LICENSES/LicenseRef-Kimi-K3.txt) |
 | DeepSeek attributed text, compression, vision and DSpark-derived computation | MIT; retained attribution | [MIT](LICENSES/MIT-DeepSeek.txt) |
+| MiniFrontier1 fusion: KDA/MLA/LatentMoE adaptations, GR/ViT reuse, CSA-derived pooling and local integration | Respectively LicenseRef-Kimi-K3, Apache-2.0, MIT and Apache-2.0; combining these modules does not remove the source terms | [MF1 source map](configs/minifrontier1/source-map.json) and the standalone licenses above |
 | Upstream snapshots (sdist; not wheel reference resources) | Each snapshot's original license as listed below | Original LICENSE beside each snapshot |
 | Dependencies installed separately | Their own licenses; not relicensed by this package | Refer to each dependency distribution |
 

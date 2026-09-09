@@ -13,11 +13,12 @@ MANIFEST = ROOT / "configs/models.json"
 
 def test_current_targets_never_report_old_model_counts():
     result = inspect_current_models(MANIFEST)
-    assert set(result) == {"miniqwen4", "minikimik3", "minideepseekv4"}
+    assert set(result) == {"miniqwen4", "minikimik3", "minideepseekv4", "minifrontier1"}
     assert {key: item["display_name"] for key, item in result.items()} == {
         "miniqwen4": "MiniQwen4",
         "minikimik3": "MiniKimi-K3",
         "minideepseekv4": "MiniDeepSeek-V4",
+        "minifrontier1": "MiniFrontier1.0",
     }
     for item in result.values():
         assert item["complete_model_parameters"] is None

@@ -7,6 +7,10 @@ from pathlib import Path
 
 
 def model_classes(name):
+    if name == "minifrontier1":
+        from .minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
+
+        return MiniFrontier1Config, MiniFrontier1ForCausalLM
     if name == "miniqwen4":
         from .miniqwen4 import MiniQwen4Config, MiniQwen4ForCausalLM
 
@@ -25,6 +29,8 @@ def model_classes(name):
 def build_model(name, values=None, *, phase="dense_pretrain"):
     config_cls, cls = model_classes(name)
     if values is None:
+        if name == "minifrontier1":
+            return cls(config_cls(), training_phase=phase)
         from minifrontier.catalog import default_manifest_path
 
         values = json.loads((default_manifest_path().parent / f"{name}.json").read_text())

@@ -14,11 +14,13 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_public_catalog_and_packaged_configuration_paths():
     assert default_manifest_path() == ROOT / "configs/models.json"
     result = inspect_current_models(default_manifest_path())
-    assert set(result) == {"miniqwen4", "minikimik3", "minideepseekv4"}
+    assert set(result) == {"miniqwen4", "minikimik3", "minideepseekv4", "minifrontier1"}
     config = tomllib.loads((ROOT / "pyproject.toml").read_text())
     assert config["project"]["readme"] == "README.md"
     for filenames in config["tool"]["setuptools"]["data-files"].values():
-        assert all((ROOT / name).is_file() for name in filenames)
+        for pattern in filenames:
+            matches = list(ROOT.glob(pattern))
+            assert matches and all(path.is_file() for path in matches)
 
 
 def test_local_documentation_links_resolve():
@@ -40,7 +42,7 @@ def test_repository_has_only_current_model_packages():
         for p in (ROOT / "minifrontier/models").iterdir()
         if p.is_dir() and p.name != "__pycache__"
     }
-    assert folders == {"miniqwen4", "minikimik3", "minideepseekv4"}
+    assert folders == {"miniqwen4", "minikimik3", "minideepseekv4", "minifrontier1"}
     # Historical documentation is retained as evidence; executable retired
     # model packages/configurations must still stay out of current entry points.
     assert (ROOT / "docs/training-failure-v1.md").is_file()
@@ -52,6 +54,8 @@ def test_repository_has_only_current_model_packages():
         "miniqwen4.json",
         "minikimik3.json",
         "minideepseekv4.json",
+        "minifrontier1.json",
+        "minifrontier1",
     }
     audit = json.loads((ROOT / "docs/audits/miniqwen4-acceptance.json").read_text())
     assert audit["formal_training_started"] is False

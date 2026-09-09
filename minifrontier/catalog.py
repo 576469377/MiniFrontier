@@ -26,13 +26,16 @@ def inspect_current_models(
 ) -> dict[str, Any]:
     path = Path(manifest_path).resolve(strict=True)
     manifest = json.loads(path.read_text())
-    if (
-        manifest.get("schema_version") != 1
-        or manifest.get("scope") != "new_source_reproductions_only"
-    ):
+    if manifest.get("schema_version") != 1 or manifest.get("scope") not in {
+        "new_source_reproductions_only",
+        "source_reproductions_and_fusion",
+    }:
         raise ValueError("expected a new-source-reproduction manifest, not an old training recipe")
-    if set(manifest.get("models", {})) != {"miniqwen4", "minikimik3", "minideepseekv4"}:
-        raise ValueError("current scope is Qwen4, Kimi-K3 and DeepSeek-V4 only")
+    expected = {"miniqwen4", "minikimik3", "minideepseekv4"}
+    if manifest.get("scope") == "source_reproductions_and_fusion":
+        expected.add("minifrontier1")
+    if set(manifest.get("models", {})) != expected:
+        raise ValueError("catalog model set differs from its declared source/fusion scope")
     from minifrontier.models.factory import build_model, model_classes
 
     result = {}
