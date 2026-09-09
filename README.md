@@ -2,7 +2,7 @@
 
 在固定官方源码的基础上缩小旗舰模型，学习架构，亲手构造数据、训练、评估和推理。
 
-[中文训练指南](docs/training.md) · [项目梳理](docs/project-review.md) · [架构与目录](docs/architecture.md) · [来源与许可证](THIRD_PARTY_NOTICES.md)
+[中文训练指南](docs/training.md) · [实验记录](docs/experiments.md) · [项目梳理](docs/project-review.md) · [架构与目录](docs/architecture.md) · [来源与许可证](THIRD_PARTY_NOTICES.md)
 
 | 模型 | strategy-v2 实现 | 当前诊断配置参数量 |
 |---|---|---:|
