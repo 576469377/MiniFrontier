@@ -5,9 +5,13 @@
   "source_document_sha256": "32b15a4b22ac425362d10a2b24593de688ec0004ecbd0fe5f467f9bc5d8e7ab8",
   "config": "configs/strategies/minikimik3-v2.json",
   "gpu_ids": [
+    0
+  ],
+  "experiment_gpu_ids": [
     0,
     1
   ],
+  "execution_override": "2026-09-09 user instruction: one GPU per run, up to six independent experiments on GPUs 0-5; active two-GPU trials finish unchanged",
   "training_dtype": "bf16",
   "optimizer_state_dtype": "fp32",
   "min_disk_free_gib": 50,

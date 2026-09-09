@@ -5,9 +5,13 @@
   "source_document_sha256": "fedde26db784178722c7a20092eb1e00ddd8b4945ea8897f3845af1c64156ea3",
   "config": "configs/strategies/miniqwen4-v2.json",
   "gpu_ids": [
+    2
+  ],
+  "experiment_gpu_ids": [
     2,
     3
   ],
+  "execution_override": "2026-09-09 user instruction: one GPU per run, up to six independent experiments on GPUs 0-5; active two-GPU trials finish unchanged",
   "training_dtype": "bf16",
   "optimizer_state_dtype": "fp32",
   "min_disk_free_gib": 50,

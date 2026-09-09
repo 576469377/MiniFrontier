@@ -100,6 +100,52 @@ def strategy_status(root):
             row["cumulative_diagnostic_ce"] = row["prior_diagnostic_ce"] + row["ce_tokens"]
         print(json.dumps(row, ensure_ascii=False))
 
+    for queue_path in sorted(root.glob("strategy-single-gpu*/queue.json")):
+        queue = read_json(queue_path)
+        plan = read_json(queue_path.parent / "queue-plan.json")
+        specs = {job["id"]: job for job in plan.get("jobs", [])}
+        for job in queue.get("jobs", []):
+            current = Path(job["output"])
+            state = read_json(current / "status.json")
+            train = latest_train(current / "metrics.jsonl")
+            ledger = (
+                state.get("token_ledger", {})
+                if state.get("state") == "complete"
+                else train.get("token_ledger", {})
+            )
+            profile = read_json(current / "performance.json")
+            spec = specs.get(job["id"], {})
+            reference = (
+                read_json(Path(spec["reference_performance"]))
+                if spec.get("reference_performance")
+                else {}
+            )
+            single, dual = (
+                profile.get("ce_tokens_per_second"),
+                reference.get("ce_tokens_per_second"),
+            )
+            row = dict(
+                kind="single_gpu_trial",
+                trial=job["id"],
+                gpu_id=job["gpu_id"],
+                state=job["state"],
+                path=str(current),
+                step=ledger.get("optimizer_updates", 0),
+                ce_tokens=ledger.get("ce_tokens", 0),
+                ce_token_budget=20_000_000,
+                measured_ce_tokens_per_second=single,
+                capability_status="unassessed",
+            )
+            if single and dual and spec.get("variant") == "reference":
+                row["single_vs_dual_run_throughput"] = single / dual
+                row["estimated_two_single_runs_vs_one_dual"] = 2 * single / dual
+                row["comparison_scope"] = (
+                    "same global input batch; separate measurement times, shared-host load may differ"
+                )
+            if job.get("error"):
+                row["error"] = job["error"]
+            print(json.dumps(row, ensure_ascii=False))
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

@@ -1,0 +1,56 @@
+{
+  "recorded_at": 1788938395.2381744,
+  "user_request": "one GPU per run; up to six independent experiments",
+  "controller_pid": 3597870,
+  "controller_sha256": "4e22dcf0b850522cf1cff470fc60b511cb06200183279587f9a502f83f3cfe26",
+  "plan_sha256": "c61b096c416b0b15dd558730fd829bdcf8c9cfaed644d2a98031935921fcb411",
+  "training_source": "75a3364f586936d764c31376e185747973d2bed6",
+  "state": "waiting_for_current_pilots",
+  "jobs": [
+    {
+      "id": "minikimik3/reference",
+      "gpu_id": 0,
+      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/minikimik3/reference",
+      "state": "waiting_predecessor"
+    },
+    {
+      "id": "minikimik3/lower-lr",
+      "gpu_id": 1,
+      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/minikimik3/lower-lr",
+      "state": "waiting_predecessor"
+    },
+    {
+      "id": "miniqwen4/reference",
+      "gpu_id": 2,
+      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/miniqwen4/reference",
+      "state": "waiting_predecessor"
+    },
+    {
+      "id": "miniqwen4/lower-lr",
+      "gpu_id": 3,
+      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/miniqwen4/lower-lr",
+      "state": "waiting_predecessor"
+    },
+    {
+      "id": "minideepseekv4/reference",
+      "gpu_id": 4,
+      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/minideepseekv4/reference",
+      "state": "waiting_predecessor"
+    },
+    {
+      "id": "minideepseekv4/lower-lr",
+      "gpu_id": 5,
+      "output": "/workspace/MiniFrontier/outputs/strategy-single-gpu-v2/minideepseekv4/lower-lr",
+      "state": "waiting_predecessor"
+    }
+  ],
+  "checks": {
+    "cpu_tests_passed": 32,
+    "ruff_passed": true,
+    "mypy_passed": true,
+    "original_strategy_documents_unchanged": true,
+    "single_vs_two_rank_global_sample_stream_equal": true
+  },
+  "single_gpu_throughput_measured": false,
+  "main_budget_eligible": false
+}

@@ -5,9 +5,13 @@
   "source_document_sha256": "3f1c30583f17f35ab1b57ecf550f717534e6d18a12d3983e5d9dc759d868c086",
   "config": "configs/strategies/minideepseekv4-v2.json",
   "gpu_ids": [
+    4
+  ],
+  "experiment_gpu_ids": [
     4,
     5
   ],
+  "execution_override": "2026-09-09 user instruction: one GPU per run, up to six independent experiments on GPUs 0-5; active two-GPU trials finish unchanged",
   "training_dtype": "bf16",
   "optimizer_state_dtype": "fp32",
   "min_disk_free_gib": 50,

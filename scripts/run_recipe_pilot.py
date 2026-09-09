@@ -22,11 +22,26 @@ def main():
     p.add_argument("--workspace", type=Path, required=True)
     p.add_argument("--model", choices=["minikimik3", "miniqwen4", "minideepseekv4"], required=True)
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument(
+        "--gpus",
+        type=int,
+        nargs="+",
+        choices=range(6),
+        help="physical GPUs; default: one GPU per model",
+    )
+    p.add_argument(
+        "--batch-size",
+        type=int,
+        default=2,
+        help="per-device microbatch; global input target stays 16384",
+    )
     p.add_argument("--diagnostic", type=Path, help="explicit reviewed diagnostic continuation")
     p.add_argument(
         "--source-root", type=Path, help="frozen training checkout; also set PYTHONPATH to it"
     )
     args = p.parse_args()
+    if args.batch_size < 1 or (args.gpus and len(args.gpus) != len(set(args.gpus))):
+        p.error("batch-size must be positive and GPU IDs must be distinct")
     workspace, output = args.workspace.resolve(), args.output.resolve()
     source_root = (args.source_root or Path(__file__).resolve().parents[1]).resolve()
     import minifrontier
@@ -39,7 +54,14 @@ def main():
     if output.exists():
         raise FileExistsError("pilot output already exists; preserve previous experiments")
     output.mkdir(parents=True)
-    gpu_ids = {"minikimik3": "0,1", "miniqwen4": "2,3", "minideepseekv4": "4,5"}[args.model]
+    selected = args.gpus or {"minikimik3": [0], "miniqwen4": [2], "minideepseekv4": [4]}[args.model]
+    from minifrontier.hardware import query_gpus
+
+    devices = {gpu.index: gpu for gpu in query_gpus()}
+    if any(index not in devices for index in selected):
+        raise ValueError("requested physical GPUs are unavailable")
+    gpu_ids = ",".join(str(index) for index in selected)
+    gpu_uuids = ",".join(devices[index].uuid for index in selected)
     diagnostic = (
         args.diagnostic or workspace / "outputs/strategy-diagnostics-v2" / args.model
     ).resolve()
@@ -58,6 +80,7 @@ def main():
         diagnostic=str(diagnostic),
         model=args.model,
         gpu_ids=gpu_ids,
+        gpu_uuids=gpu_uuids,
         stage="waiting_diagnostic",
         main_budget_eligible=False,
         comparisons="Muon vs AdamW, same 20M CE/data/seed/input batch",
@@ -78,7 +101,7 @@ def main():
         os.environ,
         OMP_NUM_THREADS="2",
         TOKENIZERS_PARALLELISM="false",
-        CUDA_VISIBLE_DEVICES=gpu_ids,
+        CUDA_VISIBLE_DEVICES=gpu_uuids,
         HF_HOME=str(workspace / "data/hf-cache"),
         TRITON_CACHE_DIR=str(workspace / "outputs/kernel-cache"),
         TORCHINDUCTOR_CACHE_DIR=str(workspace / "outputs/inductor-cache"),
@@ -184,7 +207,7 @@ def main():
                 "-m",
                 "torch.distributed.run",
                 "--standalone",
-                "--nproc_per_node=2",
+                f"--nproc_per_node={len(selected)}",
                 "-m",
                 "minifrontier",
                 "train",
@@ -205,7 +228,7 @@ def main():
                 "--sequence-length",
                 "512",
                 "--batch-size",
-                "1",
+                str(args.batch_size),
                 "--input-batch-tokens",
                 "16384",
                 "--lr",
