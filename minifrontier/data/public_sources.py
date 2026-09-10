@@ -55,11 +55,12 @@ SOURCES = {
 }
 
 
-def source_rows(name, *, seed, audit):
+def source_rows(name, *, seed, audit, specification=None):
     import pyarrow.parquet as pq
     from huggingface_hub import HfApi, HfFileSystem
 
-    source = SOURCES[name]
+    source = specification or SOURCES[name]
+    audit["files"] = {}
     files = [
         item.path
         for item in HfApi().list_repo_tree(
@@ -86,6 +87,10 @@ def source_rows(name, *, seed, audit):
         with fs.open(
             f"datasets/{source['repo']}@{source['revision']}/{filename}", block_size=4 * 1024**2
         ) as stream:
+            info = fs.info(stream.path)
+            audit["files"][filename] = {
+                key: info[key] for key in ("size", "blob_id", "lfs") if key in info
+            }
             parquet = pq.ParquetFile(stream)
             groups = list(range(parquet.num_row_groups))
             rng.shuffle(groups)

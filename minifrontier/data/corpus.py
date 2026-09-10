@@ -64,7 +64,10 @@ def simhash(text):
 
 
 class CorpusBuilder:
-    def __init__(self, root, *, seed=42, max_gib=48):
+    def __init__(self, root, *, seed=42, max_gib=48, val_buckets=50, test_buckets=50):
+        if min(val_buckets, test_buckets) <= 0 or val_buckets + test_buckets >= 10000:
+            raise ValueError("held-out hash buckets must leave a nonempty training fraction")
+        self.val_buckets, self.test_buckets = val_buckets, test_buckets
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         if (self.root / "corpus-manifest.json").exists():
@@ -145,6 +148,7 @@ class CorpusBuilder:
         media_context = "|".join(m["rgb_sha256"] for m in record.get("media", []))
         identity = fingerprint(text + ("|media:" + media_context if media_context else ""))
         if self.db.execute("SELECT 1 FROM samples WHERE id=?", (identity,)).fetchone():
+            self._link_origin(identity, record)
             self.counts["exact_duplicates"] += 1
             return False
         if question:
@@ -184,6 +188,7 @@ class CorpusBuilder:
                 own_shingles = own_shingles or text_shingles(text)
                 other = text_shingles(other_text)
                 if len(own_shingles & other) / max(1, len(own_shingles | other)) >= 0.85:
+                    self._link_origin(candidate, record)
                     self.counts["near_duplicates"] += 1
                     return False
         record = dict(
@@ -253,9 +258,21 @@ class CorpusBuilder:
                     keys.append(field + ":" + media[field])
         if record.get("repo_id"):
             keys.append("repo:" + record["repo_id"])
+        if record.get("document_id"):
+            keys.append("document:" + record["document_id"])
         self.db.executemany("INSERT INTO links VALUES (?,?)", [(identity, key) for key in keys])
         self.counts["accepted"] += 1
         return True
+
+    def _link_origin(self, identity, record):
+        # Rejected duplicates still connect their origin groups to the retained
+        # document, so other variants of that origin cannot leak into held-out.
+        keys = ["source-group:" + record["source"] + ":" + record["group_id"]]
+        if record.get("document_id"):
+            keys.append("document:" + record["document_id"])
+        if record.get("repo_id"):
+            keys.append("repo:" + record["repo_id"])
+        self.db.executemany("INSERT INTO links VALUES (?,?)", [(identity, key) for key in keys])
 
     def finalize(self):
         self.db.commit()
@@ -284,7 +301,13 @@ class CorpusBuilder:
             bucket = (
                 int(hashlib.sha256(f"{self.seed}:{root}".encode()).hexdigest()[:16], 16) % 10000
             )
-            split = "val" if bucket < 50 else "test" if bucket < 100 else "train"
+            split = (
+                "val"
+                if bucket < self.val_buckets
+                else "test"
+                if bucket < self.val_buckets + self.test_buckets
+                else "train"
+            )
             self.db.execute(
                 "UPDATE samples SET group_root=?, split=? WHERE id=?", (root, split, identity)
             )
@@ -296,7 +319,10 @@ class CorpusBuilder:
             seed=self.seed,
             counts=dict(self.counts),
             splits=dict(split_counts),
-            split_rule="connected groups; sha256 buckets val 0.5%, sealed test 0.5%",
+            split_rule=(
+                f"connected groups; sha256 buckets val {self.val_buckets / 100:g}%, "
+                f"sealed test {self.test_buckets / 100:g}%"
+            ),
             dedup="exact hash, first-question cap3, answer shingles0.8, simhash64+Jaccard0.85",
             database_sha256=sha256(self.root / "corpus.sqlite"),
         )
