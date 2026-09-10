@@ -86,3 +86,33 @@ def test_shared_gpu_admission_accounts_for_context_and_existing_jobs_reserve():
     assert not admission(11.9, 66, 6)
     assert not admission(12, 65.9, 6)
     assert not admission(8, 100, 6)
+
+
+def test_language_diagnostics_group_paraphrases_and_mask_user_content(tmp_path):
+    from minifrontier.data.minifrontier1 import encode_record
+    from minifrontier.models.minifrontier1 import MiniFrontier1Config
+    from scripts.prepare_mf1_language_data import generated_records
+
+    splits = generated_records()
+    assert splits == generated_records()
+    assert {r["split_group"] for r in splits["train"]}.isdisjoint(
+        r["split_group"] for r in splits["val"]
+    )
+    for records in splits.values():
+        assert all(
+            sum(r["split_group"] == other["split_group"] for other in records) == 2 for r in records
+        )
+    sample = splits["train"][0]
+    tokenizer = train_tokenizer([sample], tmp_path / "tokenizer.json", 320)
+    encoded = encode_record(sample, tokenizer, MiniFrontier1Config.tiny(), tmp_path)
+    ids, labels = encoded["input_ids"][0], encoded["labels"][0]
+    assistant = ids.tolist().index(5)
+    assert labels[: assistant + 1].eq(-100).all()
+    assert labels[assistant + 1 :].eq(ids[assistant + 1 :]).all()
+    assert ids[-1] == 2
+
+
+def test_language_shared_gpu_guard_reserves_memory_before_admission():
+    assert admission(8.9, 80, 5.5, 2)
+    assert not admission(8.4, 80, 5.5, 2)
+    assert not admission(8.9, 65, 5.5, 2)

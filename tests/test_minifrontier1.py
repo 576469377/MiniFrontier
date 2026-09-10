@@ -100,6 +100,36 @@ def test_gr_exact_primitive_and_four_stream_gradients(config):
     assert x.grad.abs().sum((0, 1, 3)).gt(0).all()
 
 
+def test_lookup_batched_prefill_matches_streaming_outputs_gradients_and_state(config):
+    fast = NgramLookup(config)
+    oracle = copy.deepcopy(fast)
+    ids = torch.randint(24, 100, (2, 23))
+    ids[:, [0, 7, 18]] = torch.tensor([1, 7, 2])
+    segments = torch.tensor([[0] * 12 + [1] * 8 + [-1] * 3, [0] * 8 + [1] * 15])
+    modality = torch.zeros_like(ids)
+    modality[:, 6:9] = 1
+    x = torch.randn(2, 23, config.hidden_size, requires_grad=True)
+    other = x.detach().clone().requires_grad_()
+    expected, expected_state = oracle.forward_reference(other, ids, segments, modality)
+    actual, actual_state = fast(x, ids, segments, modality)
+    torch.testing.assert_close(actual, expected, atol=2e-6, rtol=2e-5)
+    for left, right in zip(actual_state, expected_state, strict=True):
+        assert left["ids"] == right["ids"] and left["segment"] == right["segment"]
+        torch.testing.assert_close(left["conv"], right["conv"], atol=2e-6, rtol=2e-5)
+    weights = torch.randn_like(actual)
+    (actual * weights).sum().backward()
+    (expected * weights).sum().backward()
+    torch.testing.assert_close(x.grad, other.grad, atol=2e-6, rtol=2e-5)
+    for (_, a), (_, b) in zip(fast.named_parameters(), oracle.named_parameters(), strict=True):
+        torch.testing.assert_close(a.grad, b.grad, atol=2e-6, rtol=2e-5)
+    for split in (1, 7, 12, 18, 22):
+        prefix, state = fast(x[:, :split], ids[:, :split], segments[:, :split], modality[:, :split])
+        suffix, _ = fast(
+            x[:, split:], ids[:, split:], segments[:, split:], modality[:, split:], state
+        )
+        torch.testing.assert_close(torch.cat((prefix, suffix), 1), actual, atol=2e-6, rtol=2e-5)
+
+
 def test_registry_completion_before_selection():
     s = torch.tensor([0] * 9 + [1] * 2)
     m = torch.tensor([0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0])

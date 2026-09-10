@@ -465,3 +465,53 @@ def test_qualified_registry_auto_opd_and_mismatched_slot_rejection(
     registry.write_text(json.dumps(dict(teachers={"math:direct": entry})))
     with pytest.raises(ValueError, match="actual checkpoint"):
         qualified_teacher(registry, "math:direct", base)
+
+
+def test_validation_covers_domains_after_old_twelve_record_prefix(monkeypatch):
+    from types import SimpleNamespace
+
+    import minifrontier.training.minifrontier1 as runtime
+
+    data = [
+        dict(labels=torch.tensor([[-100, 24, 2]]), domain="early" if i < 12 else "late")
+        for i in range(18)
+    ]
+    monkeypatch.setattr(
+        runtime,
+        "_forward",
+        lambda model, item: SimpleNamespace(
+            lm_loss=torch.tensor(1.0 if item["domain"] == "early" else 5.0)
+        ),
+    )
+    model = torch.nn.Linear(1, 1).train()
+    result = runtime.evaluate(model, data, torch.device("cpu"))
+    assert result["examples"] == 18 and result["ce_tokens"] == 36
+    assert result["per_domain"] == {"early": 1.0, "late": 5.0}
+    assert result["nll"] == pytest.approx(7 / 3)
+    assert result["selection"] == "full_validation" and model.training
+    assert (
+        runtime.evaluate(model, data, torch.device("cpu"), limit=12)["selection"]
+        == "explicit_prefix"
+    )
+
+
+def test_dense_sft_diagnosis_binds_attention_and_cannot_change_formal_plan(fixture_data, tmp_path):
+    args = dict(
+        data=fixture_data,
+        config=asdict(MiniFrontier1Config.tiny()),
+        phase="sft",
+        steps=2,
+        input_batch_tokens=32,
+        output=tmp_path / "sft",
+        diagnostic_attention="dense_pretrain",
+    )
+    train(**args, stop_after_updates=1)
+    checkpoint = tmp_path / "sft/checkpoint.pt"
+    saved = torch.load(checkpoint, weights_only=True)
+    assert saved["phase"] == "dense_pretrain"
+    assert saved["run_spec"]["diagnostic_attention"] == "dense_pretrain"
+    with pytest.raises(ValueError, match="exact resume"):
+        train(**dict(args, diagnostic_attention=None), resume=checkpoint)
+    train(**args, resume=checkpoint)
+    with pytest.raises(ValueError, match="restricted"):
+        train(**dict(args, run_kind="strategy"))

@@ -139,7 +139,7 @@ def _forward(model, item, *, labels=True, return_hidden=False):
 
 
 @torch.no_grad()
-def evaluate(model, dataset, device, *, limit=12):
+def evaluate(model, dataset, device, *, limit=0):
     was_training = model.training
     model.eval()
     losses: dict[str, float] = defaultdict(float)
@@ -179,6 +179,8 @@ def evaluate(model, dataset, device, *, limit=12):
             k: wrong_losses[k] / wrong_counts[k] for k in wrong_counts if wrong_counts[k]
         },
         capability_qualified=False,
+        examples=min(len(dataset), limit or len(dataset)),
+        selection="full_validation" if not limit or limit >= len(dataset) else "explicit_prefix",
     )
 
 
@@ -204,7 +206,12 @@ def train(
     save_every=100,
     eval_every=100,
     weights=None,
+    diagnostic_attention=None,
 ):
+    if diagnostic_attention is not None and (
+        run_kind != "acceptance" or phase != "sft" or diagnostic_attention != "dense_pretrain"
+    ):
+        raise ValueError("attention override is restricted to dense acceptance SFT diagnosis")
     if phase not in {"pilot", "p0", "p1", "indexer", "p2", "p3", "sft"}:
         raise ValueError("use the posttrain command for RL/teacher/OPD/DPO/draft/QAT")
     if (init and resume) or input_batch_tokens < 1 or save_every < 1 or eval_every < 1:
@@ -282,7 +289,8 @@ def train(
             saved,
             resume=bool(resume),
         )
-    model = MiniFrontier1ForCausalLM(c, PHASES[phase]["attention"]).to(device)
+    attention = diagnostic_attention or PHASES[phase]["attention"]
+    model = MiniFrontier1ForCausalLM(c, attention).to(device)
     if saved:
         if (
             saved["model_name"] != "minifrontier1"
@@ -325,6 +333,7 @@ def train(
         optimizer_groups_sha256=digest(group_manifest),
         mixture=weights,
         chat_template=CONTROL_VERSION,
+        diagnostic_attention=diagnostic_attention,
     )
     sampler, balance = (
         Sampler(dataset, seed, weights, length_filter=run_kind == "strategy"),
@@ -412,7 +421,8 @@ def train(
         if writer:
             for key, value in values.items():
                 if isinstance(value, (int, float)) and not isinstance(value, bool):
-                    writer.add_scalar(key, value, step)
+                    tag = f"validation/{key}" if values.get("event") == "validation" else key
+                    writer.add_scalar(tag, value, step)
             writer.flush()
 
     def save(state):
@@ -422,7 +432,7 @@ def train(
             format="mf1-checkpoint-v1",
             model_name="minifrontier1",
             config=asdict(c),
-            phase=PHASES[phase]["attention"],
+            phase=attention,
             stage="sft"
             if phase == "sft"
             else "dense_distill"

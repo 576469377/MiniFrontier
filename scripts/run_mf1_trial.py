@@ -33,9 +33,9 @@ def gpu_status(index):
     return dict(uuid=raw[0].strip(), free_gib=int(raw[1]) / 1024, utilization=int(raw[2]))
 
 
-def admission(free_gib, disk_free_gib, memory_gib):
-    # Include CUDA context overhead and keep a reserve above the older queue's 3 GiB guard.
-    return free_gib >= memory_gib + 1 + 5 and disk_free_gib >= 50 + 16
+def admission(free_gib, disk_free_gib, memory_gib, reserve_gib=5):
+    # Budget CUDA context overhead separately from the configured physical reserve.
+    return free_gib >= memory_gib + 1 + reserve_gib and disk_free_gib >= 50 + 16
 
 
 def write(path, data):
@@ -58,7 +58,9 @@ def worker(args):
         output=args.output,
         config=str(Path(args.source_checkout) / "configs/minifrontier1/model_228m_native.json"),
         device="cuda:0",
-        phase="pilot",
+        phase="sft" if args.task == "language-sft" else "pilot",
+        diagnostic_attention="dense_pretrain" if args.task == "language-sft" else None,
+        init=args.init if not args.resume else None,
         run_kind="acceptance",
         seed=42,
         steps=10000,
@@ -66,10 +68,12 @@ def worker(args):
         input_batch_tokens=args.input_batch_tokens,
         optimizer_kind="adamw",
         lr=args.lr,
-        vision_lr=1e-4,
+        vision_lr=5e-6 if args.task == "language-sft" else 1e-4,
         save_every=25,
         eval_every=25,
-        weights={
+        weights={"language": 0.90, "vision": 0.075, "video": 0.025}
+        if args.task == "language-sft"
+        else {
             "zh_general": 0.45,
             "en_general": 0.35,
             "math": 0.18,
@@ -80,6 +84,26 @@ def worker(args):
         resume=str(Path(args.output) / "checkpoint.pt") if args.resume else None,
     )
     print(json.dumps(result), flush=True)
+    if args.task == "language-sft" and args.resume:
+        from minifrontier.data.minifrontier1 import write_json
+        from minifrontier.evaluation.minifrontier1 import generation_suite
+
+        torch.cuda.empty_cache()
+        for split in ("train", "val"):
+            report = generation_suite(
+                str(Path(args.output) / "checkpoint.pt"),
+                args.data,
+                device="cuda:0",
+                split=split,
+                controls=False,
+                domain_filter=["language"] if split == "train" else None,
+                max_new_tokens=40,
+            )
+            report["scope"] = (
+                "training memorization" if split == "train" else "held-out diagnostic tasks"
+            )
+            report["eos_count"] = sum(s["termination"] == "eos" for s in report["samples"])
+            write_json(Path(args.output) / f"generation-{split}.json", report)
 
 
 def supervise(args):
@@ -104,11 +128,12 @@ def supervise(args):
         source_commit=commit,
         gpu=args.gpu,
         memory_ceiling_gib=args.memory_gib,
-        physical_reserve_gib=5,
+        physical_reserve_gib=args.reserve_gib,
         disk_reserve_gib=50,
         token_budget=args.token_budget,
         lr=args.lr,
-        scope="shared-GPU 228M mechanism experiment; not formal pretraining",
+        task=args.task,
+        scope="bounded 228M diagnosis; not formal training or capability admission",
         started_at=time.time(),
     )
     write(output / "supervisor.json", status)
@@ -142,7 +167,13 @@ def supervise(args):
         str(args.token_budget),
         "--input-batch-tokens",
         str(args.input_batch_tokens),
+        "--task",
+        args.task,
+        "--reserve-gib",
+        str(args.reserve_gib),
     ]
+    if args.init:
+        command.extend(["--init", str(Path(args.init).resolve())])
     write(
         output / "launch.json",
         dict(
@@ -169,7 +200,10 @@ def supervise(args):
     try:
         for resume in (False, True):
             while not admission(
-                gpu["free_gib"], shutil.disk_usage(output).free / GIB, args.memory_gib
+                gpu["free_gib"],
+                shutil.disk_usage(output).free / GIB,
+                args.memory_gib,
+                args.reserve_gib,
             ):
                 if interrupted:
                     status["state"] = "stopped"
@@ -197,7 +231,7 @@ def supervise(args):
                         gpu = gpu_status(args.gpu)
                         reason = (
                             "stopped_memory"
-                            if gpu["free_gib"] < 5
+                            if gpu["free_gib"] < args.reserve_gib
                             else "stopped_disk"
                             if shutil.disk_usage(output).free / GIB < 60
                             else "stopped"
@@ -261,6 +295,9 @@ def main():
     parser.add_argument("--gpu", type=int, required=True)
     parser.add_argument("--lr", type=float, required=True)
     parser.add_argument("--memory-gib", type=float, default=6)
+    parser.add_argument("--reserve-gib", type=float, default=5)
+    parser.add_argument("--task", choices=["mechanism", "language-sft"], default="mechanism")
+    parser.add_argument("--init")
     parser.add_argument("--token-budget", type=int, default=500000)
     parser.add_argument("--input-batch-tokens", type=int, default=1024)
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
@@ -273,6 +310,8 @@ def main():
         or not math.isfinite(args.lr)
         or args.gpu < 0
         or args.input_batch_tokens < 1
+        or not 2 <= args.reserve_gib <= 12
+        or (args.task == "language-sft" and not args.init)
     ):
         raise ValueError("invalid bounded mechanism experiment controls")
     worker(args) if args.worker else supervise(args)

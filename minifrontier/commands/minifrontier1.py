@@ -106,6 +106,7 @@ def main(argv=None):
     t.add_argument("--resume")
     t.add_argument("--run-kind", choices=["acceptance", "strategy"], default="acceptance")
     t.add_argument("--evidence")
+    t.add_argument("--diagnostic-attention", choices=["dense_pretrain"])
     t.add_argument("--stop-after-updates", type=int)
     t.add_argument("--optimizer-kind", choices=["adamw", "muon"], default="adamw")
     t.add_argument("--lr", type=float)
