@@ -241,7 +241,7 @@
     "status": "method_and_decisions_pending"
   },
   "validation_topup": {
-    "status": "prepared_not_yet_applied_to_consumers",
+    "status": "applied_to_tokenizer_and_source_encoding_consumers",
     "additional_groups_by_source": {
       "HuggingFaceFW/fineweb-edu": 18,
       "HuggingFaceH4/ultrachat_200k": 3,
@@ -251,7 +251,19 @@
     },
     "affected_records": 75,
     "affected_reference_tokens": 121956,
-    "reservation_sha256": "b6815deb0f4d0b3392ba20ceec41a1197f00d1fc81bb1cb96a22ff96ed67cc48"
+    "reservation_sha256": "b6815deb0f4d0b3392ba20ceec41a1197f00d1fc81bb1cb96a22ff96ed67cc48",
+    "applied_source_commit": "1d8e3809de7f5d398b52ecfa7837fe8e3e1dc79b",
+    "application_command": [
+      "python",
+      "-m",
+      "minifrontier.data.partitions",
+      "--corpus-root",
+      "data/pretraining-canonical-text-v1",
+      "--reservation",
+      "data/pretraining-canonical-text-v1/validation-reservation.json",
+      "--output",
+      "data/pretraining-text-partition-v1"
+    ]
   },
   "tests": {
     "full_cpu_before_unicode_reader_fix": {
@@ -260,13 +272,160 @@
       "cuda_deselected": 54
     },
     "targeted_after_unicode_reader_fix": 5,
-    "real_benchmark_items_parsed": 9930
+    "real_benchmark_items_parsed": 9930,
+    "partition_full_cpu": {
+      "passed": 403,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "seconds": 137.16,
+      "log_sha256": "6f4eb228c43286df938a09e2717620de29fe552abc64fab4cc59c2d0f0da0b44"
+    }
   },
   "limitations": [
     "candidate data; formal CE remains zero for all four models",
     "a 0.5% hash bucket does not ensure each finite source reaches a 0.5% empirical validation group fraction",
-    "75 additional validation groups are selected; consumers do not yet apply this reservation",
     "manual review method and decisions, final tokenizer and encoded-data admission remain pending",
-    "image/OCR/chart/video admission is separate"
-  ]
+    "image/OCR/chart/video admission is separate",
+    "top-level corpus counts describe the original merge; effective_partition contains the applied partition and current training inventory"
+  ],
+  "effective_partition": {
+    "schema_version": 1,
+    "observed_unix": 1789061429.2364893,
+    "formal_admission": false,
+    "corpus_manifest_sha256": "ea296436ac3ca1df794aace11092e37ac98d815e95130a7909e2989a81574277",
+    "database_sha256": "d2120da088ea6ac6289d2b9e9f2a12a1f10559bd5dfb44fd99d950caaef1087f",
+    "source_database_unchanged": true,
+    "changes": [
+      [
+        "train",
+        "val",
+        75,
+        121956
+      ]
+    ],
+    "train_reference_tokens": 554830690,
+    "cross_split_groups": 0,
+    "cross_split_origin_keys": 0,
+    "source_splits": {
+      "HuggingFaceFW/fineweb-edu": {
+        "test": {
+          "records": 1492,
+          "groups": 1491,
+          "reference_tokens": 1558471
+        },
+        "train": {
+          "records": 145860,
+          "groups": 145855,
+          "reference_tokens": 147686699
+        },
+        "val": {
+          "records": 741,
+          "groups": 741,
+          "reference_tokens": 754968
+        },
+        "validation_group_fraction": 0.005003815324775301
+      },
+      "HuggingFaceH4/ultrachat_200k": {
+        "test": {
+          "records": 340,
+          "groups": 340,
+          "reference_tokens": 397010
+        },
+        "train": {
+          "records": 32448,
+          "groups": 32448,
+          "reference_tokens": 39414370
+        },
+        "val": {
+          "records": 165,
+          "groups": 165,
+          "reference_tokens": 188698
+        },
+        "validation_group_fraction": 0.00500713136891937
+      },
+      "codeparrot/codeparrot-clean-train": {
+        "test": {
+          "records": 568,
+          "groups": 151,
+          "reference_tokens": 1667859
+        },
+        "train": {
+          "records": 31377,
+          "groups": 8338,
+          "reference_tokens": 96942506
+        },
+        "val": {
+          "records": 186,
+          "groups": 70,
+          "reference_tokens": 503196
+        },
+        "validation_group_fraction": 0.008178525528683258
+      },
+      "open-web-math/open-web-math": {
+        "test": {
+          "records": 293,
+          "groups": 292,
+          "reference_tokens": 471806
+        },
+        "train": {
+          "records": 26421,
+          "groups": 26392,
+          "reference_tokens": 49214522
+        },
+        "val": {
+          "records": 135,
+          "groups": 135,
+          "reference_tokens": 303166
+        },
+        "validation_group_fraction": 0.005033744733211529
+      },
+      "opencsg/Fineweb-Edu-Chinese-V2.1": {
+        "test": {
+          "records": 1699,
+          "groups": 1699,
+          "reference_tokens": 2263954
+        },
+        "train": {
+          "records": 164374,
+          "groups": 164374,
+          "reference_tokens": 221572593
+        },
+        "val": {
+          "records": 835,
+          "groups": 835,
+          "reference_tokens": 1166560
+        },
+        "validation_group_fraction": 0.005002756009298536
+      }
+    },
+    "view_bytes": 9860664,
+    "review_samples_unchanged": true,
+    "output": "data/pretraining-text-partition-v1",
+    "source_audit_sha256": "c85ebdbacce6fec8991a9548ee10a5d66de4b283343c7f779e8454e9ee27adf6",
+    "split_reference_tokens": {
+      "test": {
+        "HuggingFaceFW/fineweb-edu": 1558471,
+        "HuggingFaceH4/ultrachat_200k": 397010,
+        "codeparrot/codeparrot-clean-train": 1667859,
+        "open-web-math/open-web-math": 471806,
+        "opencsg/Fineweb-Edu-Chinese-V2.1": 2263954
+      },
+      "train": {
+        "HuggingFaceFW/fineweb-edu": 147686699,
+        "HuggingFaceH4/ultrachat_200k": 39414370,
+        "codeparrot/codeparrot-clean-train": 96942506,
+        "open-web-math/open-web-math": 49214522,
+        "opencsg/Fineweb-Edu-Chinese-V2.1": 221572593
+      },
+      "val": {
+        "HuggingFaceFW/fineweb-edu": 754968,
+        "HuggingFaceH4/ultrachat_200k": 188698,
+        "codeparrot/codeparrot-clean-train": 503196,
+        "open-web-math/open-web-math": 303166,
+        "opencsg/Fineweb-Edu-Chinese-V2.1": 1166560
+      }
+    },
+    "integrity_audit_sha256": "1364c42abf570c8960b25a8f3cdc78f71b103b198dc205ad1f0a2cbcaacba47a",
+    "source_archive_sha256": "c485b4bf09d80090f5f4bdb737905222615dbf60133d9a3371ac1eb687258995"
+  }
 }
