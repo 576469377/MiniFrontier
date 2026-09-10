@@ -1,0 +1,230 @@
+{
+  "workspace": "${WORKSPACE}",
+  "host_label": "remote-239",
+  "allowed_gpu_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "main_budget_eligible": false,
+  "scope": "Batch frontier v1: bounded synthetic + real data screen; max 9M real CE across six workers, ephemeral probe weights",
+  "controller_sha256": "434cc3edf868f4f1e62d471530f877a68c4018a1a5a3880f36e4de704c88889e",
+  "jobs": [
+    {
+      "id": "miniqwen4/sweep",
+      "model": "miniqwen4",
+      "role": "execution_screen",
+      "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/miniqwen4/sweep",
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/miniqwen4-sweep.json"
+      ],
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/miniqwen4-sweep.json": "57efbf64abb9f65722fb321ad70895037983a131337230bb8219a34eb13fc62b",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py": "cc3157b80fed00f4592fca6a75bed67a7e607f86135bc1c1e951f37f5c76a3a8",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/benchmark_training_batch.py": "91590b43caad16e950309a434679a86f1b5350df45b68e36f546bff71cfb47b4",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/miniqwen4-v2.json": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
+        "${WORKSPACE}/data/strategy-recipe-miniqwen4-64k-v2/manifest.json": "f781d3210e394193a9098d1cd6829c8412ab0a2faabaaeb60f8bf5bdec49ac8b",
+        "${WORKSPACE}/data/strategy-recipe-miniqwen4-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/miniqwen4-1m-mixture.json": "46ad648a4c861bc5cd19562fa1bf4bc1c2cb2426e337dc4b3127952a0d336d64"
+      },
+      "allowed_gpu_ids": [
+        0
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "token_budget": 2000000,
+      "experiment_plan": "${WORKSPACE}/outputs/services/batch-frontier-v1/miniqwen4-sweep.json"
+    },
+    {
+      "id": "miniqwen4/real32",
+      "model": "miniqwen4",
+      "role": "batch32_real_control",
+      "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/miniqwen4/real32",
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/miniqwen4-real32.json"
+      ],
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/miniqwen4-real32.json": "d14eb0b4793a60db6edabedc5d0886edd5890de5fd4b84f065c2ccd71e2e7960",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py": "cc3157b80fed00f4592fca6a75bed67a7e607f86135bc1c1e951f37f5c76a3a8",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/benchmark_training_batch.py": "91590b43caad16e950309a434679a86f1b5350df45b68e36f546bff71cfb47b4",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/miniqwen4-v2.json": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
+        "${WORKSPACE}/data/strategy-recipe-miniqwen4-64k-v2/manifest.json": "f781d3210e394193a9098d1cd6829c8412ab0a2faabaaeb60f8bf5bdec49ac8b",
+        "${WORKSPACE}/data/strategy-recipe-miniqwen4-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/miniqwen4-1m-mixture.json": "46ad648a4c861bc5cd19562fa1bf4bc1c2cb2426e337dc4b3127952a0d336d64"
+      },
+      "allowed_gpu_ids": [
+        1
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "token_budget": 1000000,
+      "experiment_plan": "${WORKSPACE}/outputs/services/batch-frontier-v1/miniqwen4-real32.json"
+    },
+    {
+      "id": "minikimik3/sweep",
+      "model": "minikimik3",
+      "role": "execution_screen",
+      "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minikimik3/sweep",
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-sweep.json"
+      ],
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-sweep.json": "be3925ec8dacec7a553165d08ed967af89277f1f0980edace61a6cf915a4e667",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py": "cc3157b80fed00f4592fca6a75bed67a7e607f86135bc1c1e951f37f5c76a3a8",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/benchmark_training_batch.py": "91590b43caad16e950309a434679a86f1b5350df45b68e36f546bff71cfb47b4",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minikimik3-v2.json": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+        "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2/manifest.json": "4a3519e2a64efbee3b49b85b731be2bd2aac560f30151e80b36ea837e1b59da7",
+        "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-1m-mixture.json": "3698d1f48d0bb86a46c717b8960244deb2f060a69cd40de0d1cc652d55cc3021"
+      },
+      "allowed_gpu_ids": [
+        2
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "token_budget": 2000000,
+      "experiment_plan": "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-sweep.json"
+    },
+    {
+      "id": "minikimik3/real32",
+      "model": "minikimik3",
+      "role": "batch32_real_control",
+      "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minikimik3/real32",
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-real32.json"
+      ],
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-real32.json": "28778b1143a4fd4918cd324501e92ba9f1fa429a3d67754af83b35f894bd7ced",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py": "cc3157b80fed00f4592fca6a75bed67a7e607f86135bc1c1e951f37f5c76a3a8",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/benchmark_training_batch.py": "91590b43caad16e950309a434679a86f1b5350df45b68e36f546bff71cfb47b4",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minikimik3-v2.json": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+        "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2/manifest.json": "4a3519e2a64efbee3b49b85b731be2bd2aac560f30151e80b36ea837e1b59da7",
+        "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-1m-mixture.json": "3698d1f48d0bb86a46c717b8960244deb2f060a69cd40de0d1cc652d55cc3021"
+      },
+      "allowed_gpu_ids": [
+        3
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "token_budget": 1000000,
+      "experiment_plan": "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-real32.json"
+    },
+    {
+      "id": "minideepseekv4/sweep",
+      "model": "minideepseekv4",
+      "role": "execution_screen",
+      "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minideepseekv4/sweep",
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minideepseekv4-sweep.json"
+      ],
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minideepseekv4-sweep.json": "4d5c5fefa9c23bea3fbfc4185358a8ac2efdf2d3d57036de419551f2752a0c46",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py": "cc3157b80fed00f4592fca6a75bed67a7e607f86135bc1c1e951f37f5c76a3a8",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/benchmark_training_batch.py": "91590b43caad16e950309a434679a86f1b5350df45b68e36f546bff71cfb47b4",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minideepseekv4-v2.json": "b660f89fcf82048d087ba26b143a76b9b27baa38cfe71cb09e0ec9f997633b35",
+        "${WORKSPACE}/data/strategy-recipe-encoded-64k-v2/manifest.json": "4fd93e0b8d2e8bcebfcc8ffa71c592653d1ac91402fb3c856f6dc4ece6b33520",
+        "${WORKSPACE}/data/strategy-recipe-encoded-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "${WORKSPACE}/outputs/strategy-recipe-pilots-v2/minideepseekv4/mixture.json": "26b2e3cc6a40818166f18a908991162c809e6acba98bc42a5736e9f262e5eafd"
+      },
+      "allowed_gpu_ids": [
+        4
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "token_budget": 2000000,
+      "experiment_plan": "${WORKSPACE}/outputs/services/batch-frontier-v1/minideepseekv4-sweep.json"
+    },
+    {
+      "id": "minideepseekv4/real32",
+      "model": "minideepseekv4",
+      "role": "batch32_real_control",
+      "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minideepseekv4/real32",
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minideepseekv4-real32.json"
+      ],
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/minideepseekv4-real32.json": "566d590d84ebc84c417d853db3f39e5b4dbf339cf49032f6831f34bfe017a976",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run_batch_frontier.py": "cc3157b80fed00f4592fca6a75bed67a7e607f86135bc1c1e951f37f5c76a3a8",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/benchmark_training_batch.py": "91590b43caad16e950309a434679a86f1b5350df45b68e36f546bff71cfb47b4",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minideepseekv4-v2.json": "b660f89fcf82048d087ba26b143a76b9b27baa38cfe71cb09e0ec9f997633b35",
+        "${WORKSPACE}/data/strategy-recipe-encoded-64k-v2/manifest.json": "4fd93e0b8d2e8bcebfcc8ffa71c592653d1ac91402fb3c856f6dc4ece6b33520",
+        "${WORKSPACE}/data/strategy-recipe-encoded-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "${WORKSPACE}/outputs/strategy-recipe-pilots-v2/minideepseekv4/mixture.json": "26b2e3cc6a40818166f18a908991162c809e6acba98bc42a5736e9f262e5eafd"
+      },
+      "allowed_gpu_ids": [
+        5
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "token_budget": 1000000,
+      "experiment_plan": "${WORKSPACE}/outputs/services/batch-frontier-v1/minideepseekv4-real32.json"
+    }
+  ],
+  "adopted": [
+    {
+      "id": "mf1/steady-512",
+      "gpu_ids": [
+        6
+      ]
+    }
+  ]
+}

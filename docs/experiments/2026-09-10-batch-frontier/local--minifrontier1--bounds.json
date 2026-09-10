@@ -1,0 +1,223 @@
+{
+  "host": "local",
+  "output": "strategy-batch-frontier-gpu-v1/trials/minifrontier1/bounds",
+  "experiment": {
+    "cohort": "batch-frontier-v1",
+    "model": "minifrontier1",
+    "role": "batch_boundary_screen",
+    "source": {
+      "commit": "d77c51c4ba074ba2d325f0b52e2ecceca392972e",
+      "dirty": false,
+      "implementation_sha256": "2a04cbc1961c4e6518dc9a6b9abe526b772219ab10896abc95bc127073851b1b"
+    },
+    "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minifrontier1/bounds",
+    "command": [
+      "${WORKSPACE}/.venv/bin/python",
+      "${WORKSPACE}/outputs/mf1-source-language-v1/scripts/benchmark_mf1.py",
+      "--config",
+      "${WORKSPACE}/outputs/mf1-source-language-v1/configs/minifrontier1/model_228m_native.json",
+      "--output",
+      "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minifrontier1/bounds/measurement",
+      "--length",
+      "512",
+      "--input-tokens",
+      "16384",
+      "--batches",
+      "8",
+      "16",
+      "32",
+      "--warmup",
+      "1",
+      "--updates",
+      "3"
+    ],
+    "scope": "fixed16384 input positions; short1warmup3measured updates; MF1 only, independent of three-model frontier",
+    "main_budget_eligible": false,
+    "retention": "metrics_only_no_weights"
+  },
+  "status": {
+    "state": "running"
+  },
+  "selection": {},
+  "real_cases": [],
+  "synthetic_cases": [
+    {
+      "state": "running",
+      "source": {
+        "commit": "d77c51c4ba074ba2d325f0b52e2ecceca392972e",
+        "dirty": false,
+        "implementation_sha256": "2a04cbc1961c4e6518dc9a6b9abe526b772219ab10896abc95bc127073851b1b"
+      },
+      "runner_sha256": "0e5d57153f5583e852f2660de9c46279e835aea208b37bb24268ba127a74a02e",
+      "config": {
+        "model_version": "1.0-reference-v1",
+        "vocab_size": 32768,
+        "hidden_size": 512,
+        "num_hidden_layers": 16,
+        "attention_schedule": [
+          "kda",
+          "kda",
+          "kda",
+          "csa4",
+          "kda",
+          "kda",
+          "kda",
+          "qsa_mla",
+          "kda",
+          "kda",
+          "kda",
+          "csa4",
+          "kda",
+          "kda",
+          "kda",
+          "qsa_mla"
+        ],
+        "hc_count": 4,
+        "hc_lowrank": 64,
+        "num_attention_heads": 8,
+        "kda_head_dim": 64,
+        "conv_size": 4,
+        "kda_backend": "auto",
+        "q_lora_rank": 128,
+        "kv_lora_rank": 128,
+        "qk_nope_head_dim": 64,
+        "qk_rope_head_dim": 32,
+        "v_head_dim": 64,
+        "mrope_sections": [
+          4,
+          6,
+          6
+        ],
+        "rope_theta": 10000.0,
+        "csa_head_dim": 64,
+        "csa_rope_dim": 16,
+        "index_heads": 4,
+        "index_dim": 32,
+        "index_rope_dim": 16,
+        "block_size": 4,
+        "top_blocks": 64,
+        "window_size": 128,
+        "protected_media_tokens": 1024,
+        "protect_media": true,
+        "query_chunk_size": 64,
+        "index_query_count": 64,
+        "indexer_loss_coef": 0.01,
+        "num_experts": 32,
+        "num_experts_per_token": 4,
+        "routed_expert_hidden_size": 256,
+        "moe_intermediate_size": 256,
+        "shared_intermediate_size": 768,
+        "activation": "situ",
+        "routed_scale": 1.0,
+        "lookup_layer": 2,
+        "lookup_enabled": true,
+        "lookup_rows": 32768,
+        "lookup_dim": 64,
+        "lookup_seed": 1729,
+        "mtp_enabled": true,
+        "mtp_loss_coef": 0.1,
+        "max_position_embeddings": 8192,
+        "rms_norm_eps": 1e-05,
+        "initializer_range": 0.02,
+        "gradient_checkpointing": true,
+        "pad_token_id": 0,
+        "eos_token_id": 2,
+        "image_token_id": 7,
+        "control_token_count": 24,
+        "forbidden_action_ids": [
+          0,
+          1,
+          7
+        ],
+        "vision_config": {
+          "depth": 12,
+          "hidden_size": 384,
+          "num_heads": 6,
+          "intermediate_size": 1536,
+          "patch_size": 16,
+          "temporal_patch_size": 2,
+          "spatial_merge_size": 2,
+          "output_size": 512,
+          "gradient_checkpointing": true
+        }
+      },
+      "torch": "2.13.0+cu130",
+      "cuda": "13.0",
+      "controls": {
+        "config": "${WORKSPACE}/outputs/mf1-source-language-v1/configs/minifrontier1/model_228m_native.json",
+        "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minifrontier1/bounds/measurement",
+        "length": 512,
+        "input_tokens": 16384,
+        "batches": [
+          8,
+          16,
+          32
+        ],
+        "warmup": 1,
+        "updates": 3,
+        "media_features": 0,
+        "profile": false
+      },
+      "scope": "synthetic equal-input-budget screen; only a >=20 warmup / >=100 unprofiled-update run meets the measurement duration requirement",
+      "cases": [
+        {
+          "length": 512,
+          "microbatch": 8,
+          "accumulation": 4,
+          "media_features": 0,
+          "rows": [
+            {
+              "step": 1,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 242.4735023472458,
+              "grad_norm": 0.8336737155914307,
+              "peak_allocated_gib": 5.632359027862549,
+              "peak_reserved_gib": 6.107421875,
+              "free_gib": 17.1107177734375
+            },
+            {
+              "step": 2,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 239.76051510497928,
+              "grad_norm": 1.622903823852539,
+              "peak_allocated_gib": 7.172491073608398,
+              "peak_reserved_gib": 7.44921875,
+              "free_gib": 15.7689208984375
+            },
+            {
+              "step": 3,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 240.3716067969799,
+              "grad_norm": 4.145849704742432,
+              "peak_allocated_gib": 7.1687846183776855,
+              "peak_reserved_gib": 7.44921875,
+              "free_gib": 15.7689208984375
+            },
+            {
+              "step": 4,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 241.1891324147582,
+              "grad_norm": 5.567813396453857,
+              "peak_allocated_gib": 7.173922061920166,
+              "peak_reserved_gib": 7.44921875,
+              "free_gib": 15.7689208984375
+            }
+          ],
+          "ce_per_second": 68.00853254555635
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "plan_sha256": "eb366117a1275e51f61c85725ff8981b6a2e338ee2c849fa62d5e8066b28dc91",
+  "started_at": 1789032438.4095345,
+  "main_budget_eligible": false,
+  "jobs": [
+    {
+      "id": "minikimik3/host-confirmation",
+      "output": "${WORKSPACE}/outputs/strategy-batch-host-gpu-v1/trials/minikimik3",
+      "state": "running",
+      "gate_observed": {},
+      "gpu_id": 5,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/minikimik3-host-confirmation.json"
+      ],
+      "started_at": 1789032735.6002889
+    },
+    {
+      "id": "minideepseekv4/host-confirmation",
+      "output": "${WORKSPACE}/outputs/strategy-batch-host-gpu-v1/trials/minideepseekv4",
+      "state": "complete",
+      "gate_observed": {},
+      "gpu_id": 5,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/minideepseekv4-host-confirmation.json"
+      ],
+      "started_at": 1789032439.54078,
+      "exit_code": 0,
+      "finished_at": 1789032704.2780714
+    },
+    {
+      "id": "miniqwen4/host-confirmation",
+      "output": "${WORKSPACE}/outputs/strategy-batch-host-gpu-v1/trials/miniqwen4",
+      "state": "waiting_results",
+      "gate_observed": {
+        "result": "${WORKSPACE}/outputs/remote-239/outputs/strategy-batch-frontier-gpu-v1/trials/miniqwen4/sweep/status.json"
+      }
+    }
+  ],
+  "state": "running",
+  "updated_at": 1789032843.3136923,
+  "adopted": [],
+  "reserved_gpu_ids": [
+    5
+  ]
+}

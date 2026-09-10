@@ -1,0 +1,40 @@
+{
+  "observed_at": 1789035661.1946697,
+  "records": 215,
+  "states": {
+    "updates_complete_unqualified": 3,
+    "stopped_for_review": 2,
+    "complete": 150,
+    "budget_complete_unqualified": 36,
+    "unverified": 1,
+    "failed": 2,
+    "running": 12,
+    "stopped_by_user": 7,
+    "paused_for_review": 2
+  },
+  "families": {
+    "mf1-integration": 62,
+    "mf1-instructions": 2,
+    "mf1-learning": 6,
+    "mf1-performance": 7,
+    "legacy-language": 31,
+    "batch-screens": 42,
+    "source-integration": 18,
+    "bounded-batch-verification": 8,
+    "source-batch16": 3,
+    "source-learnability": 4,
+    "source-recipe-v2": 18,
+    "speed-selected-long": 10,
+    "source-seed-stopped": 4
+  },
+  "findings": {
+    "missing_source": 31,
+    "missing_data_sha256": 4,
+    "missing_tokenizer_sha256": 4,
+    "deepseek_muon_lr_argument_unused": 15,
+    "whole_microbatch_global_batch_overshoot": 31
+  },
+  "issues": [],
+  "plan_sha256": "731ea4729ad7d26ea14d576698d618833b8f11632da01371314fdc529fdf542a",
+  "scope": "observed records, including nested stages and fixtures; not a count of independent experiments"
+}

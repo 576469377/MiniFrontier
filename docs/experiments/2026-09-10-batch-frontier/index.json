@@ -1,0 +1,96 @@
+{
+  "recorded_at_utc": "2026-09-10T09:34:16.595351+00:00",
+  "scope": "bounded batch frontier, interruption records and conditional followups; running entries are partial",
+  "runs": [
+    {
+      "host": "local",
+      "model": "minifrontier1",
+      "file": "local--minifrontier1--bounds.json",
+      "state": "running"
+    },
+    {
+      "host": "local",
+      "model": "minideepseekv4",
+      "file": "local--minideepseekv4.json",
+      "state": "complete"
+    },
+    {
+      "host": "local",
+      "model": "minikimik3",
+      "file": "local--minikimik3.json",
+      "state": "running"
+    },
+    {
+      "host": "remote-239",
+      "model": "miniqwen4",
+      "file": "remote-239--miniqwen4--sweep.json",
+      "state": "running"
+    },
+    {
+      "host": "remote-239",
+      "model": "miniqwen4",
+      "file": "remote-239--miniqwen4--real32.json",
+      "state": "complete"
+    },
+    {
+      "host": "remote-239",
+      "model": "minikimik3",
+      "file": "remote-239--minikimik3--sweep.json",
+      "state": "complete"
+    },
+    {
+      "host": "remote-239",
+      "model": "minikimik3",
+      "file": "remote-239--minikimik3--real32.json",
+      "state": "complete"
+    },
+    {
+      "host": "remote-239",
+      "model": "minideepseekv4",
+      "file": "remote-239--minideepseekv4--sweep.json",
+      "state": "complete"
+    },
+    {
+      "host": "remote-239",
+      "model": "minideepseekv4",
+      "file": "remote-239--minideepseekv4--real32.json",
+      "state": "complete"
+    },
+    {
+      "host": "remote-239",
+      "model": "minikimik3",
+      "file": "remote-239--minikimik3--seed-43.json",
+      "state": "running"
+    },
+    {
+      "host": "remote-239",
+      "model": "minikimik3",
+      "file": "remote-239--minikimik3--seed-44.json",
+      "state": "running"
+    },
+    {
+      "host": "remote-239",
+      "model": "minideepseekv4",
+      "file": "remote-239--minideepseekv4--seed-43.json",
+      "state": "running"
+    },
+    {
+      "host": "remote-239",
+      "model": "minideepseekv4",
+      "file": "remote-239--minideepseekv4--seed-44.json",
+      "state": "running"
+    }
+  ],
+  "registry_counts": {
+    "updates_complete_unqualified": 3,
+    "running": 14,
+    "budget_complete_unqualified": 36,
+    "complete": 111,
+    "unverified": 7,
+    "failed": 2,
+    "waiting_results": 3,
+    "stopped_by_user": 7,
+    "delegated_remote": 2
+  },
+  "registry_issues": []
+}

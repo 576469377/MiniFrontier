@@ -1,5 +1,7 @@
 # 文档导航
 
+研究进展统一从[当前实验计划](experiments/current-plan.md)进入；[实验索引](experiments.md)保存证据和历史快照，[实验管理](operations/experiment-management.md)说明登记、调度与归档。
+
 这里汇总安装、训练、模型结构和实验结果。首次使用建议先运行 MiniFrontier1.0 的离线示例；希望对照上游架构学习时，可以选择 MiniQwen4、MiniKimi-K3 或 MiniDeepSeek-V4。
 
 ## 开始实践

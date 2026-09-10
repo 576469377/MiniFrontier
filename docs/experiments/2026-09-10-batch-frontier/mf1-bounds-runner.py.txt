@@ -1,0 +1,9 @@
+import sys,json,subprocess
+from pathlib import Path
+plan=json.loads(Path(sys.argv[1]).read_text());out=Path(plan['output']);out.mkdir(parents=True,exist_ok=False)
+(out/'experiment.json').write_text(json.dumps(plan,indent=2));(out/'status.json').write_text('{"state":"running"}')
+result=subprocess.run(plan['command'],check=False)
+report=json.loads((out/'measurement/report.json').read_text())
+valid=report.get('state')=='complete' and all(c.get('ce_per_second',0)>0 or c.get('state')=='out_of_memory' for c in report.get('cases',[]))
+(out/'status.json').write_text(json.dumps(dict(state='complete' if result.returncode==0 and valid else 'failed',scope='MF1 batch boundary screen; OOM is a boundary, no training capability admission',cases=report.get('cases',[])),indent=2))
+raise SystemExit(0 if result.returncode==0 and valid else 1)

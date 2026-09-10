@@ -1,0 +1,26 @@
+{
+  "plan_sha256": "6557bda4def3173f607b3ae4b9421206089194707fe3635ec44825fb5961744f",
+  "started_at": 1789031703.6231022,
+  "main_budget_eligible": false,
+  "jobs": [
+    {
+      "id": "minifrontier1/bounds",
+      "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minifrontier1/bounds",
+      "state": "running",
+      "gate_observed": {},
+      "gpu_id": 1,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run-mf1-bounds.py",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/mf1-bounds.json"
+      ],
+      "started_at": 1789031704.7053752
+    }
+  ],
+  "state": "running",
+  "updated_at": 1789032849.151307,
+  "adopted": [],
+  "reserved_gpu_ids": [
+    1
+  ]
+}

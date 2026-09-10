@@ -1,0 +1,88 @@
+{
+  "plan_sha256": "69f30a9d09a0f096d0d77bec971589b43c7cddfc0fc52bbb2c8e5a01c6432950",
+  "started_at": 1789032357.6704106,
+  "main_budget_eligible": false,
+  "jobs": [
+    {
+      "id": "miniqwen4/reference",
+      "output": "${WORKSPACE}/outputs/strategy-batch-selected-gpu-v1/trials/miniqwen4/reference",
+      "state": "waiting_results",
+      "gate_observed": {
+        "result": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/miniqwen4/sweep/status.json"
+      }
+    },
+    {
+      "id": "miniqwen4/lower-lr",
+      "output": "${WORKSPACE}/outputs/strategy-batch-selected-gpu-v1/trials/miniqwen4/lower-lr",
+      "state": "waiting_results",
+      "gate_observed": {
+        "result": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/miniqwen4/sweep/status.json"
+      }
+    },
+    {
+      "id": "minikimik3/seed-43",
+      "output": "${WORKSPACE}/outputs/strategy-batch-selected-gpu-v1/trials/minikimik3/seed-43",
+      "state": "running",
+      "gate_observed": {},
+      "gpu_id": 2,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/minikimik3-seed-43.json"
+      ],
+      "started_at": 1789032730.3229527
+    },
+    {
+      "id": "minikimik3/seed-44",
+      "output": "${WORKSPACE}/outputs/strategy-batch-selected-gpu-v1/trials/minikimik3/seed-44",
+      "state": "running",
+      "gate_observed": {},
+      "gpu_id": 3,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/minikimik3-seed-44.json"
+      ],
+      "started_at": 1789032714.2824965
+    },
+    {
+      "id": "minideepseekv4/seed-43",
+      "output": "${WORKSPACE}/outputs/strategy-batch-selected-gpu-v1/trials/minideepseekv4/seed-43",
+      "state": "running",
+      "gate_observed": {},
+      "gpu_id": 4,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/minideepseekv4-seed-43.json"
+      ],
+      "started_at": 1789032374.3763006
+    },
+    {
+      "id": "minideepseekv4/seed-44",
+      "output": "${WORKSPACE}/outputs/strategy-batch-selected-gpu-v1/trials/minideepseekv4/seed-44",
+      "state": "running",
+      "gate_observed": {},
+      "gpu_id": 5,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/minideepseekv4-seed-44.json"
+      ],
+      "started_at": 1789032358.5275552
+    }
+  ],
+  "state": "running",
+  "updated_at": 1789032822.9163194,
+  "adopted": [],
+  "reserved_gpu_ids": [
+    2,
+    3,
+    4,
+    5
+  ]
+}

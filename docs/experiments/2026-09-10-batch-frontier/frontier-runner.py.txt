@@ -1,0 +1,227 @@
+"""Bounded batch search; retain measurements and retire this probe's own weights."""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from minifrontier.data import sha256
+from minifrontier.storage import GIB, require_space
+
+
+def write(path, value):
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
+    temporary.replace(path)
+
+
+def replace(command, option, value):
+    result = list(command)
+    result[result.index(option) + 1] = str(value)
+    return result
+
+
+def choose_real(cases):
+    feasible = [c for c in cases if c.get("state") == "measured"]
+    if not feasible:
+        return []
+    fastest = max(c["ce_per_second"] for c in feasible)
+    # Prefer the smaller batch within 5% of the fastest measured candidate.
+    best = min(c["batch"] for c in feasible if c["ce_per_second"] >= fastest * 0.95)
+    return sorted({c["batch"] for c in feasible if c["batch"] in {16, 32, best}})
+
+
+def retire_weights(root):
+    """Called only inside a newly created, explicitly ephemeral probe directory."""
+    rows = []
+    for path in sorted(root.glob("*.pt")):
+        if path.is_symlink() or path.resolve().parent != root.resolve():
+            raise ValueError("refusing to retire a checkpoint outside this probe")
+        rows.append(dict(file=path.name, bytes=path.stat().st_size, sha256=sha256(path)))
+    # Persist the inventory before unlinking any checkpoint.
+    write(root / "retired-weights.json", dict(policy="ephemeral_batch_probe", files=rows))
+    for row in rows:
+        (root / row["file"]).unlink()
+
+
+def link_tensorboard(plan, name, target):
+    link = Path(plan["tensorboard_root"]) / plan["model"] / name
+    link.parent.mkdir(parents=True, exist_ok=True)
+    if link.is_symlink() and link.resolve() == target.resolve():
+        return
+    if link.exists() or link.is_symlink():
+        raise FileExistsError(f"TensorBoard alias already belongs to another run: {link}")
+    link.symlink_to(target)
+
+
+def execute(plan):
+    root = Path(plan["output"])
+    root.mkdir(parents=True, exist_ok=False)
+    write(root / "experiment.json", plan)
+    state = dict(
+        state="running",
+        cohort=plan["cohort"],
+        model=plan["model"],
+        started_at=time.time(),
+        main_budget_eligible=False,
+        synthetic=[],
+        real=[],
+    )
+
+    def save():
+        state["updated_at"] = time.time()
+        write(root / "status.json", state)
+
+    save()
+    try:
+        for batch in [] if plan.get("mode") == "real-only" else plan["batches"]:
+            destination = root / "synthetic" / f"mb{batch}"
+            destination.parent.mkdir(exist_ok=True)
+            command = [
+                sys.executable,
+                plan["benchmark_script"],
+                "--model",
+                plan["model"],
+                "--config",
+                plan["config"],
+                "--output",
+                str(destination),
+                "--batches",
+                str(batch),
+                "--length",
+                "512",
+                "--input-tokens",
+                "65536",
+                "--warmup",
+                "3",
+                "--updates",
+                "8",
+            ]
+            row = dict(batch=batch, state="running", command=command)
+            state["synthetic"].append(row)
+            save()
+            with destination.with_suffix(".log").open("x") as log:
+                result = subprocess.run(command, stdout=log, stderr=log, check=False)
+            report = json.loads((destination / "report.json").read_text())
+            cases = report.get("cases", [])
+            if result.returncode or report.get("state") != "complete":
+                raise RuntimeError(
+                    f"synthetic mb{batch} failed; inspect {destination.with_suffix('.log')}"
+                )
+            case = cases[0]
+            if case.get("state") == "out_of_memory":
+                row["state"] = "memory_boundary"
+                save()
+                break
+            row.update(
+                state="measured",
+                ce_per_second=case["ce_per_second"],
+                peak_reserved_gib=max(r["peak_reserved_gib"] for r in case["rows"]),
+            )
+            save()
+        candidates = (
+            plan.get("real_batches", [])
+            if plan.get("mode") == "real-only"
+            else choose_real(state["synthetic"])
+        )
+        if not candidates or (plan.get("mode") != "real-only" and 16 not in candidates):
+            raise RuntimeError("baseline did not pass the synthetic screen")
+        candidates = [b for b in candidates if b not in plan.get("external_real_batches", [])]
+        state["real_candidates"] = candidates
+        save()
+        from torch.utils.tensorboard import SummaryWriter
+
+        if state["synthetic"]:
+            with SummaryWriter(str(root / "tensorboard")) as writer:
+                for row in state["synthetic"]:
+                    if row["state"] == "measured":
+                        writer.add_scalar(
+                            "perf/ce_tokens_per_second", row["ce_per_second"], row["batch"]
+                        )
+                        writer.add_scalar(
+                            "perf/peak_reserved_gib", row["peak_reserved_gib"], row["batch"]
+                        )
+            link_tensorboard(plan, "synthetic", root / "tensorboard")
+        for batch in candidates:
+            require_space(root, 16 * GIB)
+            destination = root / "real" / f"mb{batch}"
+            destination.parent.mkdir(exist_ok=True)
+            command = replace(plan["real_command"], "--batch-size", batch)
+            command = replace(command, "--output", destination)
+            # Only the child creates CUDA state. It has the same allocator cap
+            # as the synthetic screen, including OOM as a measured boundary.
+            wrapped = [
+                sys.executable,
+                str(Path(__file__).resolve()),
+                "--trainer-child",
+                *command[3:],
+            ]
+            row = dict(batch=batch, state="running", command=command, started_at=time.time())
+            state["real"].append(row)
+            save()
+            link_tensorboard(plan, f"real-mb{batch}", destination / "tensorboard")
+            with destination.with_suffix(".log").open("x") as log:
+                result = subprocess.run(wrapped, stdout=log, stderr=log, check=False)
+            row.update(exit_code=result.returncode, finished_at=time.time())
+            status_path = destination / "status.json"
+            status = json.loads(status_path.read_text()) if status_path.exists() else {}
+            if result.returncode or status.get("state") != "complete":
+                tail = destination.with_suffix(".log").read_text()[-8000:]
+                if "OutOfMemoryError" in tail or "CUDA out of memory" in tail:
+                    row["state"] = "memory_boundary"
+                    retire_weights(destination)
+                    save()
+                    break
+                raise RuntimeError(f"real mb{batch} failed; inspect its log before retrying")
+            profile = json.loads((destination / "performance.json").read_text())
+            row.update(
+                state="complete",
+                token_ledger=status["token_ledger"],
+                ce_per_second=profile["ce_tokens_per_second"],
+                measured_updates=profile["measured_updates"],
+                peak_reserved_gib=max(u["peak_reserved_gib"] for u in profile["updates"]),
+            )
+            retire_weights(destination)
+            save()
+        state.update(
+            state="complete",
+            finished_at=time.time(),
+            conclusion="screen complete; long-run recipe and capability admission remain separate",
+        )
+    except Exception as error:
+        state.update(state="failed", error=f"{type(error).__name__}: {error}")
+        raise
+    finally:
+        save()
+
+
+def main():
+    if sys.argv[1:2] == ["--trainer-child"]:
+        import runpy
+
+        import torch
+
+        total = torch.cuda.get_device_properties(0).total_memory
+        torch.cuda.set_per_process_memory_fraction(min(21 * GIB, total - 3 * GIB) / total)
+        sys.argv = ["minifrontier", *sys.argv[2:]]
+        runpy.run_module("minifrontier", run_name="__main__")
+        return
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--plan", type=Path, required=True)
+    args = parser.parse_args()
+    plan = json.loads(args.plan.read_text())
+    if plan["retention"] != "ephemeral_probe_weights_keep_metrics_and_hashes":
+        raise ValueError("an explicit probe retention policy is required")
+    if plan["batches"] != [16, 32, 64, 128] or plan["main_budget_eligible"] is not False:
+        raise ValueError("unexpected bounded search controls")
+    if plan["real_command"][1:4] != ["-m", "minifrontier", "train"]:
+        raise ValueError("expected a source-model training command")
+    os.environ.setdefault("MINIFRONTIER_MIN_FREE_GIB", "50")
+    execute(plan)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,2966 @@
+{
+  "host": "remote-239",
+  "output": "strategy-batch-frontier-gpu-v1/trials/minikimik3/real32",
+  "experiment": {
+    "cohort": "batch-frontier-v1",
+    "model": "minikimik3",
+    "mode": "real-only",
+    "batches": [
+      16,
+      32,
+      64,
+      128
+    ],
+    "real_batches": [
+      32
+    ],
+    "external_real_batches": [],
+    "real_command": [
+      "${WORKSPACE}/.venv/bin/python",
+      "-m",
+      "minifrontier",
+      "train",
+      "--model",
+      "minikimik3",
+      "--stage",
+      "pretrain",
+      "--config",
+      "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minikimik3-v2.json",
+      "--data",
+      "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2",
+      "--output",
+      "${WORKSPACE}/outputs/strategy-seed-gpu-v1/minikimik3/seed-43",
+      "--ce-tokens",
+      "1000000",
+      "--steps",
+      "100000",
+      "--sequence-length",
+      "512",
+      "--batch-size",
+      "32",
+      "--input-batch-tokens",
+      "16384",
+      "--lr",
+      "0.0003",
+      "--muon-lr",
+      "0.005",
+      "--adam-eps",
+      "1e-8",
+      "--optimizer",
+      "auto",
+      "--warmup-tokens",
+      "400000",
+      "--schedule",
+      "wsd",
+      "--save-every",
+      "9999",
+      "--eval-every",
+      "9999",
+      "--eval-batches",
+      "32",
+      "--log-every",
+      "1",
+      "--run-kind",
+      "acceptance",
+      "--profile-warmup",
+      "3",
+      "--profile-updates",
+      "8",
+      "--min-device-free-gib",
+      "2",
+      "--media-mixture",
+      "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-1m-mixture.json",
+      "--vision-lr",
+      "0.0001",
+      "--projector-lr",
+      "0.0003",
+      "--seed",
+      "42"
+    ],
+    "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minikimik3/real32",
+    "config": "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minikimik3-v2.json",
+    "benchmark_script": "${WORKSPACE}/outputs/services/batch-frontier-v1/benchmark_training_batch.py",
+    "source": {
+      "commit": "75a3364f586936d764c31376e185747973d2bed6",
+      "dirty": false,
+      "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+    },
+    "main_budget_eligible": false,
+    "retention": "ephemeral_probe_weights_keep_metrics_and_hashes",
+    "tensorboard_root": "${WORKSPACE}/outputs/tensorboard-strategy-v2/batch-frontier",
+    "hypothesis": "Larger microbatches reduce launch overhead until throughput or device memory saturates",
+    "comparison_group": "minikimik3-seed42-1m",
+    "changed_variable": "microbatch",
+    "selection": "smallest feasible batch within 5% of fastest synthetic candidate",
+    "limits": {
+      "synthetic_input_positions_per_update": 65536,
+      "synthetic_warmup": 3,
+      "synthetic_updates": 8,
+      "real_ce_per_case": 1000000,
+      "real_warmup": 3,
+      "real_profile_updates": 8,
+      "minimum_device_free_gib": 2
+    },
+    "quality_admission": false
+  },
+  "status": {
+    "state": "complete",
+    "cohort": "batch-frontier-v1",
+    "model": "minikimik3",
+    "started_at": 1789031655.371552,
+    "main_budget_eligible": false,
+    "synthetic": [],
+    "real": [
+      {
+        "batch": 32,
+        "state": "complete",
+        "command": [
+          "${WORKSPACE}/.venv/bin/python",
+          "-m",
+          "minifrontier",
+          "train",
+          "--model",
+          "minikimik3",
+          "--stage",
+          "pretrain",
+          "--config",
+          "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minikimik3-v2.json",
+          "--data",
+          "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2",
+          "--output",
+          "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minikimik3/real32/real/mb32",
+          "--ce-tokens",
+          "1000000",
+          "--steps",
+          "100000",
+          "--sequence-length",
+          "512",
+          "--batch-size",
+          "32",
+          "--input-batch-tokens",
+          "16384",
+          "--lr",
+          "0.0003",
+          "--muon-lr",
+          "0.005",
+          "--adam-eps",
+          "1e-8",
+          "--optimizer",
+          "auto",
+          "--warmup-tokens",
+          "400000",
+          "--schedule",
+          "wsd",
+          "--save-every",
+          "9999",
+          "--eval-every",
+          "9999",
+          "--eval-batches",
+          "32",
+          "--log-every",
+          "1",
+          "--run-kind",
+          "acceptance",
+          "--profile-warmup",
+          "3",
+          "--profile-updates",
+          "8",
+          "--min-device-free-gib",
+          "2",
+          "--media-mixture",
+          "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-1m-mixture.json",
+          "--vision-lr",
+          "0.0001",
+          "--projector-lr",
+          "0.0003",
+          "--seed",
+          "42"
+        ],
+        "started_at": 1789031656.7436407,
+        "exit_code": 0,
+        "finished_at": 1789031952.0800412,
+        "token_ledger": {
+          "ce_tokens": 1004508,
+          "input_tokens": 1010687,
+          "response_tokens": 0,
+          "optimizer_updates": 42,
+          "skipped_windows": 0,
+          "image_occurrences": 50,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 3078
+        },
+        "ce_per_second": 4445.543169218499,
+        "measured_updates": 8,
+        "peak_reserved_gib": 7.369140625
+      }
+    ],
+    "updated_at": 1789031961.4274547,
+    "real_candidates": [
+      32
+    ],
+    "finished_at": 1789031961.4274437,
+    "conclusion": "screen complete; long-run recipe and capability admission remain separate"
+  },
+  "selection": {},
+  "real_cases": [
+    {
+      "name": "mb32",
+      "run": {
+        "model_name": "minikimik3",
+        "config": {
+          "vocab_size": 65536,
+          "hidden_size": 512,
+          "num_hidden_layers": 12,
+          "num_attention_heads": 8,
+          "num_key_value_heads": 8,
+          "intermediate_size": 2048,
+          "q_lora_rank": 128,
+          "kv_lora_rank": 64,
+          "qk_nope_head_dim": 64,
+          "qk_rope_head_dim": 32,
+          "v_head_dim": 64,
+          "kda_head_dim": 64,
+          "num_experts": 32,
+          "num_experts_per_token": 2,
+          "num_shared_experts": 2,
+          "moe_intermediate_size": 256,
+          "routed_expert_hidden_size": 256,
+          "attn_res_block_size": 4,
+          "max_position_embeddings": 4096,
+          "rms_norm_eps": 1e-05,
+          "initializer_range": 0.02,
+          "pad_token_id": 0,
+          "eos_token_id": 2,
+          "gradient_checkpointing": true,
+          "forbidden_action_ids": [
+            0,
+            1,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            20
+          ],
+          "router_fp32": true,
+          "qat_scheme": "bf16",
+          "mtp_enabled": true,
+          "mtp_loss_coef": 0.1,
+          "vision_config": {
+            "depth": 12,
+            "hidden_size": 384,
+            "qkv_hidden_size": 576,
+            "num_heads": 6,
+            "intermediate_size": 1536,
+            "patch_size": 14,
+            "temporal_merge": 4,
+            "spatial_merge": 2,
+            "position_grid": 64,
+            "output_size": 512,
+            "gradient_checkpointing": true
+          },
+          "image_token_id": 7
+        },
+        "phase": "dense_pretrain",
+        "stage": "pretrain",
+        "optimizer": "kimi_muon",
+        "world_size": 1,
+        "batch_size": 32,
+        "grad_accum": 4,
+        "input_batch_tokens": 16384,
+        "sequence_length": 512,
+        "seed": 42,
+        "data_sha256": "4a3519e2a64efbee3b49b85b731be2bd2aac560f30151e80b36ea837e1b59da7",
+        "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "steps": 100000,
+        "lr": 0.0003,
+        "muon_lr": 0.005,
+        "warmup_steps": 50,
+        "weight_decay": 0.1,
+        "clip_grad": 1.0,
+        "router_bias_rate": 0.001,
+        "ce_token_budget": 1000000,
+        "input_token_budget": null,
+        "response_token_budget": null,
+        "warmup_tokens": 400000,
+        "schedule": "wsd",
+        "adam_eps": 1e-08,
+        "init_transition": "exact",
+        "visual_warmup": false,
+        "vision_lr": 0.0001,
+        "projector_lr": 0.0003,
+        "normalization": "global-accumulation-ce-sum-v2",
+        "token_mixture": null,
+        "media_mixture": {
+          "schema_version": 1,
+          "ce_token_budget": 1000000,
+          "image_occurrences": 50,
+          "video_examples": 0,
+          "text_mixture_tokens": {
+            "zh_edu": 0.45,
+            "en_edu": 0.25,
+            "code": 0.15,
+            "verified_math_science": 0.1,
+            "dialogue": 0.05
+          },
+          "image_mixture_samples": {
+            "caption": 1.0
+          },
+          "scope": "1M CE batch frontier probe; same image/CE ratio; ephemeral weights"
+        },
+        "max_data_epochs": null,
+        "performance_profile": {
+          "warmup": 3,
+          "updates": 8,
+          "min_device_free_gib": 2.0
+        },
+        "router_balance": "kimi-quantile-histogram-v1",
+        "source": {
+          "commit": "75a3364f586936d764c31376e185747973d2bed6",
+          "dirty": false,
+          "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+        },
+        "started_at": 1789031670.4245358,
+        "kind": "acceptance",
+        "data": "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2",
+        "parameters": 204526216,
+        "command_options": {
+          "model": "minikimik3",
+          "config": "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minikimik3-v2.json",
+          "data": "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2",
+          "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minikimik3/real32/real/mb32",
+          "stage": "pretrain",
+          "steps": 100000,
+          "ce_tokens": 1000000,
+          "input_tokens": null,
+          "response_tokens": null,
+          "warmup_tokens": 400000,
+          "schedule": "wsd",
+          "batch_size": 32,
+          "grad_accum": 4,
+          "sequence_length": 512,
+          "lr": 0.0003,
+          "muon_lr": 0.005,
+          "weight_decay": 0.1,
+          "warmup_steps": 50,
+          "clip_grad": 1.0,
+          "router_bias_rate": 0.001,
+          "save_every": 9999,
+          "eval_every": 9999,
+          "eval_batches": 32,
+          "log_every": 1,
+          "seed": 42,
+          "token_mixture": null,
+          "media_mixture": "${WORKSPACE}/outputs/services/batch-frontier-v1/minikimik3-1m-mixture.json",
+          "max_data_epochs": null,
+          "input_batch_tokens": 16384,
+          "profile_warmup": 3,
+          "profile_updates": 8,
+          "min_device_free_gib": 2.0,
+          "init": null,
+          "resume": null,
+          "init_transition": "exact",
+          "visual_warmup": false,
+          "vision_lr": 0.0001,
+          "projector_lr": 0.0003,
+          "device": "cuda",
+          "optimizer": "auto",
+          "adam_eps": 1e-08,
+          "rl_data": null,
+          "group_size": 4,
+          "rollout_tokens": 32,
+          "teacher_map": null,
+          "no_tensorboard": false,
+          "run_kind": "acceptance",
+          "strategy_plan": null,
+          "strategy_phase": null,
+          "strategy_evidence": null
+        }
+      },
+      "status": {
+        "step": 42,
+        "target_steps": 100000,
+        "stage": "pretrain",
+        "phase": "dense_pretrain",
+        "state": "complete",
+        "token_budget": 1000000,
+        "token_ledger": {
+          "ce_tokens": 1004508,
+          "input_tokens": 1010687,
+          "response_tokens": 0,
+          "optimizer_updates": 42,
+          "skipped_windows": 0,
+          "image_occurrences": 50,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 3078
+        },
+        "capability_status": "unassessed",
+        "checkpoint": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minikimik3/real32/real/mb32/checkpoint.pt",
+        "updated_at": 1789031946.532653
+      },
+      "performance": {
+        "recipe": {
+          "model_name": "minikimik3",
+          "config": {
+            "vocab_size": 65536,
+            "hidden_size": 512,
+            "num_hidden_layers": 12,
+            "num_attention_heads": 8,
+            "num_key_value_heads": 8,
+            "intermediate_size": 2048,
+            "q_lora_rank": 128,
+            "kv_lora_rank": 64,
+            "qk_nope_head_dim": 64,
+            "qk_rope_head_dim": 32,
+            "v_head_dim": 64,
+            "kda_head_dim": 64,
+            "num_experts": 32,
+            "num_experts_per_token": 2,
+            "num_shared_experts": 2,
+            "moe_intermediate_size": 256,
+            "routed_expert_hidden_size": 256,
+            "attn_res_block_size": 4,
+            "max_position_embeddings": 4096,
+            "rms_norm_eps": 1e-05,
+            "initializer_range": 0.02,
+            "pad_token_id": 0,
+            "eos_token_id": 2,
+            "gradient_checkpointing": true,
+            "forbidden_action_ids": [
+              0,
+              1,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              20
+            ],
+            "router_fp32": true,
+            "qat_scheme": "bf16",
+            "mtp_enabled": true,
+            "mtp_loss_coef": 0.1,
+            "vision_config": {
+              "depth": 12,
+              "hidden_size": 384,
+              "qkv_hidden_size": 576,
+              "num_heads": 6,
+              "intermediate_size": 1536,
+              "patch_size": 14,
+              "temporal_merge": 4,
+              "spatial_merge": 2,
+              "position_grid": 64,
+              "output_size": 512,
+              "gradient_checkpointing": true
+            },
+            "image_token_id": 7
+          },
+          "phase": "dense_pretrain",
+          "stage": "pretrain",
+          "optimizer": "kimi_muon",
+          "world_size": 1,
+          "batch_size": 32,
+          "grad_accum": 4,
+          "input_batch_tokens": 16384,
+          "sequence_length": 512,
+          "seed": 42,
+          "data_sha256": "4a3519e2a64efbee3b49b85b731be2bd2aac560f30151e80b36ea837e1b59da7",
+          "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+          "steps": 100000,
+          "lr": 0.0003,
+          "muon_lr": 0.005,
+          "warmup_steps": 50,
+          "weight_decay": 0.1,
+          "clip_grad": 1.0,
+          "router_bias_rate": 0.001,
+          "ce_token_budget": 1000000,
+          "input_token_budget": null,
+          "response_token_budget": null,
+          "warmup_tokens": 400000,
+          "schedule": "wsd",
+          "adam_eps": 1e-08,
+          "init_transition": "exact",
+          "visual_warmup": false,
+          "vision_lr": 0.0001,
+          "projector_lr": 0.0003,
+          "normalization": "global-accumulation-ce-sum-v2",
+          "token_mixture": null,
+          "media_mixture": {
+            "schema_version": 1,
+            "ce_token_budget": 1000000,
+            "image_occurrences": 50,
+            "video_examples": 0,
+            "text_mixture_tokens": {
+              "zh_edu": 0.45,
+              "en_edu": 0.25,
+              "code": 0.15,
+              "verified_math_science": 0.1,
+              "dialogue": 0.05
+            },
+            "image_mixture_samples": {
+              "caption": 1.0
+            },
+            "scope": "1M CE batch frontier probe; same image/CE ratio; ephemeral weights"
+          },
+          "max_data_epochs": null,
+          "performance_profile": {
+            "warmup": 3,
+            "updates": 8,
+            "min_device_free_gib": 2.0
+          },
+          "router_balance": "kimi-quantile-histogram-v1",
+          "source": {
+            "commit": "75a3364f586936d764c31376e185747973d2bed6",
+            "dirty": false,
+            "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+          }
+        },
+        "updates": [
+          {
+            "step": 4,
+            "seconds": 5.305406995117664,
+            "io_seconds": 0.05290632322430611,
+            "optimizer_seconds": 0.3366028182208538,
+            "peak_allocated_gib": 6.383369445800781,
+            "peak_reserved_gib": 7.056640625,
+            "min_device_free_gib": 16.1689453125,
+            "ce_tokens": 24420,
+            "input_tokens": 24555,
+            "images": 1,
+            "frames": 0
+          },
+          {
+            "step": 5,
+            "seconds": 5.186871659941971,
+            "io_seconds": 0.07549812691286206,
+            "optimizer_seconds": 0.38095725513994694,
+            "peak_allocated_gib": 6.39426851272583,
+            "peak_reserved_gib": 7.212890625,
+            "min_device_free_gib": 16.0126953125,
+            "ce_tokens": 24097,
+            "input_tokens": 24300,
+            "images": 2,
+            "frames": 0
+          },
+          {
+            "step": 6,
+            "seconds": 5.404866728000343,
+            "io_seconds": 0.05787467770278454,
+            "optimizer_seconds": 0.357557225972414,
+            "peak_allocated_gib": 6.39426851272583,
+            "peak_reserved_gib": 7.212890625,
+            "min_device_free_gib": 16.0126953125,
+            "ce_tokens": 24189,
+            "input_tokens": 24321,
+            "images": 1,
+            "frames": 0
+          },
+          {
+            "step": 7,
+            "seconds": 5.047255821060389,
+            "io_seconds": 0.06309416284784675,
+            "optimizer_seconds": 0.4216402261517942,
+            "peak_allocated_gib": 6.39426851272583,
+            "peak_reserved_gib": 7.212890625,
+            "min_device_free_gib": 16.0126953125,
+            "ce_tokens": 21708,
+            "input_tokens": 21840,
+            "images": 1,
+            "frames": 0
+          },
+          {
+            "step": 8,
+            "seconds": 5.479808744974434,
+            "io_seconds": 0.1523562311194837,
+            "optimizer_seconds": 0.39552575582638383,
+            "peak_allocated_gib": 6.39426851272583,
+            "peak_reserved_gib": 7.212890625,
+            "min_device_free_gib": 16.0126953125,
+            "ce_tokens": 24456,
+            "input_tokens": 24592,
+            "images": 1,
+            "frames": 0
+          },
+          {
+            "step": 9,
+            "seconds": 5.6084886831231415,
+            "io_seconds": 0.2577970321290195,
+            "optimizer_seconds": 0.4255415489897132,
+            "peak_allocated_gib": 6.39426851272583,
+            "peak_reserved_gib": 7.212890625,
+            "min_device_free_gib": 16.0126953125,
+            "ce_tokens": 24880,
+            "input_tokens": 25016,
+            "images": 1,
+            "frames": 0
+          },
+          {
+            "step": 10,
+            "seconds": 4.947692035231739,
+            "io_seconds": 0.050762597005814314,
+            "optimizer_seconds": 0.35258466517552733,
+            "peak_allocated_gib": 6.39426851272583,
+            "peak_reserved_gib": 7.212890625,
+            "min_device_free_gib": 16.0126953125,
+            "ce_tokens": 20697,
+            "input_tokens": 20831,
+            "images": 1,
+            "frames": 0
+          },
+          {
+            "step": 11,
+            "seconds": 5.516553532332182,
+            "io_seconds": 0.13748407503589988,
+            "optimizer_seconds": 0.352422870695591,
+            "peak_allocated_gib": 6.39426851272583,
+            "peak_reserved_gib": 7.369140625,
+            "min_device_free_gib": 15.8564453125,
+            "ce_tokens": 24475,
+            "input_tokens": 24679,
+            "images": 2,
+            "frames": 0
+          }
+        ],
+        "measured_updates": 8,
+        "ce_tokens_per_second": 4445.543169218499,
+        "images_per_second": 0.2353110367886482,
+        "frames_per_second": 0.0,
+        "scope": "this phase, context bucket, modality mixture and device count only",
+        "includes": [
+          "data",
+          "forward",
+          "backward",
+          "optimizer",
+          "balance",
+          "mtp",
+          "ddp"
+        ]
+      },
+      "metrics": [
+        {
+          "event": "start",
+          "step": 0,
+          "parameters": 204526216,
+          "world_size": 1
+        },
+        {
+          "event": "validation",
+          "step": 0,
+          "loss": 12.316698292708853,
+          "lm_loss": 11.196316588923898,
+          "supervised_tokens": 13294,
+          "reward": 0.0,
+          "examples": 32,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "qk_clip",
+          "step": 1,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.4068359434604645,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.3967418074607849,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.3811575472354889,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.41053926944732666,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 1,
+          "loss": 12.305030822753906,
+          "lm_loss": 11.185602188110352,
+          "grad_norm": 2.7484703063964844,
+          "lr": 1.8856499999999998e-05,
+          "tokens_per_second": 1078.240382232806,
+          "step_seconds": 23.317620462272316,
+          "data_offset": 64,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 25142,
+            "input_tokens": 25343,
+            "response_tokens": 0,
+            "optimizer_updates": 1,
+            "skipped_windows": 0,
+            "image_occurrences": 2,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 120
+          },
+          "peak_allocated_mib": 5381.96240234375
+        },
+        {
+          "event": "qk_clip",
+          "step": 2,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.39205116033554077,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.41168203949928284,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4632963240146637,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.39722996950149536,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 2,
+          "loss": 12.308091163635254,
+          "lm_loss": 11.188501358032227,
+          "grad_norm": 2.7374107837677,
+          "lr": 3.7760249999999995e-05,
+          "tokens_per_second": 4790.6457498577565,
+          "step_seconds": 5.261294889263809,
+          "data_offset": 128,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 50347,
+            "input_tokens": 50676,
+            "response_tokens": 0,
+            "optimizer_updates": 2,
+            "skipped_windows": 0,
+            "image_occurrences": 3,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 175
+          },
+          "peak_allocated_mib": 6435.28271484375
+        },
+        {
+          "event": "qk_clip",
+          "step": 3,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.40843284130096436,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.42916765809059143,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.3878142535686493,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.43132030963897705,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 3,
+          "loss": 12.297895431518555,
+          "lm_loss": 11.179963111877441,
+          "grad_norm": 2.8660194873809814,
+          "lr": 5.5145249999999985e-05,
+          "tokens_per_second": 4291.795466223331,
+          "step_seconds": 5.401002956088632,
+          "data_offset": 192,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 73527,
+            "input_tokens": 73982,
+            "response_tokens": 0,
+            "optimizer_updates": 3,
+            "skipped_windows": 0,
+            "image_occurrences": 4,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 229
+          },
+          "peak_allocated_mib": 6532.3935546875
+        },
+        {
+          "event": "qk_clip",
+          "step": 4,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.47541022300720215,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.41889896988868713,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4106743633747101,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.4108208417892456,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 4,
+          "loss": 12.286401748657227,
+          "lm_loss": 11.168582916259766,
+          "grad_norm": 2.8086814880371094,
+          "lr": 7.346025e-05,
+          "tokens_per_second": 4602.851397163811,
+          "step_seconds": 5.305406995117664,
+          "data_offset": 256,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 97947,
+            "input_tokens": 98537,
+            "response_tokens": 0,
+            "optimizer_updates": 4,
+            "skipped_windows": 0,
+            "image_occurrences": 5,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 292
+          },
+          "peak_allocated_mib": 6536.5703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 5,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.41186952590942383,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.4269762337207794,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4040437638759613,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.41773971915245056,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 5,
+          "loss": 12.2630615234375,
+          "lm_loss": 11.146427154541016,
+          "grad_norm": 2.7999155521392822,
+          "lr": 9.153299999999999e-05,
+          "tokens_per_second": 4645.7675415608,
+          "step_seconds": 5.186871659941971,
+          "data_offset": 320,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 122044,
+            "input_tokens": 122837,
+            "response_tokens": 0,
+            "optimizer_updates": 5,
+            "skipped_windows": 0,
+            "image_occurrences": 7,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 415
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 6,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.4281366169452667,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.40516766905784607,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.39286550879478455,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.39066651463508606,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 6,
+          "loss": 12.234514236450195,
+          "lm_loss": 11.120552062988281,
+          "grad_norm": 2.7765250205993652,
+          "lr": 0.00010967474999999998,
+          "tokens_per_second": 4475.410998514904,
+          "step_seconds": 5.404866728000343,
+          "data_offset": 384,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 146233,
+            "input_tokens": 147158,
+            "response_tokens": 0,
+            "optimizer_updates": 6,
+            "skipped_windows": 0,
+            "image_occurrences": 8,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 475
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 7,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.4297529458999634,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.39998435974121094,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4076698124408722,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.399570494890213,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 7,
+          "loss": 12.199823379516602,
+          "lm_loss": 11.088644027709961,
+          "grad_norm": 2.894073486328125,
+          "lr": 0.00012595574999999998,
+          "tokens_per_second": 4300.951005776306,
+          "step_seconds": 5.047255821060389,
+          "data_offset": 448,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 167941,
+            "input_tokens": 168998,
+            "response_tokens": 0,
+            "optimizer_updates": 7,
+            "skipped_windows": 0,
+            "image_occurrences": 9,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 535
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 8,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.4319678246974945,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.4054836332798004,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4255366623401642,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.407055139541626,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 8,
+          "loss": 12.144708633422852,
+          "lm_loss": 11.037500381469727,
+          "grad_norm": 2.691871166229248,
+          "lr": 0.00014429774999999998,
+          "tokens_per_second": 4462.929481330666,
+          "step_seconds": 5.479808744974434,
+          "data_offset": 512,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 192397,
+            "input_tokens": 193590,
+            "response_tokens": 0,
+            "optimizer_updates": 8,
+            "skipped_windows": 0,
+            "image_occurrences": 10,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 598
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 9,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.4200930595397949,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.4373941421508789,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.41612353920936584,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.43027371168136597,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 9,
+          "loss": 12.037883758544922,
+          "lm_loss": 10.936847686767578,
+          "grad_norm": 2.610539674758911,
+          "lr": 0.00016295774999999996,
+          "tokens_per_second": 4436.132692015228,
+          "step_seconds": 5.6084886831231415,
+          "data_offset": 576,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 217277,
+            "input_tokens": 218606,
+            "response_tokens": 0,
+            "optimizer_updates": 9,
+            "skipped_windows": 0,
+            "image_occurrences": 11,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 661
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 10,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.3964528739452362,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.41572117805480957,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4595384895801544,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.4170081615447998,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 10,
+          "loss": 11.883115768432617,
+          "lm_loss": 10.791265487670898,
+          "grad_norm": 2.641068458557129,
+          "lr": 0.0001784805,
+          "tokens_per_second": 4183.1625437921175,
+          "step_seconds": 4.947692035231739,
+          "data_offset": 640,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 237974,
+            "input_tokens": 239437,
+            "response_tokens": 0,
+            "optimizer_updates": 10,
+            "skipped_windows": 0,
+            "image_occurrences": 12,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 724
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 11,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.4070923328399658,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.4155794382095337,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4089800715446472,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.4352281093597412,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 11,
+          "loss": 11.658050537109375,
+          "lm_loss": 10.581918716430664,
+          "grad_norm": 2.2079341411590576,
+          "lr": 0.00019683674999999997,
+          "tokens_per_second": 4436.646876814215,
+          "step_seconds": 5.516553532332182,
+          "data_offset": 704,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 262449,
+            "input_tokens": 264116,
+            "response_tokens": 0,
+            "optimizer_updates": 11,
+            "skipped_windows": 0,
+            "image_occurrences": 14,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 847
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 12,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.45316073298454285,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.41251522302627563,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.3772970139980316,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.3969370126724243,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 12,
+          "loss": 11.506061553955078,
+          "lm_loss": 10.44536018371582,
+          "grad_norm": 1.7996113300323486,
+          "lr": 0.00021587399999999996,
+          "tokens_per_second": 4601.813671745066,
+          "step_seconds": 5.515868701040745,
+          "data_offset": 768,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 287832,
+            "input_tokens": 289632,
+            "response_tokens": 0,
+            "optimizer_updates": 12,
+            "skipped_windows": 0,
+            "image_occurrences": 15,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 907
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 13,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.43671441078186035,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.4162456691265106,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.402375191450119,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.42275792360305786,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 13,
+          "loss": 11.353832244873047,
+          "lm_loss": 10.310359001159668,
+          "grad_norm": 1.6067134141921997,
+          "lr": 0.00023194499999999995,
+          "tokens_per_second": 4191.104730772354,
+          "step_seconds": 5.112733128014952,
+          "data_offset": 832,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 309260,
+            "input_tokens": 311192,
+            "response_tokens": 0,
+            "optimizer_updates": 13,
+            "skipped_windows": 0,
+            "image_occurrences": 16,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 967
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 14,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.43988534808158875,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.4353710114955902,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.405178964138031,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.4207361042499542,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 14,
+          "loss": 11.160066604614258,
+          "lm_loss": 10.136007308959961,
+          "grad_norm": 1.6186033487319946,
+          "lr": 0.000252915,
+          "tokens_per_second": 5137.901365526047,
+          "step_seconds": 5.441910618916154,
+          "data_offset": 896,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 337220,
+            "input_tokens": 339285,
+            "response_tokens": 0,
+            "optimizer_updates": 14,
+            "skipped_windows": 0,
+            "image_occurrences": 17,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1027
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 15,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.4395543336868286,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.43422412872314453,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4386511445045471,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.43205955624580383,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 15,
+          "loss": 11.032966613769531,
+          "lm_loss": 10.022321701049805,
+          "grad_norm": 1.570644736289978,
+          "lr": 0.00027071625,
+          "tokens_per_second": 4024.6259342807184,
+          "step_seconds": 5.8974424921907485,
+          "data_offset": 960,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 360955,
+            "input_tokens": 363226,
+            "response_tokens": 0,
+            "optimizer_updates": 15,
+            "skipped_windows": 0,
+            "image_occurrences": 19,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1151
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 16,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.4924987554550171,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.44448122382164,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.40819764137268066,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.4757234454154968,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 16,
+          "loss": 10.956796646118164,
+          "lm_loss": 9.955759048461914,
+          "grad_norm": 1.4493881464004517,
+          "lr": 0.00028841774999999994,
+          "tokens_per_second": 4556.436292212243,
+          "step_seconds": 5.179925381671637,
+          "data_offset": 1024,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 384557,
+            "input_tokens": 386964,
+            "response_tokens": 0,
+            "optimizer_updates": 16,
+            "skipped_windows": 0,
+            "image_occurrences": 20,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1214
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 17,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.5084880590438843,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.5342777967453003,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.4626571834087372,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.5060137510299683,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 17,
+          "loss": 10.857046127319336,
+          "lm_loss": 9.867012977600098,
+          "grad_norm": 1.5785270929336548,
+          "lr": 0.0003,
+          "tokens_per_second": 4321.605862001161,
+          "step_seconds": 5.280907312873751,
+          "data_offset": 1088,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 407379,
+            "input_tokens": 409922,
+            "response_tokens": 0,
+            "optimizer_updates": 17,
+            "skipped_windows": 0,
+            "image_occurrences": 21,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1277
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 18,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.5032424926757812,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.4874873161315918,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.5110094547271729,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.5490860939025879,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 18,
+          "loss": 10.66822338104248,
+          "lm_loss": 9.695831298828125,
+          "grad_norm": 1.4584102630615234,
+          "lr": 0.0003,
+          "tokens_per_second": 4641.31649845621,
+          "step_seconds": 5.431002175435424,
+          "data_offset": 1152,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 432586,
+            "input_tokens": 435265,
+            "response_tokens": 0,
+            "optimizer_updates": 18,
+            "skipped_windows": 0,
+            "image_occurrences": 22,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1340
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 19,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.530387282371521,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.5300536155700684,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.5130544304847717,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.6831396222114563,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 19,
+          "loss": 10.53881549835205,
+          "lm_loss": 9.57819938659668,
+          "grad_norm": 1.2516671419143677,
+          "lr": 0.0003,
+          "tokens_per_second": 4760.911216345204,
+          "step_seconds": 5.113306863699108,
+          "data_offset": 1216,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 456930,
+            "input_tokens": 459742,
+            "response_tokens": 0,
+            "optimizer_updates": 19,
+            "skipped_windows": 0,
+            "image_occurrences": 23,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1400
+          },
+          "peak_allocated_mib": 6547.73095703125
+        },
+        {
+          "event": "qk_clip",
+          "step": 20,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.545788586139679,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.5571742057800293,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.6143544912338257,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.7099313735961914,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 20,
+          "loss": 10.358394622802734,
+          "lm_loss": 9.414892196655273,
+          "grad_norm": 1.5845249891281128,
+          "lr": 0.0003,
+          "tokens_per_second": 4545.535462696817,
+          "step_seconds": 5.755097548943013,
+          "data_offset": 1280,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 483090,
+            "input_tokens": 486105,
+            "response_tokens": 0,
+            "optimizer_updates": 20,
+            "skipped_windows": 0,
+            "image_occurrences": 25,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1523
+          },
+          "peak_allocated_mib": 6549.48486328125
+        },
+        {
+          "event": "qk_clip",
+          "step": 21,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.6299527287483215,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.6043589115142822,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.6264063119888306,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.7952346801757812,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 21,
+          "loss": 10.297818183898926,
+          "lm_loss": 9.36029052734375,
+          "grad_norm": 1.2563663721084595,
+          "lr": 0.0003,
+          "tokens_per_second": 4040.848610542321,
+          "step_seconds": 5.35976525908336,
+          "data_offset": 1344,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 504748,
+            "input_tokens": 507896,
+            "response_tokens": 0,
+            "optimizer_updates": 21,
+            "skipped_windows": 0,
+            "image_occurrences": 26,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1583
+          },
+          "peak_allocated_mib": 6549.48486328125
+        },
+        {
+          "event": "qk_clip",
+          "step": 22,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.5993003845214844,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.6492626667022705,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.6895855665206909,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.8200002312660217,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 22,
+          "loss": 10.129780769348145,
+          "lm_loss": 9.206768035888672,
+          "grad_norm": 1.3799337148666382,
+          "lr": 0.0003,
+          "tokens_per_second": 4645.293951459565,
+          "step_seconds": 5.251336138229817,
+          "data_offset": 1408,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 529142,
+            "input_tokens": 532424,
+            "response_tokens": 0,
+            "optimizer_updates": 22,
+            "skipped_windows": 0,
+            "image_occurrences": 27,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1646
+          },
+          "peak_allocated_mib": 6549.48486328125
+        },
+        {
+          "event": "qk_clip",
+          "step": 23,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.6621875166893005,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.7028092741966248,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.7152400016784668,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.8567951917648315,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 23,
+          "loss": 9.99778938293457,
+          "lm_loss": 9.085752487182617,
+          "grad_norm": 1.2271682024002075,
+          "lr": 0.0003,
+          "tokens_per_second": 4501.096557314514,
+          "step_seconds": 5.441340724006295,
+          "data_offset": 1472,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 553634,
+            "input_tokens": 557052,
+            "response_tokens": 0,
+            "optimizer_updates": 23,
+            "skipped_windows": 0,
+            "image_occurrences": 28,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1709
+          },
+          "peak_allocated_mib": 6549.48486328125
+        },
+        {
+          "event": "qk_clip",
+          "step": 24,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.7017441391944885,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.7173709273338318,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.7223021984100342,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 0.9779328107833862,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 24,
+          "loss": 9.921662330627441,
+          "lm_loss": 9.017786979675293,
+          "grad_norm": 1.2162954807281494,
+          "lr": 0.0003,
+          "tokens_per_second": 4543.434298748759,
+          "step_seconds": 5.358501608949155,
+          "data_offset": 1536,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 577980,
+            "input_tokens": 581533,
+            "response_tokens": 0,
+            "optimizer_updates": 24,
+            "skipped_windows": 0,
+            "image_occurrences": 29,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1772
+          },
+          "peak_allocated_mib": 6549.48486328125
+        },
+        {
+          "event": "qk_clip",
+          "step": 25,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.7699037790298462,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.7764449119567871,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.8449671864509583,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.0383198261260986,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 25,
+          "loss": 9.772256851196289,
+          "lm_loss": 8.882293701171875,
+          "grad_norm": 1.2051705121994019,
+          "lr": 0.0003,
+          "tokens_per_second": 4268.485284074262,
+          "step_seconds": 5.254791455809027,
+          "data_offset": 1600,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 600410,
+            "input_tokens": 604172,
+            "response_tokens": 0,
+            "optimizer_updates": 25,
+            "skipped_windows": 0,
+            "image_occurrences": 31,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1899
+          },
+          "peak_allocated_mib": 6549.65869140625
+        },
+        {
+          "event": "qk_clip",
+          "step": 26,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.8973082304000854,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.8283429145812988,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.8244368433952332,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.1501892805099487,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 26,
+          "loss": 9.625893592834473,
+          "lm_loss": 8.746637344360352,
+          "grad_norm": 1.066491961479187,
+          "lr": 0.0003,
+          "tokens_per_second": 4305.441956048348,
+          "step_seconds": 5.530674955807626,
+          "data_offset": 1664,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 624222,
+            "input_tokens": 628117,
+            "response_tokens": 0,
+            "optimizer_updates": 26,
+            "skipped_windows": 0,
+            "image_occurrences": 32,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 1959
+          },
+          "peak_allocated_mib": 6549.65869140625
+        },
+        {
+          "event": "qk_clip",
+          "step": 27,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 0.9643656015396118,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.8103943467140198,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.8149903416633606,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.2742189168930054,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 27,
+          "loss": 9.690695762634277,
+          "lm_loss": 8.80986213684082,
+          "grad_norm": 1.0437625646591187,
+          "lr": 0.0003,
+          "tokens_per_second": 3710.9152791779075,
+          "step_seconds": 5.4194177142344415,
+          "data_offset": 1728,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 644333,
+            "input_tokens": 648361,
+            "response_tokens": 0,
+            "optimizer_updates": 27,
+            "skipped_windows": 0,
+            "image_occurrences": 33,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2019
+          },
+          "peak_allocated_mib": 6549.65869140625
+        },
+        {
+          "event": "qk_clip",
+          "step": 28,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.0212000608444214,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.9310834407806396,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.9970777034759521,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.220786690711975,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 28,
+          "loss": 9.48475456237793,
+          "lm_loss": 8.618773460388184,
+          "grad_norm": 1.0308903455734253,
+          "lr": 0.0003,
+          "tokens_per_second": 4811.120035232441,
+          "step_seconds": 5.279228082858026,
+          "data_offset": 1792,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 669732,
+            "input_tokens": 673895,
+            "response_tokens": 0,
+            "optimizer_updates": 28,
+            "skipped_windows": 0,
+            "image_occurrences": 34,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2083
+          },
+          "peak_allocated_mib": 6549.65869140625
+        },
+        {
+          "event": "qk_clip",
+          "step": 29,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.1807489395141602,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 0.9688905477523804,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.9573920965194702,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.3527077436447144,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 29,
+          "loss": 9.37637710571289,
+          "lm_loss": 8.519670486450195,
+          "grad_norm": 0.9319367408752441,
+          "lr": 0.0003,
+          "tokens_per_second": 4484.465950964874,
+          "step_seconds": 5.464864772744477,
+          "data_offset": 1856,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 694239,
+            "input_tokens": 698538,
+            "response_tokens": 0,
+            "optimizer_updates": 29,
+            "skipped_windows": 0,
+            "image_occurrences": 35,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2146
+          },
+          "peak_allocated_mib": 6549.65869140625
+        },
+        {
+          "event": "qk_clip",
+          "step": 30,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.2856911420822144,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 1.062307596206665,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.0561357736587524,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.4492055177688599,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 30,
+          "loss": 9.322467803955078,
+          "lm_loss": 8.470685958862305,
+          "grad_norm": 0.8748692274093628,
+          "lr": 0.0003,
+          "tokens_per_second": 4441.2342701600155,
+          "step_seconds": 5.326672398019582,
+          "data_offset": 1920,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 717896,
+            "input_tokens": 722329,
+            "response_tokens": 0,
+            "optimizer_updates": 30,
+            "skipped_windows": 0,
+            "image_occurrences": 36,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2209
+          },
+          "peak_allocated_mib": 6549.65869140625
+        },
+        {
+          "event": "qk_clip",
+          "step": 31,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.410119891166687,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 1.0815836191177368,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 0.9668194055557251,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.5898853540420532,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 31,
+          "loss": 9.257981300354004,
+          "lm_loss": 8.413683891296387,
+          "grad_norm": 0.8746594786643982,
+          "lr": 0.0003,
+          "tokens_per_second": 4515.1588498165165,
+          "step_seconds": 5.255629046354443,
+          "data_offset": 1984,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 741626,
+            "input_tokens": 746260,
+            "response_tokens": 0,
+            "optimizer_updates": 31,
+            "skipped_windows": 0,
+            "image_occurrences": 38,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2332
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 32,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.5044089555740356,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 1.1336945295333862,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.1631289720535278,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.6983444690704346,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 32,
+          "loss": 9.24916934967041,
+          "lm_loss": 8.40583324432373,
+          "grad_norm": 0.8432613015174866,
+          "lr": 0.0003,
+          "tokens_per_second": 4467.300441782947,
+          "step_seconds": 5.460344634950161,
+          "data_offset": 2048,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 766019,
+            "input_tokens": 770785,
+            "response_tokens": 0,
+            "optimizer_updates": 32,
+            "skipped_windows": 0,
+            "image_occurrences": 39,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2392
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 33,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.583321213722229,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 1.2942711114883423,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.1517300605773926,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 1.8807100057601929,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 33,
+          "loss": 9.183799743652344,
+          "lm_loss": 8.346707344055176,
+          "grad_norm": 0.7196783423423767,
+          "lr": 0.0003,
+          "tokens_per_second": 4432.838468138282,
+          "step_seconds": 5.354808249976486,
+          "data_offset": 2112,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 789756,
+            "input_tokens": 794659,
+            "response_tokens": 0,
+            "optimizer_updates": 33,
+            "skipped_windows": 0,
+            "image_occurrences": 40,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2456
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 34,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.6511086225509644,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 1.3471362590789795,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.173948884010315,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.004976987838745,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 34,
+          "loss": 8.997184753417969,
+          "lm_loss": 8.17652416229248,
+          "grad_norm": 0.7696835994720459,
+          "lr": 0.00029745951823351136,
+          "tokens_per_second": 4487.709676549482,
+          "step_seconds": 5.039096026681364,
+          "data_offset": 2176,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 812370,
+            "input_tokens": 817408,
+            "response_tokens": 0,
+            "optimizer_updates": 34,
+            "skipped_windows": 0,
+            "image_occurrences": 41,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2520
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 35,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.9419281482696533,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 1.5818226337432861,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.232696533203125,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.091214179992676,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 35,
+          "loss": 8.920685768127441,
+          "lm_loss": 8.10767650604248,
+          "grad_norm": 0.735135555267334,
+          "lr": 0.0002805637921541178,
+          "tokens_per_second": 4239.984357610062,
+          "step_seconds": 5.239406121894717,
+          "data_offset": 2240,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 834585,
+            "input_tokens": 839757,
+            "response_tokens": 0,
+            "optimizer_updates": 35,
+            "skipped_windows": 0,
+            "image_occurrences": 42,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2583
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 36,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.9844465255737305,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 1.747984766960144,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.3187904357910156,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.2623746395111084,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 36,
+          "loss": 8.992292404174805,
+          "lm_loss": 8.1727294921875,
+          "grad_norm": 0.6420184969902039,
+          "lr": 0.000247626788438931,
+          "tokens_per_second": 4460.485253996903,
+          "step_seconds": 5.264898024033755,
+          "data_offset": 2304,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 858069,
+            "input_tokens": 863376,
+            "response_tokens": 0,
+            "optimizer_updates": 36,
+            "skipped_windows": 0,
+            "image_occurrences": 43,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2646
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 37,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 2.2374279499053955,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 2.041715383529663,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.369092583656311,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.365455150604248,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 37,
+          "loss": 8.875082969665527,
+          "lm_loss": 8.06657600402832,
+          "grad_norm": 0.5736610293388367,
+          "lr": 0.00020231951966354393,
+          "tokens_per_second": 4678.290295096736,
+          "step_seconds": 5.1514545870013535,
+          "data_offset": 2368,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 882169,
+            "input_tokens": 887681,
+            "response_tokens": 0,
+            "optimizer_updates": 37,
+            "skipped_windows": 0,
+            "image_occurrences": 45,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2769
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 38,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 2.333235502243042,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 2.275482654571533,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.4286243915557861,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.3801021575927734,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 38,
+          "loss": 8.935023307800293,
+          "lm_loss": 8.121705055236816,
+          "grad_norm": 0.516851007938385,
+          "lr": 0.0001519133089077936,
+          "tokens_per_second": 4496.878913234196,
+          "step_seconds": 5.3397034839726985,
+          "data_offset": 2432,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 906181,
+            "input_tokens": 911827,
+            "response_tokens": 0,
+            "optimizer_updates": 38,
+            "skipped_windows": 0,
+            "image_occurrences": 46,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2832
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 39,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 2.4763898849487305,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 2.5742287635803223,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.5339246988296509,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.40932559967041,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 39,
+          "loss": 8.81022834777832,
+          "lm_loss": 8.008493423461914,
+          "grad_norm": 0.5314564108848572,
+          "lr": 9.789399894475963e-05,
+          "tokens_per_second": 4910.973459864908,
+          "step_seconds": 5.485266866162419,
+          "data_offset": 2496,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 933119,
+            "input_tokens": 938896,
+            "response_tokens": 0,
+            "optimizer_updates": 39,
+            "skipped_windows": 0,
+            "image_occurrences": 47,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2892
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 40,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 2.398770809173584,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 2.681551456451416,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.5543092489242554,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.402534246444702,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 40,
+          "loss": 8.899791717529297,
+          "lm_loss": 8.090165138244629,
+          "grad_norm": 0.49104180932044983,
+          "lr": 5.967770308105582e-05,
+          "tokens_per_second": 4546.195684114943,
+          "step_seconds": 5.24702447000891,
+          "data_offset": 2560,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 956973,
+            "input_tokens": 962884,
+            "response_tokens": 0,
+            "optimizer_updates": 40,
+            "skipped_windows": 0,
+            "image_occurrences": 48,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 2955
+          },
+          "peak_allocated_mib": 6550.171875
+        },
+        {
+          "event": "qk_clip",
+          "step": 41,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 2.545506477355957,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 2.745347023010254,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.5993030071258545,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.371704339981079,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 41,
+          "loss": 8.84817886352539,
+          "lm_loss": 8.042786598205566,
+          "grad_norm": 0.53719162940979,
+          "lr": 3.393930637194879e-05,
+          "tokens_per_second": 4493.547796519689,
+          "step_seconds": 6.144365488085896,
+          "data_offset": 2624,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 984583,
+            "input_tokens": 990698,
+            "response_tokens": 0,
+            "optimizer_updates": 41,
+            "skipped_windows": 0,
+            "image_occurrences": 50,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 3078
+          },
+          "peak_allocated_mib": 6554.5224609375
+        },
+        {
+          "event": "qk_clip",
+          "step": 42,
+          "layers": {
+            "layers.3.self_attn": {
+              "max_logit": 1.3508732318878174,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.7.self_attn": {
+              "max_logit": 1.448425054550171,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "layers.11.self_attn": {
+              "max_logit": 1.5385997295379639,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            },
+            "mtp.block.self_attn": {
+              "max_logit": 2.3784282207489014,
+              "clipped_heads": 0,
+              "min_gamma": 1.0,
+              "threshold": 100.0
+            }
+          }
+        },
+        {
+          "event": "train",
+          "step": 42,
+          "loss": 8.87022590637207,
+          "lm_loss": 8.063837051391602,
+          "grad_norm": 0.5237284302711487,
+          "lr": 2.9999999999999997e-05,
+          "tokens_per_second": 3839.4234090119335,
+          "step_seconds": 5.189581319224089,
+          "data_offset": 2688,
+          "micro_batches": 2,
+          "token_ledger": {
+            "ce_tokens": 1004508,
+            "input_tokens": 1010687,
+            "response_tokens": 0,
+            "optimizer_updates": 42,
+            "skipped_windows": 0,
+            "image_occurrences": 50,
+            "video_examples": 0,
+            "video_frames": 0,
+            "image_features": 3078
+          },
+          "peak_allocated_mib": 6554.5224609375
+        },
+        {
+          "event": "validation",
+          "step": 42,
+          "loss": 9.044846373033359,
+          "lm_loss": 8.224547871543319,
+          "supervised_tokens": 13294,
+          "reward": 0.0,
+          "examples": 32,
+          "sampling": "uniform_without_replacement"
+        }
+      ],
+      "retired_weights": {
+        "policy": "ephemeral_batch_probe",
+        "files": [
+          {
+            "file": "best-model.pt",
+            "bytes": 818619503,
+            "sha256": "7f944d679b1241d364632363023ee1fbc83b7f42b816d6e650323d0ee002cd75"
+          },
+          {
+            "file": "checkpoint.pt",
+            "bytes": 2048925385,
+            "sha256": "ee597c75bb5a272c84f74b60d156c457e729096ef857ace0410f76ff320496e4"
+          },
+          {
+            "file": "model.pt",
+            "bytes": 818619247,
+            "sha256": "3d24c38db5210515d5b734477b247de19d112bb8f9204e38ba014dfc1cae0805"
+          }
+        ]
+      }
+    }
+  ],
+  "synthetic_cases": []
+}

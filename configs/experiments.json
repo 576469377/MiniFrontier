@@ -14,188 +14,456 @@
   },
   "families": [
     {
+      "id": "source-integration",
+      "outputs": [
+        "preview-quickstart-*",
+        "preview-installed-wheel-quickstart"
+      ],
+      "purpose": "来源模型 CPU/3090 最小示例及独立 wheel 安装链路",
+      "decision": "integration_only",
+      "limitations": [
+        "小配置和生成 fixture 数据仅用于外部用户安装/执行验收，不作为架构优劣或模型能力证据"
+      ]
+    },
+    {
       "id": "legacy-language",
-      "outputs": ["miniqwen4", "minikimik3", "minideepseekv4"],
+      "outputs": [
+        "miniqwen4",
+        "minikimik3",
+        "minideepseekv4"
+      ],
       "purpose": "历史 educational-v1 训练与阶段执行复盘",
       "decision": "archive_only",
-      "limitations": ["训练结束不代表语言能力通过", "旧语料、tokenizer 和配置不能并入新策略预算"]
+      "limitations": [
+        "训练结束不代表语言能力通过",
+        "旧语料、tokenizer 和配置不能并入新策略预算"
+      ]
     },
     {
       "id": "source-learnability",
-      "outputs": ["strategy-diagnostics-v2"],
+      "outputs": [
+        "strategy-diagnostics-v2"
+      ],
       "purpose": "小样本可学习性、算术和原生视觉链路",
       "decision": "retain_diagnostic",
-      "limitations": ["训练题记忆不证明留出泛化", "重置优化器的扩展诊断是独立分支"]
+      "limitations": [
+        "训练题记忆不证明留出泛化",
+        "重置优化器的扩展诊断是独立分支"
+      ]
     },
     {
       "id": "source-recipe-v2",
-      "outputs": ["strategy-recipe-pilots-v2", "strategy-single-gpu-v2", "strategy-shared-gpu-v2"],
+      "outputs": [
+        "strategy-recipe-pilots-v2",
+        "strategy-single-gpu-v2",
+        "strategy-shared-gpu-v2"
+      ],
       "purpose": "优化器、学习率与 MTP 候选的 20M CE 筛选",
       "decision": "retain_conditional_evidence",
-      "limitations": ["WSD/400K warmup 是本地共同对照，不能称为 Kimi 官方配方", "单种子和单因素结果不能直接合并为最优配方", "共卡与独占吞吐不可直接比较", "主动停止的 Qwen MTP 0.2 未完成预算"]
+      "limitations": [
+        "WSD/400K warmup 是本地共同对照，不能称为 Kimi 官方配方",
+        "单种子和单因素结果不能直接合并为最优配方",
+        "共卡与独占吞吐不可直接比较",
+        "主动停止的 Qwen MTP 0.2 未完成预算"
+      ]
     },
     {
       "id": "source-seed-stopped",
-      "outputs": ["strategy-seed-gpu-v1"],
+      "outputs": [
+        "strategy-seed-gpu-v1"
+      ],
       "purpose": "旧 microbatch 2 补种子试验",
       "decision": "superseded",
-      "limitations": ["因执行效率重新规划而停止；原日志和已有权重保留", "不能把未保存的进度写为可恢复进度"]
+      "limitations": [
+        "因执行效率重新规划而停止；原日志和已有权重保留",
+        "不能把未保存的进度写为可恢复进度"
+      ]
     },
     {
       "id": "source-batch16",
-      "outputs": ["strategy-batch16-gpu-v1"],
+      "outputs": [
+        "strategy-batch16-gpu-v1"
+      ],
       "purpose": "冻结旧实现下 microbatch 16 的吞吐与收敛观察",
       "decision": "finish_exploratory_no_auto_promotion",
-      "limitations": ["实际全局 input batch 随完整 microbatch 越界；不是固定全局 batch 的纯性能对照", "旧 WSD 候选仅供同版本研究"]
+      "limitations": [
+        "实际全局 input batch 随完整 microbatch 越界；不是固定全局 batch 的纯性能对照",
+        "旧 WSD 候选仅供同版本研究"
+      ]
     },
     {
       "id": "batch-screens",
-      "outputs": ["performance-real-batch-v1", "performance-real-batch-v2", "performance-tuning-v1", "strategy-batch-frontier-gpu-v1", "strategy-batch-host-gpu-v1"],
+      "outputs": [
+        "performance-real-batch-v1",
+        "performance-real-batch-v2",
+        "performance-tuning-v1",
+        "strategy-batch-frontier-gpu-v1",
+        "strategy-batch-host-gpu-v1"
+      ],
       "purpose": "显存边界、固定形状测速和最多 1M CE 的真实数据确认",
       "decision": "execution_evidence_only",
-      "limitations": ["合成固定 input 更新与真实非 padding 累积必须分开", "1M CE / 32 例验证只能筛异常，不能冻结训练配方", "主机确认不能替代同机受控对照", "MF1 benchmark 的 microbatch 不能自动用于 MF1 trainer"]
+      "limitations": [
+        "合成固定 input 更新与真实非 padding 累积必须分开",
+        "1M CE / 32 例验证只能筛异常，不能冻结训练配方",
+        "主机确认不能替代同机受控对照",
+        "MF1 benchmark 的 microbatch 不能自动用于 MF1 trainer"
+      ]
     },
     {
       "id": "speed-selected-long",
-      "outputs": ["strategy-batch-selected-gpu-v1"],
+      "outputs": [
+        "strategy-batch-selected-gpu-v1"
+      ],
       "purpose": "旧吞吐选择器自动派发的 20M CE 候选",
       "decision": "dispatch_paused_existing_runs_exploratory",
-      "limitations": ["取消只按最快吞吐选择长期训练配方的规则", "Kimi 128 实际约 48K input/update，不是 16K", "已有 Kimi/DeepSeek 运行只保留为固定大 batch 观察，待派发 Qwen 不继续自动启动"]
+      "limitations": [
+        "取消只按最快吞吐选择长期训练配方的规则",
+        "Kimi 128 实际约 48K input/update，不是 16K",
+        "已有 Kimi/DeepSeek 运行只保留为固定大 batch 观察，待派发 Qwen 不继续自动启动"
+      ]
     },
     {
       "id": "mf1-learning",
-      "outputs": ["mf1-mechanism-v1", "mf1-language-sft-v1", "mf1-overfit-reference-v1", "mf1-overfit-reference-v2"],
+      "outputs": [
+        "mf1-mechanism-v1",
+        "mf1-language-sft-v1",
+        "mf1-overfit-reference-v1",
+        "mf1-overfit-reference-v2"
+      ],
       "purpose": "融合结构前后向、500K 机制学习、30K 语言协议控制",
       "decision": "retain_diagnostic",
-      "limitations": ["不能证明融合优于简单基线", "生成数据和训练内 32/32 不代表开放域对话能力", "视觉匹配、置黑、错配以及留出结果分别解释"]
+      "limitations": [
+        "不能证明融合优于简单基线",
+        "生成数据和训练内 32/32 不代表开放域对话能力",
+        "视觉匹配、置黑、错配以及留出结果分别解释"
+      ]
     },
     {
       "id": "mf1-instructions",
-      "outputs": ["mf1-language-instructions-v1"],
+      "outputs": [
+        "mf1-language-instructions-v1"
+      ],
       "purpose": "从 30K 控制检查点继续 100K CE 指令诊断",
       "decision": "stopped_for_review",
-      "limitations": ["约 2 CE/s；先修执行性能，再以新计划恢复研究", "初始检查点来自不同 LR 控制分支，因此不是同初始化的独立 LR 消融"]
+      "limitations": [
+        "约 2 CE/s；先修执行性能，再以新计划恢复研究",
+        "初始检查点来自不同 LR 控制分支，因此不是同初始化的独立 LR 消融"
+      ]
     },
     {
       "id": "mf1-performance",
-      "outputs": ["mf1-performance-v1", "mf1-performance-v2", "mf1-performance-remote-v1"],
+      "outputs": [
+        "mf1-performance-v1",
+        "mf1-performance-v2",
+        "mf1-performance-remote-v1"
+      ],
       "purpose": "reference/缓存优化、长度、媒体与 microbatch 性能",
       "decision": "finish_bounded_measurements",
-      "limitations": ["512 短序列吞吐不能外推 8K native 多模态", "MB 8/16 仍约 68 CE/s，批量大小未解决 reference 调度瓶颈", "性能通过不等于正确性或能力通过"]
+      "limitations": [
+        "512 短序列吞吐不能外推 8K native 多模态",
+        "MB 8/16 仍约 68 CE/s，批量大小未解决 reference 调度瓶颈",
+        "性能通过不等于正确性或能力通过"
+      ]
     },
     {
       "id": "mf1-integration",
-      "outputs": ["mf1-draft-v1", "mf1-post-dev*", "mf1-quickstart*", "mf1-teachers-v1", "mf1-wheel-outside"],
+      "outputs": [
+        "mf1-draft-v1",
+        "mf1-post-dev*",
+        "mf1-quickstart*",
+        "mf1-teachers-v1",
+        "mf1-wheel-outside",
+        "public-readme-check"
+      ],
       "purpose": "离线示例、安装、后训练和草稿接口检查",
       "decision": "integration_only",
-      "limitations": ["fixture 运行不能证明正式 RL、教师资格或草稿加速", "台账条数包含阶段和安装用例，不等于独立科学试验数"]
+      "limitations": [
+        "fixture 运行不能证明正式 RL、教师资格或草稿加速",
+        "台账条数包含阶段和安装用例，不等于独立科学试验数"
+      ]
     },
     {
       "id": "bounded-batch-verification",
-      "outputs": ["strategy-batch-controlled-v1"],
+      "outputs": [
+        "strategy-batch-controlled-v1"
+      ],
       "purpose": "修正全局 batch 语义后的相同样本窗口与真实数据性能验证",
       "decision": "verification_only",
-      "limitations": ["新源码与旧源码结果不能混合归因", "短测不选择长期配方"]
+      "limitations": [
+        "新源码与旧源码结果不能混合归因",
+        "短测不选择长期配方"
+      ]
     }
   ],
   "next_experiments": [
     {
       "id": "execution-control",
-      "models": ["minikimik3", "miniqwen4", "minideepseekv4"],
-      "status": "implementation_verification",
+      "models": [
+        "minikimik3",
+        "miniqwen4",
+        "minideepseekv4"
+      ],
+      "status": "kimi_fixed64k_verified_remaining_cells_pending",
       "question": "固定实际全局 batch 时，增大 microbatch ceiling 能提高多少端到端吞吐？",
       "variable": "microbatch ceiling",
       "input_batch_policy": "sample-bounded",
-      "global_input_targets": [16384, 65536],
-      "microbatch_candidates": {"minikimik3": [16, 32, 64, 128], "miniqwen4": [16, 32, 64], "minideepseekv4": [16, 32]},
+      "global_input_targets": [
+        16384,
+        65536
+      ],
+      "microbatch_candidates": {
+        "minikimik3": [
+          16,
+          32,
+          64,
+          128
+        ],
+        "miniqwen4": [
+          16,
+          32,
+          64
+        ],
+        "minideepseekv4": [
+          16,
+          32
+        ]
+      },
       "budget_per_trial_ce": 1000000,
       "seed": 42,
-      "fixed": ["source", "data", "sample stream", "tokenizer", "model", "LR schedule", "optimizer", "global input target within each comparison"],
-      "acceptance": ["same sample-window boundaries and actual CE/input per update", "finite loss/gradients", "reserved <=21 GiB and physical free >=2 GiB", "8 measured updates after 3 warmup for screening; final phase admission still needs 50+200"],
-      "references": ["kimi-k3", "qwen-next", "deepseek-v4", "critical-batch"]
+      "fixed": [
+        "source",
+        "data",
+        "sample stream",
+        "tokenizer",
+        "model",
+        "LR schedule",
+        "optimizer",
+        "global input target within each comparison"
+      ],
+      "acceptance": [
+        "same sample-window boundaries and actual CE/input per update",
+        "finite loss/gradients",
+        "reserved <=21 GiB and physical free >=2 GiB",
+        "8 measured updates after 3 warmup for screening; final phase admission still needs 50+200"
+      ],
+      "references": [
+        "kimi-k3",
+        "qwen-next",
+        "deepseek-v4",
+        "critical-batch"
+      ],
+      "completed_evidence": "docs/experiments/2026-09-10-batch-frontier/controlled-batch-comparison.json",
+      "remaining": [
+        "fixed16K ceiling comparison",
+        "Qwen/DeepSeek real-data controlled comparisons",
+        "full 50+200 phase profiles"
+      ]
     },
     {
       "id": "kimi-batch-lr",
-      "models": ["minikimik3"],
+      "models": [
+        "minikimik3"
+      ],
       "status": "blocked_on_execution_control",
       "question": "128 的吞吐优势能否在充分调 LR 后保留等 token 质量？",
       "variable": "global input batch and independently tuned peak LR",
-      "global_input_targets": [16384, 32768, 65536],
+      "global_input_targets": [
+        16384,
+        32768,
+        65536
+      ],
       "schedule": "cosine",
       "warmup_ce_tokens": 200000,
       "budget_per_trial_ce": 20000000,
-      "muon_lr_candidates": [0.003, 0.005, 0.01],
+      "muon_lr_candidates": [
+        0.003,
+        0.005,
+        0.01
+      ],
       "adam_branch_lr": 0.0003,
       "seed": 42,
-      "repeat_seeds": [43, 44],
+      "repeat_seeds": [
+        43,
+        44
+      ],
       "selection": "screen loss/stability and GPU-hours jointly; repeat only best two recipe candidates; retain old WSD as separately labeled comparison",
-      "references": ["kimi-k3", "critical-batch"],
-      "local_choices": ["all batch sizes, LR grid and token budgets", "no claimed official K3 batch ramp"]
+      "references": [
+        "kimi-k3",
+        "critical-batch"
+      ],
+      "local_choices": [
+        "all batch sizes, LR grid and token budgets",
+        "no claimed official K3 batch ramp"
+      ]
     },
     {
       "id": "qwen-fixed-batch",
-      "models": ["miniqwen4"],
+      "models": [
+        "miniqwen4"
+      ],
       "status": "blocked_on_execution_control",
       "question": "固定全局 batch 和 Muon LR 的合适组合？",
       "variable": "constant global input batch and peak LR",
-      "global_input_targets": [16384, 32768],
+      "global_input_targets": [
+        16384,
+        32768
+      ],
       "schedule": "wsd",
       "warmup_ce_tokens": 400000,
       "budget_per_trial_ce": 20000000,
-      "muon_lr_candidates": [0.003, 0.01],
+      "muon_lr_candidates": [
+        0.003,
+        0.01
+      ],
       "seed": 42,
-      "repeat_seeds": [43, 44],
-      "references": ["qwen-next"],
-      "local_choices": ["WSD, batch sizes and LR grid are local pilot settings", "do not add batch warmup by default; do not copy 25.2M global batch to a 513M model"]
+      "repeat_seeds": [
+        43,
+        44
+      ],
+      "references": [
+        "qwen-next"
+      ],
+      "local_choices": [
+        "WSD, batch sizes and LR grid are local pilot settings",
+        "do not add batch warmup by default; do not copy 25.2M global batch to a 513M model"
+      ]
     },
     {
       "id": "deepseek-batch-ramp",
-      "models": ["minideepseekv4"],
+      "models": [
+        "minideepseekv4"
+      ],
       "status": "blocked_on_execution_control",
       "question": "小模型是否受益于早期小全局 batch？",
       "variable": "global input schedule, followed by independent LR tuning",
-      "batch_schedules": ["0:16384", "0:32768", "0:8192,400000:16384,2000000:32768"],
+      "batch_schedules": [
+        "0:16384",
+        "0:32768",
+        "0:8192,400000:16384,2000000:32768"
+      ],
       "schedule": "wsd",
       "warmup_ce_tokens": 400000,
       "budget_per_trial_ce": 20000000,
-      "shared_muon_adam_lr_candidates": [0.0001, 0.0002, 0.0003],
+      "shared_muon_adam_lr_candidates": [
+        0.0001,
+        0.0002,
+        0.0003
+      ],
       "seed": 42,
-      "repeat_seeds": [43, 44],
-      "references": ["deepseek-v4"],
-      "local_choices": ["8K/16K/32K and 0.4M/2M milestones are hypotheses from the local mini plan; official initial batch and milestones are undisclosed", "current DeepSeek trainer uses --lr for BOTH Muon and AdamW; --muon-lr is ignored for this route; any independent rates need explicit implementation and comparison"]
+      "repeat_seeds": [
+        43,
+        44
+      ],
+      "references": [
+        "deepseek-v4"
+      ],
+      "local_choices": [
+        "8K/16K/32K and 0.4M/2M milestones are hypotheses from the local mini plan; official initial batch and milestones are undisclosed",
+        "current DeepSeek trainer uses --lr for BOTH Muon and AdamW; --muon-lr is ignored for this route; any independent rates need explicit implementation and comparison"
+      ]
     },
     {
       "id": "mf1-execution",
-      "models": ["minifrontier1"],
+      "models": [
+        "minifrontier1"
+      ],
       "status": "required_before_larger_learning_runs",
       "question": "融合 reference 的逐 query 调度、专家执行和样本打包能否等价加速？",
       "variable": "execution implementation only",
-      "acceptance": ["forward/gradient parity", "causality, segment/media boundaries, cache and rollback parity", "same true input/CE budget", "real text/image/video performance; final 50 warmup+200 measured updates", "single GPU memory and disk reserve"],
-      "references": ["kimi-k3", "qwen-next", "deepseek-v4"],
-      "local_choices": ["do not assume Kimi microbatch 128 applies to MF1 trainer", "implement native microbatch collation only after media and sample-boundary parity"]
+      "acceptance": [
+        "forward/gradient parity",
+        "causality, segment/media boundaries, cache and rollback parity",
+        "same true input/CE budget",
+        "real text/image/video performance; final 50 warmup+200 measured updates",
+        "single GPU memory and disk reserve"
+      ],
+      "references": [
+        "kimi-k3",
+        "qwen-next",
+        "deepseek-v4"
+      ],
+      "local_choices": [
+        "do not assume Kimi microbatch 128 applies to MF1 trainer",
+        "implement native microbatch collation only after media and sample-boundary parity"
+      ]
     },
     {
       "id": "mf1-fusion-ablation",
-      "models": ["minifrontier1"],
+      "models": [
+        "minifrontier1"
+      ],
       "status": "blocked_on_execution_and_audited_pilot_data",
       "question": "融合是否值得增加参数与训练计算？",
-      "first_controls": ["B0 parameter-matched dense MLA + dense FFN baseline", "B3 lookup disabled and parameter-reallocated control", "B9 MTP 0 vs 0.1", "B2 dense/full-budget vs sparse QSA after indexer qualification"],
-      "later_controls": ["B1 CSA replacement", "B4 latent vs full-width experts", "B5 GR vs ordinary residual", "B6 replace GR with AttnRes or mHC separately", "B7 sparse budget and media protection", "B8 random vs pretrained vision with initialization cost disclosed"],
-      "budgets_ce": [2000000, 20000000, 200000000],
+      "first_controls": [
+        "B0 parameter-matched dense MLA + dense FFN baseline",
+        "B3 lookup disabled and parameter-reallocated control",
+        "B9 MTP 0 vs 0.1",
+        "B2 dense/full-budget vs sparse QSA after indexer qualification"
+      ],
+      "later_controls": [
+        "B1 CSA replacement",
+        "B4 latent vs full-width experts",
+        "B5 GR vs ordinary residual",
+        "B6 replace GR with AttnRes or mHC separately",
+        "B7 sparse budget and media protection",
+        "B8 random vs pretrained vision with initialization cost disclosed"
+      ],
+      "budgets_ce": [
+        2000000,
+        20000000,
+        200000000
+      ],
       "seed": 42,
-      "repeat_seeds": [43, 44],
+      "repeat_seeds": [
+        43,
+        44
+      ],
       "selection": "all candidates need correctness/2M mechanism screening; selected single-factor trials get 20M; best 2-3 get 200M and at least a second seed",
-      "acceptance": ["equal CE and separately equal GPU-hours", "total/active parameters and FLOPs disclosed", "held-out text, OCR/VQA, media mismatch/blackout, long-distance retrieval", "router coverage, gradient/module RMS, actual media exposures", "no NLL comparison across tokenizer vocabularies without byte normalization"],
-      "references": ["kimi-k3", "qwen-next", "deepseek-v4", "engram", "smollm3", "smolvlm"],
-      "local_choices": ["all fusion choices and budgets remain project hypotheses", "B0/B1/B4/B5/B6/B8 require implementation or matched configurations before launch", "do not relax the existing 2M acceptance cap to bypass formal pilot admission"]
+      "acceptance": [
+        "equal CE and separately equal GPU-hours",
+        "total/active parameters and FLOPs disclosed",
+        "held-out text, OCR/VQA, media mismatch/blackout, long-distance retrieval",
+        "router coverage, gradient/module RMS, actual media exposures",
+        "no NLL comparison across tokenizer vocabularies without byte normalization"
+      ],
+      "references": [
+        "kimi-k3",
+        "qwen-next",
+        "deepseek-v4",
+        "engram",
+        "smollm3",
+        "smolvlm"
+      ],
+      "local_choices": [
+        "all fusion choices and budgets remain project hypotheses",
+        "B0/B1/B4/B5/B6/B8 require implementation or matched configurations before launch",
+        "do not relax the existing 2M acceptance cap to bypass formal pilot admission"
+      ]
     },
     {
       "id": "data-and-tokenizer",
-      "models": ["minikimik3", "miniqwen4", "minideepseekv4", "minifrontier1"],
+      "models": [
+        "minikimik3",
+        "miniqwen4",
+        "minideepseekv4",
+        "minifrontier1"
+      ],
       "status": "required_before_recipe_freeze",
       "question": "候选语料能否支撑计划 token 预算，32K/64K 的质量和计算代价如何？",
-      "acceptance": ["source/revision/license/rebuild audit", "cross-source exact/near duplicate and evaluation contamination checks", "unique image/video and exposure budgets", "fixed held-out documents across tokenizers; bytes/character fertility and byte NLL", "formal mixture and epochs measured in actual CE/input/media units"],
-      "references": ["kimi-k3", "qwen-next", "deepseek-v4", "smollm3", "smolvlm"]
+      "acceptance": [
+        "source/revision/license/rebuild audit",
+        "cross-source exact/near duplicate and evaluation contamination checks",
+        "unique image/video and exposure budgets",
+        "fixed held-out documents across tokenizers; bytes/character fertility and byte NLL",
+        "formal mixture and epochs measured in actual CE/input/media units"
+      ],
+      "references": [
+        "kimi-k3",
+        "qwen-next",
+        "deepseek-v4",
+        "smollm3",
+        "smolvlm"
+      ]
     }
   ]
 }

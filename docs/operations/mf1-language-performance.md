@@ -1,5 +1,7 @@
 # MF1 语言诊断与性能实验调度
 
+> 历史执行记录：此页保留当时的设备安排和候选值。当前配方、暂停/停止决定与新任务顺序以[实验总计划](../experiments/current-plan.md)为准。
+
 2026-09-10 的本机执行记录。通用配方和复现入口见[实验档案](../experiments/mf1-language-performance-v1/README.md)。编号只表示本次设备安排。
 
 | GPU | 任务 | 显存控制 |

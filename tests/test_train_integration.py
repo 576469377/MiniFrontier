@@ -221,6 +221,7 @@ def test_training_resume_matches_uninterrupted_run(corpus, tmp_path, monkeypatch
 def test_two_rank_trainer_checks_parameters(name, corpus, tmp_path):
     config = config_for(name, tmp_path)
     args = arguments(name, config, corpus, tmp_path / "ddp")
+    args += ["--batch-size", "4", "--input-batch-tokens", "600"]
     result = subprocess.run(
         [
             sys.executable,

@@ -2,6 +2,8 @@
 
 本目录按日期保留模型设计与训练方案。方案中的规模、预算、教师数量和性能目标描述计划；完成情况请查看[模型页](../models/minifrontier1.md)和[实验记录](../experiments.md)。
 
+当前待执行的试验、技术报告复核和已修正的配方判断统一见[当前实验计划](../experiments/current-plan.md)。原文中的初始 microbatch、调度和候选值不是不经实测即可套用的最终配方。
+
 - `2026-09-09/`：MiniFrontier1.0 原生多模态融合方案。
 - `2026-09-08/`：MiniKimi-K3、MiniQwen4、MiniDeepSeek-V4 各自的训练与结构改造方案。
 

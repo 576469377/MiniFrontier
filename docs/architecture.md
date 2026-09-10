@@ -27,6 +27,7 @@ MF1 的阶段累计和恢复由自己的训练器管理，主干 moments 跨 ind
 2. 模型结构、数据处理和训练计算不依赖命令解析或浏览器服务。`commands/` 组合各模块；Demo 调用共用推理，命令文件不新增训练算法。
 3. 可共用的检查点保存、随机状态、存储预算、分布计算等继续复用已有模块。阶段状态和损失含义不同的训练器显式区分，整合前验证行为一致。
 4. 根包仅保留入口、模型清单和硬件/存储/来源等跨功能模块。数据处理不再新增根层 `data_v3.py` 一类文件，也不再新增包含整套数据/训练/Demo 的模型专属根目录。
+5. 科学试验统一登记在 `configs/experiments.json`，工作站命令实例保存在各自忽略的 `outputs/<cohort>/queue-plan.json`。新的独占任务复用同一个队列入口；历史 launcher 保留可追溯性，不继续增加版本化 Python 调度器。当前计划、通用管理与日期快照分别集中在[计划](experiments/current-plan.md)、[管理](operations/experiment-management.md)和[实验索引](experiments.md)。
 
 2026-09-09 的迁移移除了根包下的 `mf1/`：数据与编码进入 `data/minifrontier1*.py`，六个训练模块进入 `training/minifrontier1*.py`，评测进入 `evaluation/minifrontier1.py`，生成/导出/Demo 进入 `inference/minifrontier1*.py`，命令进入 `commands/minifrontier1.py`。旧数据模块归入 `data/`，原 `inference.py` 拆成运行时、浏览器和参数解析。
 

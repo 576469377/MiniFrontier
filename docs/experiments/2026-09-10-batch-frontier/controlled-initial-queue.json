@@ -1,0 +1,43 @@
+{
+  "plan_sha256": "f2706e472cbd39f16c565ad27de7f37bc2278b45c4dc519bca7029cf2d99b6d3",
+  "started_at": 1789034494.7228813,
+  "main_budget_eligible": false,
+  "jobs": [
+    {
+      "id": "kimi-fixed64k-mb128",
+      "output": "${WORKSPACE}/outputs/strategy-batch-controlled-v1/trials/minikimik3/mb128",
+      "state": "complete",
+      "gate_observed": {},
+      "gpu_id": 4,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/source-batch-controlled-v1/scripts/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/strategy-batch-controlled-v1/mb128-plan.json"
+      ],
+      "started_at": 1789034495.731005,
+      "exit_code": 0,
+      "finished_at": 1789034820.207073
+    },
+    {
+      "id": "kimi-fixed64k-mb16",
+      "output": "${WORKSPACE}/outputs/strategy-batch-controlled-v1/trials/minikimik3/mb16",
+      "state": "complete",
+      "gate_observed": {},
+      "gpu_id": 5,
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/source-batch-controlled-v1/scripts/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/strategy-batch-controlled-v1/mb16-plan.json"
+      ],
+      "started_at": 1789034620.105024,
+      "exit_code": 0,
+      "finished_at": 1789035050.9433231
+    }
+  ],
+  "state": "complete",
+  "updated_at": 1789035050.9433675,
+  "adopted": [],
+  "reserved_gpu_ids": []
+}

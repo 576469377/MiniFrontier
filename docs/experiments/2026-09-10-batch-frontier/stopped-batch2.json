@@ -1,0 +1,263 @@
+{
+  "local": [
+    {
+      "state": "stopped_by_user",
+      "reason": "Replace inefficient batch2 trial with larger-batch screening",
+      "stopped_at": 1789031452.8217854,
+      "last_logged_train": {
+        "event": "train",
+        "step": 1160,
+        "loss": 5.649356842041016,
+        "lm_loss": 4.682391166687012,
+        "grad_norm": 0.342002809047699,
+        "lr": 4.5680131467381736e-05,
+        "tokens_per_second": 281.24400856183905,
+        "step_seconds": 59.11592600680888,
+        "data_offset": 52466,
+        "micro_batches": 24,
+        "token_ledger": {
+          "ce_tokens": 19380232,
+          "input_tokens": 19489676,
+          "response_tokens": 0,
+          "optimizer_updates": 1160,
+          "skipped_windows": 0,
+          "image_occurrences": 970,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 55038
+        },
+        "peak_allocated_mib": 7178.306640625
+      },
+      "checkpoint_status": {
+        "step": 1000,
+        "target_steps": 100000,
+        "stage": "pretrain",
+        "phase": "dense_pretrain",
+        "state": "running",
+        "token_budget": 20000000,
+        "token_ledger": {
+          "ce_tokens": 16706957,
+          "input_tokens": 16801313,
+          "response_tokens": 0,
+          "optimizer_updates": 1000,
+          "skipped_windows": 0,
+          "image_occurrences": 836,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 47458
+        },
+        "capability_status": "unassessed",
+        "checkpoint": "${WORKSPACE}/outputs/strategy-shared-gpu-v2/miniqwen4/mtp-0.2/checkpoint.pt",
+        "updated_at": 1789022168.9944282
+      },
+      "checkpoint_exists": true,
+      "exact_current_state_saved": false
+    }
+  ],
+  "remote-239": [
+    {
+      "id": "miniqwen4/reference",
+      "gpu_id": 0,
+      "state": "stopped_by_user",
+      "reason": "Replace inefficient batch2 trials with bounded larger-batch screening",
+      "stopped_at": 1789031462.4913368,
+      "source_run": "run.json",
+      "last_logged_train": {
+        "event": "train",
+        "step": 10,
+        "loss": 12.204773902893066,
+        "lm_loss": 11.089232444763184,
+        "grad_norm": 1.7564374208450317,
+        "lr": 0.00012473699999999998,
+        "tokens_per_second": 176.52471391440997,
+        "step_seconds": 93.57329992903396,
+        "data_offset": 440,
+        "micro_batches": 22,
+        "token_ledger": {
+          "ce_tokens": 166316,
+          "input_tokens": 167272,
+          "response_tokens": 0,
+          "optimizer_updates": 10,
+          "skipped_windows": 0,
+          "image_occurrences": 9,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 498
+        },
+        "peak_allocated_mib": 7178.08642578125
+      },
+      "checkpoint_exists": false,
+      "exact_current_state_saved": false
+    },
+    {
+      "id": "miniqwen4/lower-lr",
+      "gpu_id": 1,
+      "state": "stopped_by_user",
+      "reason": "Replace inefficient batch2 trials with bounded larger-batch screening",
+      "stopped_at": 1789031462.4927256,
+      "source_run": "run.json",
+      "last_logged_train": {
+        "event": "train",
+        "step": 20,
+        "loss": 12.169635772705078,
+        "lm_loss": 11.059030532836914,
+        "grad_norm": 1.670533299446106,
+        "lr": 0.00025001324999999997,
+        "tokens_per_second": 223.7774979812755,
+        "step_seconds": 74.59195026569068,
+        "data_offset": 904,
+        "micro_batches": 21,
+        "token_ledger": {
+          "ce_tokens": 333351,
+          "input_tokens": 335221,
+          "response_tokens": 0,
+          "optimizer_updates": 20,
+          "skipped_windows": 0,
+          "image_occurrences": 17,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 932
+        },
+        "peak_allocated_mib": 7178.28857421875
+      },
+      "checkpoint_exists": false,
+      "exact_current_state_saved": false
+    },
+    {
+      "id": "minikimik3/seed-43",
+      "gpu_id": 2,
+      "state": "stopped_by_user",
+      "reason": "Replace inefficient batch2 trials with bounded larger-batch screening",
+      "stopped_at": 1789031462.494693,
+      "source_run": "run.json",
+      "last_logged_train": {
+        "event": "train",
+        "step": 70,
+        "loss": 8.185253143310547,
+        "lm_loss": 7.444906711578369,
+        "grad_norm": 0.41818469762802124,
+        "lr": 0.0003,
+        "tokens_per_second": 582.9175716223447,
+        "step_seconds": 29.46557255461812,
+        "data_offset": 3094,
+        "micro_batches": 20,
+        "token_ledger": {
+          "ce_tokens": 1168302,
+          "input_tokens": 1175558,
+          "response_tokens": 0,
+          "optimizer_updates": 70,
+          "skipped_windows": 0,
+          "image_occurrences": 59,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 3674
+        },
+        "peak_allocated_mib": 3726.2919921875
+      },
+      "checkpoint_exists": false,
+      "exact_current_state_saved": false
+    },
+    {
+      "id": "minikimik3/seed-44",
+      "gpu_id": 3,
+      "state": "stopped_by_user",
+      "reason": "Replace inefficient batch2 trials with bounded larger-batch screening",
+      "stopped_at": 1789031462.4963732,
+      "source_run": "run.json",
+      "last_logged_train": {
+        "event": "train",
+        "step": 70,
+        "loss": 8.068770408630371,
+        "lm_loss": 7.339096546173096,
+        "grad_norm": 0.5118997693061829,
+        "lr": 0.0003,
+        "tokens_per_second": 462.0772477863675,
+        "step_seconds": 35.872789840679616,
+        "data_offset": 3156,
+        "micro_batches": 25,
+        "token_ledger": {
+          "ce_tokens": 1168672,
+          "input_tokens": 1175989,
+          "response_tokens": 0,
+          "optimizer_updates": 70,
+          "skipped_windows": 0,
+          "image_occurrences": 59,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 3674
+        },
+        "peak_allocated_mib": 3722.9248046875
+      },
+      "checkpoint_exists": false,
+      "exact_current_state_saved": false
+    },
+    {
+      "id": "minideepseekv4/seed-43",
+      "gpu_id": 4,
+      "state": "stopped_by_user",
+      "reason": "Replace inefficient batch2 trials with bounded larger-batch screening",
+      "stopped_at": 1789031462.4977121,
+      "source_run": "run.json",
+      "last_logged_train": {
+        "event": "train",
+        "step": 70,
+        "loss": 9.866222381591797,
+        "lm_loss": 7.49929666519165,
+        "grad_norm": 1.1212830543518066,
+        "lr": 0.0003,
+        "tokens_per_second": 503.7111425323673,
+        "step_seconds": 32.717163883149624,
+        "data_offset": 3112,
+        "micro_batches": 20,
+        "token_ledger": {
+          "ce_tokens": 1172857,
+          "input_tokens": 1175969,
+          "response_tokens": 0,
+          "optimizer_updates": 70,
+          "skipped_windows": 0,
+          "image_occurrences": 0,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 0
+        },
+        "peak_allocated_mib": 5014.8583984375
+      },
+      "checkpoint_exists": false,
+      "exact_current_state_saved": false
+    },
+    {
+      "id": "minideepseekv4/seed-44",
+      "gpu_id": 5,
+      "state": "stopped_by_user",
+      "reason": "Replace inefficient batch2 trials with bounded larger-batch screening",
+      "stopped_at": 1789031462.499,
+      "source_run": "run.json",
+      "last_logged_train": {
+        "event": "train",
+        "step": 70,
+        "loss": 9.86008358001709,
+        "lm_loss": 7.491961479187012,
+        "grad_norm": 1.0101232528686523,
+        "lr": 0.0003,
+        "tokens_per_second": 504.2783183336362,
+        "step_seconds": 33.49340906785801,
+        "data_offset": 3170,
+        "micro_batches": 22,
+        "token_ledger": {
+          "ce_tokens": 1171981,
+          "input_tokens": 1175151,
+          "response_tokens": 0,
+          "optimizer_updates": 70,
+          "skipped_windows": 0,
+          "image_occurrences": 0,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 0
+        },
+        "peak_allocated_mib": 5014.7333984375
+      },
+      "checkpoint_exists": false,
+      "exact_current_state_saved": false
+    }
+  ]
+}

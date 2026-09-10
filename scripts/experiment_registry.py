@@ -29,7 +29,17 @@ def allowed_root(path):
         and not (path / ".git").exists()
         and not any(t in path.name for t in ("source", "cache", "controller", "tensorboard"))
         and path.name.startswith(
-            ("strategy-", "mf1-", "performance-", "miniqwen", "minikimi", "minideepseek")
+            (
+                "strategy-",
+                "mf1-",
+                "performance-",
+                "miniqwen",
+                "minikimi",
+                "minideepseek",
+                "preview-quickstart",
+                "preview-installed-wheel",
+                "public-readme-check",
+            )
         )
     )
 
@@ -74,6 +84,7 @@ def collect(workspace):
                         status=states.get(job["id"], {}),
                         queue=queue_name,
                         queue_updated_at=state.get("updated_at", 0),
+                        dispatch_paused=(queue_root / "dispatch-pause.json").is_file(),
                     )
                     old = targets.get(target)
                     if old:
@@ -145,6 +156,8 @@ def collect(workspace):
                 or parent_case_state
                 or "unverified"
             )
+            if binding.get("dispatch_paused") and status.startswith(("waiting", "pending")):
+                status = "paused_for_review"
             if state.get("state") == "complete" and not interruption:
                 ledger = state.get("token_ledger", state.get("ledger", ledger))
             budget = run.get("ce_token_budget", run.get("token_budget", job.get("token_budget")))
@@ -217,6 +230,8 @@ def collect(workspace):
                 comparison_group=experiment.get("comparison_group"),
                 kind=kind,
                 state=status,
+                trainer_state=state.get("state"),
+                supervisor_state=supervisor.get("state"),
                 queue=binding.get("queue"),
                 trial=job.get("id"),
                 gpu_id=queued.get("gpu_id"),
@@ -316,7 +331,7 @@ def collect(workspace):
             entry["host"] == "local"
             and remote
             and not entry["evidence_files"]
-            and entry["state"].startswith(("waiting", "pending"))
+            and entry["state"].startswith(("waiting", "pending", "delegated_remote"))
         ):
             remote.setdefault("superseded_reservations", []).append(entry["id"])
         else:

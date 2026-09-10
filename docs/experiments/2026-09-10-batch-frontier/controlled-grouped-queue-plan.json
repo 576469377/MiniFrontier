@@ -1,0 +1,74 @@
+{
+  "workspace": "${WORKSPACE}",
+  "allowed_gpu_ids": [
+    4,
+    5
+  ],
+  "main_budget_eligible": false,
+  "controller_sha256": "b31d500cf1fb55c0a5fd99eb5df34ab0cc9bc2c14f0a9a60ee46adbbe7fcd6ce",
+  "scope": "Grouped window execution verification at fixed global 65536 input; matched sample streams, not recipe selection",
+  "jobs": [
+    {
+      "id": "kimi-grouped-mb128",
+      "model": "minikimik3",
+      "output": "${WORKSPACE}/outputs/strategy-batch-controlled-v1/trials/minikimik3/grouped-mb128",
+      "source_root": "${WORKSPACE}/outputs/source-batch-grouped-v1",
+      "source": {
+        "commit": "dd2b5196b82744c72415ab29782b4fca585b7c6f",
+        "dirty": false,
+        "implementation_sha256": "8a5ae16697b4d95c55506645e50d628049b23211bd9b244292c5f3e2e9780df2"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/strategy-batch-controlled-v1/grouped-execution/mb128-plan.json": "d4361720c35456ff1ec81b10581be9a38fcdf63fda2f15c034c5b8aa09ce6883",
+        "${WORKSPACE}/outputs/source-batch-grouped-v1/configs/strategies/minikimik3-v2.json": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/minikimik3-host-mixture.json": "083476557593acce7ad41e47a3ed70cf887ca1859d45c7bb77e6dce53182bb0f",
+        "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2/manifest.json": "c0884a102fd5f3dce0002c1e21a9c4acf2d5b241a56638976e4c3a04eb20e78d",
+        "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b"
+      },
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/source-batch-grouped-v1/scripts/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/strategy-batch-controlled-v1/grouped-execution/mb128-plan.json"
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "allowed_gpu_ids": [
+        4
+      ],
+      "token_budget": 1000000,
+      "role": "controlled_execution_verification"
+    },
+    {
+      "id": "kimi-grouped-mb16",
+      "model": "minikimik3",
+      "output": "${WORKSPACE}/outputs/strategy-batch-controlled-v1/trials/minikimik3/grouped-mb16",
+      "source_root": "${WORKSPACE}/outputs/source-batch-grouped-v1",
+      "source": {
+        "commit": "dd2b5196b82744c72415ab29782b4fca585b7c6f",
+        "dirty": false,
+        "implementation_sha256": "8a5ae16697b4d95c55506645e50d628049b23211bd9b244292c5f3e2e9780df2"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/strategy-batch-controlled-v1/grouped-execution/mb16-plan.json": "2751f1bdb0a29989193c3db9dc54416087717e30651c0b06d940062ca1480a35",
+        "${WORKSPACE}/outputs/source-batch-grouped-v1/configs/strategies/minikimik3-v2.json": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+        "${WORKSPACE}/outputs/services/batch-selected-v1/minikimik3-host-mixture.json": "083476557593acce7ad41e47a3ed70cf887ca1859d45c7bb77e6dce53182bb0f",
+        "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2/manifest.json": "c0884a102fd5f3dce0002c1e21a9c4acf2d5b241a56638976e4c3a04eb20e78d",
+        "${WORKSPACE}/data/strategy-recipe-minikimik3-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b"
+      },
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/source-batch-grouped-v1/scripts/run_batch_frontier.py",
+        "--plan",
+        "${WORKSPACE}/outputs/strategy-batch-controlled-v1/grouped-execution/mb16-plan.json"
+      ],
+      "memory_gib": 12,
+      "reserve_gib": 2,
+      "allowed_gpu_ids": [
+        5
+      ],
+      "token_budget": 1000000,
+      "role": "controlled_execution_verification"
+    }
+  ]
+}

@@ -70,6 +70,16 @@ def test_review_reports_coverage_and_global_batch_overshoot(tmp_path):
     assert result["issues"] == []
 
 
+def test_readme_and_external_install_trials_are_included(tmp_path):
+    for name in [
+        "public-readme-check",
+        "preview-quickstart-cpu-v1",
+        "preview-installed-wheel-quickstart",
+    ]:
+        write(tmp_path / "outputs" / name / "train/run.json", dict(kind="acceptance"))
+    assert len(collect(tmp_path)["experiments"]) == 3
+
+
 def test_remote_execution_supersedes_empty_local_reservation(tmp_path):
     outputs = tmp_path / "outputs"
     for _host, root, workspace, status in [

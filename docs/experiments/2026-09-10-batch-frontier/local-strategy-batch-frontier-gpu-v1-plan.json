@@ -1,0 +1,41 @@
+{
+  "workspace": "${WORKSPACE}",
+  "allowed_gpu_ids": [
+    1
+  ],
+  "main_budget_eligible": false,
+  "scope": "MF1 batch8/16/32 bounds on the GPU released by the stopped batch2 Qwen",
+  "jobs": [
+    {
+      "id": "minifrontier1/bounds",
+      "model": "minifrontier1",
+      "role": "batch_boundary_screen",
+      "output": "${WORKSPACE}/outputs/strategy-batch-frontier-gpu-v1/trials/minifrontier1/bounds",
+      "source_root": "${WORKSPACE}/outputs/mf1-source-language-v1",
+      "source": {
+        "commit": "d77c51c4ba074ba2d325f0b52e2ecceca392972e",
+        "dirty": false,
+        "implementation_sha256": "2a04cbc1961c4e6518dc9a6b9abe526b772219ab10896abc95bc127073851b1b"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/mf1-bounds.json": "93e62f9b2502d00e17d278d9e2f45a272b047d1fbef13a4b99514705dd5bcf71",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run-mf1-bounds.py": "761d6e26b20f75345781520a8fbf122a29ffb2b4aa125f4138e6e11800298b84",
+        "${WORKSPACE}/outputs/mf1-source-language-v1/scripts/benchmark_mf1.py": "0e5d57153f5583e852f2660de9c46279e835aea208b37bb24268ba127a74a02e",
+        "${WORKSPACE}/outputs/mf1-source-language-v1/configs/minifrontier1/model_228m_native.json": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8"
+      },
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/run-mf1-bounds.py",
+        "${WORKSPACE}/outputs/services/batch-frontier-v1/mf1-bounds.json"
+      ],
+      "allowed_gpu_ids": [
+        1
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "token_budget": 0,
+      "experiment_plan": "${WORKSPACE}/outputs/services/batch-frontier-v1/mf1-bounds.json"
+    }
+  ],
+  "controller_sha256": "434cc3edf868f4f1e62d471530f877a68c4018a1a5a3880f36e4de704c88889e"
+}
