@@ -13,7 +13,11 @@ from minifrontier.data.media_inventory import (
     audit_media_identities,
     export_media_identities,
 )
-from minifrontier.data.partitions import create_partition_view
+from minifrontier.data.partitions import (
+    create_media_exclusion_view,
+    create_partition_view,
+    open_corpus,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -120,6 +124,8 @@ def test_identity_export_retains_rejected_origin_aliases_and_actual_holdouts(tmp
         lang="en",
         task="caption",
         stage="pretrain",
+        reference_tokens=10,
+        answer_reference_tokens=8,
         text="A coastline photographed on a clear afternoon.",
         media=[
             dict(
@@ -135,11 +141,13 @@ def test_identity_export_retains_rejected_origin_aliases_and_actual_holdouts(tmp
     assert not builder.add(dict(row, item_id="alias", group_id="old-duplicate"))
     extra_media = dict(row["media"][0], rgb_sha256="b" * 64, phash="ffffffffffffffff")
     assert builder.add(dict(row, item_id="two", group_id="new-train", media=[extra_media]))
+    last_media = dict(row["media"][0], rgb_sha256="c" * 64, phash="f0f0f0f0f0f0f0f0")
+    assert builder.add(dict(row, item_id="three", group_id="quarantine", media=[last_media]))
     builder.finalize(split_locks={"source-group:fixture:old-duplicate": "test"})
     builder.db.close()
     before = sha256(root / "corpus.sqlite")
     report = export_media_identities(root, tmp_path / "identities.json")
-    assert report["image_count"] == report["group_count"] == 2
+    assert report["image_count"] == report["group_count"] == 3
     group = report["groups"][report["images"]["a" * 64]["group"]]
     assert group["split"] == "test"
     assert "source-group:fixture:old-duplicate" in group["origin_keys"]
@@ -153,6 +161,7 @@ def test_identity_export_retains_rejected_origin_aliases_and_actual_holdouts(tmp
         )
     )
     (root / "integrity-and-split-audit.json").write_text("{}")
+    (root / "review-samples.jsonl").write_text("")
     reservation = tmp_path / "reservation.json"
     reservation.write_text(
         json.dumps(
@@ -168,7 +177,38 @@ def test_identity_export_retains_rejected_origin_aliases_and_actual_holdouts(tmp
     create_partition_view(root, reservation, view)
     effective = export_media_identities(view, tmp_path / "effective-identities.json")
     assert effective["groups"][train]["split"] == "val"
-    assert effective["split_groups"] == {"val": 1, "test": 1}
+    assert effective["split_groups"] == {"val": 1, "test": 1, "train": 1}
+    quarantine = effective["images"]["c" * 64]["group"]
+    grouping = tmp_path / "grouping.json"
+    evidence = dict(
+        kind="cross_corpus_media_group_audit",
+        inputs={
+            "fixture": dict(
+                corpus_manifest_sha256=sha256(view / "corpus-manifest.json"), database_sha256=before
+            )
+        },
+        split_conflicts=[
+            dict(
+                required_split="test",
+                members=[dict(inventory="fixture", group=quarantine, split="train", records=1)],
+            )
+        ],
+    )
+    grouping.write_text(json.dumps(evidence))
+    excluded = tmp_path / "excluded"
+    result = create_media_exclusion_view(view, grouping, "fixture", excluded)
+    assert result["newly_excluded_records"] == 1
+    isolated = export_media_identities(excluded, tmp_path / "isolated.json")
+    assert isolated["split_groups"] == {"val": 1, "test": 1}
+    assert quarantine not in isolated["groups"]
+    assert sha256(root / "corpus.sqlite") == before
+    with open_corpus(view) as original:
+        assert original.execute("SELECT COUNT(*) FROM samples").fetchone() == (3,)
+    # A grouping proposal cannot quarantine an existing validation group.
+    evidence["split_conflicts"][0]["members"][0]["group"] = train
+    grouping.write_text(json.dumps(evidence))
+    with pytest.raises(ValueError, match="membership differs"):
+        create_media_exclusion_view(view, grouping, "fixture", tmp_path / "invalid-exclusion")
     assert sha256(root / "corpus.sqlite") == before
     with pytest.raises(ValueError, match="byte budget"):
         export_media_identities(root, tmp_path / "tiny.json", max_bytes=10)

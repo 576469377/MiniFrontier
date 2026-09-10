@@ -7,6 +7,7 @@ fail instead of silently training on the newly reserved validation records.
 
 import argparse
 import contextlib
+import hashlib
 import json
 import math
 import os
@@ -22,7 +23,7 @@ from minifrontier.storage import GIB, require_space
 FORMAT = "corpus-partition-view-v1"
 
 
-def _reserve(db, groups):
+def _reserve(db, groups, excluded_groups=()):
     if not isinstance(groups, dict) or any(
         not isinstance(g, str) or not g or v != "val" for g, v in groups.items()
     ):
@@ -37,11 +38,31 @@ def _reserve(db, groups):
     )
     if len(actual) != len(groups) or any(split != "train" for _, split in actual):
         raise ValueError("reservation refers to missing, mixed or already held-out groups")
+    if (
+        not isinstance(excluded_groups, (list, tuple))
+        or any(not isinstance(g, str) or not g or g in groups for g in excluded_groups)
+        or len(set(excluded_groups)) != len(excluded_groups)
+    ):
+        raise ValueError("excluded groups must be distinct and outside validation reservations")
+    db.execute("CREATE TEMP TABLE excluded_training_groups(group_root TEXT PRIMARY KEY)")
+    db.executemany(
+        "INSERT INTO excluded_training_groups VALUES (?)", ((g,) for g in excluded_groups)
+    )
+    excluded = list(
+        db.execute(
+            "SELECT s.group_root,s.split FROM main.samples s JOIN excluded_training_groups x "
+            "ON s.group_root=x.group_root GROUP BY s.group_root,s.split"
+        )
+    )
+    if len(excluded) != len(excluded_groups) or any(split != "train" for _, split in excluded):
+        raise ValueError("exclusion refers to missing, mixed or held-out groups")
     db.execute("""CREATE TEMP VIEW samples AS
         SELECT s.id,s.stage,s.source,s.task,s.first_question,s.text,s.payload,
                s.simhash,s.group_root,
                CASE WHEN v.group_root IS NOT NULL THEN 'val' ELSE s.split END AS split
         FROM main.samples s LEFT JOIN extra_validation v ON s.group_root=v.group_root
+        LEFT JOIN excluded_training_groups x ON s.group_root=x.group_root
+        WHERE x.group_root IS NULL
     """)
 
 
@@ -67,7 +88,8 @@ def open_corpus(root):
         raise ValueError("partition reservation hash differs")
     db = sqlite3.connect((base / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
     try:
-        _reserve(db, json.loads(partition.read_text())["groups"])
+        overrides = json.loads(partition.read_text())
+        _reserve(db, overrides["groups"], overrides.get("excluded_groups", []))
         return db
     except BaseException:
         db.close()
@@ -203,6 +225,170 @@ def create_partition_view(corpus_root, reservation, output):
     )
     audit.update(media_statistics)
     write_json(root / "source-audit.json", audit)
+    return result
+
+
+def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
+    """Quarantine train groups linked to holds; preserve original val/test and raw data."""
+    from minifrontier.data.minifrontier1 import write_json
+
+    source, report_path, root = (
+        Path(corpus_root).resolve(),
+        Path(group_audit).resolve(),
+        Path(output).resolve(),
+    )
+    if root.exists():
+        raise FileExistsError("media exclusion views require a new output")
+    report = json.loads(report_path.read_text())
+    manifest = json.loads((source / "corpus-manifest.json").read_text())
+    audit = json.loads((source / "source-audit.json").read_text())
+    binding = report["inputs"][inventory]
+    if (
+        report["kind"] != "cross_corpus_media_group_audit"
+        or binding["corpus_manifest_sha256"] != sha256(source / "corpus-manifest.json")
+        or binding["database_sha256"] != manifest["database_sha256"]
+        or audit.get("formal_admission")
+        or audit["status"]
+        not in {"candidate_slice_complete_pending_admission", "candidate_inventory_below_target"}
+    ):
+        raise ValueError("media grouping evidence and unadmitted source differ")
+    selected = {}
+    for component in report["split_conflicts"]:
+        if component["required_split"] not in {"val", "test"}:
+            raise ValueError("exclusion has no held-out component")
+        for member in component["members"]:
+            if member["inventory"] == inventory and member["split"] == "train":
+                selected[member["group"]] = member["records"]
+    if not selected:
+        raise ValueError("no train groups require exclusion for this inventory")
+    overrides: dict[str, Any] = dict(groups={}, excluded_groups=[])
+    base = source
+    if manifest.get("format") == FORMAT:
+        base = (source / manifest["base_corpus"]["path"]).resolve()
+        overrides = json.loads((source / manifest["partition_file"]).read_text())
+
+    def holdout_hash(db):
+        digest = hashlib.sha256()
+        for identity, split in db.execute(
+            "SELECT id,split FROM samples WHERE split!='train' ORDER BY id"
+        ):
+            digest.update((identity + ":" + split + "\n").encode())
+        return digest.hexdigest()
+
+    with contextlib.closing(open_corpus(source)) as db:
+        if sha256(corpus_storage_root(db) / "corpus.sqlite") != binding["database_sha256"]:
+            raise ValueError("media exclusion source database changed")
+        prior_holdouts = holdout_hash(db)
+        for group, count in selected.items():
+            actual = list(
+                db.execute(
+                    "SELECT split,COUNT(*) FROM samples WHERE group_root=? GROUP BY split", (group,)
+                )
+            )
+            if actual != [("train", count)]:
+                raise ValueError("conflicting group membership differs from the audit")
+    exclusions = sorted(set(overrides.get("excluded_groups", [])) | set(selected))
+    statistics: dict[str, dict[str, Any]] = {}
+    totals: dict[str, int] = {}
+    tokens: dict[str, dict[str, int]] = {}
+    images: dict[str, set[str]] = {}
+    answers: dict[str, dict[str, int]] = {}
+    review = []
+    review_counts: dict[str, int] = {}
+    with contextlib.closing(
+        sqlite3.connect((base / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
+    ) as db:
+        _reserve(db, overrides["groups"], exclusions)
+        if holdout_hash(db) != prior_holdouts:
+            raise ValueError("exclusion changed an existing validation/test record")
+        for name, split, records, groups, count in db.execute(
+            "SELECT source,split,COUNT(*),COUNT(DISTINCT group_root),SUM(json_extract(payload,'$.reference_tokens')) FROM samples GROUP BY source,split"
+        ):
+            statistics.setdefault(name, {})[split] = dict(
+                records=records, groups=groups, reference_tokens=count
+            )
+            totals[split] = totals.get(split, 0) + records
+            tokens.setdefault(split, {})[name] = count
+        for split, payload in db.execute("SELECT split,payload FROM samples ORDER BY id"):
+            row = json.loads(payload)
+            images.setdefault(split, set()).update(m["rgb_sha256"] for m in row["media"])
+            answers.setdefault(split, {})[row["task"]] = (
+                answers.setdefault(split, {}).get(row["task"], 0) + row["answer_reference_tokens"]
+            )
+            key = row["source"] + ":" + row["task"]
+            if split == "train" and review_counts.get(key, 0) < 100:
+                review.append(dict(split=split, record=row))
+                review_counts[key] = review_counts.get(key, 0) + 1
+        split_groups = dict(
+            db.execute("SELECT split,COUNT(DISTINCT group_root) FROM samples GROUP BY split")
+        )
+    require_space(root, 16 * 1024**2, reserve_bytes=80 * GIB)
+    root.mkdir(parents=True)
+    write_json(
+        root / "split-overrides.json",
+        dict(
+            groups=overrides["groups"],
+            excluded_groups=exclusions,
+            grouping_audit_sha256=sha256(report_path),
+        ),
+    )
+    for name in ("source_allowlist.json", "reference-tokenizer.json"):
+        if (source / name).exists():
+            shutil.copyfile(source / name, root / name)
+    review_path = root / "review-samples.jsonl"
+    review_path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in review))
+    previous_review = {
+        json.loads(line)["record"]["sample_id"]
+        for line in (source / "review-samples.jsonl").read_text().splitlines()
+    }
+    current_review = {r["record"]["sample_id"] for r in review}
+    result = dict(
+        manifest,
+        format=FORMAT,
+        base_corpus=dict(
+            path=os.path.relpath(base, root), manifest_sha256=sha256(base / "corpus-manifest.json")
+        ),
+        partition_file="split-overrides.json",
+        partition_sha256=sha256(root / "split-overrides.json"),
+        splits=totals,
+        source_splits=statistics,
+        formal_admission=False,
+        split_rule=manifest["split_rule"]
+        + "; exclude entire train groups linked to held-out media across corpora",
+        excluded_training_groups=len(exclusions),
+        newly_excluded_records=sum(selected.values()),
+        grouping_audit_sha256=sha256(report_path),
+        previous_effective_manifest_sha256=sha256(source / "corpus-manifest.json"),
+    )
+    write_json(root / "corpus-manifest.json", result)
+    write_json(
+        root / "source-audit.json",
+        dict(
+            audit,
+            operation="exclude_cross_pool_train_groups",
+            corpus=result,
+            source_data_changed=False,
+            formal_admission=False,
+            main_budget_eligible=False,
+            base_source_audit_sha256=sha256(source / "source-audit.json"),
+            split_reference_tokens=tokens,
+            split_independent_images={k: len(v) for k, v in images.items()},
+            split_independent_groups=split_groups,
+            split_answer_reference_tokens=answers,
+            grouping_audit_sha256=sha256(report_path),
+            holdout_membership_sha256=prior_holdouts,
+            excluded_training_groups=selected,
+            updated_unix=time.time(),
+            review=dict(
+                status="awaiting_manual_review",
+                sha256=sha256(review_path),
+                samples=review_counts,
+                prior_sha256=sha256(source / "review-samples.jsonl"),
+                removed_ids=sorted(previous_review - current_review),
+                added_ids=sorted(current_review - previous_review),
+            ),
+        ),
+    )
     return result
 
 
