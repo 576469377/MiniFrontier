@@ -5,6 +5,7 @@ import contextlib
 import json
 import time
 from collections import Counter
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -12,9 +13,10 @@ from tokenizers import Tokenizer
 
 from minifrontier.data import sha256
 from minifrontier.data.corpus import STRATEGY_SPECIAL_TOKENS
-from minifrontier.data.minifrontier1 import SPECIAL_TOKENS, write_json
+from minifrontier.data.minifrontier1 import SPECIAL_TOKENS, digest, write_json
 from minifrontier.data.minifrontier1_encoding import FORMAT, INDEX
 from minifrontier.data.partitions import open_corpus
+from minifrontier.models.minifrontier1 import MiniFrontier1Config
 
 DOMAINS = dict(
     zh_edu="zh_general",
@@ -78,7 +80,7 @@ def _source_records(root, manifest, split):
         raise ValueError("source token storage has unindexed positions")
 
 
-def _mf1_records(root, manifest, split):
+def _compact_records(root, manifest, split, *, images=False):
     if manifest["token_dtype"] not in ("<u2", "<u4"):
         raise ValueError("unsupported compact token type")
     for part in manifest["splits"][split]["parts"]:
@@ -89,9 +91,11 @@ def _mf1_records(root, manifest, split):
         ids = np.memmap(paths["tokens.bin"], mode="r", dtype=manifest["token_dtype"])
         masks = np.memmap(paths["mask.bin"], mode="r", dtype=np.uint8)
         counts = part["counts"]
-        if len(indexes) != counts["records"] or counts.get("text_documents") != len(indexes):
-            raise ValueError("compact component includes non-document records")
-        end = mask_end = meta_end = 0
+        if len(indexes) != counts["records"] or counts.get("text_documents", 0) != (
+            0 if images else len(indexes)
+        ):
+            raise ValueError("compact component has an unexpected record type")
+        end = mask_end = meta_end = part_ce = 0
         with paths["metadata.jsonl"].open("rb") as metadata:
             for index in indexes:
                 offset, length = int(index["offset"]), int(index["length"])
@@ -107,7 +111,7 @@ def _mf1_records(root, manifest, split):
                 if len(raw) != int(index["metadata_bytes"]):
                     raise ValueError("compact document metadata was truncated")
                 row = json.loads(raw)
-                if row["media"] or row["resources"]:
+                if not images and (row["media"] or row["resources"]):
                     raise ValueError("text component contains media")
                 mask_bytes = (length + 7) // 8
                 if mask_end + mask_bytes > len(masks):
@@ -122,7 +126,9 @@ def _mf1_records(root, manifest, split):
                     row["split_group"],
                     ids[offset : offset + length],
                     mask,
+                    row,
                 )
+                part_ce += int(mask[1:].sum())
                 end += length
                 mask_end += mask_bytes
                 meta_end += len(raw)
@@ -131,9 +137,205 @@ def _mf1_records(root, manifest, split):
             or mask_end != len(masks)
             or meta_end != paths["metadata.jsonl"].stat().st_size
             or end != counts["input_tokens"]
-            or end - len(indexes) != counts["ce_tokens"]
+            or part_ce != counts["ce_tokens"]
         ):
             raise ValueError("compact part size or CE counters differ")
+
+
+def _mf1_records(root, manifest, split):
+    for record in _compact_records(root, manifest, split):
+        yield record[:6]
+
+
+def audit_image_encoding(corpus, encoded, output, config):
+    """Check every standard single-image QA's source, protocol, labels and geometry.
+
+    Raw files are hashed once per distinct image; no vision features are cached or
+    inferred from the labels. Source quality and model capability remain separate.
+    """
+    corpus, root, output = Path(corpus).resolve(), Path(encoded).resolve(), Path(output).resolve()
+    if output.exists():
+        raise FileExistsError("encoding audit is immutable; choose a new report")
+    values = json.loads(Path(config).read_text()) if isinstance(config, (str, Path)) else config
+    model = MiniFrontier1Config(**values)
+    manifest = json.loads((root / "manifest.json").read_text())
+    if (
+        manifest.get("format") != FORMAT
+        or manifest.get("kind") != "canonical_image_component"
+        or manifest["config_sha256"] != digest(asdict(model))
+        or manifest["image_transform"]["document_tiles"]
+        or manifest["source_corpus_manifest_sha256"] != sha256(corpus / "corpus-manifest.json")
+        or manifest["source_manifest_sha256"] != manifest["source_corpus_manifest_sha256"]
+    ):
+        raise ValueError("image audit needs a bound standard-image component and model config")
+    canonical = json.loads((corpus / "corpus-manifest.json").read_text())
+    if sha256(corpus / "corpus.sqlite") != canonical["database_sha256"]:
+        raise ValueError("canonical media database checksum differs")
+    tokenizer = Tokenizer.from_file(
+        str(_checked(root, "tokenizer.json", manifest["tokenizer_sha256"]))
+    )
+    if tokenizer.get_vocab_size() > model.vocab_size or any(
+        tokenizer.token_to_id(token) != i for i, token in enumerate(SPECIAL_TOKENS)
+    ):
+        raise ValueError("image component vocabulary/control mapping differs")
+    report = dict(
+        kind="canonical_image_encoding_audit",
+        status="checking",
+        formal_admission=False,
+        started_unix=time.time(),
+        encoded_manifest_sha256=sha256(root / "manifest.json"),
+        corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
+        tokenizer_sha256=manifest["tokenizer_sha256"],
+        config_sha256=manifest["config_sha256"],
+        processor_sha256=sha256(__file__),
+        splits={},
+        scope="all records and raw image hashes; QA identity, complete answer CE, protocol, span geometry and counts; not source quality or model capability",
+    )
+    checked_media = set()
+    try:
+        with contextlib.closing(open_corpus(corpus)) as db:
+            remaining = dict(db.execute("SELECT id,split FROM samples"))
+            for split in ("train", "val", "test"):
+                counts: Counter[str] = Counter()
+                domains: Counter[str] = Counter()
+                buckets: dict[str, dict[str, Counter[str]]] = {}
+                for identity, domain, origin, group, ids, mask, meta in _compact_records(
+                    root, manifest, split, images=True
+                ):
+                    if remaining.pop(identity, None) != split:
+                        raise ValueError(
+                            "encoded image duplicated, absent or in the wrong partition"
+                        )
+                    payload, expected_group = db.execute(
+                        "SELECT payload,group_root FROM samples WHERE id=?", (identity,)
+                    ).fetchone()
+                    row = json.loads(payload)
+                    if (
+                        row["stage"] != "pretrain"
+                        or domain != row["task"]
+                        or group != expected_group
+                        or any(
+                            origin[k] != row[k]
+                            for k in ("source", "revision", "item_id", "license", "content_hash")
+                        )
+                    ):
+                        raise ValueError("image source, domain or connected group differs")
+                    if (
+                        len(row["media"]) != 1
+                        or len(meta["resources"]) != 1
+                        or len(meta["media"]) != 1
+                    ):
+                        raise ValueError("standard image QA needs one original image and one span")
+                    original, resource, span = (
+                        row["media"][0],
+                        meta["resources"][0],
+                        meta["media"][0],
+                    )
+                    if any(
+                        resource[k] != original[k]
+                        for k in ("sha256", "rgb_sha256", "width", "height")
+                    ) or (
+                        resource["uri"] != original["path"]
+                        or resource["media_id"] != original["rgb_sha256"]
+                        or resource["representation"] != "standard"
+                        or resource["max_features"] != manifest["image_transform"]["max_features"]
+                    ):
+                        raise ValueError(
+                            "encoded image resource differs from its canonical original"
+                        )
+                    path = (corpus / resource["uri"]).resolve()
+                    key = (str(path), resource["sha256"])
+                    if key not in checked_media:
+                        _checked(corpus, resource["uri"], resource["sha256"])
+                        checked_media.add(key)
+                    features = span["feature_count"]
+                    grid = np.asarray(span["grid_thw"])
+                    if (
+                        grid.shape != (1, 3)
+                        or grid[0, 0] != 1
+                        or np.any(grid < 1)
+                        or np.any(grid[0, 1:] % 2)
+                        or int(grid.prod()) // 4 != features
+                        or not 1
+                        <= features
+                        <= min(resource["max_features"], model.protected_media_tokens)
+                        or span["source_size"] != [original["width"], original["height"]]
+                        or span["resized_size"]
+                        != [
+                            int(grid[0, 2]) * model.vision_config.patch_size,
+                            int(grid[0, 1]) * model.vision_config.patch_size,
+                        ]
+                        or span["start"] != 3
+                        or span["batch_index"] != 0
+                        or span["resource_kind"] != "image"
+                        or span["media_id"] != resource["media_id"]
+                        or span["source_sha256"] != original["sha256"]
+                    ):
+                        raise ValueError("image span geometry or source identity differs")
+                    texts = [row["visual_question"], row["visual_answer"]]
+                    for i, text in enumerate(texts):
+                        for control in SPECIAL_TOKENS:
+                            text = text.replace(control, control[0] + "\u2060" + control[1:])
+                        texts[i] = text
+                    question, answer = [
+                        tokenizer.encode(s, add_special_tokens=False).ids for s in texts
+                    ]
+                    expected = [1, 4, 9, *([7] * features), 10, *question, 2, 5, 17, *answer, 2]
+                    expected_mask = np.zeros(len(expected), dtype=bool)
+                    expected_mask[-len(answer) - 2 :] = True
+                    if not np.array_equal(ids, expected) or not np.array_equal(mask, expected_mask):
+                        raise ValueError("image QA protocol or complete answer labels differ")
+                    if np.any(ids >= model.vocab_size) or len(ids) > model.max_position_embeddings:
+                        raise ValueError("image QA exceeds model vocabulary/context")
+                    delta = dict(
+                        records=1,
+                        input_tokens=len(ids),
+                        ce_tokens=len(answer) + 2,
+                        media_exposures=1,
+                        vision_tokens=features,
+                    )
+                    counts.update(delta)
+                    domains[domain] += delta["ce_tokens"]
+                    bucket = str(
+                        next(
+                            (n for n in (512, 1024, 2048, 4096, 8192) if len(ids) <= n), "over_8192"
+                        )
+                    )
+                    buckets.setdefault(domain, {}).setdefault(bucket, Counter()).update(delta)
+                if (
+                    dict(counts) != manifest["splits"][split]["counts"]
+                    or dict(domains) != manifest["splits"][split]["domain_ce"]
+                    or buckets != manifest["complete_record_length_buckets"][split]
+                ):
+                    raise ValueError("image split or complete-record length counts differ")
+                report["splits"][split] = dict(
+                    counts=dict(counts),
+                    domain_ce=dict(domains),
+                    complete_record_length_buckets=buckets,
+                )
+                print(
+                    json.dumps(
+                        dict(split=split, records=counts["records"], ce_tokens=counts["ce_tokens"])
+                    ),
+                    flush=True,
+                )
+            if remaining:
+                raise ValueError("canonical image QAs are missing from encoding")
+        report.update(
+            status="mechanical_checks_passed_pending_quality_admission",
+            raw_media_files=len(checked_media),
+        )
+    except BaseException as error:
+        report.update(
+            status="failed",
+            error=type(error).__name__ + ": " + str(error),
+            updated_unix=time.time(),
+        )
+        write_json(output, report)
+        raise
+    report["updated_unix"] = time.time()
+    write_json(output, report)
+    return report
 
 
 def audit_text_encoding(corpus, encoded, output):
@@ -301,7 +503,17 @@ def main():
     parser.add_argument("--corpus", required=True)
     parser.add_argument("--encoded", required=True)
     parser.add_argument("--output", required=True)
-    result = audit_text_encoding(**vars(parser.parse_args()))
+    parser.add_argument("--kind", choices=["text", "image"], default="text")
+    parser.add_argument("--config", help="model config for image audits")
+    args = vars(parser.parse_args())
+    kind, config = args.pop("kind"), args.pop("config")
+    if kind == "image" and not config:
+        parser.error("image audits require --config")
+    result = (
+        audit_image_encoding(**args, config=config)
+        if kind == "image"
+        else audit_text_encoding(**args)
+    )
     if result["status"] == "failed":
         raise SystemExit(1)
 

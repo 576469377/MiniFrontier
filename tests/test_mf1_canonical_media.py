@@ -10,6 +10,7 @@ from PIL import Image
 
 from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder, train_tokenizer
+from minifrontier.data.encoding_audit import audit_image_encoding
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS, encode_record, safe_text
 from minifrontier.data.minifrontier1_components import ComponentDataset, assemble_components
 from minifrontier.data.minifrontier1_encoding import (
@@ -90,6 +91,9 @@ def test_canonical_media_keeps_complete_answer_pixels_and_model_outputs(corpus, 
     output = tmp_path / "encoded"
     original_database = sha256(root / "corpus.sqlite")
     manifest = encode_canonical_images(root, tokenizer, output, config, max_features=49)
+    audit = audit_image_encoding(root, output, tmp_path / "encoding-audit.json", asdict(config))
+    assert audit["status"] == "mechanical_checks_passed_pending_quality_admission"
+    assert audit["raw_media_files"] == 4 and not audit["formal_admission"]
     assert sha256(root / "corpus.sqlite") == original_database
     assert not manifest["formal_admission"] and not manifest["raw_media_copied"]
     assert manifest["image_transform"] == dict(max_features=49, document_tiles=False)
@@ -158,6 +162,33 @@ def test_canonical_media_never_shortens_answers_to_fit_context(corpus, tmp_path)
         with pytest.raises(ValueError, match="complete grounded QA"):
             canonical_image_record(row, rows[0][2], max_features=49)
     assert not (tmp_path / "overflow/manifest.json").exists()
+
+
+@pytest.mark.parametrize("fault", ["mask", "geometry"])
+def test_image_audit_rejects_rehashed_wrong_supervision_or_span(corpus, tmp_path, fault):
+    root, tokenizer, config, _ = corpus
+    output = tmp_path / "image-component"
+    manifest = encode_canonical_images(root, tokenizer, output, config, max_features=49)
+    part = manifest["splits"]["train"]["parts"][0]
+    if fault == "mask":
+        entry = part["files"]["mask.bin"]
+        path = output / entry["name"]
+        raw = bytearray(path.read_bytes())
+        raw[0] ^= 1  # The BOS must not receive answer CE.
+        path.write_bytes(raw)
+    else:
+        entry = part["files"]["metadata.jsonl"]
+        path = output / entry["name"]
+        rows = [json.loads(line) for line in path.open()]
+        rows[0]["media"][0]["start"] = 4
+        path.write_text(
+            "".join(json.dumps(r, ensure_ascii=False, separators=(",", ":")) + "\n" for r in rows)
+        )
+    entry.update(bytes=path.stat().st_size, sha256=sha256(path))
+    (output / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="labels differ" if fault == "mask" else "geometry"):
+        audit_image_encoding(root, output, tmp_path / "audit.json", asdict(config))
+    assert json.loads((tmp_path / "audit.json").read_text())["status"] == "failed"
 
 
 @pytest.fixture
