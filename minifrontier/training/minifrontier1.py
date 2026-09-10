@@ -23,6 +23,7 @@ from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, token_
 from minifrontier.multimodal import move
 from minifrontier.training.metrics import mf1_scalars
 from minifrontier.training.minifrontier1_curriculum import (
+    collate_records,
     context_length,
     microbatches,
     pack_records,
@@ -42,6 +43,7 @@ from minifrontier.training.minifrontier1_strategy import (
     validate_gate,
 )
 from minifrontier.training.runtime import atomic_save, cpu_tree, restore_rng, rng_state
+from minifrontier.training.validation import NativeCEValidation, validation_due
 
 
 class Sampler:
@@ -194,39 +196,107 @@ def _forward(model, item, *, labels=True, return_hidden=False):
 
 
 @torch.no_grad()
-def evaluate(model, dataset, device, *, limit=0, max_length=None):
+def evaluate(
+    model, dataset, device, *, limit=0, max_length=None, selection=None, final=False, batch_size=1
+):
+    if selection is not None and (
+        limit or selection.dataset is not dataset or selection.max_length != max_length
+    ):
+        raise ValueError(
+            "fixed native validation must use its bound dataset/context without a limit"
+        )
+    scope = "phase_end" if final else "periodic"
+    started = time.monotonic()
     was_training = model.training
     model.eval()
     losses: dict[str, float] = defaultdict(float)
     counts: Counter[str] = Counter()
     wrong_losses: dict[str, float] = defaultdict(float)
     wrong_counts: Counter[str] = Counter()
-    try:
-        with torch.random.fork_rng(devices=[device.index or 0] if device.type == "cuda" else []):
+    batches = 0
+    attention_states = (
+        [
+            (layer.attention, layer.attention.training_phase)
+            for layer in model.layers
+            if layer.kind != "kda"
+        ]
+        if selection is not None
+        else []
+    )
+
+    def selected_batches():
+        if selection is None:
             for item in evaluation_items(dataset, limit=limit, max_length=max_length):
-                item = move(item, device)
+                yield item["domain"], [item], None
+        else:
+            for domain, indices in selection.batches(final=final, batch_size=batch_size):
+                yield (
+                    domain,
+                    [selection[i] for i in indices],
+                    sum(selection.counts[i] for i in indices),
+                )
+
+    try:
+        # P2 training can leave a layer on its last dense replay microbatch.
+        # Evaluate the declared model phase consistently, then restore the training state.
+        for attention, _phase in attention_states:
+            attention.training_phase = model.training_phase
+        with torch.random.fork_rng(devices=[device.index or 0] if device.type == "cuda" else []):
+            for domain, rows, expected in selected_batches():
+                item = move(
+                    collate_records(rows, model.config.pad_token_id) if len(rows) > 1 else rows[0],
+                    device,
+                )
                 count = int(item["labels"][:, 1:].ne(-100).sum())
+                if expected is not None and count != expected:
+                    raise ValueError("native validation CE differs from its stored loss mask")
+                if not count:
+                    continue
+                batches += 1
                 with torch.autocast(
                     device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"
                 ):
                     output = _forward(model, item)
-                    domain = item["domain"]
-                    losses[domain] += float(output.lm_loss) * count
+                    loss = float(output.lm_loss)
+                    if not math.isfinite(loss):
+                        raise ValueError("nonfinite native validation loss")
+                    losses[domain] += loss * count
                     counts[domain] += count
                     if item.get("media"):
+                        # A mixed-domain source can contain both text-only and media rows.
+                        # Black-media denominators cover only records with actual media.
+                        media_rows = [r for r in rows if r.get("media")]
+                        media_item = (
+                            item
+                            if len(media_rows) == len(rows)
+                            else move(
+                                collate_records(media_rows, model.config.pad_token_id), device
+                            )
+                        )
                         altered = dict(
-                            item,
+                            media_item,
                             media=[
                                 dict(s, patches=torch.zeros_like(s["patches"]))
-                                for s in item["media"]
+                                for s in media_item["media"]
                             ],
                         )
                         changed = _forward(model, altered)
-                        wrong_losses[domain] += float(changed.lm_loss) * count
-                        wrong_counts[domain] += count
+                        black_loss = float(changed.lm_loss)
+                        if not math.isfinite(black_loss):
+                            raise ValueError("nonfinite black-media validation loss")
+                        black_count = int(media_item["labels"][:, 1:].ne(-100).sum())
+                        wrong_losses[domain] += black_loss * black_count
+                        wrong_counts[domain] += black_count
     finally:
+        for attention, phase in attention_states:
+            attention.training_phase = phase
         model.train(was_training)
-    return dict(
+    if selection is not None and (
+        sum(counts.values()) != selection.binding[scope]["actual_ce_tokens"]
+        or dict(counts) != selection.binding[scope]["domain_ce"]
+    ):
+        raise ValueError("native validation totals differ from the fixed CE selection")
+    result = dict(
         nll=sum(losses.values()) / max(1, sum(counts.values())),
         ce_tokens=sum(counts.values()),
         per_domain={k: losses[k] / counts[k] for k in counts if counts[k]},
@@ -238,6 +308,21 @@ def evaluate(model, dataset, device, *, limit=0, max_length=None):
         selection="full_validation" if not limit or limit >= len(dataset) else "explicit_prefix",
         context_length=max_length,
     )
+    if selection is not None:
+        result.update(
+            evaluation_scope=scope,
+            requested_ce_tokens=selection.binding[scope]["requested_ce_tokens"],
+            selection="fixed_without_replacement",
+            selection_sha256=selection.binding[scope]["indices_sha256"],
+            examples=selection.binding[scope]["examples"],
+            example_unit="native answer or text context window",
+            domain_ce=dict(counts),
+            black_media_ce=dict(wrong_counts),
+            micro_batches=batches,
+            duration_seconds=time.monotonic() - started,
+            attention_phase=model.training_phase,
+        )
+    return result
 
 
 def train(
@@ -262,6 +347,7 @@ def train(
     vision_lr=None,
     save_every=100,
     eval_every=100,
+    pretraining_eval=False,
     weights=None,
     diagnostic_attention=None,
     profile_warmup=50,
@@ -299,6 +385,11 @@ def train(
         raise ValueError("invalid training controls")
     if run_kind not in {"acceptance", "strategy", "performance"}:
         raise ValueError("unknown run kind")
+    if pretraining_eval and (phase not in {"p0", "p1", "p2", "p3"} or performance_only):
+        raise ValueError("fixed CE validation belongs to main base-training phases")
+    pretraining_eval = pretraining_eval or (
+        run_kind == "strategy" and phase in {"p0", "p1", "p2", "p3"}
+    )
     if steps is None and token_budget is None:
         token_budget = PHASES[phase]["budget"]
     if run_kind == "acceptance" and (
@@ -315,6 +406,8 @@ def train(
         raise ValueError("budgets/stop point must be positive")
     if run_kind == "strategy" and token_budget != PHASES[phase]["budget"]:
         raise ValueError("formal stage budget must match the frozen plan")
+    if run_kind == "strategy" and steps is not None:
+        raise ValueError("formal stages end at their token budget; use stop_after_updates to pause")
     if int(__import__("os").environ.get("WORLD_SIZE", "1")) != 1:
         raise ValueError(
             "MF1 defaults to independent single-device jobs; DDP needs separate benchmark admission"
@@ -373,6 +466,20 @@ def train(
             saved,
             resume=bool(resume),
         )
+    evaluation_length = (
+        max(
+            length
+            for length in PHASES[phase].get("lengths", {c.max_position_embeddings: 1})
+            if length <= c.max_position_embeddings
+        )
+        if production_path
+        else c.max_position_embeddings
+    )
+    ce_validation = (
+        NativeCEValidation(validation, max_length=evaluation_length, seed=seed)
+        if pretraining_eval
+        else None
+    )
     attention = diagnostic_attention or PHASES[phase]["attention"]
     model = MiniFrontier1ForCausalLM(c, attention).to(device)
     if saved:
@@ -436,15 +543,9 @@ def train(
         Sampler(dataset, seed, weights, length_filter=production_path),
         QuantileBalance(model),
     )
-    evaluation_length = (
-        max(
-            length
-            for length in PHASES[phase].get("lengths", {c.max_position_embeddings: 1})
-            if length <= c.max_position_embeddings
-        )
-        if production_path
-        else c.max_position_embeddings
-    )
+    if ce_validation is not None:
+        ce_validation.binding["attention_phase"] = attention
+        run["validation"] = ce_validation.binding
     ledger = dict(
         input_tokens=0,
         ce_tokens=0,
@@ -603,11 +704,39 @@ def train(
             ),
         )
 
+    def finished():
+        return (steps is not None and step >= steps) or (
+            token_budget is not None and ledger["phase_tokens"] >= token_budget
+        )
+
+    last_evaluation = None
+
+    def validate(final=False):
+        nonlocal last_evaluation
+        if last_evaluation is not None and last_evaluation[:2] == (step, final):
+            return last_evaluation[2]
+        metrics = evaluate(
+            model,
+            validation,
+            device,
+            max_length=evaluation_length,
+            selection=ce_validation,
+            final=final,
+            batch_size=batch_size,
+        )
+        record(
+            dict(event="validation", step=step, main_ce_tokens=ledger["main_ce_tokens"], **metrics)
+        )
+        last_evaluation = (step, final, metrics)
+        return metrics
+
     try:
         model.train()
-        while (steps is None or step < steps) and (
-            token_budget is None or ledger["phase_tokens"] < token_budget
-        ):
+        if ce_validation is not None and step == 0 and not finished():
+            validate()
+            step_started = time.monotonic()
+        while not finished():
+            previous_main_ce = ledger["main_ce_tokens"]
             data_started = time.monotonic()
             window, inputs = [], 0
             capacity = (
@@ -824,25 +953,21 @@ def train(
             if router_metrics:
                 with (output / "router_metrics.jsonl").open("a") as handle:
                     handle.write(json.dumps(dict(step=step, routers=router_metrics)) + "\n")
-            if not performance_only and step % eval_every == 0:
-                record(
-                    dict(
-                        event="validation",
-                        step=step,
-                        **evaluate(model, validation, device, max_length=evaluation_length),
-                    )
-                )
+            due = (
+                not finished()
+                and validation_due(previous_main_ce, ledger["main_ce_tokens"], ce_validation.policy)
+                if ce_validation is not None
+                else step % eval_every == 0
+            )
+            if not performance_only and due:
+                validate()
             pause = stop_after_updates is not None and step >= stop_after_updates
             if step % save_every == 0 or pause:
                 save("paused" if pause else "running")
             if pause:
                 break
             step_started = time.monotonic()
-        paused = (
-            stop_after_updates is not None
-            and step >= stop_after_updates
-            and (steps is None or step < steps)
-        )
+        paused = stop_after_updates is not None and step >= stop_after_updates and not finished()
         if performance_only:
             if (
                 len(profile) != profile_updates
@@ -884,7 +1009,11 @@ def train(
             save(result["state"])
             return result
         save("paused" if paused else "budget_complete_unqualified")
-        evaluation = evaluate(model, validation, device, max_length=evaluation_length)
+        evaluation = (
+            validate(final=not paused)
+            if ce_validation is not None
+            else evaluate(model, validation, device, max_length=evaluation_length)
+        )
         write_json(
             output / "evaluation.json",
             dict(

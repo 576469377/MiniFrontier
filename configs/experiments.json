@@ -1324,7 +1324,22 @@
           "resume": "bind policy and selected index hashes",
           "phase_end_inventory_required_before_start": true
         },
-        "mf1": "pending alignment of native evaluator; this source-model flag does not configure MF1",
+        "mf1": {
+          "activation": "automatic for strategy P0/P1/P2/P3; --pretraining-eval opts acceptance into the same validator",
+          "periodic_ce_tokens": 1000000,
+          "phase_end_ce_tokens": 5000000,
+          "first_100m_interval_ce": 10000000,
+          "later_interval_ce": 50000000,
+          "axis": "cumulative main CE across phases",
+          "selection": "fixed nonrepeating text context windows and complete native answers; CE read from compact loss masks without decoding media",
+          "batching": "same-domain padded microbatches; native spans and independent sample boundaries retained",
+          "resume": "bind policy, seed, context, attention phase and selected-index/window hashes",
+          "phase_end_inventory_required_before_start": true,
+          "tensorboard": "eval/* for periodic; eval/phase_end_* for phase end; explicit domain and black-media CE denominators",
+          "indexer": "independent input-token phase; main-CE validation cadence does not configure indexer evaluation",
+          "gpu_evaluation_time_fraction_measured": false,
+          "visual_capability": "black-media NLL is a diagnostic; separate 1000-group normal/mismatch/blackout/temporal evaluation still required"
+        },
         "capability_status": "unassessed"
       }
     }

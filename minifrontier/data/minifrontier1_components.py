@@ -181,3 +181,7 @@ class ComponentDataset:
     def window_at(self, index, start, capacity):
         dataset, index = self._locate(index)
         return dataset.window_at(index, start, capacity)
+
+    def ce_count_at(self, index, start=0, capacity=None):
+        dataset, index = self._locate(index)
+        return dataset.ce_count_at(index, start, capacity)

@@ -3,6 +3,7 @@
 import hashlib
 import json
 from collections import defaultdict
+from typing import Any
 
 from minifrontier.training.runtime import validation_indices
 
@@ -83,3 +84,48 @@ class CEValidation:
         for domain, indices in sorted(groups.items()):
             for start in range(0, len(indices), batch_size):
                 yield domain, indices[start : start + batch_size]
+
+
+class NativeCEValidation(CEValidation):
+    """Index complete native answers and nonoverlapping document targets before selection."""
+
+    def __init__(self, dataset, *, max_length, seed, policy=None):
+        if max_length < 2:
+            raise ValueError("native validation needs at least two token positions")
+        self.dataset, self.max_length = dataset, max_length
+        self.windows = []
+        self.ce_counts, self.domains = [], []
+        for index in range(len(dataset)):
+            compact = hasattr(dataset, "ce_count_at")
+            item: Any = None if compact else dataset[index]
+            length = dataset.length_at(index) if compact else item["input_ids"].shape[1]
+            domain = dataset.domain_at(index) if compact else item["domain"]
+            windowable = hasattr(dataset, "windowable_at") and dataset.windowable_at(index)
+            if not windowable and length > max_length:
+                raise ValueError("complete validation record exceeds the declared context")
+            starts = range(0, length - 1, max_length - 1) if windowable else (0,)
+            for start in starts:
+                self.windows.append((index, start, bool(windowable)))
+                self.domains.append(domain)
+                self.ce_counts.append(
+                    dataset.ce_count_at(index, start, max_length)
+                    if compact
+                    else int(item["labels"][:, 1:].ne(-100).sum())
+                )
+        super().__init__(self, seed=seed, policy=policy)
+        self.binding.update(
+            context_length=max_length,
+            window_descriptors_sha256=hashlib.sha256(json.dumps(self.windows).encode()).hexdigest(),
+            units="complete native answers or text context windows with unique CE positions",
+        )
+
+    def __len__(self):
+        return len(self.windows)
+
+    def __getitem__(self, index):
+        record, start, windowable = self.windows[index]
+        return (
+            self.dataset.window_at(record, start, self.max_length)
+            if windowable
+            else self.dataset[record]
+        )

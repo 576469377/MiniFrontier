@@ -118,6 +118,11 @@ def main(argv=None):
     t.add_argument("--vision-lr", type=float)
     t.add_argument("--save-every", type=int, default=100)
     t.add_argument("--eval-every", type=int, default=100)
+    t.add_argument(
+        "--pretraining-eval",
+        action="store_true",
+        help="fixed CE validation; automatic for formal P0-P3, opt-in for acceptance checks",
+    )
     t.add_argument("--mixture", help="JSON mapping every data domain to CE proportions")
     benchmark = commands.add_parser(
         "benchmark", help="bounded P0 production-path measurement without exporting weights"

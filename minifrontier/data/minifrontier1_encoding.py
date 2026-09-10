@@ -628,6 +628,25 @@ class CompactDataset:
         counts = self.parts[self._entry(index)[0]]["counts"]
         return counts.get("text_documents", 0) == counts["records"]
 
+    def _loss_mask(self, index, start=0, capacity=None):
+        part, entry = self._entry(index)
+        length = int(entry["length"]) - start
+        if capacity is not None:
+            length = min(length, capacity)
+        if start < 0 or length < 1:
+            raise ValueError("loss mask window is outside the record")
+        mask_offset, bit_offset = int(entry["mask_offset"]) + start // 8, start % 8
+        array = self._open_part(part)["mask.bin"]
+        return np.unpackbits(
+            array[mask_offset : mask_offset + (bit_offset + length + 7) // 8],
+            bitorder="little",
+            count=bit_offset + length,
+        )[bit_offset:].astype(bool)
+
+    def ce_count_at(self, index, start=0, capacity=None):
+        """Read the stored supervision bits without decoding tokens or media."""
+        return int(np.count_nonzero(self._loss_mask(index, start, capacity)[1:]))
+
     def window_at(self, index, start, capacity):
         if not self.windowable_at(index):
             raise ValueError("only canonical continuation documents may be windowed")
@@ -657,12 +676,7 @@ class CompactDataset:
         ids = torch.from_numpy(arrays["tokens.bin"][offset : offset + length].astype(np.int64))[
             None
         ]
-        mask_offset, bit_offset = int(entry["mask_offset"]) + start // 8, start % 8
-        mask = np.unpackbits(
-            arrays["mask.bin"][mask_offset : mask_offset + (bit_offset + length + 7) // 8],
-            bitorder="little",
-            count=bit_offset + length,
-        )[bit_offset:].astype(bool)
+        mask = self._loss_mask(index, start, capacity)
         labels = ids.clone().masked_fill(~torch.from_numpy(mask)[None], -100)
         metadata_offset = int(entry["metadata_offset"])
         metadata = json.loads(
