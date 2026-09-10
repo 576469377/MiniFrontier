@@ -45,6 +45,10 @@ MF1 完整 228M、512 长度、20 次预热 + 100 次测量已完成，约 **66.
 
 原始逐更新数据、配置/命令/来源、窗口一致性和临时权重 hash 清单见 [controlled-batch-comparison.json](controlled-batch-comparison.json)。所有这四项临时权重均按启动前声明的策略清理，日志、数值与恢复文件 hash 保留。
 
+### 后续执行矩阵的输入修正
+
+[execution-matrix-plan.json](execution-matrix-plan.json)登记随后 14 组短测。首次准备其中六组 Kimi 时，文本比例误用了 Qwen 的 `40/25/20/10/5`，区别于原 Kimi 的 `45/25/15/10/5`（中文教育/英文教育/代码/数学科学/对话）。输入复核后，未完成项停止，已完成的测量保留但排除配方证据；六组均以原 Kimi mixture 校验值、相同 seed 和重新初始化权重另开记录。初次配置保存在 `excluded_initial_trials`，不能与此前 Kimi 64K 结果拼成同配方对照。八组远端 Qwen/DeepSeek 沿用各自正确配比，继续执行。
+
 ## 处理决定
 
 - 七项旧 microbatch2 运行按用户要求停止，已有日志和恢复点保留。远端六项尚未到保存间隔，没有新 checkpoint；中断时的观测 CE 不能当作可恢复状态。
@@ -62,6 +66,7 @@ MF1 完整 228M、512 长度、20 次预热 + 100 次测量已完成，约 **66.
 | `reviewed-registry.json` / `.csv`、`review-summary.json` | 本轮复核后的全部登记记录、覆盖类别、缺项和统计 |
 | `batch-comparison.json` | 本轮真实短测逐配置汇总；完整原始更新、验证记录位于对应 run 档案 |
 | `controlled-batch-comparison.json`、`controlled-*-queue*.json` | 修正全局 batch 和窗口合批后的四项完成结果与冻结执行计划 |
+| `execution-matrix-plan.json` | 随后派发的 14 组固定全局 batch 短测命令、数据身份和采集时状态；不改写此前 215 条复核快照 |
 | `stopped-batch2.json`、`mf1-stopped-review.json` | 主动停止原因、已观察进度与已保存进度 |
 | `*-plan.json`、`*-state.json` | 原队列命令、来源和依赖；某些策略已经被本次复核替代，不能当作推荐启动计划 |
 | `remote-239--*.json`、`local--*.json` | 各扫描/真实试验的配置、指标、预算、性能行及临时权重 hash 清单 |
