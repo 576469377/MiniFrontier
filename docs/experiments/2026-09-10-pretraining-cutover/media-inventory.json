@@ -801,7 +801,7 @@
     },
     "models": {
       "minikimik3": {
-        "state": "encoding_native_natural_images",
+        "state": "auditing_all_native_media_records",
         "process_identity_verified": true,
         "output": "data/pretraining-minikimik3-natural-p0-v1",
         "max_features": 64,
@@ -811,7 +811,7 @@
         "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be"
       },
       "miniqwen4": {
-        "state": "encoding_native_natural_images",
+        "state": "auditing_all_native_media_records",
         "process_identity_verified": true,
         "output": "data/pretraining-miniqwen4-natural-p0-v1",
         "max_features": 49,
@@ -825,14 +825,15 @@
       "natural-image component only; phase exposure and domain quotas are unmet",
       "manual quality review and visual benchmark exclusion remain pending",
       "complete per-record encoding audits are still running; tokenizer and data not formally admitted"
-    ]
+    ],
+    "requires_train_group_exclusion_before_admission": true
   },
   "remote_natural_extension": {
     "source": "HuggingFaceM4/FineVision/allava_laion",
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
     "output": "data/pretraining-media-natural-extension-v1",
     "state": "extracting_next_natural_image_slice",
-    "observed_unix": 1789075486.83288,
+    "observed_unix": 1789076944.693316,
     "process_identity_verified": true,
     "source_commit": "c96973035a22c983b8ec6c705ca7f29908d43d57",
     "source_archive_sha256": "6132b492456fe6aa0657ddb694e01a596420675b885b58b50e6b7b74c336255a",
@@ -842,7 +843,7 @@
     "source_row_offset": 23790,
     "prior_pixels_excluded": 23260,
     "target_additional_images": 36740,
-    "observed_additional_images": 0,
+    "observed_additional_images": 2500,
     "max_examined_new_rows": 146960,
     "storage": {
       "new_slice_max_gib": 40,
@@ -866,6 +867,110 @@
       "cross-slice near-duplicate connected groups and benchmark exclusion are pending",
       "candidate supply is not human quality or phase exposure admission",
       "first-slice native encoders are still active; no new token encodings or formal CE claimed"
+    ],
+    "observed_additional_qa_records": 4680,
+    "observed_media_bytes": 2051717474
+  },
+  "cross_pool_grouping": {
+    "observed_unix": 1789077048.458557,
+    "identity_source_commit": "2cb2ca6af5930df841f6bff3623f41647ae673a2",
+    "partition_source_commit": "63ec03461361cefbdfa5a61fff3deb5eaa94b267",
+    "grouping_rules": {
+      "exact_rgb": true,
+      "retained_origin_aliases": true,
+      "phash_hamming_threshold": 6,
+      "whole_transitive_groups": true,
+      "scope": "closed natural-image and document/chart pools; growing extension is excluded"
+    },
+    "before": {
+      "images": 63260,
+      "unique_rgb_images": 63260,
+      "connected_groups": 56744,
+      "near_links": {
+        "phash_hamming_le_6": 85
+      },
+      "conflict_components": 4,
+      "report_sha256": "fb295ba528f9311291b14327bab917dc622d1b012377d5ddf11033812a585e7c"
+    },
+    "after": {
+      "images": 63250,
+      "unique_rgb_images": 63250,
+      "connected_groups": 56744,
+      "near_links": {
+        "phash_hamming_le_6": 78
+      },
+      "conflict_components": 0,
+      "report_sha256": "c80e6f687cbb006afc76dbe1448bd77614465b4124e2ac0a87c7b0d62eee86b9",
+      "status": "mechanical_group_checks_passed"
+    },
+    "training_quarantine": {
+      "natural": {
+        "groups": 5,
+        "images": 8,
+        "qa_records": 13
+      },
+      "documents_charts": {
+        "groups": 2,
+        "images": 2,
+        "qa_records": 4
+      }
+    },
+    "effective_partitions": {
+      "natural": {
+        "output": "data/pretraining-natural-partition-v1",
+        "corpus_manifest_sha256": "69bda38107307c5a84d6b58b7b51acf9732c6f6338a9d92af6bb888c9654561b",
+        "database_sha256": "5ef12d8e99041440f6e716dacfc1439e65dd7914087a8fff558144063dd7d27e",
+        "effective_images": 23252,
+        "effective_groups": 23173,
+        "split_images": {
+          "test": 211,
+          "train": 22930,
+          "val": 111
+        },
+        "split_groups": {
+          "test": 211,
+          "train": 22851,
+          "val": 111
+        }
+      },
+      "documents-charts": {
+        "output": "remote-239:data/pretraining-doc-chart-partition-v2",
+        "corpus_manifest_sha256": "338b46778136f3fe183a49a4443fe91b6936c9b35f008fef63a65d21e379f316",
+        "database_sha256": "e531bb5083fb8614d12c7587a787db9124637763186cdd31b2b6ed267eaaa17b",
+        "effective_images": 39998,
+        "effective_groups": 33649,
+        "split_images": {
+          "test": 335,
+          "train": 38602,
+          "val": 1061
+        },
+        "split_groups": {
+          "test": 325,
+          "train": 32324,
+          "val": 1000
+        }
+      }
+    },
+    "raw_pixels_copied": false,
+    "original_databases_unchanged": true,
+    "old_holdout_membership_unchanged": true,
+    "review_samples_replaced": 0,
+    "encoded_consumers_migrated": false,
+    "consumer_migration_sha256": "e291bfe09cd808882efedb036b4adf8079765616b0a6b6f5b8fc88717b614b10",
+    "checks": {
+      "cpu_passed": 470,
+      "cpu_skipped": 1,
+      "cuda_deselected": 54,
+      "cpu_seconds": 149.9,
+      "mypy_source_files": 181
+    },
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "limitations": [
+      "pHash links are conservative grouping evidence, not confirmed semantic duplicate identities",
+      "all original media encodings must consume the new exclusions before formal admission",
+      "growing natural-image extension and external benchmark identity exclusion still need audit",
+      "manual quality review and production qualification remain pending"
     ]
   }
 }
