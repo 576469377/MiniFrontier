@@ -37,3 +37,5 @@
 来源条款分别记录：[ALLaVA-4V](https://huggingface.co/datasets/FreedomIntelligence/ALLaVA-4V) 为 CC-BY-NC-4.0，保留底层图像权利与研究使用范围；[CoSyn-400K](https://huggingface.co/datasets/allenai/CoSyn-400K) 声明 ODC-BY-1.0，并说明生成图像/问答的各自条款与研究教育用途。FineVision 的追加提示许可不能覆盖这些来源的条款。源数据卡按实际提交保留本地哈希快照；公开材料不包含源图片、原文或凭据。
 
 代码域核查：现有 6,756 条 Python-Edu 候选只有一条含匹配的 Apache 头部，不能靠文件头补足整个代码域。Python-Edu 的 Parquet 索引确实不含 license/revision_id。The Stack v2 去重版包含这些补充字段，但当前机器凭据读取其文件返回 403；已请求开通数据集访问，文本/视觉准备继续。没有将许可不明的旧 Python 行改标为正式数据。
+
+第一次视觉构造在获取文件目录时遇到远程响应中断，尚未读取图片，失败记录保留。目录读取现对传输错误最多重试三次，权限与 schema 错误仍直接失败；大媒体分片复用已有的并发 HTTP Range 读取器，限制单块大小及每文件网络预算。该修复不更改候选来源、筛选阈值或训练准入条件。

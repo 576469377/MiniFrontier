@@ -173,7 +173,13 @@ def build_visual_candidates(
     try:
         progress()
         for number, (subset, target) in enumerate(targets.items()):
-            source = dict(repo=REPO, revision=REVISION, prefix=subset, file_prefix="train-")
+            source = dict(
+                repo=REPO,
+                revision=REVISION,
+                prefix=subset,
+                file_prefix="train-",
+                bounded_http_ranges=True,
+            )
             entry: dict[str, Any] = dict(
                 specification=dict(VISUAL_CANDIDATES[subset], **source),
                 status="reading",

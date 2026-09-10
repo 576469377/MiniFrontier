@@ -11,6 +11,7 @@ import gzip
 import hashlib
 import json
 import random
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
@@ -55,23 +56,43 @@ SOURCES = {
 }
 
 
+def retry_transport(call, *, audit, operation):
+    """Retry transient transport failures only; permissions/schema failures remain errors."""
+    import httpx
+
+    for attempt in range(3):
+        try:
+            return call()
+        except httpx.TransportError as error:
+            audit.setdefault("transport_failures", []).append(
+                dict(operation=operation, attempt=attempt + 1, error=type(error).__name__)
+            )
+            if attempt == 2:
+                raise
+            time.sleep(attempt + 1)
+
+
 def source_rows(name, *, seed, audit, specification=None):
     import pyarrow.parquet as pq
     from huggingface_hub import HfApi, HfFileSystem
 
     source = specification or SOURCES[name]
     audit["files"] = {}
-    files = [
-        item.path
-        for item in HfApi().list_repo_tree(
-            source["repo"],
-            path_in_repo=source["prefix"],
-            revision=source["revision"],
-            repo_type="dataset",
-        )
-        if item.path.endswith(".parquet")
-        and Path(item.path).name.startswith(source.get("file_prefix", ""))
-    ]
+    files = retry_transport(
+        lambda: [
+            item.path
+            for item in HfApi().list_repo_tree(
+                source["repo"],
+                path_in_repo=source["prefix"],
+                revision=source["revision"],
+                repo_type="dataset",
+            )
+            if item.path.endswith(".parquet")
+            and Path(item.path).name.startswith(source.get("file_prefix", ""))
+        ],
+        audit=audit,
+        operation="pinned_file_catalog",
+    )
     if not files:
         raise ValueError(f"no source Parquet files: {name}")
     rng = random.Random(seed)
@@ -84,10 +105,21 @@ def source_rows(name, *, seed, audit, specification=None):
     audit["reads"] = []
     fs = HfFileSystem()
     for filename in files:
-        with fs.open(
-            f"datasets/{source['repo']}@{source['revision']}/{filename}", block_size=4 * 1024**2
-        ) as stream:
+        remote = f"datasets/{source['repo']}@{source['revision']}/{filename}"
+        if source.get("bounded_http_ranges"):
+            from minifrontier.data.remote import RangeFile
+
+            info = fs.info(remote)
+            stream = RangeFile(
+                f"https://huggingface.co/datasets/{source['repo']}/resolve/{source['revision']}/{filename}",
+                info["size"],
+                chunk_size=1024**2,
+                network_budget=2 * info["size"] + 64 * 1024**2,
+            )
+        else:
+            stream = fs.open(remote, block_size=4 * 1024**2)
             info = fs.info(stream.path)
+        with stream:
             audit["files"][filename] = {
                 key: info[key] for key in ("size", "blob_id", "lfs") if key in info
             }

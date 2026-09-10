@@ -88,3 +88,27 @@ def test_visual_budget_rejects_invalid_partition_before_creating_files(tmp_path)
             tmp_path / "invalid", "missing", max_gib=2, metadata_gib=3
         )
     assert not (tmp_path / "invalid").exists()
+
+
+def test_pinned_catalog_transport_retry_is_bounded_and_does_not_retry_schema_errors(monkeypatch):
+    httpx = pytest.importorskip("httpx")
+    from minifrontier.data import public_sources
+
+    monkeypatch.setattr(public_sources.time, "sleep", lambda _: None)
+    calls, audit = [], {}
+
+    def interrupted():
+        calls.append(1)
+        raise httpx.RemoteProtocolError("interrupted catalog response")
+
+    with pytest.raises(httpx.RemoteProtocolError):
+        public_sources.retry_transport(interrupted, audit=audit, operation="test_catalog")
+    assert len(calls) == len(audit["transport_failures"]) == 3
+
+    def invalid_schema():
+        raise ValueError("schema mismatch")
+
+    unchanged = {}
+    with pytest.raises(ValueError, match="schema"):
+        public_sources.retry_transport(invalid_schema, audit=unchanged, operation="test_schema")
+    assert unchanged == {}
