@@ -19,8 +19,10 @@ from minifrontier.data.minifrontier1 import (
     SPECIAL_TOKENS,
     RecordDataset,
     digest,
+    encode_record,
     prepare_media,
     safe_text,
+    validate_record,
     write_json,
 )
 from minifrontier.data.partitions import open_corpus
@@ -260,6 +262,145 @@ def encode_canonical_text(
                     text_document=True,
                 ),
             )
+
+    with contextlib.closing(open_corpus(corpus)) as db:
+        return _encode_compact_items(
+            ((split, records(db, split)) for split in ("train", "val", "test")),
+            output,
+            config,
+            tokenizer_path,
+            source_manifest,
+            source_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
+            media_root=corpus,
+            max_gib=max_gib,
+            shard_tokens=shard_tokens,
+        )
+
+
+def canonical_image_record(row, group, *, max_features, document_tiles=False):
+    """Adapt a complete canonical image QA without rebuilding text or source pixels."""
+    if (
+        row.get("stage") != "pretrain"
+        or row.get("task") not in {"caption", "vqa", "ocr_document", "chart_table"}
+        or len(row.get("media", [])) != 1
+        or row["media"][0].get("kind") != "image"
+        or any(
+            not isinstance(row.get(k), str) or not row[k].strip()
+            for k in ("visual_question", "visual_answer")
+        )
+        or max_features < 1
+    ):
+        raise ValueError("canonical image encoding requires one image and a complete grounded QA")
+    original = row["media"][0]
+    resource = dict(
+        media_id=original["rgb_sha256"],
+        uri=original["path"],
+        sha256=original["sha256"],
+        rgb_sha256=original["rgb_sha256"],
+        width=original["width"],
+        height=original["height"],
+        max_features=max_features,
+        representation="document"
+        if document_tiles and row["task"] == "ocr_document"
+        else "standard",
+    )
+    return dict(
+        sample_id=row["sample_id"],
+        split_group=group,
+        language=row["lang"],
+        domain=row["task"],
+        source=dict(dataset=row["source"], revision=row["revision"], record_id=row["item_id"]),
+        provenance=dict(license_record=row["license"], transform="canonical-image-qa-to-mf1-v1"),
+        origin={k: row[k] for k in ("source", "revision", "item_id", "license", "content_hash")},
+        supervision=dict(type="answer_ce"),
+        media=[resource],
+        messages=[
+            dict(
+                role="user",
+                content=[
+                    dict(type="image", media_id=resource["media_id"]),
+                    dict(type="text", text=row["visual_question"]),
+                ],
+            ),
+            dict(
+                role="assistant",
+                channel="final",
+                content=[dict(type="text", text=row["visual_answer"])],
+            ),
+        ],
+    )
+
+
+def encode_canonical_images(
+    corpus,
+    tokenizer_path,
+    output,
+    config,
+    *,
+    max_features,
+    document_tiles=False,
+    max_gib=1,
+    shard_tokens=64_000_000,
+):
+    """Keep complete grounded answers in compact shards, with source pixels shared.
+
+    The result is an unadmitted media component. P0 uses max_features=49 and no
+    document tiles; later stages explicitly rebuild their media spans at higher
+    resolution. Context overflow is an error, never silent answer truncation.
+    """
+    corpus, tokenizer_path = Path(corpus).resolve(), Path(tokenizer_path).resolve()
+    audit = json.loads((corpus / "source-audit.json").read_text())
+    if audit.get("status") not in {
+        "candidate_slice_complete_pending_admission",
+        "candidate_inventory_below_target",
+    } and not audit.get("formal_admission"):
+        raise ValueError("canonical media construction must finish before encoding")
+    manifest = json.loads((corpus / "corpus-manifest.json").read_text())
+    if sha256(corpus / "corpus.sqlite") != manifest["database_sha256"]:
+        raise ValueError("canonical media database checksum differs")
+    tokenizer = Tokenizer.from_file(str(tokenizer_path))
+    if tokenizer.get_vocab_size() > config.vocab_size or any(
+        tokenizer.token_to_id(s) != i for i, s in enumerate(SPECIAL_TOKENS)
+    ):
+        raise ValueError("canonical media needs the MF1 control mapping and fitting vocabulary")
+    if not 1 <= max_features <= config.protected_media_tokens:
+        raise ValueError("image feature limit exceeds the model media budget")
+    source_manifest = dict(
+        kind="canonical_image_component",
+        formal_admission=False,
+        source_corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
+        source_audit_sha256=sha256(corpus / "source-audit.json"),
+        raw_media_copied=False,
+        raw_text_copied=False,
+        image_transform=dict(max_features=max_features, document_tiles=document_tiles),
+        encoding_processor_sha256=sha256(__file__),
+        complete_record_length_buckets={},
+    )
+
+    def records(db, split):
+        buckets: dict[str, dict[str, Counter[str]]] = {}
+        source_manifest["complete_record_length_buckets"][split] = buckets
+        for payload, group in db.execute(
+            "SELECT payload,group_root FROM samples WHERE split=? ORDER BY id", (split,)
+        ):
+            record = canonical_image_record(
+                json.loads(payload), group, max_features=max_features, document_tiles=document_tiles
+            )
+            validate_record(record, corpus)
+            item = encode_record(record, tokenizer, config, corpus)
+            length = item["input_ids"].shape[1]
+            bucket = str(
+                next((n for n in (512, 1024, 2048, 4096, 8192) if length <= n), "over_8192")
+            )
+            counts = buckets.setdefault(record["domain"], {}).setdefault(bucket, Counter())
+            counts.update(
+                records=1,
+                input_tokens=length,
+                ce_tokens=int(item["labels"][:, 1:].ne(-100).sum()),
+                media_exposures=item["media_exposures"],
+                vision_tokens=sum(s["feature_count"] for s in item["media"]),
+            )
+            yield record, item
 
     with contextlib.closing(open_corpus(corpus)) as db:
         return _encode_compact_items(
