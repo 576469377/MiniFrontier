@@ -623,11 +623,11 @@
       "final_manifest_present": false,
       "api": "minifrontier.data.corpus.encode_corpus",
       "arguments": {
-        "corpus": "data/pretraining-text-partition-v1",
-        "tokenizer": "data/pretraining-tokenizers-v1/source-models-65536.json",
         "output": "data/pretraining-text-64k-v1",
         "max_gib": 11,
-        "max_length": 8192
+        "max_length": 8192,
+        "tokenizer_path": "data/pretraining-tokenizers-v1/source-models-65536.json",
+        "corpus_root": "data/pretraining-text-partition-v1"
       }
     },
     "mf1": {
@@ -649,12 +649,13 @@
       "api": "minifrontier.data.minifrontier1_encoding.encode_canonical_text",
       "arguments": {
         "corpus": "data/pretraining-text-partition-v1",
-        "tokenizer": "data/pretraining-tokenizers-v1/mf1-32768.json",
         "output": "data/pretraining-mf1-text-v1",
         "max_gib": 3,
         "config": "configs/minifrontier1/model_228m_native.json",
-        "shard_tokens": 64000000
-      }
+        "shard_tokens": 64000000,
+        "tokenizer_path": "data/pretraining-tokenizers-v1/mf1-32768.json"
+      },
+      "config_argument_loader": "MiniFrontier1Config(**json.loads(Path(config).read_text()))"
     }
   }
 }
