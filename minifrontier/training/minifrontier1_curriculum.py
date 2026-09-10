@@ -48,3 +48,47 @@ def pack_records(items, capacity):
         packing_capacity=capacity,
         sample_count=len(items),
     )
+
+
+def collate_records(items, pad_token_id):
+    """Pad independent rows and relocate media without changing any sample's positions."""
+    if len(items) == 1:
+        return items[0]
+    length = max(i["input_ids"].shape[1] for i in items)
+    ids = items[0]["input_ids"].new_full((len(items), length), pad_token_id)
+    labels, segments = torch.full_like(ids, -100), torch.full_like(ids, -1)
+    spans: list[dict[str, Any]] = []
+    for row, item in enumerate(items):
+        n = item["input_ids"].shape[1]
+        ids[row, :n], labels[row, :n] = item["input_ids"][0], item["labels"][0]
+        segments[row, :n] = item.get("segment_ids", torch.zeros_like(item["input_ids"]))[0]
+        spans.extend(dict(s, batch_index=row) for s in item.get("media", []))
+    return dict(
+        input_ids=ids,
+        labels=labels,
+        segment_ids=segments,
+        media=spans,
+        media_hashes=[h for i in items for h in i["media_hashes"]],
+        media_exposures=sum(i.get("media_exposures", len(i.get("media", []))) for i in items),
+        sample_count=sum(i.get("sample_count", 1) for i in items),
+        attention_phase=items[0].get("attention_phase"),
+    )
+
+
+def microbatches(window, *, batch_size, max_padded_tokens, pad_token_id):
+    """Group a preselected global window; capacity and P2 phase never mix rows incorrectly."""
+    pending: list[dict[str, Any]] = []
+    longest = 0
+    for item in window:
+        length = item["input_ids"].shape[1]
+        if pending and (
+            len(pending) == batch_size
+            or max(longest, length) * (len(pending) + 1) > max_padded_tokens
+            or item.get("attention_phase") != pending[0].get("attention_phase")
+        ):
+            yield collate_records(pending, pad_token_id)
+            pending, longest = [], 0
+        pending.append(item)
+        longest = max(longest, length)
+    if pending:
+        yield collate_records(pending, pad_token_id)

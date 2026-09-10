@@ -127,6 +127,40 @@ def select_blocks(scores, visible, budget):
     return torch.zeros_like(visible).scatter(-1, indices, True) & visible
 
 
+def block_members(blocks, device, *, offset=0):
+    """Materialize the small CPU directory once, including short boundary blocks."""
+    indices = torch.tensor(
+        [list(b.member_indices) + [-1] * (4 - len(b.member_indices)) for b in blocks],
+        device=device,
+        dtype=torch.long,
+    ).reshape(-1, 4)
+    valid = indices.ge(0)
+    return (indices - offset).clamp_min(0), valid
+
+
+def gather_support(support):
+    """One bounded gather per query chunk, preserving increasing key order.
+
+    A single size synchronization replaces one nonzero synchronization per query.
+    Padding is masked; no routed token is dropped or capacity-clipped.
+    """
+    size = max(1, int(support.sum(-1).max()))
+    positions = torch.arange(support.shape[-1], device=support.device).expand_as(support)
+    indices = (
+        positions.masked_fill(~support, support.shape[-1])
+        .topk(size, dim=-1, largest=False, sorted=True)
+        .values
+    )
+    return indices.clamp_max(support.shape[-1] - 1), indices.lt(support.shape[-1])
+
+
+def masked_probabilities(logits, support):
+    """Fully masked/padded queries produce zero values and zero gradients."""
+    valid = support.any(-1, keepdim=True)
+    masked = logits.masked_fill(~support, float("-inf"))
+    return masked.masked_fill(~valid, 0).softmax(-1) * valid
+
+
 def index_kl(scores, target, visible):
     target = target.detach().float() * visible
     mass = target.sum(-1)

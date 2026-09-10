@@ -101,6 +101,9 @@ def main(argv=None):
     t.add_argument("--steps", type=int)
     t.add_argument("--token-budget", type=int)
     t.add_argument("--input-batch-tokens", type=int, default=16384)
+    t.add_argument(
+        "--batch-size", type=int, default=8, help="maximum independent rows per microbatch"
+    )
     t.add_argument("--seed", type=int, default=42)
     t.add_argument("--init")
     t.add_argument("--resume")

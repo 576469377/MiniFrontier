@@ -77,11 +77,35 @@ class LatentMoE(nn.Module):
         flat = x.reshape(-1, shape[-1])
         selected, weights, _ = self.router(flat)
         latent = self.down(flat)
+        combined = self.grouped(latent, selected, weights) if x.is_cuda else None
+        if combined is None:
+            combined = self.reference(latent, selected, weights)
+        routed = self.up(self.norm(combined).to(latent.dtype)) * self.scale
+        return (routed + self.shared(flat)).reshape(shape)
+
+    def reference(self, latent, selected, weights):
         combined = torch.zeros_like(latent, dtype=torch.float32)
         for index, expert in enumerate(self.experts):
             token, slot = (selected == index).nonzero(as_tuple=True)
             if token.numel():
                 update = expert(latent[token]).float() * weights[token, slot, None]
                 combined = combined.index_add(0, token, update)
-        routed = self.up(self.norm(combined).to(latent.dtype)) * self.scale
-        return (routed + self.shared(flat)).reshape(shape)
+        return combined
+
+    def grouped(self, latent, selected, weights):
+        from minifrontier.models.grouped_experts import pack, projection, sum_routes
+
+        packed, routing = pack(latent, selected, len(self.experts))
+        if packed is None:
+            return None
+        active = selected.unique(sorted=True).tolist()
+        experts = [self.experts[i] for i in active]
+        # Do not stack unused expert weights: a zero gradient instead of None
+        # would change AdamW decay/moments for an expert that received no tokens.
+        gate = projection(packed[active], [expert.gate for expert in experts])
+        up = projection(packed[active], [expert.up for expert in experts])
+        hidden = activation(gate, up, experts[0].kind).to(gate.dtype)
+        values = projection(hidden, [expert.down for expert in experts])
+        indices = torch.tensor(active, device=latent.device)
+        routed = values.new_zeros(*packed.shape).index_copy(0, indices, values)
+        return sum_routes(routed, routing, selected, torch.float32, weights)

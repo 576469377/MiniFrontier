@@ -1,12 +1,23 @@
 # Gated overlap pooling derives from DeepSeek 60d8d70 (MIT). Boundary handling is local.
 """CSA-4 reference with media-aware short-block flush and bounded raw/pending cache."""
 
+from itertools import pairwise
 from typing import cast
 
 import torch
 from torch import nn
 
-from .indexer import BlockIndexer, block_registry, index_kl, rope, select_blocks, visible_blocks
+from .indexer import (
+    BlockIndexer,
+    block_members,
+    block_registry,
+    gather_support,
+    index_kl,
+    masked_probabilities,
+    rope,
+    select_blocks,
+    visible_blocks,
+)
 from .moe import RMSNorm
 
 
@@ -20,30 +31,32 @@ class Compressor(nn.Module):
         self.norm = RMSNorm(dim, eps)
 
     def forward(self, x, blocks, offset):
+        if not blocks:
+            return x.new_empty((0, self.dim))
         with torch.autocast(device_type=x.device.type, enabled=False):
             kv = torch.nn.functional.linear(x.float(), self.kv.weight.float())
             gates = torch.nn.functional.linear(x.float(), self.gate.weight.float())
-            result = []
-            for i, block in enumerate(blocks):
-                ids = torch.tensor(block.member_indices, device=x.device) - offset
-                values = kv[ids, self.dim :]
-                scores = gates[ids, self.dim :] + self.ape[: len(ids), self.dim :]
-                if i and (
-                    blocks[i - 1].segment,
-                    blocks[i - 1].modality,
-                    blocks[i - 1].media_id,
-                ) == (block.segment, block.modality, block.media_id):
-                    previous = torch.tensor(blocks[i - 1].member_indices, device=x.device) - offset
-                    values = torch.cat((kv[previous, : self.dim], values))
-                    scores = torch.cat(
-                        (
-                            gates[previous, : self.dim] + self.ape[: len(previous), : self.dim],
-                            scores,
-                        )
-                    )
-                # Invalid slots are absent (equivalent to -inf pooling masks).
-                result.append((values * scores.softmax(0)).sum(0))
-        return self.norm(torch.stack(result)) if result else x.new_empty((0, self.dim))
+            ids, valid = block_members(blocks, x.device, offset=offset)
+            previous = torch.arange(len(blocks), device=x.device).sub(1).clamp_min(0)
+            overlaps = torch.tensor(
+                [False]
+                + [
+                    (a.segment, a.modality, a.media_id) == (b.segment, b.modality, b.media_id)
+                    for a, b in pairwise(blocks)
+                ],
+                device=x.device,
+            )
+            support = torch.cat((valid[previous] & overlaps[:, None], valid), 1)
+            values = torch.cat((kv[ids[previous], : self.dim], kv[ids, self.dim :]), 1)
+            scores = torch.cat(
+                (
+                    gates[ids[previous], : self.dim] + self.ape[None, :, : self.dim],
+                    gates[ids, self.dim :] + self.ape[None, :, self.dim :],
+                ),
+                1,
+            ).masked_fill(~support[..., None], float("-inf"))
+            pooled = (values * scores.softmax(1)).sum(1)
+        return self.norm(pooled)
 
 
 class CSA(nn.Module):
@@ -138,8 +151,13 @@ class CSA(nn.Module):
                     & seg[start:stop, None].ge(0)
                 )
                 visible = visible_blocks(blocks, qp[start:stop], seg[start:stop])
-                scores = self.indexer.scores(
-                    z[start:stop].detach(), linear_positions[start:stop], keys
+                needs_indexer = self.training_phase == "sparse_cpt" or (
+                    self.indexer_loss_enabled and self.training_phase != "dense_pretrain"
+                )
+                scores = (
+                    self.indexer.scores(z[start:stop].detach(), linear_positions[start:stop], keys)
+                    if needs_indexer
+                    else z.new_empty((stop - start, 0))
                 )
                 selected = (
                     select_blocks(scores, visible, c.top_blocks)
@@ -147,39 +165,38 @@ class CSA(nn.Module):
                     else visible
                 )
                 support = torch.cat((local, selected), -1)
-                for j in range(stop - start):
-                    i = start + j
-                    indices = support[j].nonzero().flatten()
-                    if not indices.numel():
-                        rows.append(z.new_zeros(c.num_attention_heads, c.csa_head_dim))
-                        continue
-                    logits = (
-                        torch.einsum("hd,kd->hk", q[i].float(), kv[indices].float())
-                        * c.csa_head_dim**-0.5
+                indices, valid = gather_support(support)
+                gathered = kv[indices]
+                logits = (
+                    torch.einsum("qhd,qkd->qhk", q[start:stop].float(), gathered.float())
+                    * c.csa_head_dim**-0.5
+                )
+                rows.append(
+                    torch.einsum(
+                        "qhk,qkd->qhd",
+                        masked_probabilities(logits, valid[:, None]).to(kv.dtype),
+                        gathered,
                     )
-                    rows.append(
-                        torch.einsum("hk,kd->hd", logits.softmax(-1).to(kv.dtype), kv[indices])
-                    )
-                    if (
-                        blocks
-                        and self.indexer_loss_enabled
-                        and self.training_phase != "dense_pretrain"
-                        and i in sampled
-                    ):
-                        with torch.no_grad():
-                            dense = (
-                                torch.einsum("hd,kd->hk", q[i].float(), kv.float())
-                                * c.csa_head_dim**-0.5
-                            )
-                            teacher = (
-                                dense.masked_fill(~torch.cat((local[j], visible[j])), float("-inf"))
-                                .softmax(-1)
-                                .mean(0)[len(raw) :]
-                            )
-                        term, count = index_kl(scores[j : j + 1], teacher[None], visible[j : j + 1])
-                        terms.append(term)
-                        query_count += count
-            outputs.append(self.out(torch.stack(rows).flatten(-2)))
+                )
+                chosen = [i - start for i in sorted(sampled) if start <= i < stop]
+                if (
+                    blocks
+                    and self.indexer_loss_enabled
+                    and self.training_phase != "dense_pretrain"
+                    and chosen
+                ):
+                    with torch.no_grad():
+                        dense = (
+                            torch.einsum("qhd,kd->qhk", q[start:stop][chosen].float(), kv.float())
+                            * c.csa_head_dim**-0.5
+                        )
+                        teacher = masked_probabilities(
+                            dense, torch.cat((local[chosen], visible[chosen]), -1)[:, None]
+                        ).mean(1)[:, len(raw) :]
+                    term, count = index_kl(scores[chosen], teacher, visible[chosen])
+                    terms.append(term)
+                    query_count += count
+            outputs.append(self.out(torch.cat(rows).flatten(-2)))
             # Keep the previous block plus pending/current block, enough for exact overlap replay.
             keep = registry[-2].start if len(registry) > 1 else tail_offset
             tail = {k: v[keep - tail_offset :].clone() for k, v in tail.items()}

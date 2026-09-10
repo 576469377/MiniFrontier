@@ -20,7 +20,11 @@ from minifrontier.models.minifrontier1.mtp import mtp_targets
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, token_metadata
 from minifrontier.multimodal import move
 from minifrontier.training.metrics import mf1_scalars
-from minifrontier.training.minifrontier1_curriculum import context_length, pack_records
+from minifrontier.training.minifrontier1_curriculum import (
+    context_length,
+    microbatches,
+    pack_records,
+)
 from minifrontier.training.minifrontier1_optim import (
     QuantileBalance,
     make_optimizer,
@@ -195,6 +199,7 @@ def train(
     steps=None,
     token_budget=None,
     input_batch_tokens=16384,
+    batch_size=8,
     seed=42,
     init=None,
     resume=None,
@@ -215,7 +220,13 @@ def train(
         raise ValueError("attention override is restricted to dense acceptance SFT diagnosis")
     if phase not in {"pilot", "p0", "p1", "indexer", "p2", "p3", "sft"}:
         raise ValueError("use the posttrain command for RL/teacher/OPD/DPO/draft/QAT")
-    if (init and resume) or input_batch_tokens < 1 or save_every < 1 or eval_every < 1:
+    if (
+        (init and resume)
+        or input_batch_tokens < 1
+        or batch_size < 1
+        or save_every < 1
+        or eval_every < 1
+    ):
         raise ValueError("invalid training controls")
     if run_kind not in {"acceptance", "strategy"}:
         raise ValueError("unknown run kind")
@@ -330,6 +341,7 @@ def train(
         token_budget=token_budget,
         unit=PHASES[phase]["unit"],
         input_batch_tokens=input_batch_tokens,
+        batch_size=batch_size,
         optimizer_kind=optimizer_kind,
         optimizer_groups_sha256=digest(group_manifest),
         mixture=weights,
@@ -542,15 +554,23 @@ def train(
                     group["adam_lr"] = group["base_adam_lr"] * factor
             opt.zero_grad(set_to_none=True)
             totals: dict[str, float] = defaultdict(float)
-            for raw in window:
-                item = move(raw, device)
-                if phase == "p2":
+            if phase == "p2":
+                for raw in window:
                     sparse = sampler.rng.random() < min(1.0, ledger["phase_tokens"] / 20_000_000)
+                    raw["attention_phase"] = "sparse_cpt" if sparse else "dense_distill"
+            actual_batches = []
+            for raw in microbatches(
+                window,
+                batch_size=batch_size,
+                max_padded_tokens=input_batch_tokens,
+                pad_token_id=c.pad_token_id,
+            ):
+                item = move(raw, device)
+                actual_batches.append(item["input_ids"].shape[0])
+                if phase == "p2":
                     for layer in model.layers:
                         if layer.kind != "kda":
-                            cast(Any, layer).attention.training_phase = (
-                                "sparse_cpt" if sparse else "dense_distill"
-                            )
+                            cast(Any, layer).attention.training_phase = raw["attention_phase"]
                 with torch.autocast(
                     device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"
                 ):
@@ -617,6 +637,10 @@ def train(
                 step_seconds=elapsed,
                 ce_per_second=ce_count / elapsed if phase != "indexer" else 0,
                 input_per_second=inputs / elapsed,
+                input_batch_actual=inputs,
+                micro_batches=len(actual_batches),
+                microbatch_max_samples=max(actual_batches),
+                microbatch_samples=actual_batches,
                 **ledger,
             )
             if device.type == "cuda":

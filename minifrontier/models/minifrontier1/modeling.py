@@ -180,10 +180,9 @@ class MiniFrontier1ForCausalLM(nn.Module):
 
                 def run(r, layer=layer):
                     value, _, loss, count = layer(r, metadata)
-                    return value, loss, torch.tensor(count, device=r.device)
+                    return value, loss, count
 
                 residual, loss, count = checkpoint(run, residual, use_reentrant=False)
-                count = int(count)
             else:
                 residual, state, loss, count = layer(
                     residual, metadata, cache.layers[i] if cache is not None else None

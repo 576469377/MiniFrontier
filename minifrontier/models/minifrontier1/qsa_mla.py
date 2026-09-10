@@ -6,8 +6,11 @@ from torch import nn
 
 from .indexer import (
     BlockIndexer,
+    block_members,
     block_registry,
+    gather_support,
     index_kl,
+    masked_probabilities,
     mrope,
     rope,
     select_blocks,
@@ -77,10 +80,10 @@ class QSAMLA(nn.Module):
             blocks = block_registry(full["segment_ids"], full["modality"], full["media_ids"])
             blocks = [b for b in blocks if b.complete_at is not None]
             keys = z.new_empty((0, c.index_dim))
+            members, member_valid = block_members(blocks, z.device)
             if self.indexer is not None and blocks:
-                keys = torch.stack(
-                    [full["index_raw"][list(b.member_indices)].mean(0) for b in blocks]
-                )
+                keys = (full["index_raw"][members] * member_valid[..., None]).sum(1)
+                keys = keys / member_valid.sum(1, keepdim=True)
                 keys = rope(
                     keys,
                     full["linear_positions"][[b.start for b in blocks]],
@@ -116,59 +119,79 @@ class QSAMLA(nn.Module):
                 visible = visible_blocks(blocks, qp[start:stop], seg[start:stop])
                 scores = (
                     self.indexer.scores(z[start:stop].detach(), linear_positions[start:stop], keys)
-                    if self.indexer is not None and blocks
+                    if self.indexer is not None
+                    and blocks
+                    and (
+                        self.training_phase == "sparse_cpt"
+                        or (self.indexer_loss_enabled and self.training_phase != "dense_pretrain")
+                    )
                     else z.new_empty((stop - start, 0))
                 )
                 selected = (
                     select_blocks(scores, visible, c.top_blocks)
-                    if blocks and self.indexer is not None
+                    if blocks and self.indexer is not None and self.training_phase == "sparse_cpt"
                     else visible
                 )
                 support = causal
                 if self.indexer is not None and self.training_phase == "sparse_cpt":
                     support = local | protected
-                    for index, block in enumerate(blocks):
-                        support[:, list(block.member_indices)] |= selected[:, index, None]
+                    if blocks:
+                        directory = torch.full((total,), -1, device=z.device, dtype=torch.long)
+                        directory[members[member_valid]] = torch.arange(
+                            len(blocks), device=z.device
+                        )[:, None].expand_as(members)[member_valid]
+                        support |= selected[:, directory.clamp_min(0)] & directory.ge(0)
                     support &= causal
-                # Sparse gather per query: no dense raw attention matrix for the sparse core.
-                for j in range(stop - start):
-                    i = start + j
-                    indices = support[j].nonzero().flatten()
-                    if not indices.numel():
-                        chunks.append(z.new_zeros(c.num_attention_heads, c.v_head_dim))
-                        continue
+                    # Gather a bounded query chunk, rather than synchronizing once per token.
+                    indices, valid = gather_support(support)
                     logits = (
-                        torch.einsum("hd,khd->hk", qc[i].float(), kc[indices].float())
-                        + torch.einsum("hd,kd->hk", qr[i].float(), full["rope"][indices].float())
+                        torch.einsum("qhd,qkhd->qhk", qc[start:stop].float(), kc[indices].float())
+                        + torch.einsum(
+                            "qhd,qkd->qhk", qr[start:stop].float(), full["rope"][indices].float()
+                        )
                     ) * (c.qk_nope_head_dim + c.qk_rope_head_dim) ** -0.5
-                    probs = logits.softmax(-1)
                     chunks.append(
-                        torch.einsum("hk,khd->hd", probs.to(values.dtype), values[indices])
+                        torch.einsum(
+                            "qhk,qkhd->qhd",
+                            masked_probabilities(logits, valid[:, None]).to(values.dtype),
+                            values[indices],
+                        )
                     )
-                    if (
-                        self.indexer is not None
-                        and self.indexer_loss_enabled
-                        and self.training_phase != "dense_pretrain"
-                        and blocks
-                        and i in sampled
-                    ):
-                        with torch.no_grad():
-                            dense = (
-                                torch.einsum("hd,khd->hk", qc[i].float(), kc.float())
-                                + torch.einsum("hd,kd->hk", qr[i].float(), full["rope"].float())
-                            ) * (c.qk_nope_head_dim + c.qk_rope_head_dim) ** -0.5
-                            teacher = (
-                                dense.masked_fill(~causal[j], float("-inf")).softmax(-1).mean(0)
+                else:
+                    logits = (
+                        torch.einsum("qhd,khd->qhk", qc[start:stop].float(), kc.float())
+                        + torch.einsum("qhd,kd->qhk", qr[start:stop].float(), full["rope"].float())
+                    ) * (c.qk_nope_head_dim + c.qk_rope_head_dim) ** -0.5
+                    chunks.append(
+                        torch.einsum(
+                            "qhk,khd->qhd",
+                            masked_probabilities(logits, causal[:, None]).to(values.dtype),
+                            values,
+                        )
+                    )
+                chosen = [i - start for i in sorted(sampled) if start <= i < stop]
+                if (
+                    self.indexer is not None
+                    and self.indexer_loss_enabled
+                    and self.training_phase != "dense_pretrain"
+                    and blocks
+                    and chosen
+                ):
+                    with torch.no_grad():
+                        dense = (
+                            torch.einsum("qhd,khd->qhk", qc[start:stop][chosen].float(), kc.float())
+                            + torch.einsum(
+                                "qhd,kd->qhk", qr[start:stop][chosen].float(), full["rope"].float()
                             )
-                            # Exclude always-retained positions from retrieval quality/targets.
-                            teacher = teacher * ~(local[j] | protected[j])
-                            target = torch.stack(
-                                [teacher[list(b.member_indices)].sum() for b in blocks]
-                            )[None]
-                        term, count = index_kl(scores[j : j + 1], target, visible[j : j + 1])
-                        losses.append(term)
-                        query_count += count
-            out = torch.stack(chunks).flatten(-2)
+                        ) * (c.qk_nope_head_dim + c.qk_rope_head_dim) ** -0.5
+                        teacher = masked_probabilities(dense, causal[chosen, None]).mean(1)
+                        # Always-retained local/media tokens do not reward the indexer.
+                        teacher = teacher * ~(local[chosen] | protected[chosen])
+                        target = (teacher[:, members] * member_valid).sum(-1)
+                    term, count = index_kl(scores[chosen], target, visible[chosen])
+                    losses.append(term)
+                    query_count += count
+            out = torch.cat(chunks).flatten(-2)
             outputs.append(self.out(out * self.gate(z).sigmoid()))
             states.append(dict(full, length=total, blocks=blocks, index_keys=keys))
         loss = sum(losses, x.sum() * 0)
