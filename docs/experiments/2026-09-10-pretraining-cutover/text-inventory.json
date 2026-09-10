@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "text_candidate_inventory_snapshot",
-  "observed_unix": 1789067226.9465756,
+  "observed_unix": 1789071421.4932296,
   "formal_admission": false,
   "run_id": "strategy-pretraining-data-v3",
   "source_commit": "578b26d32454521cf851f7c137dce00c0f54dc4b",
@@ -976,6 +976,203 @@
     "subsequent_image_audit": {
       "source_commit": "fe58029",
       "text_media_targeted_tests": 27
+    }
+  },
+  "phase_end_validation_partition": {
+    "output": "data/pretraining-text-partition-v2",
+    "state": "completed_pending_reencoding",
+    "source_commit": "54498be4e5589ce3e1a9095abe6325b84fe8549b",
+    "driver_sha256": "78bd864572059208792cef0049045e9469109d09f4913c90ade40a3aa5aebeb4",
+    "partition_manifest_sha256": "b7df9509c5c71c380da9029ee1d735c6fc32ce2f92a13c04818cbb85f55f27ab",
+    "reservation": {
+      "kind": "phase_end_text_validation_reservation",
+      "formal_admission": false,
+      "seed": 20260910,
+      "minimum_validation_group_fraction": 0.005,
+      "corpus_manifest_sha256": "8449703a6376089c084e9f72b78b918bd6f04e0098f8179cb080d38452d68827",
+      "integrity_audit_sha256": "26a7f3cebcc3c38f565586f3d06ef80e104bdb79e13033997a16062fc774410d",
+      "previous_partition_sha256": "ea296436ac3ca1df794aace11092e37ac98d815e95130a7909e2989a81574277",
+      "source_encoded_manifest_sha256": "bc92340eebc5fc14352c7b0f27a3654677618cfdb83fd5e7b9908acc93eee6be",
+      "mf1_encoded_manifest_sha256": "d500db1dc7e2946788611d67961dee62eee68e8e0f49f72f0818c2d8357f1555",
+      "source_encoding_audit_sha256": "aa48e7f4c44113c2fe40513ae76a0f83f4ff2724c6cd7e5b96a971f4077fbe7b",
+      "mf1_encoding_audit_sha256": "8c97d7134b0a21ea7f625aa883906bf6fa7553745eaaf0dec6c854ec9d74c041",
+      "before_validation_ce": {
+        "source_ce": 2851102,
+        "mf1_ce": 3045747
+      },
+      "after_validation_ce": {
+        "source_ce": 5065923,
+        "mf1_ce": 5416788
+      },
+      "previous_overrides": 75,
+      "new_reserved_groups": 1624,
+      "new_reserved_records": 1673,
+      "protected_groups": 10743,
+      "protected_tokenizer_groups": 10743,
+      "tokenizer_training_bytes": 67107100,
+      "tokenizer_training_byte_sha256": "73e751f8d57e811b2d29e16ddb18a7fdeeaaf8c22ebe9a84d672ecb25dcea8a1",
+      "protected_tokenizer_boundary_id": "06e04be05720adffce41f9538a5257928653978b753f85bc4542bcbabe7c379e",
+      "selection": "fixed SHA256 priority among complete training groups; preserve old holds, fixed review groups and all original tokenizer training/boundary groups"
+    },
+    "splits": {
+      "test": 4392,
+      "train": 398807,
+      "val": 3735
+    },
+    "source_splits": {
+      "HuggingFaceFW/fineweb-edu": {
+        "test": {
+          "records": 1492,
+          "groups": 1491,
+          "reference_tokens": 1558471
+        },
+        "train": {
+          "records": 145236,
+          "groups": 145231,
+          "reference_tokens": 147021269
+        },
+        "val": {
+          "records": 1365,
+          "groups": 1365,
+          "reference_tokens": 1420398
+        },
+        "validation_group_fraction": 0.009217554545638712
+      },
+      "HuggingFaceH4/ultrachat_200k": {
+        "test": {
+          "records": 340,
+          "groups": 340,
+          "reference_tokens": 397010
+        },
+        "train": {
+          "records": 32305,
+          "groups": 32305,
+          "reference_tokens": 39237797
+        },
+        "val": {
+          "records": 308,
+          "groups": 308,
+          "reference_tokens": 365271
+        },
+        "validation_group_fraction": 0.009346645221982823
+      },
+      "codeparrot/codeparrot-clean-train": {
+        "test": {
+          "records": 568,
+          "groups": 151,
+          "reference_tokens": 1667859
+        },
+        "train": {
+          "records": 31303,
+          "groups": 8313,
+          "reference_tokens": 96656942
+        },
+        "val": {
+          "records": 260,
+          "groups": 95,
+          "reference_tokens": 788760
+        },
+        "validation_group_fraction": 0.011099427503212992
+      },
+      "open-web-math/open-web-math": {
+        "test": {
+          "records": 293,
+          "groups": 292,
+          "reference_tokens": 471806
+        },
+        "train": {
+          "records": 26302,
+          "groups": 26273,
+          "reference_tokens": 49008686
+        },
+        "val": {
+          "records": 254,
+          "groups": 254,
+          "reference_tokens": 509002
+        },
+        "validation_group_fraction": 0.009470897498042433
+      },
+      "opencsg/Fineweb-Edu-Chinese-V2.1": {
+        "test": {
+          "records": 1699,
+          "groups": 1699,
+          "reference_tokens": 2263954
+        },
+        "train": {
+          "records": 163661,
+          "groups": 163661,
+          "reference_tokens": 220640628
+        },
+        "val": {
+          "records": 1548,
+          "groups": 1548,
+          "reference_tokens": 2098525
+        },
+        "validation_group_fraction": 0.009274570422028902
+      }
+    },
+    "train_reference_tokens": 552565322,
+    "formal_admission": false,
+    "raw_corpus_copied": false,
+    "tokenizer_training_bytes_unchanged": true,
+    "encodings": {
+      "source": {
+        "output": "data/pretraining-text-64k-v3",
+        "state": "encoding_new_validation_partition",
+        "source_commit": "54498be4e5589ce3e1a9095abe6325b84fe8549b",
+        "driver_sha256": "6b2a63c43727a0876f96312e0af34283e7ecbd3b4ef647ffffae9220a2a89c2f",
+        "max_gib": 7.1,
+        "formal_admission": false,
+        "observed_unix": 1789071421.4927452,
+        "process_identity_verified": true,
+        "actual_bytes_at_observation": 915687083
+      },
+      "mf1": {
+        "output": "data/pretraining-mf1-text-v2",
+        "state": "encoding_new_validation_partition",
+        "source_commit": "54498be4e5589ce3e1a9095abe6325b84fe8549b",
+        "driver_sha256": "6b2a63c43727a0876f96312e0af34283e7ecbd3b4ef647ffffae9220a2a89c2f",
+        "max_gib": 1.5,
+        "formal_admission": false,
+        "observed_unix": 1789071421.4930007,
+        "process_identity_verified": true,
+        "actual_bytes_at_observation": 180811678
+      }
+    },
+    "storage_transition": {
+      "kind": "atomic_token_cache_repartition_transition",
+      "state": "encoding_replacements",
+      "started_unix": 1789071263.7116923,
+      "free_bytes_before": 153689075712,
+      "temporary_replacement_cap_gib": 8.6,
+      "temporary_category_cap_gib": 10,
+      "steady_token_cache_cap_gib": 15,
+      "source_snapshot_bytes": 400764928,
+      "source_cap_gib": 7.1,
+      "mf1_cap_gib": 1.5,
+      "raw_data_new_bytes": 0,
+      "retention": "Original caches and the partial joint manifest remain until both replacements pass full audits and consumer references are moved. Retire superseded derived payloads after dependency checks; retain manifests and experiment evidence.",
+      "formal_admission": false
+    }
+  },
+  "source_pretraining_validation": {
+    "source_commit": "54498be4e5589ce3e1a9095abe6325b84fe8549b",
+    "flag": "--pretraining-eval",
+    "periodic_ce_tokens": 1000000,
+    "phase_end_ce_tokens": 5000000,
+    "first_100m_interval_ce": 10000000,
+    "later_interval_ce": 50000000,
+    "axis": "cumulative main CE",
+    "selection": "fixed without replacement, group batches by domain; exact actual CE checked; source sampling indices and policy included in resume identity",
+    "best_checkpoint": "compare periodic subsets only; phase-end metrics are separate",
+    "formal_main_phase_requires_flag": true,
+    "actual_phase_end_inventory_required": true,
+    "mf1_evaluator_aligned": false,
+    "cpu_validation": {
+      "passed": 451,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "seconds": 146.69
     }
   }
 }
