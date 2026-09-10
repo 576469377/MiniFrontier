@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "kind": "formal_pretraining_media_candidate_snapshot",
+  "observed_unix": 1789065811.2759564,
+  "formal_admission": false,
+  "natural_images": {
+    "output": "data/pretraining-media-v2",
+    "source": "HuggingFaceM4/FineVision",
+    "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
+    "state": "candidate_inventory_below_target",
+    "target_independent_images": 60000,
+    "actual_independent_images": 23260,
+    "finalization": {
+      "operation": "close_media_byte_limited_slice",
+      "started_unix": 1789063985.4458437,
+      "before_audit_sha256": "fda62df6813d6456b1ee4b5a57eb9b651af5c34c360c22f29bc7adf5de22cb9f",
+      "before_database_sha256": "6325c8c1688be8c4bf80d7d9fdddbdf5276f18de32f06a297e9b84ec05fe2a69",
+      "construction_run_sha256": "af68fd221504bcfeb47243474cd3a41c0dfd6909ed4869d36a22febfcb7ee1a9",
+      "construction_stop_reason": "ValueError: media byte budget reached; inventory remains unadmitted",
+      "processor_files": {
+        "visual_sources.py": "774d026b69a75c748946c83ba09c877c47dad1675e5902eb26234b9387919ae2",
+        "corpus.py": "46a5b81ef8674d56a2c8e6eb99b1745f82753e2619eff3603481775c34aca5f6"
+      },
+      "media_files_unchanged": true,
+      "new_download_bytes": 0
+    },
+    "finalizer_source_commit": "51802e86201269266a7524740ee42370ce966e9a",
+    "integrity": {
+      "kind": "finalized_visual_slice_integrity",
+      "status": "mechanical_checks_passed_pending_quality_admission",
+      "formal_admission": false,
+      "updated_unix": 1789065536.409393,
+      "corpus_manifest_sha256": "0453474d00e57b8a59b7dffe619591618ee965bc446fa2477b6e4e5ae03010fd",
+      "database_sha256": "5ef12d8e99041440f6e716dacfc1439e65dd7914087a8fff558144063dd7d27e",
+      "source_audit_sha256": "4e27fa1d9570171cfd522a340174519412ac7efaa5188bcf1b2098e67ac3b935",
+      "processor_sha256": "4cb28ec90c288833d8d414101b4d49e17d1cde45c44169d0b73c5ba8851b3420",
+      "records": {
+        "train": 42937,
+        "val": 205,
+        "test": 400
+      },
+      "independent_images": {
+        "train": 22938,
+        "val": 111,
+        "test": 211
+      },
+      "answer_reference_tokens": {
+        "train": {
+          "caption": 1756019,
+          "vqa": 5094008
+        },
+        "val": {
+          "vqa": 23559,
+          "caption": 8843
+        },
+        "test": {
+          "caption": 16084,
+          "vqa": 48512
+        }
+      },
+      "raw_media_files": 23260,
+      "raw_media_bytes": 18251086021,
+      "cross_split_connected_groups": 0,
+      "cross_split_origin_keys": 0,
+      "cross_split_rgb_identities": 0,
+      "orphan_raw_media_files": 0,
+      "review_rows": {
+        "HuggingFaceM4/FineVision/allava_laion:vqa": 100,
+        "HuggingFaceM4/FineVision/allava_laion:caption": 100
+      },
+      "review_status": "awaiting_manual_review",
+      "limitations": [
+        "upstream validation/benchmark image identity exclusion",
+        "stratified source/domain manual review and fixed visual evaluation",
+        "full OCR transcription, Chinese OCR, multiimage and video coverage",
+        "per-model tokenizer, complete media/answer length and phase exposure audit"
+      ]
+    },
+    "remaining_natural_image_target": 36740
+  },
+  "limitations": [
+    "This is a retained storage-limited slice, not completion of the 60K natural-image target.",
+    "111 natural-image validation identities are fewer than the required full visual evaluation inventory.",
+    "Manual review, upstream held-out image exclusion, per-model CE/exposure/length admission and supplementary modalities remain pending."
+  ],
+  "remote_documents_charts": {
+    "source": "HuggingFaceM4/FineVision",
+    "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
+    "status": "building",
+    "formal_admission": false,
+    "observed_unix": 1789065965.443749,
+    "process_identity_verified": true,
+    "source_commit": "642aced7a6b849e608259857421c566c9abfc687",
+    "independent_images": 31000,
+    "media_bytes": 9144439585,
+    "sources": {
+      "CoSyn_400k_document": {
+        "status": "candidate_target_reached",
+        "unique_images": 20000,
+        "accepted_records": 49885,
+        "answer_reference_tokens": 1272888
+      },
+      "CoSyn_400k_chart": {
+        "status": "reading",
+        "unique_images": 11000,
+        "accepted_records": 60049,
+        "answer_reference_tokens": 2736348
+      }
+    },
+    "local_copy_performed": false
+  },
+  "mf1_natural_p0_encoding": {
+    "source_commit": "713eb786a71276729fa710102747d94545b9890e",
+    "source_archive_sha256": "3993720ca7ea6d68b77c0e75a28c626ad0153d200bf2ab822528f36f77e5b934",
+    "output": "data/pretraining-mf1-natural-p0-v1",
+    "state": "running",
+    "formal_admission": false,
+    "max_gib": 1,
+    "max_features": 49,
+    "document_tiles": false,
+    "api": "minifrontier.data.minifrontier1_encoding.encode_canonical_images",
+    "model_config": "configs/minifrontier1/model_228m_native.json",
+    "tokenizer": "data/pretraining-tokenizers-v1/mf1-32768.json",
+    "record": "outputs/strategy-pretraining-media-v2/mf1-p0-encoding/run.json"
+  }
+}
