@@ -1,0 +1,133 @@
+{
+  "workspace": "${WORKSPACE}",
+  "allowed_gpu_ids": [
+    0,
+    2,
+    3
+  ],
+  "main_budget_eligible": false,
+  "jobs": [
+    {
+      "id": "minifrontier1/performance-screen",
+      "output": "${WORKSPACE}/outputs/performance-tuning-v1/minifrontier1",
+      "source_root": "${WORKSPACE}/outputs/mf1-source-language-v1",
+      "source": {
+        "commit": "d77c51c4ba074ba2d325f0b52e2ecceca392972e",
+        "dirty": false,
+        "implementation_sha256": "2a04cbc1961c4e6518dc9a6b9abe526b772219ab10896abc95bc127073851b1b"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/mf1-source-language-v1/configs/minifrontier1/model_228m_native.json": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8"
+      },
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/mf1-source-language-v1/scripts/benchmark_mf1.py",
+        "--config",
+        "${WORKSPACE}/outputs/mf1-source-language-v1/configs/minifrontier1/model_228m_native.json",
+        "--output",
+        "${WORKSPACE}/outputs/performance-tuning-v1/minifrontier1",
+        "--length",
+        "512",
+        "--input-tokens",
+        "512",
+        "--batches",
+        "1",
+        "--warmup",
+        "1",
+        "--updates",
+        "2",
+        "--profile"
+      ],
+      "allowed_gpu_ids": [
+        0
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "result_file": "report.json",
+      "token_budget": 0
+    },
+    {
+      "id": "miniqwen4/performance-screen",
+      "output": "${WORKSPACE}/outputs/performance-tuning-v1/miniqwen4",
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/miniqwen4-v2.json": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
+        "${WORKSPACE}/outputs/services/performance-tuning-v1/benchmark_training_batch.py": "57232acae9d3ffdacf4a9f45aae32abea22df7b434b7cf38a63fe6e9f04433f3"
+      },
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/performance-tuning-v1/benchmark_training_batch.py",
+        "--model",
+        "miniqwen4",
+        "--config",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/miniqwen4-v2.json",
+        "--output",
+        "${WORKSPACE}/outputs/performance-tuning-v1/miniqwen4",
+        "--batches",
+        "2",
+        "4",
+        "8",
+        "16",
+        "32",
+        "--warmup",
+        "1",
+        "--updates",
+        "2"
+      ],
+      "allowed_gpu_ids": [
+        2
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "result_file": "report.json",
+      "token_budget": 0
+    },
+    {
+      "id": "minikimik3/performance-screen",
+      "output": "${WORKSPACE}/outputs/performance-tuning-v1/minikimik3",
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minikimik3-v2.json": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+        "${WORKSPACE}/outputs/services/performance-tuning-v1/benchmark_training_batch.py": "57232acae9d3ffdacf4a9f45aae32abea22df7b434b7cf38a63fe6e9f04433f3"
+      },
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "${WORKSPACE}/outputs/services/performance-tuning-v1/benchmark_training_batch.py",
+        "--model",
+        "minikimik3",
+        "--config",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minikimik3-v2.json",
+        "--output",
+        "${WORKSPACE}/outputs/performance-tuning-v1/minikimik3",
+        "--batches",
+        "2",
+        "4",
+        "8",
+        "16",
+        "32",
+        "--warmup",
+        "1",
+        "--updates",
+        "2"
+      ],
+      "allowed_gpu_ids": [
+        3
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "result_file": "report.json",
+      "token_budget": 0
+    }
+  ],
+  "scope": "Exclusive idle-GPU performance diagnosis; MF1 operator profile and fixed-input Qwen/Kimi microbatch screens"
+}

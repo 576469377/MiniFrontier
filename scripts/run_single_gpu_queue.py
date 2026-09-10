@@ -52,10 +52,12 @@ def single_command(original, output, variant, option, value):
     if any(flag in command for flag in ("--resume", "--init")):
         raise ValueError("single-GPU comparisons must start from the same random initialization")
     replace_option(command, "--output", output)
-    replace_option(command, "--batch-size", 2)
+    # Historical two-rank pilots used one sample per rank. Preserve their
+    # effective microbatch; newer single-GPU pilots retain their screened size.
+    if "torch.distributed.run" in original:
+        replace_option(command, "--batch-size", 2)
     if variant == "lower-lr":
         replace_option(command, option, value)
-    # Two samples per single-GPU microbatch match two ranks with one sample each.
     for flag, expected in (
         ("--input-batch-tokens", "16384"),
         ("--ce-tokens", "20000000"),

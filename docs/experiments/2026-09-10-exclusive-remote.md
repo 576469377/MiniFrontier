@@ -27,3 +27,5 @@ TensorBoard 新增 `remote-239/`，同步间隔约 30 秒。三模型保留原�
 这些任务均为 acceptance 配方试验或合成性能验证，不计入正式主训练预算。20M CE 损失下降和控制任务通过不能作为对话能力验收。
 
 调度与数据迁移工具见[单卡独占队列操作说明](../operations/exclusive-gpu-queue.md)。
+
+后续在本机空闲卡上完成了 microbatch 扫描和真实数据短训，并启动 batch 16 的三模型复验；见[单卡 batch 测速档案](2026-09-10-batch-tuning/README.md)。本页记录的远端 batch 2 试验继续保持原配置。

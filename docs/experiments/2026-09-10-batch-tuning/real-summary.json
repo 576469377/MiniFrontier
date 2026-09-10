@@ -1,0 +1,32 @@
+[
+  {
+    "model": "miniqwen4-mb16",
+    "ce_per_second": 1212.7964732997846,
+    "mean_step_seconds": 15.349648856868347,
+    "mean_io_seconds": 0.05468594841659069,
+    "mean_optimizer_seconds": 4.012517257283132,
+    "peak_reserved_gib": 9.76953125,
+    "actual_ce_tokens": 92650,
+    "updates": 5
+  },
+  {
+    "model": "minideepseekv4-mb16",
+    "ce_per_second": 3270.668981117012,
+    "mean_step_seconds": 5.72033838989834,
+    "mean_io_seconds": 0.007706796750426292,
+    "mean_optimizer_seconds": 0.4380914991100629,
+    "peak_reserved_gib": 11.537109375,
+    "actual_ce_tokens": 92567,
+    "updates": 5
+  },
+  {
+    "model": "minikimik3-mb16",
+    "ce_per_second": 3472.873397918818,
+    "mean_step_seconds": 5.296766651794314,
+    "mean_io_seconds": 0.06011307922502359,
+    "mean_optimizer_seconds": 0.32095660207172233,
+    "peak_reserved_gib": 5.41015625,
+    "actual_ce_tokens": 92360,
+    "updates": 5
+  }
+]

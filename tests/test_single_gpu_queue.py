@@ -89,6 +89,11 @@ def test_commands_preserve_budget_and_change_only_requested_learning_rate():
     with pytest.raises(ValueError, match="random initialization"):
         queue.single_command([*original, "--resume", "old.pt"], "new", "reference", "--lr", "0.1")
 
+    single = [original[0], *original[5:]]
+    queue.replace_option(single, "--batch-size", 16)
+    result = queue.single_command(single, "new", "reference", "--lr", "0.1")
+    assert result[result.index("--batch-size") + 1] == "16"
+
 
 def test_six_jobs_wait_for_predecessor_gpu_and_disk_and_isolate_devices(tmp_path, monkeypatch):
     workspace = tmp_path

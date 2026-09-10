@@ -1,0 +1,11 @@
+{
+  "attempt": "performance-real-batch-v1",
+  "models": [
+    "miniqwen4",
+    "minikimik3"
+  ],
+  "state": "argument_parsing_failed",
+  "cause": "Frozen trainer 75a3364 does not support --stop-after-updates; no optimizer updates occurred",
+  "replacement": "performance-real-batch-v2 uses supported 80K CE budget with proportional media quota",
+  "ce_tokens": 0
+}

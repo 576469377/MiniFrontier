@@ -31,8 +31,8 @@ def main():
     p.add_argument(
         "--batch-size",
         type=int,
-        default=2,
-        help="per-device microbatch; global input target stays 16384",
+        default=16,
+        help="single-3090 microbatch screened at sequence 512; global input target stays 16384",
     )
     p.add_argument("--diagnostic", type=Path, help="explicit reviewed diagnostic continuation")
     p.add_argument(

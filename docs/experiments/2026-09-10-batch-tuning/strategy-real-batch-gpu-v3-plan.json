@@ -1,0 +1,88 @@
+{
+  "workspace": "${WORKSPACE}",
+  "allowed_gpu_ids": [
+    3
+  ],
+  "main_budget_eligible": false,
+  "jobs": [
+    {
+      "id": "minideepseekv4/real-mb16-80k",
+      "output": "${WORKSPACE}/outputs/performance-real-batch-v2/minideepseekv4-mb16",
+      "source_root": "${WORKSPACE}/outputs/strategy-source-pilot-v2",
+      "source": {
+        "commit": "75a3364f586936d764c31376e185747973d2bed6",
+        "dirty": false,
+        "implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de"
+      },
+      "inputs": {
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minideepseekv4-v2.json": "b660f89fcf82048d087ba26b143a76b9b27baa38cfe71cb09e0ec9f997633b35",
+        "${WORKSPACE}/outputs/strategy-recipe-pilots-v2/minideepseekv4/mixture.json": "26b2e3cc6a40818166f18a908991162c809e6acba98bc42a5736e9f262e5eafd",
+        "${WORKSPACE}/data/strategy-recipe-encoded-64k-v2/manifest.json": "4fd93e0b8d2e8bcebfcc8ffa71c592653d1ac91402fb3c856f6dc4ece6b33520",
+        "${WORKSPACE}/data/strategy-recipe-encoded-64k-v2/tokenizer.json": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b"
+      },
+      "command": [
+        "${WORKSPACE}/.venv/bin/python",
+        "-m",
+        "minifrontier",
+        "train",
+        "--model",
+        "minideepseekv4",
+        "--stage",
+        "pretrain",
+        "--config",
+        "${WORKSPACE}/outputs/strategy-source-pilot-v2/configs/strategies/minideepseekv4-v2.json",
+        "--data",
+        "${WORKSPACE}/data/strategy-recipe-encoded-64k-v2",
+        "--output",
+        "${WORKSPACE}/outputs/performance-real-batch-v2/minideepseekv4-mb16",
+        "--ce-tokens",
+        "80000",
+        "--steps",
+        "100000",
+        "--sequence-length",
+        "512",
+        "--batch-size",
+        "16",
+        "--input-batch-tokens",
+        "16384",
+        "--lr",
+        "0.0003",
+        "--muon-lr",
+        "0.01",
+        "--adam-eps",
+        "1e-8",
+        "--optimizer",
+        "auto",
+        "--warmup-tokens",
+        "400000",
+        "--schedule",
+        "wsd",
+        "--save-every",
+        "9999",
+        "--eval-every",
+        "9999",
+        "--eval-batches",
+        "8",
+        "--log-every",
+        "1",
+        "--run-kind",
+        "acceptance",
+        "--profile-warmup",
+        "1",
+        "--profile-updates",
+        "3",
+        "--min-device-free-gib",
+        "2",
+        "--token-mixture",
+        "${WORKSPACE}/outputs/strategy-recipe-pilots-v2/minideepseekv4/mixture.json"
+      ],
+      "memory_gib": 20,
+      "reserve_gib": 2,
+      "allowed_gpu_ids": [
+        3
+      ],
+      "token_budget": 80000
+    }
+  ],
+  "scope": "DeepSeek 80K CE real-data mb16 throughput probe; bounded acceptance"
+}

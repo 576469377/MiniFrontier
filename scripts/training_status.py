@@ -108,6 +108,9 @@ def strategy_status(root):
     queues = [
         *root.glob("remote-*/outputs/strategy-*gpu*/queue.json"),
         *root.glob("strategy-exclusive-gpu*/queue.json"),
+        *root.glob("strategy-performance-gpu*/queue.json"),
+        *root.glob("strategy-real-batch-gpu*/queue.json"),
+        *root.glob("strategy-batch16-gpu*/queue.json"),
         *root.glob("strategy-single-gpu*/queue.json"),
         *root.glob("strategy-shared-gpu*/queue.json"),
     ]
@@ -171,7 +174,7 @@ def strategy_status(root):
                 row["single_vs_dual_run_throughput"] = single / dual
                 row["estimated_two_single_runs_vs_one_dual"] = 2 * single / dual
                 row["comparison_scope"] = (
-                    "same global input batch; separate measurement times, shared-host load may differ"
+                    "same target input batch; microbatch, device count, measurement times and host load may differ"
                 )
             if job.get("error"):
                 row["error"] = job["error"]
