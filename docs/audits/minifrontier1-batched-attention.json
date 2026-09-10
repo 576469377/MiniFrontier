@@ -1,0 +1,2838 @@
+{
+  "schema_version": 1,
+  "state": "complete",
+  "created_at": "2026-09-10T13:06:52.898874+00:00",
+  "main_budget_eligible": false,
+  "scope": "Second MF1 execution audit; all synthetic comparisons fixed at 16384 input/update on the same physical RTX 3090",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "memory_gib": 24,
+    "one_project_process_per_physical_gpu": true,
+    "other_host_gpus_may_run_independent_jobs": true,
+    "python": "3.13.5",
+    "torch": "2.13.0+cu130",
+    "cuda": "13.0",
+    "cpu_threads": 2,
+    "bfloat16_autocast": true,
+    "allocator_cap_gib": 21,
+    "fla-core": "0.5.2",
+    "triton": "3.7.1"
+  },
+  "config": {
+    "model_version": "1.0-reference-v1",
+    "vocab_size": 32768,
+    "hidden_size": 512,
+    "num_hidden_layers": 16,
+    "attention_schedule": [
+      "kda",
+      "kda",
+      "kda",
+      "csa4",
+      "kda",
+      "kda",
+      "kda",
+      "qsa_mla",
+      "kda",
+      "kda",
+      "kda",
+      "csa4",
+      "kda",
+      "kda",
+      "kda",
+      "qsa_mla"
+    ],
+    "hc_count": 4,
+    "hc_lowrank": 64,
+    "num_attention_heads": 8,
+    "kda_head_dim": 64,
+    "conv_size": 4,
+    "kda_backend": "auto",
+    "q_lora_rank": 128,
+    "kv_lora_rank": 128,
+    "qk_nope_head_dim": 64,
+    "qk_rope_head_dim": 32,
+    "v_head_dim": 64,
+    "mrope_sections": [
+      4,
+      6,
+      6
+    ],
+    "rope_theta": 10000.0,
+    "csa_head_dim": 64,
+    "csa_rope_dim": 16,
+    "index_heads": 4,
+    "index_dim": 32,
+    "index_rope_dim": 16,
+    "block_size": 4,
+    "top_blocks": 64,
+    "window_size": 128,
+    "protected_media_tokens": 1024,
+    "protect_media": true,
+    "query_chunk_size": 64,
+    "index_query_count": 64,
+    "indexer_loss_coef": 0.01,
+    "num_experts": 32,
+    "num_experts_per_token": 4,
+    "routed_expert_hidden_size": 256,
+    "moe_intermediate_size": 256,
+    "shared_intermediate_size": 768,
+    "activation": "situ",
+    "routed_scale": 1.0,
+    "lookup_layer": 2,
+    "lookup_enabled": true,
+    "lookup_rows": 32768,
+    "lookup_dim": 64,
+    "lookup_seed": 1729,
+    "mtp_enabled": true,
+    "mtp_loss_coef": 0.1,
+    "max_position_embeddings": 8192,
+    "rms_norm_eps": 1e-05,
+    "initializer_range": 0.02,
+    "gradient_checkpointing": true,
+    "pad_token_id": 0,
+    "eos_token_id": 2,
+    "image_token_id": 7,
+    "control_token_count": 24,
+    "forbidden_action_ids": [
+      0,
+      1,
+      7
+    ],
+    "vision_config": {
+      "depth": 12,
+      "hidden_size": 384,
+      "num_heads": 6,
+      "intermediate_size": 1536,
+      "patch_size": 16,
+      "temporal_patch_size": 2,
+      "spatial_merge_size": 2,
+      "output_size": 512,
+      "gradient_checkpointing": true
+    }
+  },
+  "config_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8",
+  "total_parameters": 228235809,
+  "synthetic_data": "Seed 42 fixed random token window, repeated on every optimizer update. Throughput only; not a learning or capability trial.",
+  "synthetic": [
+    {
+      "id": "comparison/baseline-mb8",
+      "physical_device": "B",
+      "source": {
+        "commit": "8e2ec1b1e579d498154a37a640324e904717861a",
+        "dirty": false,
+        "implementation_sha256": "87069598a4534aaf1a83292c4ba5a43a06f0c2bfed3c4eac7ae8ae9aa463c944"
+      },
+      "runner_sha256": "0e5d57153f5583e852f2660de9c46279e835aea208b37bb24268ba127a74a02e",
+      "report_sha256": "62680a2c69685255df978e4934bb36c7066613cf543f3985fd2e6e1c35d9b421",
+      "controls": {
+        "config": "${WORKSPACE}/outputs/source-mf1-execution-audit-final/configs/minifrontier1/model_228m_native.json",
+        "output": "${WORKSPACE}/outputs/mf1-performance-v2/batched-attention-audit/comparison/baseline-mb8",
+        "length": 512,
+        "input_tokens": 16384,
+        "batches": [
+          8
+        ],
+        "warmup": 3,
+        "updates": 8,
+        "media_features": 0,
+        "profile": false
+      },
+      "scope": "synthetic equal-input-budget screen; only a >=20 warmup / >=100 unprofiled-update run meets the measurement duration requirement",
+      "cases": [
+        {
+          "length": 512,
+          "microbatch": 8,
+          "accumulation": 4,
+          "media_features": 0,
+          "rows": [
+            {
+              "step": 1,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 11.719079487025738,
+              "grad_norm": 0.8328501582145691,
+              "peak_allocated_gib": 3.7899904251098633,
+              "peak_reserved_gib": 5.34765625,
+              "free_gib": 17.8704833984375
+            },
+            {
+              "step": 2,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 8.052566783502698,
+              "grad_norm": 1.5380561351776123,
+              "peak_allocated_gib": 5.21506929397583,
+              "peak_reserved_gib": 6.203125,
+              "free_gib": 17.0150146484375
+            },
+            {
+              "step": 3,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 8.03431261330843,
+              "grad_norm": 4.421877384185791,
+              "peak_allocated_gib": 5.233944416046143,
+              "peak_reserved_gib": 6.314453125,
+              "free_gib": 16.9036865234375
+            },
+            {
+              "step": 4,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 8.881636260077357,
+              "grad_norm": 5.416337490081787,
+              "peak_allocated_gib": 5.404850482940674,
+              "peak_reserved_gib": 6.708984375,
+              "free_gib": 16.5091552734375
+            },
+            {
+              "step": 5,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 8.18387396261096,
+              "grad_norm": 5.432164669036865,
+              "peak_allocated_gib": 5.293835163116455,
+              "peak_reserved_gib": 6.708984375,
+              "free_gib": 16.5091552734375
+            },
+            {
+              "step": 6,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 8.329934867098927,
+              "grad_norm": 5.178471088409424,
+              "peak_allocated_gib": 5.040665149688721,
+              "peak_reserved_gib": 6.708984375,
+              "free_gib": 16.5091552734375
+            },
+            {
+              "step": 7,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 8.0330869872123,
+              "grad_norm": 5.022538661956787,
+              "peak_allocated_gib": 5.255321979522705,
+              "peak_reserved_gib": 6.708984375,
+              "free_gib": 16.5091552734375
+            },
+            {
+              "step": 8,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 7.9960643555969,
+              "grad_norm": 4.394635200500488,
+              "peak_allocated_gib": 5.29679536819458,
+              "peak_reserved_gib": 6.708984375,
+              "free_gib": 16.5091552734375
+            },
+            {
+              "step": 9,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 7.884046815335751,
+              "grad_norm": 3.5882134437561035,
+              "peak_allocated_gib": 5.168430805206299,
+              "peak_reserved_gib": 6.708984375,
+              "free_gib": 16.5091552734375
+            },
+            {
+              "step": 10,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 8.020227961242199,
+              "grad_norm": 3.8571701049804688,
+              "peak_allocated_gib": 5.238361835479736,
+              "peak_reserved_gib": 6.708984375,
+              "free_gib": 16.5091552734375
+            },
+            {
+              "step": 11,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 7.988542839884758,
+              "grad_norm": 2.8397111892700195,
+              "peak_allocated_gib": 5.154568195343018,
+              "peak_reserved_gib": 6.708984375,
+              "free_gib": 16.5091552734375
+            }
+          ],
+          "ce_per_second": 2002.7737151649271
+        }
+      ]
+    },
+    {
+      "id": "comparison/optimized-mb8",
+      "physical_device": "B",
+      "source": {
+        "commit": "5871666e951eb97752e1a0c0b773949258525a62",
+        "dirty": false,
+        "implementation_sha256": "d21c18632a8eba862d78cbb2742c9c6a153197191fec0c505b03c3172bd39c3e"
+      },
+      "runner_sha256": "0e5d57153f5583e852f2660de9c46279e835aea208b37bb24268ba127a74a02e",
+      "report_sha256": "227a6f884a04171efed8acfc7f038dd74ca35eaac3153b222d6412e33ef0b863",
+      "controls": {
+        "config": "${WORKSPACE}/outputs/source-mf1-batched-attention/configs/minifrontier1/model_228m_native.json",
+        "output": "${WORKSPACE}/outputs/mf1-performance-v2/batched-attention-audit/comparison/optimized-mb8",
+        "length": 512,
+        "input_tokens": 16384,
+        "batches": [
+          8
+        ],
+        "warmup": 3,
+        "updates": 8,
+        "media_features": 0,
+        "profile": false
+      },
+      "scope": "synthetic equal-input-budget screen; only a >=20 warmup / >=100 unprofiled-update run meets the measurement duration requirement",
+      "cases": [
+        {
+          "length": 512,
+          "microbatch": 8,
+          "accumulation": 4,
+          "media_features": 0,
+          "rows": [
+            {
+              "step": 1,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 5.899351544678211,
+              "grad_norm": 0.8327380418777466,
+              "peak_allocated_gib": 3.7930116653442383,
+              "peak_reserved_gib": 5.41796875,
+              "free_gib": 17.7982177734375
+            },
+            {
+              "step": 2,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.6127335280179977,
+              "grad_norm": 1.5370677709579468,
+              "peak_allocated_gib": 5.106241703033447,
+              "peak_reserved_gib": 6.4609375,
+              "free_gib": 16.7552490234375
+            },
+            {
+              "step": 3,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.5794031843543053,
+              "grad_norm": 4.280606269836426,
+              "peak_allocated_gib": 5.1124749183654785,
+              "peak_reserved_gib": 6.4609375,
+              "free_gib": 16.7552490234375
+            },
+            {
+              "step": 4,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 3.4182374700903893,
+              "grad_norm": 5.288159370422363,
+              "peak_allocated_gib": 5.287317752838135,
+              "peak_reserved_gib": 6.849609375,
+              "free_gib": 16.3665771484375
+            },
+            {
+              "step": 5,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.5590203013271093,
+              "grad_norm": 5.070196628570557,
+              "peak_allocated_gib": 5.102510929107666,
+              "peak_reserved_gib": 6.849609375,
+              "free_gib": 16.3665771484375
+            },
+            {
+              "step": 6,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.685510056093335,
+              "grad_norm": 4.834776878356934,
+              "peak_allocated_gib": 4.973718643188477,
+              "peak_reserved_gib": 6.849609375,
+              "free_gib": 16.3665771484375
+            },
+            {
+              "step": 7,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.5269357673823833,
+              "grad_norm": 4.7692389488220215,
+              "peak_allocated_gib": 5.1188530921936035,
+              "peak_reserved_gib": 6.849609375,
+              "free_gib": 16.3665771484375
+            },
+            {
+              "step": 8,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.902390679344535,
+              "grad_norm": 6.346436023712158,
+              "peak_allocated_gib": 5.0936455726623535,
+              "peak_reserved_gib": 6.849609375,
+              "free_gib": 16.3665771484375
+            },
+            {
+              "step": 9,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.5182531643658876,
+              "grad_norm": 4.1151556968688965,
+              "peak_allocated_gib": 5.08770227432251,
+              "peak_reserved_gib": 6.849609375,
+              "free_gib": 16.3665771484375
+            },
+            {
+              "step": 10,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.530852535739541,
+              "grad_norm": 3.811161994934082,
+              "peak_allocated_gib": 5.12011194229126,
+              "peak_reserved_gib": 6.849609375,
+              "free_gib": 16.3665771484375
+            },
+            {
+              "step": 11,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.6176755893975496,
+              "grad_norm": 3.522350788116455,
+              "peak_allocated_gib": 5.039515018463135,
+              "peak_reserved_gib": 6.849609375,
+              "free_gib": 16.3665771484375
+            }
+          ],
+          "ce_per_second": 6012.075376633591
+        }
+      ]
+    },
+    {
+      "id": "comparison/optimized-mb32",
+      "physical_device": "B",
+      "source": {
+        "commit": "5871666e951eb97752e1a0c0b773949258525a62",
+        "dirty": false,
+        "implementation_sha256": "d21c18632a8eba862d78cbb2742c9c6a153197191fec0c505b03c3172bd39c3e"
+      },
+      "runner_sha256": "0e5d57153f5583e852f2660de9c46279e835aea208b37bb24268ba127a74a02e",
+      "report_sha256": "339175ac5e7c6ed571069d9c701418ef81cd3c8b104c5c98b32b89da45d7ed86",
+      "controls": {
+        "config": "${WORKSPACE}/outputs/source-mf1-batched-attention/configs/minifrontier1/model_228m_native.json",
+        "output": "${WORKSPACE}/outputs/mf1-performance-v2/batched-attention-audit/comparison/optimized-mb32",
+        "length": 512,
+        "input_tokens": 16384,
+        "batches": [
+          32
+        ],
+        "warmup": 3,
+        "updates": 8,
+        "media_features": 0,
+        "profile": false
+      },
+      "scope": "synthetic equal-input-budget screen; only a >=20 warmup / >=100 unprofiled-update run meets the measurement duration requirement",
+      "cases": [
+        {
+          "length": 512,
+          "microbatch": 32,
+          "accumulation": 1,
+          "media_features": 0,
+          "rows": [
+            {
+              "step": 1,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 4.94205779209733,
+              "grad_norm": 0.8316985964775085,
+              "peak_allocated_gib": 7.532898426055908,
+              "peak_reserved_gib": 10.1328125,
+              "free_gib": 13.0833740234375
+            },
+            {
+              "step": 2,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.912246210500598,
+              "grad_norm": 1.5649521350860596,
+              "peak_allocated_gib": 9.44774055480957,
+              "peak_reserved_gib": 13.537109375,
+              "free_gib": 9.6790771484375
+            },
+            {
+              "step": 3,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9681108016520739,
+              "grad_norm": 4.588553428649902,
+              "peak_allocated_gib": 9.469606399536133,
+              "peak_reserved_gib": 15.20703125,
+              "free_gib": 8.0091552734375
+            },
+            {
+              "step": 4,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.3530324026942253,
+              "grad_norm": 5.2842020988464355,
+              "peak_allocated_gib": 9.041203022003174,
+              "peak_reserved_gib": 17.8984375,
+              "free_gib": 5.3177490234375
+            },
+            {
+              "step": 5,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9793262034654617,
+              "grad_norm": 6.217042446136475,
+              "peak_allocated_gib": 10.300844192504883,
+              "peak_reserved_gib": 20.1484375,
+              "free_gib": 3.0677490234375
+            },
+            {
+              "step": 6,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.034920683130622,
+              "grad_norm": 5.097959041595459,
+              "peak_allocated_gib": 9.169106483459473,
+              "peak_reserved_gib": 20.1484375,
+              "free_gib": 3.0677490234375
+            },
+            {
+              "step": 7,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.1494753547012806,
+              "grad_norm": 5.691535472869873,
+              "peak_allocated_gib": 9.557527542114258,
+              "peak_reserved_gib": 20.1484375,
+              "free_gib": 3.0677490234375
+            },
+            {
+              "step": 8,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.962055316194892,
+              "grad_norm": 5.151744842529297,
+              "peak_allocated_gib": 9.662477493286133,
+              "peak_reserved_gib": 20.1484375,
+              "free_gib": 3.0677490234375
+            },
+            {
+              "step": 9,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.923479076474905,
+              "grad_norm": 4.333613395690918,
+              "peak_allocated_gib": 9.499147415161133,
+              "peak_reserved_gib": 20.1484375,
+              "free_gib": 3.0677490234375
+            },
+            {
+              "step": 10,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.939473632723093,
+              "grad_norm": 3.8030989170074463,
+              "peak_allocated_gib": 9.559074878692627,
+              "peak_reserved_gib": 20.1484375,
+              "free_gib": 3.0677490234375
+            },
+            {
+              "step": 11,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0958578437566757,
+              "grad_norm": 2.916764736175537,
+              "peak_allocated_gib": 9.142946243286133,
+              "peak_reserved_gib": 20.1484375,
+              "free_gib": 3.0677490234375
+            }
+          ],
+          "ce_per_second": 7958.329485427551
+        }
+      ]
+    },
+    {
+      "id": "steady/text-512-mb32",
+      "physical_device": "B",
+      "source": {
+        "commit": "5871666e951eb97752e1a0c0b773949258525a62",
+        "dirty": false,
+        "implementation_sha256": "d21c18632a8eba862d78cbb2742c9c6a153197191fec0c505b03c3172bd39c3e"
+      },
+      "runner_sha256": "0e5d57153f5583e852f2660de9c46279e835aea208b37bb24268ba127a74a02e",
+      "report_sha256": "8ef8dc3797bf78bff8684fb0cfff14b892f629b58d854d62acbbcb13409e8134",
+      "controls": {
+        "config": "${WORKSPACE}/outputs/source-mf1-batched-attention/configs/minifrontier1/model_228m_native.json",
+        "output": "${WORKSPACE}/outputs/mf1-performance-v2/batched-attention-audit/steady/text-512-mb32",
+        "length": 512,
+        "input_tokens": 16384,
+        "batches": [
+          32
+        ],
+        "warmup": 20,
+        "updates": 100,
+        "media_features": 0,
+        "profile": false
+      },
+      "scope": "synthetic equal-input-budget screen; only a >=20 warmup / >=100 unprofiled-update run meets the measurement duration requirement",
+      "cases": [
+        {
+          "length": 512,
+          "microbatch": 32,
+          "accumulation": 1,
+          "media_features": 0,
+          "rows": [
+            {
+              "step": 1,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 4.9556835275143385,
+              "grad_norm": 0.8316978812217712,
+              "peak_allocated_gib": 7.532898426055908,
+              "peak_reserved_gib": 10.1328125,
+              "free_gib": 13.0833740234375
+            },
+            {
+              "step": 2,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8934391755610704,
+              "grad_norm": 1.562869906425476,
+              "peak_allocated_gib": 9.429933547973633,
+              "peak_reserved_gib": 13.529296875,
+              "free_gib": 9.6868896484375
+            },
+            {
+              "step": 3,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9771044831722975,
+              "grad_norm": 4.595477104187012,
+              "peak_allocated_gib": 9.445680618286133,
+              "peak_reserved_gib": 15.251953125,
+              "free_gib": 7.9642333984375
+            },
+            {
+              "step": 4,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.3141630236059427,
+              "grad_norm": 5.260047912597656,
+              "peak_allocated_gib": 9.13070011138916,
+              "peak_reserved_gib": 18.099609375,
+              "free_gib": 5.1165771484375
+            },
+            {
+              "step": 5,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.974037965759635,
+              "grad_norm": 6.258835315704346,
+              "peak_allocated_gib": 9.037235260009766,
+              "peak_reserved_gib": 18.099609375,
+              "free_gib": 5.1165771484375
+            },
+            {
+              "step": 6,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.038685480132699,
+              "grad_norm": 5.1371283531188965,
+              "peak_allocated_gib": 9.200912475585938,
+              "peak_reserved_gib": 19.998046875,
+              "free_gib": 3.2181396484375
+            },
+            {
+              "step": 7,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.2056139390915632,
+              "grad_norm": 5.991369247436523,
+              "peak_allocated_gib": 9.634157180786133,
+              "peak_reserved_gib": 19.998046875,
+              "free_gib": 3.2181396484375
+            },
+            {
+              "step": 8,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.510572573170066,
+              "grad_norm": 5.093523979187012,
+              "peak_allocated_gib": 9.667085647583008,
+              "peak_reserved_gib": 20.912109375,
+              "free_gib": 10.0618896484375
+            },
+            {
+              "step": 9,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9210352431982756,
+              "grad_norm": 4.785894870758057,
+              "peak_allocated_gib": 9.534077167510986,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 10,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9289449751377106,
+              "grad_norm": 3.778590440750122,
+              "peak_allocated_gib": 9.492006301879883,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 11,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0543860346078873,
+              "grad_norm": 2.98335862159729,
+              "peak_allocated_gib": 9.121706008911133,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 12,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8970867916941643,
+              "grad_norm": 3.191462755203247,
+              "peak_allocated_gib": 9.439577102661133,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 13,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9842796102166176,
+              "grad_norm": 8.252630233764648,
+              "peak_allocated_gib": 10.073122024536133,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 14,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0944320783019066,
+              "grad_norm": 2.473818778991699,
+              "peak_allocated_gib": 9.598237991333008,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 15,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8709431551396847,
+              "grad_norm": 2.409693956375122,
+              "peak_allocated_gib": 9.260133743286133,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 16,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8852768205106258,
+              "grad_norm": 1.933371901512146,
+              "peak_allocated_gib": 9.561891555786133,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 17,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.044559670612216,
+              "grad_norm": 2.6778109073638916,
+              "peak_allocated_gib": 9.201173782348633,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 18,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8737056627869606,
+              "grad_norm": 2.378657817840576,
+              "peak_allocated_gib": 9.872194290161133,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 19,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8648172207176685,
+              "grad_norm": 1.3230067491531372,
+              "peak_allocated_gib": 9.746461868286133,
+              "peak_reserved_gib": 15.31640625,
+              "free_gib": 7.8997802734375
+            },
+            {
+              "step": 20,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8941991403698921,
+              "grad_norm": 1.4078611135482788,
+              "peak_allocated_gib": 8.779720306396484,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 21,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.046341083943844,
+              "grad_norm": 1.8570176362991333,
+              "peak_allocated_gib": 8.69442892074585,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 22,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.910401351749897,
+              "grad_norm": 1.721816062927246,
+              "peak_allocated_gib": 8.855446815490723,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 23,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8895325921475887,
+              "grad_norm": 1.1625792980194092,
+              "peak_allocated_gib": 8.691973686218262,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 24,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8916597627103329,
+              "grad_norm": 1.2079917192459106,
+              "peak_allocated_gib": 8.689950466156006,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 25,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0797824412584305,
+              "grad_norm": 0.9701701998710632,
+              "peak_allocated_gib": 8.775438785552979,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 26,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9022409841418266,
+              "grad_norm": 0.8041948676109314,
+              "peak_allocated_gib": 8.83687973022461,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 27,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9037938490509987,
+              "grad_norm": 0.7872405052185059,
+              "peak_allocated_gib": 9.017800331115723,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 28,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0594245735555887,
+              "grad_norm": 0.8300905227661133,
+              "peak_allocated_gib": 10.208894729614258,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 29,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.9055133778601885,
+              "grad_norm": 1.138916254043579,
+              "peak_allocated_gib": 9.034297466278076,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 30,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8693619798868895,
+              "grad_norm": 1.3270479440689087,
+              "peak_allocated_gib": 9.895875930786133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 31,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8808235693722963,
+              "grad_norm": 0.859969437122345,
+              "peak_allocated_gib": 9.786165237426758,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 32,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0391290094703436,
+              "grad_norm": 0.9413667917251587,
+              "peak_allocated_gib": 9.520784378051758,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 33,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8645243160426617,
+              "grad_norm": 0.9552749991416931,
+              "peak_allocated_gib": 9.38847541809082,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 34,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8753389418125153,
+              "grad_norm": 0.9855796694755554,
+              "peak_allocated_gib": 9.476930618286133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 35,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0464315731078386,
+              "grad_norm": 0.8835557699203491,
+              "peak_allocated_gib": 9.427034378051758,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 36,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8693219311535358,
+              "grad_norm": 0.8804484605789185,
+              "peak_allocated_gib": 9.599946975708008,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 37,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8738340120762587,
+              "grad_norm": 0.9493012428283691,
+              "peak_allocated_gib": 9.573396682739258,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 38,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0426707472652197,
+              "grad_norm": 0.9754086136817932,
+              "peak_allocated_gib": 9.336030960083008,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 39,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8782659079879522,
+              "grad_norm": 1.078779935836792,
+              "peak_allocated_gib": 9.39463996887207,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 40,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8684739582240582,
+              "grad_norm": 1.165651559829712,
+              "peak_allocated_gib": 9.306520462036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 41,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.053947461768985,
+              "grad_norm": 1.2765823602676392,
+              "peak_allocated_gib": 9.367311477661133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 42,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.872924093157053,
+              "grad_norm": 1.2050989866256714,
+              "peak_allocated_gib": 9.401506423950195,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 43,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8965093158185482,
+              "grad_norm": 1.1502020359039307,
+              "peak_allocated_gib": 9.387880325317383,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 44,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8802557550370693,
+              "grad_norm": 1.1172062158584595,
+              "peak_allocated_gib": 9.551362991333008,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 45,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0374779384583235,
+              "grad_norm": 1.1213936805725098,
+              "peak_allocated_gib": 9.475587844848633,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 46,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8756816647946835,
+              "grad_norm": 1.1431876420974731,
+              "peak_allocated_gib": 9.467897415161133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 47,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8680489528924227,
+              "grad_norm": 1.21416175365448,
+              "peak_allocated_gib": 9.207887649536133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 48,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8748953640460968,
+              "grad_norm": 1.4072697162628174,
+              "peak_allocated_gib": 9.380769729614258,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 49,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.05026613175869,
+              "grad_norm": 1.4015321731567383,
+              "peak_allocated_gib": 9.149049758911133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 50,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.876033067703247,
+              "grad_norm": 1.1456913948059082,
+              "peak_allocated_gib": 9.263063430786133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 51,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8702060040086508,
+              "grad_norm": 1.037102222442627,
+              "peak_allocated_gib": 9.234254837036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 52,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0678750686347485,
+              "grad_norm": 0.9590845704078674,
+              "peak_allocated_gib": 9.201570510864258,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 53,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8708995003253222,
+              "grad_norm": 0.8732442855834961,
+              "peak_allocated_gib": 9.263551712036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 54,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8695898409932852,
+              "grad_norm": 0.8070204854011536,
+              "peak_allocated_gib": 9.309358596801758,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 55,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.034827319905162,
+              "grad_norm": 0.6839674711227417,
+              "peak_allocated_gib": 9.13072395324707,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 56,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8667628467082977,
+              "grad_norm": 0.6408770680427551,
+              "peak_allocated_gib": 9.163942337036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 57,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.874329574406147,
+              "grad_norm": 0.5348077416419983,
+              "peak_allocated_gib": 9.042055130004883,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 58,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8669908717274666,
+              "grad_norm": 0.4882611632347107,
+              "peak_allocated_gib": 9.032594680786133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 59,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0290903113782406,
+              "grad_norm": 0.4182482957839966,
+              "peak_allocated_gib": 8.980104446411133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 60,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8723674155771732,
+              "grad_norm": 0.3796289265155792,
+              "peak_allocated_gib": 9.051149368286133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 61,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.861687559634447,
+              "grad_norm": 0.31777307391166687,
+              "peak_allocated_gib": 9.007936477661133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 62,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.026258561760187,
+              "grad_norm": 0.2960338294506073,
+              "peak_allocated_gib": 9.043733596801758,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 63,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8645801972597837,
+              "grad_norm": 0.25795915722846985,
+              "peak_allocated_gib": 9.001100540161133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 64,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8641122244298458,
+              "grad_norm": 0.247347891330719,
+              "peak_allocated_gib": 9.010866165161133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 65,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.871378319337964,
+              "grad_norm": 0.21543893218040466,
+              "peak_allocated_gib": 8.945924758911133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 66,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0447369068861008,
+              "grad_norm": 0.20236055552959442,
+              "peak_allocated_gib": 8.942995071411133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 67,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8676909152418375,
+              "grad_norm": 0.18586327135562897,
+              "peak_allocated_gib": 8.962648391723633,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 68,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8629302680492401,
+              "grad_norm": 0.169458270072937,
+              "peak_allocated_gib": 8.963045120239258,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 69,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0382880121469498,
+              "grad_norm": 0.16991659998893738,
+              "peak_allocated_gib": 8.925569534301758,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 70,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8704564850777388,
+              "grad_norm": 0.17841750383377075,
+              "peak_allocated_gib": 8.974733352661133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 71,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.870202636346221,
+              "grad_norm": 0.1821499913930893,
+              "peak_allocated_gib": 8.940431594848633,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 72,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.039484715089202,
+              "grad_norm": 0.18570305407047272,
+              "peak_allocated_gib": 9.027223587036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 73,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8644634876400232,
+              "grad_norm": 0.191898912191391,
+              "peak_allocated_gib": 8.943727493286133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 74,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8642972633242607,
+              "grad_norm": 0.19096100330352783,
+              "peak_allocated_gib": 9.031862258911133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 75,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8657842092216015,
+              "grad_norm": 0.19851551949977875,
+              "peak_allocated_gib": 9.029420852661133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 76,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0275747273117304,
+              "grad_norm": 0.23158513009548187,
+              "peak_allocated_gib": 9.007204055786133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 77,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8612527158111334,
+              "grad_norm": 0.21175327897071838,
+              "peak_allocated_gib": 8.975221633911133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 78,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8667253255844116,
+              "grad_norm": 0.16717903316020966,
+              "peak_allocated_gib": 8.961061477661133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 79,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0255149006843567,
+              "grad_norm": 0.2000739425420761,
+              "peak_allocated_gib": 9.004518508911133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 80,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8626082297414541,
+              "grad_norm": 0.1787542849779129,
+              "peak_allocated_gib": 9.037477493286133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 81,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.859024804085493,
+              "grad_norm": 0.13997846841812134,
+              "peak_allocated_gib": 8.950960159301758,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 82,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8594981599599123,
+              "grad_norm": 0.14089816808700562,
+              "peak_allocated_gib": 8.991823196411133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 83,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0539421923458576,
+              "grad_norm": 0.1369991898536682,
+              "peak_allocated_gib": 8.962846755981445,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 84,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8567125629633665,
+              "grad_norm": 0.13470426201820374,
+              "peak_allocated_gib": 8.988405227661133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 85,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8573065046221018,
+              "grad_norm": 0.1069522500038147,
+              "peak_allocated_gib": 8.930543899536133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 86,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0363280456513166,
+              "grad_norm": 0.11842101812362671,
+              "peak_allocated_gib": 8.978395462036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 87,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8571090996265411,
+              "grad_norm": 0.0965665802359581,
+              "peak_allocated_gib": 8.925661087036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 88,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8549741227179766,
+              "grad_norm": 0.09891600906848907,
+              "peak_allocated_gib": 8.932741165161133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 89,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0219450928270817,
+              "grad_norm": 0.0861964002251625,
+              "peak_allocated_gib": 8.934938430786133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 90,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8590152617543936,
+              "grad_norm": 0.08204139024019241,
+              "peak_allocated_gib": 8.933229446411133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 91,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8550906237214804,
+              "grad_norm": 0.07511574774980545,
+              "peak_allocated_gib": 8.943971633911133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 92,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8543553203344345,
+              "grad_norm": 0.068787582218647,
+              "peak_allocated_gib": 8.950502395629883,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 93,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.01254390925169,
+              "grad_norm": 0.0635177493095398,
+              "peak_allocated_gib": 8.935914993286133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 94,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8525167312473059,
+              "grad_norm": 0.05921103060245514,
+              "peak_allocated_gib": 8.903688430786133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 95,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8519176617264748,
+              "grad_norm": 0.05249100923538208,
+              "peak_allocated_gib": 8.936403274536133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 96,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0149279963225126,
+              "grad_norm": 0.05104251950979233,
+              "peak_allocated_gib": 8.901735305786133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 97,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8524139951914549,
+              "grad_norm": 0.04489139840006828,
+              "peak_allocated_gib": 8.909791946411133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 98,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8533794544637203,
+              "grad_norm": 0.04221421852707863,
+              "peak_allocated_gib": 8.909059524536133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 99,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8558694552630186,
+              "grad_norm": 0.039009496569633484,
+              "peak_allocated_gib": 8.890291213989258,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 100,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0107517149299383,
+              "grad_norm": 0.03519362211227417,
+              "peak_allocated_gib": 8.901735305786133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 101,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8556217886507511,
+              "grad_norm": 0.033552370965480804,
+              "peak_allocated_gib": 8.910768508911133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 102,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8518041428178549,
+              "grad_norm": 0.030864832922816277,
+              "peak_allocated_gib": 8.902956008911133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 103,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.032237559556961,
+              "grad_norm": 0.02814287692308426,
+              "peak_allocated_gib": 8.920167922973633,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 104,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8480925504118204,
+              "grad_norm": 0.026376809924840927,
+              "peak_allocated_gib": 8.899751663208008,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 105,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8500527050346136,
+              "grad_norm": 0.024497270584106445,
+              "peak_allocated_gib": 8.882692337036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 106,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.021556479856372,
+              "grad_norm": 0.022769249975681305,
+              "peak_allocated_gib": 8.878053665161133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 107,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8473595641553402,
+              "grad_norm": 0.02130213938653469,
+              "peak_allocated_gib": 8.884401321411133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 108,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8493654876947403,
+              "grad_norm": 0.019834693521261215,
+              "peak_allocated_gib": 8.889375686645508,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 109,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.85047010704875,
+              "grad_norm": 0.018595201894640923,
+              "peak_allocated_gib": 8.880983352661133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 110,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.021011723205447,
+              "grad_norm": 0.017376890406012535,
+              "peak_allocated_gib": 8.882692337036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 111,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.846649907529354,
+              "grad_norm": 0.01615302823483944,
+              "peak_allocated_gib": 8.876588821411133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 112,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.864713916555047,
+              "grad_norm": 0.015233253128826618,
+              "peak_allocated_gib": 8.865999221801758,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 113,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0086544808000326,
+              "grad_norm": 0.01445287186652422,
+              "peak_allocated_gib": 8.852724075317383,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 114,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.841839723289013,
+              "grad_norm": 0.013444514945149422,
+              "peak_allocated_gib": 8.862306594848633,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 115,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8454284723848104,
+              "grad_norm": 0.012681790627539158,
+              "peak_allocated_gib": 8.851991653442383,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 116,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8421746343374252,
+              "grad_norm": 0.012066320516169071,
+              "peak_allocated_gib": 8.855104446411133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 117,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0044370368123055,
+              "grad_norm": 0.011311079375445843,
+              "peak_allocated_gib": 8.862123489379883,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 118,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8460351806133986,
+              "grad_norm": 0.010628481395542622,
+              "peak_allocated_gib": 8.852510452270508,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 119,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 1.8454547673463821,
+              "grad_norm": 0.010189293883740902,
+              "peak_allocated_gib": 8.872926712036133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            },
+            {
+              "step": 120,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 16384,
+              "ce_tokens": 16352,
+              "seconds": 2.0017724689096212,
+              "grad_norm": 0.00968784000724554,
+              "peak_allocated_gib": 8.874147415161133,
+              "peak_reserved_gib": 15.318359375,
+              "free_gib": 7.8978271484375
+            }
+          ],
+          "ce_per_second": 8533.100550416557
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "baseline-profile",
+      "physical_device": "A",
+      "source": {
+        "commit": "8e2ec1b1e579d498154a37a640324e904717861a",
+        "dirty": false,
+        "implementation_sha256": "87069598a4534aaf1a83292c4ba5a43a06f0c2bfed3c4eac7ae8ae9aa463c944"
+      },
+      "runner_sha256": "53557503733b70acf9617e4e9091f691552ec5477403f1a740cae2f2fcdf48cc",
+      "scope": "bounded annotated profile of existing 8x512 path; not steady throughput qualification",
+      "scopes": [
+        {
+          "name": "MF1/QSAMLA.forward",
+          "calls": 5,
+          "cpu_total_ms": 832.604835,
+          "self_cpu_ms": 185.71025300003134,
+          "cuda_total_ms": 42.951581999998304
+        },
+        {
+          "name": "MF1/CSA.forward",
+          "calls": 4,
+          "cpu_total_ms": 754.014287,
+          "self_cpu_ms": 149.80796000001794,
+          "cuda_total_ms": 53.89353299997713
+        },
+        {
+          "name": "MF1/LatentMoE.forward",
+          "calls": 33,
+          "cpu_total_ms": 269.94031200000006,
+          "self_cpu_ms": 43.75111900001233,
+          "cuda_total_ms": 103.13602599998741
+        },
+        {
+          "name": "MF1/KDA.forward",
+          "calls": 24,
+          "cpu_total_ms": 142.01121499999928,
+          "self_cpu_ms": 28.943164999995975,
+          "cuda_total_ms": 31.368643000002624
+        },
+        {
+          "name": "MF1/Compressor.forward",
+          "calls": 64,
+          "cpu_total_ms": 109.64886800000089,
+          "self_cpu_ms": 33.59794799999103,
+          "cuda_total_ms": 5.430863999992333
+        },
+        {
+          "name": "MF1/GatedResidual.read",
+          "calls": 69,
+          "cpu_total_ms": 76.93131499999794,
+          "self_cpu_ms": 13.928503999999098,
+          "cuda_total_ms": 53.33470600000119
+        },
+        {
+          "name": "MF1/QuantileBalance.update",
+          "calls": 1,
+          "cpu_total_ms": 35.362362999999895,
+          "self_cpu_ms": 7.2749349999967965,
+          "cuda_total_ms": 2.5041499999989756
+        },
+        {
+          "name": "MF1/NgramLookup.forward",
+          "calls": 1,
+          "cpu_total_ms": 35.329703,
+          "self_cpu_ms": 33.48185200000001,
+          "cuda_total_ms": 0.49788299999999436
+        },
+        {
+          "name": "MF1/GatedResidual.inject",
+          "calls": 66,
+          "cpu_total_ms": 8.019167000000596,
+          "self_cpu_ms": 2.642682000004632,
+          "cuda_total_ms": 7.00392399999762
+        }
+      ],
+      "cpu_operators": "-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \n                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  \n-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \n                                       cudaLaunchKernel        14.15%     487.504ms        14.22%     490.020ms       7.788us       0.000us         0.00%      29.250us       0.000us         62918  \n                                     MF1/QSAMLA.forward         5.39%     185.710ms        24.16%     832.605ms     166.521ms       0.000us         0.00%      42.952ms       8.590ms             5  \n                                              aten::bmm         5.15%     177.597ms         6.51%     224.452ms      65.552us      32.710ms         4.71%      41.875ms      12.230us          3424  \n                                        MF1/CSA.forward         4.35%     149.808ms        21.88%     754.014ms     188.504ms       0.000us         0.00%      53.894ms      13.473ms             4  \n                                            aten::copy_         4.00%     137.685ms        10.21%     351.769ms      16.886us     112.126ms        16.14%     112.127ms       5.382us         20832  \n                                              aten::mul         3.92%     134.942ms         5.83%     200.866ms      24.768us     112.479ms        16.19%     112.479ms      13.869us          8110  \n                                    aten::empty_strided         3.45%     119.039ms         3.47%     119.518ms       6.201us       0.000us         0.00%       0.000us       0.000us         19274  \n                                               aten::mm         2.80%      96.599ms         3.88%     133.796ms      48.284us      85.545ms        12.31%      85.553ms      30.874us          2771  \n                                         aten::_to_copy         2.17%      74.867ms        12.25%     422.238ms      28.441us       0.000us         0.00%      88.297ms       5.948us         14846  \n                                        cudaMemcpyAsync         1.78%      61.229ms         1.78%      61.229ms      11.566us       0.000us         0.00%       0.000us       0.000us          5294  \n                                            aten::empty         1.60%      55.133ms         1.60%      55.133ms       5.581us       0.000us         0.00%       0.000us       0.000us          9879  \n                                           MulBackward0         1.50%      51.671ms        31.46%        1.084s     578.463us       0.000us         0.00%     193.120ms     103.053us          1874  \n                                  MF1/LatentMoE.forward         1.27%      43.751ms         7.83%     269.940ms       8.180ms       0.000us         0.00%     103.136ms       3.125ms            33  \n                                           aten::einsum         1.27%      43.706ms        11.92%     410.706ms     173.440us       0.000us         0.00%      12.875ms       5.437us          2368  \n                                         cuLaunchKernel         1.18%      40.586ms         1.18%      40.586ms       8.942us       0.000us         0.00%       0.000us       0.000us          4539  \n                                       aten::as_strided         1.13%      39.021ms         1.13%      39.021ms       0.706us       0.000us         0.00%       0.000us       0.000us         55299  \nautograd::engine::evaluate_function: ToCopyBackward0...         1.10%      37.806ms         5.16%     177.825ms      41.278us       0.000us         0.00%      35.132ms       8.155us          4308  \n                                          aten::permute         1.05%      36.073ms         1.28%      44.012ms       3.809us       0.000us         0.00%       0.000us       0.000us         11554  \n                                      aten::bitwise_and         1.04%      35.732ms         1.64%      56.485ms      17.242us       5.842ms         0.84%       5.842ms       1.783us          3276  \n                                        aten::unsqueeze         1.03%      35.521ms         1.27%      43.748ms       3.169us       0.000us         0.00%       0.000us       0.000us         13803  \n                                            aten::index         0.99%      33.947ms         1.57%      54.170ms      44.005us      10.289ms         1.48%      10.534ms       8.558us          1231  \n                                 MF1/Compressor.forward         0.98%      33.598ms         3.18%     109.649ms       1.713ms       0.000us         0.00%       5.431ms      84.857us            64  \n                                MF1/NgramLookup.forward         0.97%      33.482ms         1.03%      35.330ms      35.330ms       0.000us         0.00%     497.883us     497.883us             1  \n                                       ChunkKDAFunction         0.91%      31.485ms         1.32%      45.410ms       1.892ms       5.764ms         0.83%       8.004ms     333.482us            24  \n                                             aten::view         0.90%      31.037ms         0.90%      31.037ms       2.512us       0.000us         0.00%       0.000us       0.000us         12355  \n                                            aten::slice         0.89%      30.603ms         1.06%      36.438ms       4.551us       0.000us         0.00%       0.000us       0.000us          8006  \n                                        MF1/KDA.forward         0.84%      28.943ms         4.12%     142.011ms       5.917ms       0.000us         0.00%      31.369ms       1.307ms            24  \n                                      aten::masked_fill         0.81%      27.920ms         4.02%     138.568ms      64.994us       0.000us         0.00%       9.556ms       4.482us          2132  \n                                               aten::ge         0.76%      26.359ms         1.22%      41.892ms      22.571us       3.715ms         0.53%       3.715ms       2.002us          1856  \n                                  cudaStreamSynchronize         0.76%      26.021ms         0.76%      26.021ms      10.039us       0.000us         0.00%       0.000us       0.000us          2592  \n                                              aten::add         0.75%      25.813ms         1.15%      39.493ms      21.941us      12.738ms         1.83%      12.738ms       7.077us          1800  \n                                Activity Buffer Request         0.74%      25.510ms         0.83%      28.679ms       2.607ms     244.511us         0.04%     481.376us      43.761us            11  \n                              Optimizer.step#AdamW.step         0.73%      25.123ms         1.65%      56.822ms      56.822ms       0.000us         0.00%      19.798ms      19.798ms             1  \nautograd::engine::evaluate_function: PermuteBackward...         0.66%      22.798ms         1.32%      45.328ms      10.896us       0.000us         0.00%       0.000us       0.000us          4160  \n                                               aten::to         0.66%      22.719ms        12.91%     444.956ms      22.127us       0.000us         0.00%      88.297ms       4.391us         20109  \n                                              aten::div         0.65%      22.385ms         1.02%      35.016ms      28.844us      16.324ms         2.35%      16.324ms      13.446us          1214  \n                                           BmmBackward0         0.64%      21.947ms         3.40%     117.033ms     132.992us       0.000us         0.00%      18.170ms      20.648us           880  \n                                             aten::add_         0.63%      21.812ms         1.15%      39.771ms       8.514us      41.608ms         5.99%      41.608ms       8.908us          4671  \n                               ChunkKDAFunctionBackward         0.63%      21.732ms         0.83%      28.707ms       2.392ms       7.422ms         1.07%       8.019ms     668.268us            12  \n      autograd::engine::evaluate_function: MulBackward0         0.60%      20.652ms        32.50%        1.120s     597.640us       0.000us         0.00%     204.295ms     109.016us          1874  \n                                              aten::cat         0.59%      20.437ms         0.92%      31.755ms      23.027us       8.338ms         1.20%       8.338ms       6.047us          1379  \n                                              aten::pow         0.58%      20.003ms         1.13%      38.970ms      34.154us       7.673ms         1.10%      12.359ms      10.832us          1141  \n                                          aten::reshape         0.56%      19.407ms         1.21%      41.775ms       4.278us       0.000us         0.00%     871.322us       0.089us          9765  \n                                              aten::sum         0.55%      18.797ms         1.02%      35.185ms      33.864us      12.075ms         1.74%      12.954ms      12.468us          1039  \n                                     aten::masked_fill_         0.54%      18.697ms         1.17%      40.257ms      18.882us       5.617ms         0.81%       5.620ms       2.636us          2132  \n     autograd::engine::evaluate_function: ViewBackward0         0.51%      17.403ms         1.03%      35.640ms      11.475us       0.000us         0.00%       8.769ms       2.823us          3106  \n                                       NllLossBackward0         0.50%      17.219ms         1.21%      41.731ms     652.039us       0.000us         0.00%      21.646ms     338.221us            64  \n                                 aten::_index_put_impl_         0.49%      16.925ms         2.08%      71.628ms     179.970us      70.878ms        10.20%      74.048ms     186.050us           398  \n                                      aten::bitwise_not         0.49%      16.826ms         0.77%      26.474ms      17.768us       1.975ms         0.28%       1.975ms       1.325us          1490  \n                                            MmBackward0         0.49%      16.775ms         2.27%      78.380ms     110.395us       0.000us         0.00%      42.773ms      60.244us           710  \n-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \nSelf CPU time total: 3.446s\nSelf CUDA time total: 694.845ms\n",
+      "cases": [
+        {
+          "length": 512,
+          "microbatch": 8,
+          "accumulation": 1,
+          "media_features": 0,
+          "rows": [
+            {
+              "step": 1,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 4096,
+              "ce_tokens": 4088,
+              "seconds": 5.310230165719986,
+              "grad_norm": 1.6702616214752197,
+              "peak_allocated_gib": 3.7898073196411133,
+              "peak_reserved_gib": 5.287109375,
+              "free_gib": 17.9310302734375
+            },
+            {
+              "step": 2,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 4096,
+              "ce_tokens": 4088,
+              "seconds": 2.048088528215885,
+              "grad_norm": 2.9782025814056396,
+              "peak_allocated_gib": 4.424847602844238,
+              "peak_reserved_gib": 6.181640625,
+              "free_gib": 17.0364990234375
+            },
+            {
+              "step": 3,
+              "warmup": false,
+              "profiled": true,
+              "input_tokens": 4096,
+              "ce_tokens": 4088,
+              "seconds": 7.468890922144055,
+              "grad_norm": 5.068914413452148,
+              "peak_allocated_gib": 4.368809700012207,
+              "peak_reserved_gib": 6.341796875,
+              "free_gib": 16.8646240234375,
+              "operators": "-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \n                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  \n-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \n                                     MF1/QSAMLA.forward         0.00%       0.000us         0.00%       0.000us       0.000us     831.597ms       119.68%     831.597ms     166.319ms             5  \n                                        MF1/CSA.forward         0.00%       0.000us         0.00%       0.000us       0.000us     753.466ms       108.44%     753.466ms     188.366ms             4  \n                                  MF1/LatentMoE.forward         0.00%       0.000us         0.00%       0.000us       0.000us     265.790ms        38.25%     265.790ms       8.054ms            33  \n                                        MF1/KDA.forward         0.00%       0.000us         0.00%       0.000us       0.000us     133.039ms        19.15%     133.039ms       5.543ms            24  \n                                              aten::mul         3.92%     134.942ms         5.83%     200.866ms      24.768us     112.479ms        16.19%     112.479ms      13.869us          8110  \n                                            aten::copy_         4.00%     137.685ms        10.21%     351.769ms      16.886us     112.126ms        16.14%     112.127ms       5.382us         20832  \n                                 MF1/Compressor.forward         0.00%       0.000us         0.00%       0.000us       0.000us     101.131ms        14.55%     101.131ms       1.580ms            64  \n                                               aten::mm         2.80%      96.599ms         3.88%     133.796ms      48.284us      85.545ms        12.31%      85.553ms      30.874us          2771  \n                                 aten::_index_put_impl_         0.49%      16.925ms         2.08%      71.628ms     179.970us      70.878ms        10.20%      74.048ms     186.050us           398  \n                                 MF1/GatedResidual.read         0.00%       0.000us         0.00%       0.000us       0.000us      66.220ms         9.53%      66.220ms     959.705us            69  \nvoid (anonymous namespace)::indexing_backward_kernel...         0.00%       0.000us         0.00%       0.000us       0.000us      62.728ms         9.03%      62.728ms     278.791us           225  \n                              Optimizer.step#AdamW.step         0.00%       0.000us         0.00%       0.000us       0.000us      55.912ms         8.05%      55.912ms      55.912ms             1  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      45.263ms         6.51%      45.263ms      30.296us          1494  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      44.958ms         6.47%      44.958ms       7.026us          6399  \n                                             aten::add_         0.63%      21.812ms         1.15%      39.771ms       8.514us      41.608ms         5.99%      41.608ms       8.908us          4671  \nvoid at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us      37.383ms         5.38%      37.383ms       7.047us          5305  \n                                MF1/NgramLookup.forward         0.00%       0.000us         0.00%       0.000us       0.000us      34.765ms         5.00%      34.765ms      34.765ms             1  \n                             MF1/QuantileBalance.update         0.00%       0.000us         0.00%       0.000us       0.000us      34.635ms         4.98%      34.635ms      34.635ms             1  \n                                              aten::bmm         5.15%     177.597ms         6.51%     224.452ms      65.552us      32.710ms         4.71%      41.875ms      12.230us          3424  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      30.646ms         4.41%      30.646ms      19.532us          1569  \nvoid at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us      28.137ms         4.05%      28.137ms       9.228us          3049  \nampere_bf16_s16816gemm_bf16_256x128_ldg8_f2f_stages_...         0.00%       0.000us         0.00%       0.000us       0.000us      18.764ms         2.70%      18.764ms      66.305us           283  \n                                              aten::div         0.65%      22.385ms         1.02%      35.016ms      28.844us      16.324ms         2.35%      16.324ms      13.446us          1214  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      15.169ms         2.18%      15.169ms      19.447us           780  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      13.274ms         1.91%      13.274ms       8.224us          1614  \n                                              aten::add         0.75%      25.813ms         1.15%      39.493ms      21.941us      12.738ms         1.83%      12.738ms       7.077us          1800  \n                                             aten::topk         0.16%       5.410ms         0.28%       9.603ms      35.178us      12.602ms         1.81%      12.602ms      46.163us           273  \n                                              aten::sum         0.55%      18.797ms         1.02%      35.185ms      33.864us      12.075ms         1.74%      12.954ms      12.468us          1039  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      11.450ms         1.65%      11.450ms      18.378us           623  \n                         Memcpy DtoD (Device -> Device)         0.00%       0.000us         0.00%       0.000us       0.000us      10.769ms         1.55%      10.769ms       3.986us          2702  \n-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \nSelf CPU time total: 3.446s\nSelf CUDA time total: 694.845ms\n"
+            },
+            {
+              "step": 4,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 4096,
+              "ce_tokens": 4088,
+              "seconds": 2.7099697217345238,
+              "grad_norm": 7.618279933929443,
+              "peak_allocated_gib": 4.507541179656982,
+              "peak_reserved_gib": 6.521484375,
+              "free_gib": 16.6849365234375
+            }
+          ],
+          "ce_per_second": 1508.5039390711215
+        }
+      ]
+    },
+    {
+      "id": "comparison/optimized-profile",
+      "physical_device": "A",
+      "source": {
+        "commit": "5871666e951eb97752e1a0c0b773949258525a62",
+        "dirty": false,
+        "implementation_sha256": "d21c18632a8eba862d78cbb2742c9c6a153197191fec0c505b03c3172bd39c3e"
+      },
+      "runner_sha256": "53557503733b70acf9617e4e9091f691552ec5477403f1a740cae2f2fcdf48cc",
+      "scope": "bounded annotated profile of existing 8x512 path; not steady throughput qualification",
+      "scopes": [
+        {
+          "name": "MF1/LatentMoE.forward",
+          "calls": 33,
+          "cpu_total_ms": 246.48768199999992,
+          "self_cpu_ms": 41.470823000000394,
+          "cuda_total_ms": 100.65493099999986
+        },
+        {
+          "name": "MF1/KDA.forward",
+          "calls": 24,
+          "cpu_total_ms": 100.01321700000041,
+          "self_cpu_ms": 10.12695399999964,
+          "cuda_total_ms": 27.391906999997076
+        },
+        {
+          "name": "MF1/GatedResidual.read",
+          "calls": 69,
+          "cpu_total_ms": 72.90567699999967,
+          "self_cpu_ms": 13.2096479999994,
+          "cuda_total_ms": 52.54540700000124
+        },
+        {
+          "name": "MF1/CSA.forward",
+          "calls": 4,
+          "cpu_total_ms": 43.02921600000004,
+          "self_cpu_ms": 8.427680000000109,
+          "cuda_total_ms": 4.841064999998649
+        },
+        {
+          "name": "MF1/QuantileBalance.update",
+          "calls": 1,
+          "cpu_total_ms": 35.56026600000006,
+          "self_cpu_ms": 6.534253000000259,
+          "cuda_total_ms": 2.2002000000039117
+        },
+        {
+          "name": "MF1/NgramLookup.forward",
+          "calls": 1,
+          "cpu_total_ms": 32.915943999999996,
+          "self_cpu_ms": 31.01943900000002,
+          "cuda_total_ms": 0.500127000000015
+        },
+        {
+          "name": "MF1/QSAMLA.forward",
+          "calls": 5,
+          "cpu_total_ms": 19.084311000000017,
+          "self_cpu_ms": 3.519931000001001,
+          "cuda_total_ms": 3.3717460000005377
+        },
+        {
+          "name": "MF1/GatedResidual.inject",
+          "calls": 66,
+          "cpu_total_ms": 7.45449800000012,
+          "self_cpu_ms": 2.4472349999998624,
+          "cuda_total_ms": 6.9215230000000085
+        }
+      ],
+      "cpu_operators": "-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \n                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  \n-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \n                                       cudaLaunchKernel        14.38%     155.555ms        14.59%     157.801ms       7.397us       0.000us         0.00%      28.835us       0.001us         21332  \n                                               aten::mm         5.48%      59.319ms         7.52%      81.374ms      43.353us      73.705ms        15.14%      73.717ms      39.274us          1877  \n                                    aten::empty_strided         4.15%      44.875ms         4.19%      45.339ms       5.723us       0.000us         0.00%       0.000us       0.000us          7922  \n                                              aten::mul         3.95%      42.723ms         6.08%      65.719ms      22.361us      99.579ms        20.46%      99.579ms      33.882us          2939  \n                                  MF1/LatentMoE.forward         3.83%      41.471ms        22.79%     246.488ms       7.469ms       0.000us         0.00%     100.655ms       3.050ms            33  \n                                            aten::copy_         3.67%      39.711ms         9.96%     107.709ms      16.777us      80.918ms        16.63%      80.918ms      12.604us          6420  \n                                MF1/NgramLookup.forward         2.87%      31.019ms         3.04%      32.916ms      32.916ms       0.000us         0.00%     500.127us     500.127us             1  \n                                       ChunkKDAFunction         2.49%      26.894ms         3.54%      38.257ms       1.594ms       5.629ms         1.16%       7.443ms     310.133us            24  \n                              Optimizer.step#AdamW.step         2.37%      25.672ms         4.95%      53.583ms      53.583ms       0.000us         0.00%      19.757ms      19.757ms             1  \n                                  cudaStreamSynchronize         1.83%      19.769ms         1.83%      19.769ms      31.230us       0.000us         0.00%       0.000us       0.000us           633  \n                               ChunkKDAFunctionBackward         1.81%      19.543ms         2.35%      25.449ms       2.121ms       7.172ms         1.47%       7.701ms     641.743us            12  \n                                         aten::_to_copy         1.73%      18.735ms        10.45%     112.986ms      29.978us       0.000us         0.00%      62.009ms      16.452us          3769  \n                                           MulBackward0         1.65%      17.831ms        23.48%     253.983ms     370.778us       0.000us         0.00%     139.049ms     202.991us           685  \n                                            aten::empty         1.45%      15.634ms         1.45%      15.634ms       5.122us       0.000us         0.00%       0.000us       0.000us          3052  \n                                       NllLossBackward0         1.39%      15.000ms         3.37%      36.439ms     569.356us       0.000us         0.00%      21.148ms     330.436us            64  \n                                              aten::div         1.32%      14.237ms         1.92%      20.810ms      23.648us      15.470ms         3.18%      15.470ms      17.580us           880  \n                                 MF1/GatedResidual.read         1.22%      13.210ms         6.74%      72.906ms       1.057ms       0.000us         0.00%      52.545ms     761.528us            69  \n                                Activity Buffer Request         1.17%      12.684ms         1.17%      12.684ms       2.537ms       2.881us         0.00%       2.881us       0.576us             5  \n                                        cudaMemcpyAsync         1.07%      11.567ms         1.07%      11.567ms      10.642us       0.000us         0.00%       0.000us       0.000us          1087  \n                                              aten::bmm         0.97%      10.446ms         2.08%      22.534ms      78.243us      14.517ms         2.98%      23.107ms      80.231us           288  \n                                        MF1/KDA.forward         0.94%      10.127ms         9.25%     100.013ms       4.167ms       0.000us         0.00%      27.392ms       1.141ms            24  \n                                            aten::index         0.90%       9.695ms         1.66%      17.927ms      49.384us       6.025ms         1.24%       6.283ms      17.309us           363  \n                                            MmBackward0         0.88%       9.563ms         4.55%      49.228ms      98.456us       0.000us         0.00%      35.941ms      71.882us           500  \n                                              aten::add         0.86%       9.336ms         1.34%      14.504ms      19.787us       9.588ms         1.97%       9.588ms      13.081us           733  \n                                       aten::as_strided         0.79%       8.576ms         0.79%       8.576ms       0.704us       0.000us         0.00%       0.000us       0.000us         12189  \n                                        MF1/CSA.forward         0.78%       8.428ms         3.98%      43.029ms      10.757ms       0.000us         0.00%       4.841ms       1.210ms             4  \nautograd::engine::evaluate_function: ToCopyBackward0...         0.78%       8.387ms         4.05%      43.806ms      37.314us       0.000us         0.00%      25.303ms      21.553us          1174  \nautograd::engine::evaluate_function: torch::autograd...         0.75%       8.087ms         4.27%      46.152ms      21.791us       0.000us         0.00%       4.095ms       1.933us          2118  \n                                              aten::sum         0.73%       7.850ms         1.13%      12.242ms      26.270us       8.793ms         1.81%       8.795ms      18.874us           466  \n                                                aten::t         0.71%       7.733ms         1.42%      15.379ms       5.199us       0.000us         0.00%       0.000us       0.000us          2958  \n                                        aten::transpose         0.71%       7.712ms         1.00%      10.827ms       2.871us       0.000us         0.00%       0.000us       0.000us          3771  \n                                             aten::add_         0.71%       7.670ms         1.21%      13.068ms       4.438us      37.815ms         7.77%      37.815ms      12.840us          2945  \n                                    aten::_foreach_norm         0.70%       7.610ms         0.72%       7.767ms       7.767ms     947.651us         0.19%     950.243us     950.243us             1  \n                                 aten::_index_put_impl_         0.68%       7.335ms         2.76%      29.885ms     160.673us       6.234ms         1.28%       7.534ms      40.504us           186  \n                                              aten::pow         0.68%       7.323ms         1.14%      12.290ms      35.013us       6.668ms         1.37%      10.374ms      29.555us           351  \n      autograd::engine::evaluate_function: MulBackward0         0.67%       7.292ms        24.84%     268.712ms     392.281us       0.000us         0.00%     148.446ms     216.709us           685  \n                                             aten::view         0.67%       7.288ms         0.67%       7.288ms       2.245us       0.000us         0.00%       0.000us       0.000us          3246  \n                                           aten::linear         0.67%       7.234ms        14.87%     160.847ms      95.742us       0.000us         0.00%      93.756ms      55.807us          1680  \n                             MF1/QuantileBalance.update         0.60%       6.534ms         3.29%      35.560ms      35.560ms       0.000us         0.00%       2.200ms       2.200ms             1  \n                        torch::autograd::AccumulateGrad         0.60%       6.463ms         3.52%      38.066ms      17.972us       0.000us         0.00%       4.095ms       1.933us          2118  \n       autograd::engine::evaluate_function: MmBackward0         0.58%       6.272ms         5.20%      56.276ms     112.552us       0.000us         0.00%      36.522ms      73.045us           500  \n                                        cudaMemsetAsync         0.58%       6.258ms         0.58%       6.258ms       5.597us       0.000us         0.00%       0.000us       0.000us          1118  \n                                               aten::to         0.57%       6.210ms        11.02%     119.196ms      16.398us       0.000us         0.00%      62.009ms       8.531us          7269  \n                                 aten::nll_loss_forward         0.57%       6.121ms         0.67%       7.279ms      56.865us     616.064us         0.13%     616.064us       4.813us           128  \n                                          aten::sigmoid         0.55%       5.986ms         0.97%      10.499ms      35.470us       7.331ms         1.51%       7.331ms      24.766us           296  \n                                            aten::rsqrt         0.52%       5.583ms         0.62%       6.738ms      45.221us     213.665us         0.04%     213.665us       1.434us           149  \n                                             aten::mean         0.47%       5.058ms         0.70%       7.576ms      25.003us       7.833ms         1.61%       7.835ms      25.858us           303  \n                                            aten::fill_         0.47%       5.041ms         1.12%      12.083ms      13.793us       7.747ms         1.59%       7.747ms       8.844us           876  \n                                           aten::select         0.46%       4.991ms         0.57%       6.187ms       2.997us       0.000us         0.00%       0.000us       0.000us          2064  \n                                             aten::item         0.46%       4.967ms         1.12%      12.098ms       2.633us       0.000us         0.00%     438.751us       0.096us          4594  \n-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \nSelf CPU time total: 1.082s\nSelf CUDA time total: 486.665ms\n",
+      "cases": [
+        {
+          "length": 512,
+          "microbatch": 8,
+          "accumulation": 1,
+          "media_features": 0,
+          "rows": [
+            {
+              "step": 1,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 4096,
+              "ce_tokens": 4088,
+              "seconds": 7.0682893712073565,
+              "grad_norm": 1.667238473892212,
+              "peak_allocated_gib": 3.7928285598754883,
+              "peak_reserved_gib": 5.326171875,
+              "free_gib": 17.8900146484375
+            },
+            {
+              "step": 2,
+              "warmup": true,
+              "profiled": false,
+              "input_tokens": 4096,
+              "ce_tokens": 4088,
+              "seconds": 0.7104362025856972,
+              "grad_norm": 2.9758822917938232,
+              "peak_allocated_gib": 4.257494926452637,
+              "peak_reserved_gib": 5.90625,
+              "free_gib": 17.3099365234375
+            },
+            {
+              "step": 3,
+              "warmup": false,
+              "profiled": true,
+              "input_tokens": 4096,
+              "ce_tokens": 4088,
+              "seconds": 2.2777472864836454,
+              "grad_norm": 5.056533336639404,
+              "peak_allocated_gib": 4.301027297973633,
+              "peak_reserved_gib": 6.171875,
+              "free_gib": 17.0325927734375,
+              "operators": "-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \n                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  \n-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \n                                  MF1/LatentMoE.forward         0.00%       0.000us         0.00%       0.000us       0.000us     243.018ms        49.94%     243.018ms       7.364ms            33  \n                                              aten::mul         3.95%      42.723ms         6.08%      65.719ms      22.361us      99.579ms        20.46%      99.579ms      33.882us          2939  \n                                        MF1/KDA.forward         0.00%       0.000us         0.00%       0.000us       0.000us      97.867ms        20.11%      97.867ms       4.078ms            24  \n                                            aten::copy_         3.67%      39.711ms         9.96%     107.709ms      16.777us      80.918ms        16.63%      80.918ms      12.604us          6420  \n                                               aten::mm         5.48%      59.319ms         7.52%      81.374ms      43.353us      73.705ms        15.14%      73.717ms      39.274us          1877  \n                                 MF1/GatedResidual.read         0.00%       0.000us         0.00%       0.000us       0.000us      62.255ms        12.79%      62.255ms     902.241us            69  \n                              Optimizer.step#AdamW.step         0.00%       0.000us         0.00%       0.000us       0.000us      52.000ms        10.68%      52.000ms      52.000ms             1  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      44.147ms         9.07%      44.147ms      47.726us           925  \n                                        MF1/CSA.forward         0.00%       0.000us         0.00%       0.000us       0.000us      42.518ms         8.74%      42.518ms      10.629ms             4  \n                                             aten::add_         0.71%       7.670ms         1.21%      13.068ms       4.438us      37.815ms         7.77%      37.815ms      12.840us          2945  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      37.211ms         7.65%      37.211ms      18.633us          1997  \n                             MF1/QuantileBalance.update         0.00%       0.000us         0.00%       0.000us       0.000us      35.359ms         7.27%      35.359ms      35.359ms             1  \n                                MF1/NgramLookup.forward         0.00%       0.000us         0.00%       0.000us       0.000us      32.308ms         6.64%      32.308ms      32.308ms             1  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      28.245ms         5.80%      28.245ms      42.991us           657  \nvoid at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us      24.224ms         4.98%      24.224ms      16.368us          1480  \nvoid at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us      23.274ms         4.78%      23.274ms      30.867us           754  \n                                     MF1/QSAMLA.forward         0.00%       0.000us         0.00%       0.000us       0.000us      18.633ms         3.83%      18.633ms       3.727ms             5  \nampere_bf16_s16816gemm_bf16_256x128_ldg8_f2f_stages_...         0.00%       0.000us         0.00%       0.000us       0.000us      18.430ms         3.79%      18.430ms      62.053us           297  \n                                              aten::div         1.32%      14.237ms         1.92%      20.810ms      23.648us      15.470ms         3.18%      15.470ms      17.580us           880  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      14.833ms         3.05%      14.833ms      24.237us           612  \n                                              aten::bmm         0.97%      10.446ms         2.08%      22.534ms      78.243us      14.517ms         2.98%      23.107ms      80.231us           288  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      11.177ms         2.30%      11.177ms      38.147us           293  \nvoid at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      11.127ms         2.29%      11.127ms      27.473us           405  \nvoid at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us      10.135ms         2.08%      10.135ms     101.350us           100  \n                                              aten::add         0.86%       9.336ms         1.34%      14.504ms      19.787us       9.588ms         1.97%       9.588ms      13.081us           733  \n                                              aten::sum         0.73%       7.850ms         1.13%      12.242ms      26.270us       8.793ms         1.81%       8.795ms      18.874us           466  \n                                     aten::_log_softmax         0.27%       2.895ms         0.37%       3.992ms      31.187us       8.479ms         1.74%       8.479ms      66.245us           128  \nvoid at::native::(anonymous namespace)::cunn_SoftMax...         0.00%       0.000us         0.00%       0.000us       0.000us       8.479ms         1.74%       8.479ms      66.245us           128  \n                                             aten::mean         0.47%       5.058ms         0.70%       7.576ms      25.003us       7.833ms         1.61%       7.835ms      25.858us           303  \n                                            aten::fill_         0.47%       5.041ms         1.12%      12.083ms      13.793us       7.747ms         1.59%       7.747ms       8.844us           876  \n-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  \nSelf CPU time total: 1.082s\nSelf CUDA time total: 486.665ms\n"
+            },
+            {
+              "step": 4,
+              "warmup": false,
+              "profiled": false,
+              "input_tokens": 4096,
+              "ce_tokens": 4088,
+              "seconds": 0.9181773215532303,
+              "grad_norm": 7.517563819885254,
+              "peak_allocated_gib": 4.413758754730225,
+              "peak_reserved_gib": 6.84375,
+              "free_gib": 16.3607177734375
+            }
+          ],
+          "ce_per_second": 4452.2990320481385
+        }
+      ]
+    }
+  ],
+  "actual_mixture_controls": {
+    "data": "data/mf1-language-v1/instructions",
+    "config": "configs/minifrontier1/model_228m_native.json",
+    "init": "outputs/mf1-language-sft-v1/adamw-lr1e-4/checkpoint.pt",
+    "data_manifest_sha256": "5ce5f1ddcfbe1d5540768da71c2c1cb3b02631f0f443ebc83c3d0ed9641c630e",
+    "init_sha256": "322a7aaffd44ab3e21798827ef654e74a9a8f0fd968d602f167bb1ee8bb117db",
+    "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+    "seed": 42,
+    "steps": 2,
+    "token_budget": 100000,
+    "input_batch_tokens": 512,
+    "phase": "sft",
+    "diagnostic_attention": "dense_pretrain",
+    "run_kind": "acceptance",
+    "optimizer_kind": "adamw",
+    "lr": 0.0001,
+    "vision_lr": 5e-06,
+    "save_every": 9999,
+    "eval_every": 9999,
+    "mixture": {
+      "language": 0.9,
+      "vision": 0.075,
+      "video": 0.025
+    }
+  },
+  "actual_mixture": [
+    {
+      "id": "previous-mb8",
+      "physical_device": "A",
+      "source": {
+        "commit": "8e2ec1b1e579d498154a37a640324e904717861a",
+        "dirty": false,
+        "implementation_sha256": "87069598a4534aaf1a83292c4ba5a43a06f0c2bfed3c4eac7ae8ae9aa463c944"
+      },
+      "data_manifest_sha256": "5ce5f1ddcfbe1d5540768da71c2c1cb3b02631f0f443ebc83c3d0ed9641c630e",
+      "init_sha256": "322a7aaffd44ab3e21798827ef654e74a9a8f0fd968d602f167bb1ee8bb117db",
+      "batch_size": 8,
+      "scope": "Two actual mixed SFT updates from the same init and stream; full validation and saving included in wall time; no capability admission",
+      "result": {
+        "output": "${WORKSPACE}/outputs/mf1-performance-v2/execution-audit/final/actual-mb8",
+        "step": 2,
+        "state": "budget_complete_unqualified",
+        "ledger": {
+          "input_tokens": 1037,
+          "ce_tokens": 192,
+          "generated_tokens": 0,
+          "vision_tokens": 81,
+          "mtp_target_tokens": 80,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 7,
+          "main_ce_tokens": 0,
+          "phase_tokens": 192,
+          "optimizer_updates": 2
+        },
+        "evaluation": {
+          "nll": 3.5698633365446115,
+          "ce_tokens": 494,
+          "per_domain": {
+            "language": 4.430927083719915,
+            "video": 4.765210991308777e-05,
+            "vision": 2.545065075310049e-05
+          },
+          "black_media_nll": {
+            "video": 3.5589491052312496,
+            "vision": 3.792352109921012
+          },
+          "capability_qualified": false,
+          "examples": 138,
+          "selection": "full_validation"
+        },
+        "elapsed_seconds": 80.21495227701962
+      },
+      "metrics": [
+        {
+          "step": 1,
+          "train_lm_loss": 5.960960701258496,
+          "grad_norm": 27.950353622436523,
+          "step_seconds": 8.703406855463982,
+          "ce_per_second": 11.374856035581974,
+          "input_per_second": 59.63182103502065,
+          "input_batch_actual": 519,
+          "micro_batches": 4,
+          "microbatch_max_samples": 8,
+          "microbatch_samples": [
+            8,
+            8,
+            8,
+            4
+          ],
+          "input_tokens": 519,
+          "ce_tokens": 99,
+          "generated_tokens": 0,
+          "vision_tokens": 45,
+          "mtp_target_tokens": 43,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 4,
+          "main_ce_tokens": 0,
+          "phase_tokens": 99,
+          "optimizer_updates": 1,
+          "peak_allocated_gib": 3.873129367828369,
+          "peak_reserved_gib": 4.052734375
+        },
+        {
+          "step": 2,
+          "train_lm_loss": 4.411002159118652,
+          "grad_norm": 24.851703643798828,
+          "step_seconds": 5.427589362487197,
+          "ce_per_second": 17.134678729155493,
+          "input_per_second": 95.43831808282307,
+          "input_batch_actual": 518,
+          "micro_batches": 4,
+          "microbatch_max_samples": 8,
+          "microbatch_samples": [
+            8,
+            8,
+            8,
+            4
+          ],
+          "input_tokens": 1037,
+          "ce_tokens": 192,
+          "generated_tokens": 0,
+          "vision_tokens": 81,
+          "mtp_target_tokens": 80,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 7,
+          "main_ce_tokens": 0,
+          "phase_tokens": 192,
+          "optimizer_updates": 2,
+          "peak_allocated_gib": 4.035703659057617,
+          "peak_reserved_gib": 4.35546875
+        }
+      ]
+    },
+    {
+      "id": "batched-attention-mb8",
+      "physical_device": "A",
+      "source": {
+        "commit": "5871666e951eb97752e1a0c0b773949258525a62",
+        "dirty": false,
+        "implementation_sha256": "d21c18632a8eba862d78cbb2742c9c6a153197191fec0c505b03c3172bd39c3e"
+      },
+      "data_manifest_sha256": "5ce5f1ddcfbe1d5540768da71c2c1cb3b02631f0f443ebc83c3d0ed9641c630e",
+      "init_sha256": "322a7aaffd44ab3e21798827ef654e74a9a8f0fd968d602f167bb1ee8bb117db",
+      "batch_size": 8,
+      "scope": "Two actual mixed SFT updates from the same init and stream; full validation and saving included in wall time; no capability admission",
+      "result": {
+        "output": "${WORKSPACE}/outputs/mf1-performance-v2/batched-attention-audit/comparison/actual-mb8",
+        "step": 2,
+        "state": "budget_complete_unqualified",
+        "ledger": {
+          "input_tokens": 1037,
+          "ce_tokens": 192,
+          "generated_tokens": 0,
+          "vision_tokens": 81,
+          "mtp_target_tokens": 80,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 7,
+          "main_ce_tokens": 0,
+          "phase_tokens": 192,
+          "optimizer_updates": 2
+        },
+        "evaluation": {
+          "nll": 3.5656939101561265,
+          "ce_tokens": 494,
+          "per_domain": {
+            "language": 4.425752397158637,
+            "video": 4.343345074175886e-05,
+            "vision": 2.609879902593093e-05
+          },
+          "black_media_nll": {
+            "video": 3.594106063046638,
+            "vision": 3.793329010168236
+          },
+          "capability_qualified": false,
+          "examples": 138,
+          "selection": "full_validation"
+        },
+        "elapsed_seconds": 73.71721786633134
+      },
+      "metrics": [
+        {
+          "step": 1,
+          "train_lm_loss": 5.96267787856285,
+          "grad_norm": 28.295181274414062,
+          "step_seconds": 6.106520522385836,
+          "ce_per_second": 16.212178381629414,
+          "input_per_second": 84.99111697036027,
+          "input_batch_actual": 519,
+          "micro_batches": 4,
+          "microbatch_max_samples": 8,
+          "microbatch_samples": [
+            8,
+            8,
+            8,
+            4
+          ],
+          "input_tokens": 519,
+          "ce_tokens": 99,
+          "generated_tokens": 0,
+          "vision_tokens": 45,
+          "mtp_target_tokens": 43,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 4,
+          "main_ce_tokens": 0,
+          "phase_tokens": 99,
+          "optimizer_updates": 1,
+          "peak_allocated_gib": 3.875034809112549,
+          "peak_reserved_gib": 4.0546875
+        },
+        {
+          "step": 2,
+          "train_lm_loss": 4.3734298675291,
+          "grad_norm": 26.85788345336914,
+          "step_seconds": 2.7279691081494093,
+          "ce_per_second": 34.091295140467714,
+          "input_per_second": 189.8848482017449,
+          "input_batch_actual": 518,
+          "micro_batches": 4,
+          "microbatch_max_samples": 8,
+          "microbatch_samples": [
+            8,
+            8,
+            8,
+            4
+          ],
+          "input_tokens": 1037,
+          "ce_tokens": 192,
+          "generated_tokens": 0,
+          "vision_tokens": 81,
+          "mtp_target_tokens": 80,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 7,
+          "main_ce_tokens": 0,
+          "phase_tokens": 192,
+          "optimizer_updates": 2,
+          "peak_allocated_gib": 4.033886909484863,
+          "peak_reserved_gib": 4.359375
+        }
+      ]
+    }
+  ],
+  "numerics": {
+    "state": "complete",
+    "source": {
+      "commit": "5871666e951eb97752e1a0c0b773949258525a62",
+      "dirty": false,
+      "implementation_sha256": "d21c18632a8eba862d78cbb2742c9c6a153197191fec0c505b03c3172bd39c3e"
+    },
+    "scope": "Independent full-FP32 attention oracle against both BF16 paths; packed, media and padded rows; seed 231",
+    "cases": [
+      {
+        "module": "CSA",
+        "metrics": {
+          "old-bf16": {
+            "output": {
+              "relative_l2": 0.004675490781664848,
+              "cosine": 0.9999891519546509,
+              "max_absolute": 0.0071547627449035645
+            },
+            "input_grad": {
+              "relative_l2": 0.00689934054389596,
+              "cosine": 0.9999765157699585,
+              "max_absolute": 0.01727771759033203
+            },
+            "parameters": {
+              "relative_l2": 0.006759230513125658,
+              "cosine": 0.9999771118164062,
+              "max_absolute": 0.14256572723388672
+            }
+          },
+          "fused-bf16": {
+            "output": {
+              "relative_l2": 0.004585642367601395,
+              "cosine": 0.9999896883964539,
+              "max_absolute": 0.008991479873657227
+            },
+            "input_grad": {
+              "relative_l2": 0.00653386116027832,
+              "cosine": 0.99997878074646,
+              "max_absolute": 0.010589838027954102
+            },
+            "parameters": {
+              "relative_l2": 0.006132150534540415,
+              "cosine": 0.999981164932251,
+              "max_absolute": 0.11546993255615234
+            }
+          },
+          "fused-vs-old": {
+            "output": {
+              "relative_l2": 0.003197774989530444,
+              "cosine": 0.9999949336051941,
+              "max_absolute": 0.0078125
+            },
+            "input_grad": {
+              "relative_l2": 0.006062591914087534,
+              "cosine": 0.9999816417694092,
+              "max_absolute": 0.015611886978149414
+            },
+            "parameters": {
+              "relative_l2": 0.005664729978889227,
+              "cosine": 0.9999839067459106,
+              "max_absolute": 0.125
+            }
+          }
+        }
+      },
+      {
+        "module": "QSAMLA",
+        "metrics": {
+          "old-bf16": {
+            "output": {
+              "relative_l2": 0.005654021166265011,
+              "cosine": 0.9999841451644897,
+              "max_absolute": 0.002104818820953369
+            },
+            "input_grad": {
+              "relative_l2": 0.007522189524024725,
+              "cosine": 0.9999721050262451,
+              "max_absolute": 0.0038743019104003906
+            },
+            "parameters": {
+              "relative_l2": 0.007069142069667578,
+              "cosine": 0.9999749660491943,
+              "max_absolute": 0.059474945068359375
+            }
+          },
+          "fused-bf16": {
+            "output": {
+              "relative_l2": 0.0055926162749528885,
+              "cosine": 0.9999845623970032,
+              "max_absolute": 0.002104818820953369
+            },
+            "input_grad": {
+              "relative_l2": 0.0071650221943855286,
+              "cosine": 0.9999744296073914,
+              "max_absolute": 0.0034653693437576294
+            },
+            "parameters": {
+              "relative_l2": 0.006596261635422707,
+              "cosine": 0.9999781847000122,
+              "max_absolute": 0.051869869232177734
+            }
+          },
+          "fused-vs-old": {
+            "output": {
+              "relative_l2": 0.003554822178557515,
+              "cosine": 0.9999936819076538,
+              "max_absolute": 0.001220703125
+            },
+            "input_grad": {
+              "relative_l2": 0.004750664811581373,
+              "cosine": 0.9999892115592957,
+              "max_absolute": 0.0026073455810546875
+            },
+            "parameters": {
+              "relative_l2": 0.0044375634752213955,
+              "cosine": 0.9999901056289673,
+              "max_absolute": 0.03125
+            }
+          }
+        }
+      }
+    ]
+  },
+  "stream_equivalence": {
+    "state": "complete",
+    "same_parameter_keys_shapes": true,
+    "same_sampler": true,
+    "same_ledger": true,
+    "runs": [
+      {
+        "run": "mf1-performance-v2/execution-audit/final/actual-mb8",
+        "sampler_sha256": "4cc59d10b151fe010ffa1c6f774a3aa33360fb005a62b08e842d43e93d7e6c99",
+        "ledger": {
+          "input_tokens": 1037,
+          "ce_tokens": 192,
+          "generated_tokens": 0,
+          "vision_tokens": 81,
+          "mtp_target_tokens": 80,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 7,
+          "main_ce_tokens": 0,
+          "phase_tokens": 192,
+          "optimizer_updates": 2
+        }
+      },
+      {
+        "run": "mf1-performance-v2/batched-attention-audit/comparison/actual-mb8",
+        "sampler_sha256": "4cc59d10b151fe010ffa1c6f774a3aa33360fb005a62b08e842d43e93d7e6c99",
+        "ledger": {
+          "input_tokens": 1037,
+          "ce_tokens": 192,
+          "generated_tokens": 0,
+          "vision_tokens": 81,
+          "mtp_target_tokens": 80,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 7,
+          "main_ce_tokens": 0,
+          "phase_tokens": 192,
+          "optimizer_updates": 2
+        }
+      }
+    ]
+  },
+  "checkpoint_retention": {
+    "state": "complete",
+    "reason": "Replace the previous two-update execution-audit retention checkpoint with the current verified audit checkpoint; shared initialization is outside these paths",
+    "artifacts": [
+      {
+        "path": "mf1-performance-v2/execution-audit/final/actual-mb8/checkpoint.pt",
+        "bytes": 4559888603,
+        "sha256": "37654c8ee46c9cc7facf366c8da8994fa40d1fbcde2d2c8e9e4b88030520d52c",
+        "state": "retired"
+      },
+      {
+        "path": "mf1-performance-v2/batched-attention-audit/comparison/actual-mb8/checkpoint.pt",
+        "bytes": 4563038935,
+        "sha256": "edcd5e4a37df8493f3409d8ed7f4f03726be5b4c5816fe88a511d0db399aa18e",
+        "state": "retained"
+      }
+    ],
+    "freed_bytes": 4559888603,
+    "free_bytes": 142060965888
+  },
+  "verification": {
+    "frozen_source_commit": "5871666e951eb97752e1a0c0b773949258525a62",
+    "cpu": {
+      "passed": 352,
+      "skipped": 1,
+      "deselected": 52,
+      "seconds": 114.2
+    },
+    "cuda": {
+      "passed": 11,
+      "deselected": 13,
+      "seconds": 7.94
+    },
+    "ruff": "passed",
+    "ruff_format": "passed",
+    "mypy": "172 source files passed",
+    "mutable_tree_attempt": {
+      "passed": 351,
+      "failed": 1,
+      "test": "test_training_resume_matches_uninterrupted_run[True]",
+      "error": "resume recipe differs",
+      "checkpoint_implementation_sha256": "577597723bb37ad3e064ff6b480f5651b1d860bfecfb05711c7cb62a1428f70a",
+      "later_main_implementation_sha256": "9154a550981eb081d9d2f07b19c125682c248207a7ce23895c59553b9c8425e4",
+      "resolution": "Main-tree configuration was being edited concurrently; the complete suite passed from the frozen source tree. Resume identity checks remain unchanged."
+    }
+  },
+  "references": [
+    "https://docs.pytorch.org/tutorials/intermediate/scaled_dot_product_attention_tutorial.html"
+  ],
+  "limits": [
+    "Fixed-budget comparison uses 3 warmup plus 8 measured updates, on the same GPU.",
+    "Selected microbatch 32 completed 20 warmup plus 100 measured updates; only this row satisfies this synthetic measurement-duration criterion.",
+    "Dense no-cache attention uses the batched path. Cached inference and indexer/sparse paths retain the checked reference attention implementation.",
+    "No parameters, MTP coefficient, layer count, tokenizer vocabulary or global input budget were removed to reach this speed.",
+    "Batched SDPA changes BF16 rounding; full-FP32 oracles and BF16 gradient tolerances are recorded, not bitwise equivalence.",
+    "Microbatch 32 is a text-512 execution candidate, not a default for media or long contexts.",
+    "The training CLI default remains batch size 8 pending real phase resource qualification.",
+    "Synthetic TensorBoard scalars were reconstructed after completion from report rows; they represent optimizer step timing, not original event wall timestamps."
+  ]
+}
