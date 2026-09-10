@@ -427,5 +427,35 @@
     },
     "integrity_audit_sha256": "1364c42abf570c8960b25a8f3cdc78f71b103b198dc205ad1f0a2cbcaacba47a",
     "source_archive_sha256": "c485b4bf09d80090f5f4bdb737905222615dbf60133d9a3371ac1eb687258995"
+  },
+  "tokenizer_preparation": {
+    "state": "running",
+    "observed_unix": 1789061784.493372,
+    "attempt": 2,
+    "source_commit": "80e64a5a324241e3811cba7d9ac8a08045e978e0",
+    "source_archive_sha256": "ec2990f000405d42c67d1600f03f0f606212b29b26c8d5c3afd7056085ca5440",
+    "driver_sha256": "82d0cee55e8d0f9806e3ce9ee05891b6ae6e2d27230fb80960fc696688a503fb",
+    "corpus_manifest_sha256": "ea296436ac3ca1df794aace11092e37ac98d815e95130a7909e2989a81574277",
+    "vocabulary_sizes": {
+      "source_models": 65536,
+      "mf1": 32768
+    },
+    "training_byte_budget": 67108864,
+    "training_order": "sample_id ascending within effective train split",
+    "algorithm": "ByteLevel BPE with min_frequency=2 and byte alphabet",
+    "controls": {
+      "source_models": "minifrontier.data.corpus.STRATEGY_SPECIAL_TOKENS",
+      "mf1": "minifrontier.data.minifrontier1.SPECIAL_TOKENS"
+    },
+    "mapping_frozen": false,
+    "formal_admission": false,
+    "first_attempt": {
+      "state": "failed_before_mapping_output",
+      "reason": "SQLite iterator resumed on different Rayon worker threads",
+      "source_commit": "1d8e3809de7f5d398b52ecfa7837fe8e3e1dc79b",
+      "log_sha256": "025c36477ce7a5458b4d426a1e6edc797e2909cb23703a93edf5de0a65ae77eb"
+    },
+    "fix": "Materialize only the bounded training sample on the database-owning thread before passing text to tokenizers.",
+    "targeted_tests_passed": 18
   }
 }
