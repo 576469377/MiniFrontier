@@ -1,6 +1,8 @@
 import json
 import time
 
+import pytest
+
 from scripts.experiment_registry import collect, refresh
 
 
@@ -98,8 +100,11 @@ def test_remote_execution_supersedes_empty_local_reservation(tmp_path):
     assert len(result["experiments"][0]["superseded_reservations"]) == 1
 
 
-def test_conflicting_gpu_assignments_are_visible(tmp_path):
+@pytest.mark.parametrize("nested", [False, True])
+def test_conflicting_gpu_assignments_are_visible(tmp_path, nested):
     queue = tmp_path / "outputs/strategy-example-gpu-v1"
+    if nested:
+        queue = queue / "second-stage"
     jobs = [dict(id=name, output=str(queue / name), model="miniqwen4") for name in ["a", "b"]]
     write(queue / "queue-plan.json", dict(workspace=str(tmp_path), jobs=jobs))
     write(

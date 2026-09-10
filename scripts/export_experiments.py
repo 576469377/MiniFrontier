@@ -3,6 +3,7 @@
 import argparse
 import csv
 import json
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -28,6 +29,8 @@ RUN_KEYS = (
     "steps",
     "lr",
     "muon_lr",
+    "effective_muon_lr",
+    "muon_lr_argument_used",
     "warmup_steps",
     "weight_decay",
     "clip_grad",
@@ -57,6 +60,7 @@ METRIC_KEYS = (
     "lm_loss",
     "grad_norm",
     "lr",
+    "muon_lr",
     "step_seconds",
     "tokens_per_second",
     "peak_allocated_mib",
@@ -84,6 +88,63 @@ def portable(value, workspace):
     if isinstance(value, dict):
         return {portable(key, workspace): portable(item, workspace) for key, item in value.items()}
     return value
+
+
+def export_registry(workspace, output):
+    """Publish the complete review index; never overwrite an earlier observation."""
+    from scripts.experiment_registry import collect
+
+    output.mkdir(parents=True, exist_ok=True)
+    names = ("reviewed-registry.json", "reviewed-registry.csv", "review-summary.json")
+    if any((output / name).exists() for name in names):
+        raise FileExistsError("review snapshot exists; choose a new snapshot directory")
+    snapshot = portable(collect(workspace.resolve()), workspace.resolve())
+    (output / names[0]).write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n")
+    columns = [
+        "id",
+        "host",
+        "output",
+        "model",
+        "kind",
+        "state",
+        "parent_experiment_id",
+        "review_family",
+        "review_decision",
+        "batch",
+        "input_batch_target",
+        "input_batch_policy",
+        "ce_tokens",
+        "ce_token_budget",
+        "optimizer_updates",
+        "data_sha256",
+        "tokenizer_sha256",
+        "audit_findings",
+        "limitations",
+    ]
+    with (output / names[1]).open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=columns, extrasaction="ignore")
+        writer.writeheader()
+        for entry in snapshot["experiments"]:
+            writer.writerow(
+                {
+                    key: json.dumps(value, ensure_ascii=False)
+                    if isinstance(value, (dict, list))
+                    else value
+                    for key, value in entry.items()
+                }
+            )
+    summary = dict(
+        observed_at=snapshot["observed_at"],
+        records=len(snapshot["experiments"]),
+        states=snapshot["counts"],
+        families=dict(Counter(e["review_family"] for e in snapshot["experiments"])),
+        findings=dict(Counter(f for e in snapshot["experiments"] for f in e["audit_findings"])),
+        issues=snapshot["issues"],
+        plan_sha256=sha256(workspace / "configs/experiments.json"),
+        scope="observed records, including nested stages and fixtures; not a count of independent experiments",
+    )
+    (output / names[2]).write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+    return summary
 
 
 def export(workspace, output):
@@ -262,9 +323,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--registry-only",
+        action="store_true",
+        help="export all indexed runs and review decisions, without samples/weights",
+    )
     args = parser.parse_args()
-    report = export(args.workspace, args.output)
-    print(json.dumps(dict(runs=len(report["runs"]), output=str(args.output))))
+    if args.registry_only:
+        print(json.dumps(export_registry(args.workspace, args.output), ensure_ascii=False))
+    else:
+        report = export(args.workspace, args.output)
+        print(json.dumps(dict(runs=len(report["runs"]), output=str(args.output))))
 
 
 if __name__ == "__main__":

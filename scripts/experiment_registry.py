@@ -48,9 +48,11 @@ def collect(workspace):
         parents = [p for p in root.iterdir() if allowed_root(p)]
         targets: dict[Path, dict[str, Any]] = {}
         for parent in parents:
-            for plan_path in parent.glob("queue-plan.json"):
+            for plan_path in parent.rglob("queue-plan.json"):
+                queue_root = plan_path.parent
+                queue_name = str(queue_root.relative_to(root))
                 plan = read_json(plan_path)
-                state = read_json(parent / "queue.json")
+                state = read_json(queue_root / "queue.json")
                 states = {j["id"]: j for j in state.get("jobs", [])}
                 for job in plan.get("jobs", []):
                     try:
@@ -61,7 +63,7 @@ def collect(workspace):
                         issues.append(
                             dict(
                                 kind="unresolved_queue_output",
-                                queue=parent.name,
+                                queue=queue_name,
                                 trial=job.get("id"),
                             )
                         )
@@ -70,7 +72,7 @@ def collect(workspace):
                     record = dict(
                         job=job,
                         status=states.get(job["id"], {}),
-                        queue=parent.name,
+                        queue=queue_name,
                         queue_updated_at=state.get("updated_at", 0),
                     )
                     old = targets.get(target)
@@ -83,7 +85,7 @@ def collect(workspace):
                                     kind="duplicate_active_output",
                                     host=host,
                                     output=str(relative_path),
-                                    queues=[old["queue"], parent.name],
+                                    queues=[old["queue"], queue_name],
                                 )
                             )
                         if record["queue_updated_at"] <= old["queue_updated_at"]:
@@ -287,6 +289,10 @@ def collect(workspace):
                 else None
             )
             entry["audit_findings"] = []
+            if model == "minideepseekv4" and run.get("optimizer") == "deepseek_muon":
+                entry["effective_muon_lr"] = run.get("lr")
+                if run.get("muon_lr") != run.get("lr"):
+                    entry["audit_findings"].append("deepseek_muon_lr_argument_unused")
             if kind == "training":
                 for field in ("source", "data_sha256", "tokenizer_sha256"):
                     if not entry[field]:

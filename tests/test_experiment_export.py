@@ -1,7 +1,38 @@
 import csv
 import json
 
-from scripts.export_experiments import export
+import pytest
+
+from scripts.export_experiments import export, export_registry
+
+
+def test_registry_export_preserves_review_and_refuses_overwrite(tmp_path):
+    workspace = tmp_path / "workspace"
+    trial = workspace / "outputs/mf1-test/run"
+    trial.mkdir(parents=True)
+    (trial / "run.json").write_text(json.dumps(dict(model_name="minifrontier1")))
+    (trial / "interruption.json").write_text(
+        json.dumps(dict(state="stopped_for_review", reason=str(workspace)))
+    )
+    (workspace / "configs").mkdir()
+    (workspace / "configs/experiments.json").write_text(
+        json.dumps(
+            dict(
+                families=[
+                    dict(
+                        id="mf1", outputs=["mf1-*"], decision="diagnostic", limitations=["fixture"]
+                    )
+                ]
+            )
+        )
+    )
+    output = tmp_path / "snapshot"
+    summary = export_registry(workspace, output)
+    assert summary["records"] == 1 and summary["states"] == {"stopped_for_review": 1}
+    raw = (output / "reviewed-registry.json").read_text()
+    assert str(workspace) not in raw and "${WORKSPACE}" in raw
+    with pytest.raises(FileExistsError):
+        export_registry(workspace, output)
 
 
 def test_export_reconciles_retired_queue_and_preserves_csv_token_axis(tmp_path):

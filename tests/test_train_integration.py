@@ -168,7 +168,15 @@ def test_large_microbatch_ceiling_preserves_global_batch_and_ramp_resume(corpus,
             train.main(args)
         events = [json.loads(line) for line in (output / "metrics.jsonl").read_text().splitlines()]
         assert [e["input_batch_actual"] for e in events if e["event"] == "train"] == [256, 512, 768]
+        if cap == 128:
+            assert [e["microbatch_samples"] for e in events if e["event"] == "train"] == [
+                [2],
+                [4],
+                [6],
+            ]
     saved = [torch.load(p / "checkpoint.pt", weights_only=True) for p in outputs]
+    assert saved[0]["run_spec"]["effective_muon_lr"] == 0.0003
+    assert saved[0]["run_spec"]["muon_lr_argument_used"] is False
     assert saved[0]["token_ledger"] == saved[1]["token_ledger"] == saved[2]["token_ledger"]
     assert saved[0]["data_offset"] == saved[1]["data_offset"] == saved[2]["data_offset"]
     for key, value in saved[1]["model"].items():

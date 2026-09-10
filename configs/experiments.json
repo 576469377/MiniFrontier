@@ -158,12 +158,11 @@
       "schedule": "wsd",
       "warmup_ce_tokens": 400000,
       "budget_per_trial_ce": 20000000,
-      "adam_branch_lr_candidates": [0.0001, 0.0002, 0.0003],
-      "muon_lr": 0.01,
+      "shared_muon_adam_lr_candidates": [0.0001, 0.0002, 0.0003],
       "seed": 42,
       "repeat_seeds": [43, 44],
       "references": ["deepseek-v4"],
-      "local_choices": ["8K/16K/32K and 0.4M/2M milestones are hypotheses from the local mini plan; official initial batch and milestones are undisclosed", "do not infer Muon LR from the Adam branch LR"]
+      "local_choices": ["8K/16K/32K and 0.4M/2M milestones are hypotheses from the local mini plan; official initial batch and milestones are undisclosed", "current DeepSeek trainer uses --lr for BOTH Muon and AdamW; --muon-lr is ignored for this route; any independent rates need explicit implementation and comparison"]
     },
     {
       "id": "mf1-execution",

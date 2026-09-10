@@ -492,6 +492,12 @@ def run(args, rank, world, device):
         steps=args.steps,
         lr=args.lr,
         muon_lr=args.muon_lr,
+        effective_muon_lr=args.lr
+        if optimizer_kind == "deepseek_muon"
+        else args.muon_lr
+        if optimizer_kind in {"kimi_muon", "qwen_muon"}
+        else None,
+        muon_lr_argument_used=optimizer_kind in {"kimi_muon", "qwen_muon"},
         warmup_steps=args.warmup_steps,
         weight_decay=args.weight_decay,
         clip_grad=args.clip_grad,
@@ -923,6 +929,7 @@ def run(args, rank, world, device):
         trainable_response = torch.zeros((), device=device, dtype=torch.int64)
         # Keep only token tensors (not activations) for this accumulation window.
         window = []
+        pending_rows = []
         accumulated_inputs = 0
         target_inputs = input_target(args.input_batch_tokens, batch_schedule, ledger.ce_tokens)
         while True:
@@ -931,7 +938,36 @@ def run(args, rank, world, device):
                 count = microbatch_count(
                     args.batch_size, target_inputs - accumulated_inputs, args.sequence_length, world
                 )
-            item = batch(train, cursor.next(count), torch.device("cpu"))
+            indices = cursor.next(count)
+            if target_inputs is not None and args.input_batch_policy == "sample-bounded":
+                # Select the global sample window first, then collate into full
+                # microbatches. Small sampling groups near the boundary must not
+                # create a separate forward/backward for each tail sample.
+                from minifrontier.multimodal import TrainingBatch, collate
+
+                rows = [train[index] for index in indices]
+                tensors = [
+                    row.input_ids if isinstance(row, TrainingBatch) else row[0] for row in rows
+                ]
+                if any(x.shape[-1] > args.sequence_length for x in tensors):
+                    raise ValueError(
+                        "input row exceeds the declared sequence length used for batching"
+                    )
+                pending_rows.extend(rows)
+                actual = torch.tensor(sum(int(x.ne(0).sum()) for x in tensors), device=device)
+                if world > 1:
+                    dist.all_reduce(actual)
+                accumulated_inputs += int(actual)
+                if accumulated_inputs >= target_inputs:
+                    window = [
+                        collate(pending_rows[start : start + args.batch_size], torch.device("cpu"))
+                        for start in range(0, len(pending_rows), args.batch_size)
+                    ]
+                    break
+                if len(pending_rows) >= 1024 * args.batch_size:
+                    raise ValueError("global input target needs more than 1024 microbatches")
+                continue
+            item = batch(train, indices, torch.device("cpu"))
             if target_inputs is not None and item.input_ids.shape[-1] > args.sequence_length:
                 raise ValueError("input row exceeds the declared sequence length used for batching")
             window.append(item)
@@ -1302,6 +1338,9 @@ def run(args, rank, world, device):
                     lm_loss=(metrics[1] / world).item(),
                     grad_norm=grad_norm.item(),
                     lr=args.lr * factor,
+                    muon_lr=run_spec["effective_muon_lr"] * factor
+                    if run_spec["effective_muon_lr"] is not None
+                    else None,
                     tokens_per_second=metrics[2].item() / elapsed,
                     step_seconds=elapsed,
                     data_offset=cursor.offset,
