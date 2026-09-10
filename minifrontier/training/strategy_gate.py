@@ -165,6 +165,18 @@ def validate_arguments(args):
         measured = (
             json.loads(profile_path.read_text()).get("recipe", {}) if profile_path.is_file() else {}
         )
+        if getattr(args, "pretraining_program", None):
+            from .pretraining import PretrainingProgram
+
+            binding = PretrainingProgram(args).binding
+            qualified = measured.get("pretraining_program", {})
+            if any(
+                qualified.get(k) != binding[k]
+                for k in ("program_id", "model", "recipe_sha256", "phase")
+            ):
+                report["errors"].append(
+                    "performance profile does not measure this frozen pretraining program"
+                )
         for key in (
             "sequence_length",
             "batch_size",

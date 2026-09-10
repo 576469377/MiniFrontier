@@ -59,7 +59,9 @@ def parser():
         "--response-tokens", type=int, help="actual student-generated response budget"
     )
     p.add_argument("--warmup-tokens", type=int)
-    p.add_argument("--schedule", choices=["cosine", "wsd"], default="cosine")
+    p.add_argument("--schedule", choices=["cosine", "wsd", "program"], default="cosine")
+    p.add_argument("--pretraining-program", help="experiment plan containing the full base recipe")
+    p.add_argument("--pretraining-phase", help="explicit phase in the frozen pretraining recipe")
     p.add_argument("--batch-size", type=int, default=1)
     p.add_argument("--grad-accum", type=int, default=4)
     p.add_argument("--sequence-length", type=int, default=256)
@@ -148,6 +150,14 @@ def batch(dataset, indices, device):
 
 def main(argv=None):
     args = parser().parse_args(argv)
+    if bool(args.pretraining_program) != bool(args.pretraining_phase):
+        raise ValueError("pretraining program and phase must be supplied together")
+    if args.schedule == "program" and not args.pretraining_program:
+        raise ValueError("program schedule requires an explicit pretraining program")
+    if args.pretraining_program:
+        from .pretraining import PretrainingProgram
+
+        PretrainingProgram(args)
     if args.stop_after_updates is not None and args.stop_after_updates < 1:
         raise ValueError("stop-after-updates must be positive")
     if args.run_kind == "strategy":
@@ -253,6 +263,9 @@ def main(argv=None):
 
 
 def run(args, rank, world, device):
+    from .pretraining import PretrainingProgram
+
+    program = PretrainingProgram(args) if args.pretraining_program else None
     batch_schedule = parse_schedule(
         args.input_batch_schedule, args.input_batch_tokens, args.ce_tokens
     )
@@ -260,6 +273,8 @@ def run(args, rank, world, device):
     torch.manual_seed(args.seed)
     random.seed(args.seed)
     data_dir, output = Path(args.data).resolve(), Path(args.output).resolve()
+    if program and not args.resume and output.exists() and any(output.iterdir()):
+        raise FileExistsError("a new pretraining phase requires a new output directory")
     output.mkdir(parents=True, exist_ok=True)
     if (output / "checkpoint.pt").exists() and not args.resume:
         raise FileExistsError("output contains a checkpoint; use --resume or a new directory")
@@ -280,6 +295,8 @@ def run(args, rank, world, device):
         if args.resume or args.init
         else None
     )
+    if program:
+        program.validate_parent(args, saved)
     phase = (
         args.stage
         if args.stage in {"dense_distill", "sparse_cpt"}
@@ -296,7 +313,7 @@ def run(args, rank, world, device):
         and not saved
     ):
         raise ValueError("this stage requires --init or --resume from a trained checkpoint")
-    if args.init:
+    if args.init and not program:
         assert saved is not None
         allowed = {
             "dense_distill": {"pretrain"},
@@ -313,6 +330,8 @@ def run(args, rank, world, device):
             )
     config = args.config or (saved["config"] if saved else None)
     model = build_model(args.model, config, phase=phase).to(device)
+    if program and model.config.mtp_loss_coef != program.phase["mtp_loss_coef"]:
+        raise ValueError("model MTP coefficient differs from pretraining phase")
     if data_manifest["tokenizer"]["vocab_size"] > model.config.vocab_size:
         raise ValueError("tokenizer vocabulary exceeds model capacity")
     if args.sequence_length > getattr(
@@ -374,7 +393,11 @@ def run(args, rank, world, device):
             from .minideepseekv4_optim import MiniDeepSeekV4Optimizer
 
             optimizer = MiniDeepSeekV4Optimizer(
-                model, lr=args.lr, weight_decay=args.weight_decay, eps=args.adam_eps
+                model,
+                lr=args.lr,
+                weight_decay=args.weight_decay,
+                eps=args.adam_eps,
+                indexer_adamw=program is not None,
             )
     else:
         decay: list[torch.Tensor] = []
@@ -532,6 +555,8 @@ def run(args, rank, world, device):
     from minifrontier.provenance import source_identity
 
     run_spec["source"] = source_identity()
+    if program:
+        run_spec["pretraining_program"] = program.binding
     if args.run_kind == "strategy":
         run_spec["strategy"] = dict(
             phase=args.strategy_phase,
@@ -574,6 +599,8 @@ def run(args, rank, world, device):
         first_step, offset = saved["step"], saved["data_offset"]
         restore_rng(saved["rng"][rank], device)
         ledger = TokenLedger(**saved["token_ledger"])
+    if program:
+        program.inherit(model, optimizer, saved, resume=bool(args.resume))
     cursor: Any
     if args.media_mixture:
         from .media_mixture import MediaMixtureCursor
@@ -633,13 +660,64 @@ def run(args, rank, world, device):
         from .kimi_qk_clip import KimiQKClip
 
         qk_clip = KimiQKClip(model)
-    if args.resume:
+    if args.resume or (program and args.init):
         assert saved is not None
         balance.load_state_dict(saved["router_balance"])
         if qk_clip is not None:
             qk_clip.load_state_dict(saved["qk_clip"])
+    if program and args.init:
+        assert saved is not None
+        cursor_keys = (
+            "data_sha256",
+            "sequence_length",
+            "token_mixture",
+            "media_mixture",
+            "seed",
+            "batch_size",
+            "world_size",
+        )
+        same_cursor = all(saved["run_spec"].get(k) == run_spec.get(k) for k in cursor_keys)
+        if same_cursor:
+            if args.token_mixture or args.media_mixture:
+                cursor.load_state_dict(saved["data_cursor"])
+            else:
+                cursor.offset = saved["data_offset"]
+        program.transition = dict(
+            model="inherit",
+            optimizer="inherit named moments; pause frozen parameters on CPU",
+            router="inherit",
+            main_ce="inherit",
+            phase_ce="reset",
+            sampler="inherit"
+            if same_cursor
+            else "reset: data/context/mixture or cursor geometry changed",
+            rng="inherit",
+            parent_checkpoint_sha256=sha256(args.init),
+        )
+        restore_rng(saved["rng"][rank], device)
+        if rank == 0:
+            (output / "pretraining-transition.json").write_text(
+                json.dumps(program.transition, indent=2)
+            )
     writer = None
     if rank == 0:
+        if program:
+            from .pretraining import optimizer_groups
+
+            (output / "optimizer_groups.json").write_text(
+                json.dumps(
+                    dict(
+                        optimizer=optimizer_kind,
+                        parameter_groups=optimizer_groups(model, optimizer),
+                        peak_lr=program.phase["peak_lr"],
+                        schedule=program.phase["schedule"],
+                        trainable_parameters=sum(
+                            p.numel() for p in model.parameters() if p.requires_grad
+                        ),
+                    ),
+                    indent=2,
+                )
+            )
         (output / "run.json").write_text(
             json.dumps(
                 dict(
@@ -684,6 +762,12 @@ def run(args, rank, world, device):
         return result.loss, result.lm_loss, result
 
     def record(value):
+        if program:
+            value["main_ce_tokens"] = program.main_ce(ledger)
+            if value.get("event") == "train":
+                indexer_groups = [g for g in optimizer.param_groups if ".indexer." in g["name"]]
+                if indexer_groups:
+                    value["indexer_lr"] = indexer_groups[0]["adam_lr"]
         if rank == 0:
             print(json.dumps(value), flush=True)
             with (output / "metrics.jsonl").open("a") as f:
@@ -886,6 +970,10 @@ def run(args, rank, world, device):
                 qk_clip=qk_clip.state_dict() if qk_clip is not None else None,
                 performance_updates=profile,
             )
+            if program:
+                payload["pretraining_state"] = program.snapshot(
+                    model, optimizer, ledger, complete=finished(step)
+                )
             if reference is not None:
                 payload["reference"] = reference.state_dict()
             atomic_save(payload, output / "checkpoint.pt")
@@ -1100,6 +1188,9 @@ def run(args, rank, world, device):
                 group["lr"] = group["visual_base_lr"] * factor
                 if "adam_lr" in group:
                     group["adam_lr"] = group["visual_base_lr"] * factor
+        if program:
+            assert counts is not None
+            factor = program.rates(optimizer, ledger, int(counts[0 if args.ce_tokens else 1]))
         window_balance = None
         if (
             args.model == "miniqwen4"
