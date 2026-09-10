@@ -77,6 +77,12 @@ def test_real_pause_resume_matches_uninterrupted_optimizer_router_rng(
     ]
     for key in ("model", "optimizer", "sampler", "router_balance", "ledger", "rng"):
         assert_tree_equal(a[key], b[key])
+    for path in (tmp_path / "continuous", tmp_path / "resumed"):
+        for row in map(json.loads, (path / "metrics.jsonl").read_text().splitlines()):
+            if "step_seconds" in row:
+                assert 0 <= row["data_preparation_seconds"] <= row["step_seconds"]
+                assert 0 < row["ce_fraction"] <= 1
+                assert 0 <= row["padding_fraction"] < 1
 
 
 def test_control_escape_and_media_hash_tampering(fixture_data):

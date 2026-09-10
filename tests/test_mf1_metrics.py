@@ -18,6 +18,9 @@ def test_mf1_groups_and_validation_denominators():
             grad_norm=1.2,
             ce_per_second=4.1,
             peak_reserved_gib=4.3,
+            data_preparation_seconds=0.2,
+            ce_fraction=0.25,
+            padding_fraction=0.1,
         )
     )
     validation = mf1_scalars(
@@ -34,6 +37,9 @@ def test_mf1_groups_and_validation_denominators():
         )
     )
     assert train["train/ce_tokens"] == 4255
+    assert train["perf/data_preparation_seconds"] == 0.2
+    assert train["perf/ce_fraction"] == 0.25
+    assert train["perf/padding_fraction"] == 0.1
     assert validation["eval/ce_tokens"] == 494
     assert validation["eval/lm_loss_language"] == 3.5
     assert validation["eval/black_media_lm_loss_vision"] == 2.0

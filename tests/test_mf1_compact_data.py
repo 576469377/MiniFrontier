@@ -1,10 +1,12 @@
 """Compact shards preserve model inputs, media gradients' pixel inputs and sampler order."""
 
+import os
 from dataclasses import asdict
 
 import pytest
 import torch
 
+from minifrontier.data import minifrontier1_encoding as encoding
 from minifrontier.data.minifrontier1 import RecordDataset, make_fixture
 from minifrontier.data.minifrontier1_encoding import CompactDataset, encode_dataset, open_dataset
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
@@ -19,7 +21,7 @@ def encoded(tmp_path, monkeypatch):
     source, output = tmp_path / "source", tmp_path / "compact"
     make_fixture(source)
     config = MiniFrontier1Config.tiny()
-    manifest = encode_dataset(source, output, config, compact=True, shard_tokens=512)
+    manifest = encode_dataset(source, output, config, compact=True, shard_tokens=128)
     return source, output, config, manifest
 
 
@@ -80,9 +82,57 @@ def test_compact_sampler_uses_index_without_retokenizing_or_decoding(encoded, mo
         raise AssertionError("sampler initialization must use compact index only")
 
     monkeypatch.setattr(CompactDataset, "__getitem__", forbidden)
+    monkeypatch.setattr(CompactDataset, "_map_part", forbidden)
+    compact._open_part.cache_clear()
+    compact._open_part = forbidden
     after = Sampler(compact, 9, weights, length_filter=True)
     assert before.state_dict() == after.state_dict()
     assert before.lengths == after.lengths
+
+
+def test_compact_random_access_does_not_rehash_evicted_unchanged_shards(encoded, monkeypatch):
+    _, output, config, manifest = encoded
+    calls = []
+    original_hash = encoding.sha256
+
+    def counted_hash(path):
+        if path.parent == output:
+            calls.append(path.name)
+        return original_hash(path)
+
+    monkeypatch.setattr(encoding, "sha256", counted_hash)
+    dataset = CompactDataset(output, "train", config)
+    parts = manifest["splits"]["train"]["parts"]
+    assert len(parts) > 4
+    starts = [0, *dataset.ends[:-1]]
+    # Force both bounded caches to evict every part, then revisit in the same order.
+    for _ in range(3):
+        for index in starts:
+            dataset[index]
+    for part in parts:
+        for entry in part["files"].values():
+            assert calls.count(entry["name"]) == 1
+    assert dataset._open_part.cache_info().currsize == 4
+    assert dataset._open_index.cache_info().currsize == 4
+
+
+@pytest.mark.parametrize("key", ["tokens.bin", "metadata.jsonl", "index.bin"])
+def test_compact_reopen_detects_changed_file_even_with_restored_mtime(encoded, key):
+    _, output, config, manifest = encoded
+    dataset = CompactDataset(output, "train", config)
+    dataset[0]
+    assert len(dataset.ends) > 4
+    for index in dataset.ends[:-1]:
+        dataset[index]
+    path = output / manifest["splits"]["train"]["parts"][0]["files"][key]["name"]
+    stat = path.stat()
+    with path.open("r+b") as handle:
+        first = handle.read(1)
+        handle.seek(0)
+        handle.write(bytes([first[0] ^ 1]))
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+    with pytest.raises(ValueError, match="checksum"):
+        dataset[0]
 
 
 def test_compact_loader_rejects_corruption_and_wrong_config(encoded):

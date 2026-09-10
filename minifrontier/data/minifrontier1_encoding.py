@@ -278,7 +278,7 @@ def encode_compact_dataset(data, output, config, *, max_gib=16, shard_tokens=64_
 
 
 class CompactDataset:
-    """Memory-map up to four shards; decode pixels without retokenizing text."""
+    """Bound token and index mappings separately; validate immutable files once per identity."""
 
     def __init__(self, root, split, config):
         self.root, self.config = Path(root).resolve(), config
@@ -295,6 +295,8 @@ class CompactDataset:
         self.media_root = Path(self.manifest["media_root"]).resolve()
         self.parts = self.manifest["splits"][split]["parts"]
         self.ends = np.cumsum([p["counts"]["records"] for p in self.parts]).tolist()
+        self._verified_files: dict[tuple[int, str], tuple[int, ...]] = {}
+        self._open_index = lru_cache(maxsize=4)(self._map_index)
         self._open_part = lru_cache(maxsize=4)(self._map_part)
 
     def __len__(self):
@@ -306,18 +308,33 @@ class CompactDataset:
             raise ValueError("compact shard path escapes dataset")
         return path
 
-    def _map_part(self, number):
+    def _validated_file(self, number, key):
         part = self.parts[number]
-        for key, entry in part["files"].items():
-            path = self._file(part, key)
-            if path.stat().st_size != entry["bytes"] or sha256(path) != entry["sha256"]:
+        entry, path = part["files"][key], self._file(part, key)
+
+        def identity():
+            stat = path.stat()
+            return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+
+        current = identity()
+        if self._verified_files.get((number, key)) != current:
+            if current[2] != entry["bytes"] or sha256(path) != entry["sha256"]:
                 raise ValueError("compact shard checksum differs")
+            if identity() != current:
+                raise ValueError("compact shard changed during checksum validation")
+            self._verified_files[number, key] = current
+        return path
+
+    def _map_index(self, number):
+        return np.memmap(self._validated_file(number, "index.bin"), mode="r", dtype=INDEX)
+
+    def _map_part(self, number):
         return {
-            key: np.memmap(self._file(part, key), mode="r", dtype=dtype)
+            key: np.memmap(self._validated_file(number, key), mode="r", dtype=dtype)
             for key, dtype in (
                 ("tokens.bin", self.manifest["token_dtype"]),
                 ("mask.bin", np.uint8),
-                ("index.bin", INDEX),
+                ("metadata.jsonl", np.uint8),
             )
         }
 
@@ -328,17 +345,17 @@ class CompactDataset:
             raise IndexError(index)
         part = bisect_right(self.ends, index)
         row = index - (self.ends[part - 1] if part else 0)
-        arrays = self._open_part(part)
-        return part, arrays, arrays["index.bin"][row]
+        return part, self._open_index(part)[row]
 
     def length_at(self, index):
-        return int(self._entry(index)[2]["length"])
+        return int(self._entry(index)[1]["length"])
 
     def domain_at(self, index):
-        return self.manifest["domains"][int(self._entry(index)[2]["domain"])]
+        return self.manifest["domains"][int(self._entry(index)[1]["domain"])]
 
     def __getitem__(self, index):
-        part, arrays, entry = self._entry(index)
+        part, entry = self._entry(index)
+        arrays = self._open_part(part)
         length, offset = int(entry["length"]), int(entry["offset"])
         ids = torch.from_numpy(arrays["tokens.bin"][offset : offset + length].astype(np.int64))[
             None
@@ -350,9 +367,14 @@ class CompactDataset:
             count=length,
         ).astype(bool)
         labels = ids.clone().masked_fill(~torch.from_numpy(mask)[None], -100)
-        with self._file(self.parts[part], "metadata.jsonl").open("rb") as handle:
-            handle.seek(int(entry["metadata_offset"]))
-            metadata = json.loads(handle.read(int(entry["metadata_bytes"])))
+        metadata_offset = int(entry["metadata_offset"])
+        metadata = json.loads(
+            bytes(
+                arrays["metadata.jsonl"][
+                    metadata_offset : metadata_offset + int(entry["metadata_bytes"])
+                ]
+            )
+        )
         resources = {r["media_id"]: r for r in metadata["resources"]}
         spans, loaded = [], {}
         remaining = self.config.protected_media_tokens
@@ -383,7 +405,7 @@ class CompactDataset:
             media=spans,
             sample_id=metadata["sample_id"],
             split_group=metadata["split_group"],
-            domain=self.domain_at(index),
+            domain=self.manifest["domains"][int(entry["domain"])],
             media_hashes=[s["source_sha256"] for s in spans],
             media_exposures=len(resources),
         )

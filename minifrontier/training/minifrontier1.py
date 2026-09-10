@@ -509,6 +509,7 @@ def train(
         while (steps is None or step < steps) and (
             token_budget is None or ledger["phase_tokens"] < token_budget
         ):
+            data_started = time.monotonic()
             window, inputs = [], 0
             capacity = (
                 context_length(
@@ -551,6 +552,7 @@ def train(
                 )
             if not ce_count and phase != "indexer":
                 raise ValueError("all-mask window has no training signal; fix the dataset")
+            data_seconds = time.monotonic() - data_started
             factor = (
                 1.0
                 if run_kind == "acceptance"
@@ -573,14 +575,18 @@ def train(
                     sparse = sampler.rng.random() < min(1.0, ledger["phase_tokens"] / 20_000_000)
                     raw["attention_phase"] = "sparse_cpt" if sparse else "dense_distill"
             actual_batches = []
+            padded_inputs = 0
             for raw in microbatches(
                 window,
                 batch_size=batch_size,
                 max_padded_tokens=input_batch_tokens,
                 pad_token_id=c.pad_token_id,
             ):
+                # The labels already exist on CPU; avoid a CUDA scalar read per microbatch.
+                local_ce = int(raw["labels"][:, 1:].ne(-100).sum())
                 item = move(raw, device)
                 actual_batches.append(item["input_ids"].shape[0])
+                padded_inputs += item["input_ids"].numel()
                 if phase == "p2":
                     for layer in model.layers:
                         if layer.kind != "kda":
@@ -590,7 +596,6 @@ def train(
                 ):
                     with balance.capture(item["input_ids"].ne(0)):
                         result = _forward(model, item)
-                    local_ce = int(item["labels"][:, 1:].ne(-100).sum())
                     local_queries = result.index_query_tokens
                     objective = (
                         result.indexer_loss * local_queries
@@ -651,6 +656,9 @@ def train(
                 step_seconds=elapsed,
                 ce_per_second=ce_count / elapsed if phase != "indexer" else 0,
                 input_per_second=inputs / elapsed,
+                data_preparation_seconds=data_seconds,
+                ce_fraction=ce_count / inputs if phase != "indexer" else 0,
+                padding_fraction=(padded_inputs - inputs) / padded_inputs,
                 input_batch_actual=inputs,
                 micro_batches=len(actual_batches),
                 microbatch_max_samples=max(actual_batches),

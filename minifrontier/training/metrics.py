@@ -6,6 +6,9 @@ PERFORMANCE_METRICS = {
     "input_per_second",
     "peak_allocated_gib",
     "peak_reserved_gib",
+    "data_preparation_seconds",
+    "ce_fraction",
+    "padding_fraction",
 }
 
 
