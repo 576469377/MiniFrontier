@@ -483,11 +483,16 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_g
         schema_version=2,
         sequence_length=max_length,
         format="document-ragged-v2",
+        pretrain_text_encoding="literal_text_without_special_token_matching_v1",
         corpus_sha256=sha256(root / "corpus-manifest.json"),
         stages={},
         tokenizer=dict(vocab_size=tokenizer.get_vocab_size(), sha256=sha256(tokenizer_path)),
     )
     for stage in ("pretrain", "sft"):
+        # Raw documents can quote protocol spellings. Encode their original bytes
+        # as ordinary BPE pieces; only this writer inserts document BOS/EOS.
+        # This option is distinct from add_special_tokens (post-processing).
+        tokenizer.encode_special_tokens = stage == "pretrain"
         manifest["stages"][stage] = {}
         for split in ("train", "val", "test"):
             prefix = f"{stage}.{split}"
@@ -509,7 +514,7 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_g
                         rejected["requires_native_media_encoder"] += 1
                         continue
                     if stage == "pretrain":
-                        ids = [1, *tokenizer.encode(row["text"]).ids, 2]
+                        ids = [1, *tokenizer.encode(row["text"], add_special_tokens=False).ids, 2]
                         targets = ids.copy()
                         targets[0] = -100
                     else:

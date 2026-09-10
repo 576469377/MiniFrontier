@@ -5,12 +5,19 @@ import json
 import random
 import string
 from dataclasses import asdict
+from types import SimpleNamespace
 
 import pytest
 import torch
+from tokenizers import Tokenizer
 
 from minifrontier.data import sha256
-from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokenizer
+from minifrontier.data.corpus import (
+    STRATEGY_SPECIAL_TOKENS,
+    CorpusBuilder,
+    encode_corpus,
+    train_tokenizer,
+)
 from minifrontier.data.encoding_audit import audit_text_encoding
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS
 from minifrontier.data.minifrontier1_encoding import (
@@ -45,7 +52,7 @@ def encoded(tmp_path, monkeypatch):
     rng = random.Random(45)
     for i in range(4):
         text = " ".join("".join(rng.choices(string.ascii_lowercase, k=8)) for _ in range(100))
-        text += "\nLiteral control spelling: " + SPECIAL_TOKENS[2]
+        text += "\nLiteral control spellings: " + " ".join(STRATEGY_SPECIAL_TOKENS)
         assert builder.add(
             dict(
                 source="fixture",
@@ -179,16 +186,35 @@ def test_compact_audit_decodes_all_documents_and_preserves_partition_counts(enco
         )
 
 
-def test_source_audit_detects_literal_control_tokens_in_normal_documents(encoded, tmp_path):
+@pytest.mark.parametrize("legacy", [False, True])
+def test_source_documents_keep_literal_control_spellings_as_ordinary_text(
+    encoded, tmp_path, monkeypatch, legacy
+):
     root, _config, _manifest = encoded
     corpus = root.parent / "canonical"
     tokenizer = tmp_path / "source-tokenizer.json"
     train_tokenizer(corpus, tokenizer, 350)
+    if legacy:
+        # Reproduce the old writer, which left special-token matching enabled.
+        class LegacyTokenizer:
+            def __init__(self, path):
+                self.inner = Tokenizer.from_file(str(path))
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+        monkeypatch.setattr(
+            "minifrontier.data.corpus.Tokenizer", SimpleNamespace(from_file=LegacyTokenizer)
+        )
     source = tmp_path / "source-encoded"
     encode_corpus(corpus, tokenizer, source)
     report = audit_text_encoding(corpus, source, tmp_path / "audit.json")
-    assert report["status"] == "failed"
-    assert report["errors"] == {"literal_control_encoded_as_protocol": 4}
+    if legacy:
+        assert report["status"] == "failed"
+        assert report["errors"] == {"literal_control_encoded_as_protocol": 4}
+    else:
+        assert report["status"] == "mechanical_checks_passed_pending_quality_admission"
+        assert not report["errors"]
 
 
 @pytest.mark.parametrize("fault", ["mask", "partition"])
