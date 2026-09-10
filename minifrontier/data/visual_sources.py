@@ -19,6 +19,7 @@ from PIL import Image
 from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder
 from minifrontier.data.media_hash import decoded_hashes
+from minifrontier.data.media_tasks import allava_task
 from minifrontier.data.minifrontier1 import write_json
 from minifrontier.data.public_sources import source_rows
 from minifrontier.data.remote import RangeFile
@@ -423,14 +424,7 @@ def candidate_turns(subset, row):
             continue
         task = VISUAL_CANDIDATES[subset]["task"]
         if task == "caption_or_vqa":
-            task = (
-                "caption"
-                if any(
-                    word in question.lower()
-                    for word in ("describ", "description", "descriptive", "elaborate", "details")
-                )
-                else "vqa"
-            )
+            task = allava_task(question)
         selected.append(
             dict(
                 index=index,

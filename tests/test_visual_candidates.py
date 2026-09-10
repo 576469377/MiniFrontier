@@ -24,7 +24,7 @@ def row(seed=1):
         images=[dict(bytes=binary.getvalue(), path="original/image.png")],
         texts=[
             dict(
-                user="Describe the contents of this image.",
+                user="Please provide a detailed narrative of the image.",
                 assistant="The image contains a garden with several tall trees and a small stone path.",
             )
         ],

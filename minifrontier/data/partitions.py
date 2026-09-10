@@ -21,9 +21,11 @@ from minifrontier.data import sha256
 from minifrontier.storage import GIB, require_space
 
 FORMAT = "corpus-partition-view-v1"
+TASK_FORMAT = "corpus-partition-view-v2"
+VIEW_FORMATS = {FORMAT, TASK_FORMAT}
 
 
-def _reserve(db, groups, excluded_groups=()):
+def _reserve(db, groups, excluded_groups=(), task_classification=None):
     if not isinstance(groups, dict) or any(
         not isinstance(g, str) or not g or v != "val" for g, v in groups.items()
     ):
@@ -56,7 +58,8 @@ def _reserve(db, groups, excluded_groups=()):
     )
     if len(excluded) != len(excluded_groups) or any(split != "train" for _, split in excluded):
         raise ValueError("exclusion refers to missing, mixed or held-out groups")
-    db.execute("""CREATE TEMP VIEW samples AS
+    view = "reserved_samples" if task_classification is not None else "samples"
+    db.execute(f"""CREATE TEMP VIEW {view} AS
         SELECT s.id,s.stage,s.source,s.task,s.first_question,s.text,s.payload,
                s.simhash,s.group_root,
                CASE WHEN v.group_root IS NOT NULL THEN 'val' ELSE s.split END AS split
@@ -64,6 +67,21 @@ def _reserve(db, groups, excluded_groups=()):
         LEFT JOIN excluded_training_groups x ON s.group_root=x.group_root
         WHERE x.group_root IS NULL
     """)
+    if task_classification is not None:
+        from minifrontier.data.media_tasks import effective_task, task_policy
+
+        if task_classification != task_policy():
+            raise ValueError("media task classifier differs from the bound source policy")
+        db.create_function("effective_media_task", 4, effective_task, deterministic=True)
+        db.execute("""CREATE TEMP VIEW samples AS
+            SELECT id,stage,source,new_task AS task,first_question,text,
+              CASE WHEN new_task=task THEN payload
+                   ELSE json_set(payload,'$.task',new_task) END AS payload,
+              simhash,group_root,split
+            FROM (SELECT *,effective_media_task(source,json_extract(payload,'$.revision'),
+                  task,json_extract(payload,'$.visual_question')) AS new_task
+                  FROM reserved_samples)
+        """)
 
 
 def open_corpus(root):
@@ -71,13 +89,13 @@ def open_corpus(root):
     root = Path(root).resolve()
     path = root / "corpus-manifest.json"
     manifest = json.loads(path.read_text()) if path.exists() else {}
-    if manifest.get("format") != FORMAT:
+    if manifest.get("format") not in VIEW_FORMATS:
         return sqlite3.connect((root / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
     base = (root / manifest["base_corpus"]["path"]).resolve()
     if sha256(base / "corpus-manifest.json") != manifest["base_corpus"]["manifest_sha256"]:
         raise ValueError("partition base manifest changed")
     original = json.loads((base / "corpus-manifest.json").read_text())
-    if original.get("format") == FORMAT:
+    if original.get("format") in VIEW_FORMATS:
         raise ValueError("partition views must reference the original database directly")
     if sha256(base / "corpus.sqlite") != manifest["database_sha256"]:
         raise ValueError("partition base database changed")
@@ -89,7 +107,12 @@ def open_corpus(root):
     db = sqlite3.connect((base / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
     try:
         overrides = json.loads(partition.read_text())
-        _reserve(db, overrides["groups"], overrides.get("excluded_groups", []))
+        policy = overrides.get("task_policy")
+        if (manifest["format"] == TASK_FORMAT) != (policy is not None):
+            raise ValueError("task-aware partition format and policy disagree")
+        if policy is not None and manifest.get("task_policy") != policy:
+            raise ValueError("partition task policy differs from its manifest")
+        _reserve(db, overrides["groups"], overrides.get("excluded_groups", []), policy)
         return db
     except BaseException:
         db.close()
@@ -118,7 +141,7 @@ def create_partition_view(corpus_root, reservation, output):
     manifest = json.loads((source / "corpus-manifest.json").read_text())
     audit = json.loads((source / "source-audit.json").read_text())
     if (
-        manifest.get("format") == FORMAT
+        manifest.get("format") in VIEW_FORMATS
         or audit.get("formal_admission")
         or audit["status"] != "candidate_slice_complete_pending_admission"
     ):
@@ -263,7 +286,7 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
         raise ValueError("no train groups require exclusion for this inventory")
     overrides: dict[str, Any] = dict(groups={}, excluded_groups=[])
     base = source
-    if manifest.get("format") == FORMAT:
+    if manifest.get("format") in VIEW_FORMATS:
         base = (source / manifest["base_corpus"]["path"]).resolve()
         overrides = json.loads((source / manifest["partition_file"]).read_text())
 
@@ -298,7 +321,7 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
     with contextlib.closing(
         sqlite3.connect((base / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
     ) as db:
-        _reserve(db, overrides["groups"], exclusions)
+        _reserve(db, overrides["groups"], exclusions, overrides.get("task_policy"))
         if holdout_hash(db) != prior_holdouts:
             raise ValueError("exclusion changed an existing validation/test record")
         for name, split, records, groups, count in db.execute(
@@ -330,6 +353,7 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
             groups=overrides["groups"],
             excluded_groups=exclusions,
             grouping_audit_sha256=sha256(report_path),
+            **({"task_policy": overrides["task_policy"]} if "task_policy" in overrides else {}),
         ),
     )
     for name in ("source_allowlist.json", "reference-tokenizer.json"):
@@ -344,7 +368,7 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
     current_review = {r["record"]["sample_id"] for r in review}
     result = dict(
         manifest,
-        format=FORMAT,
+        format=TASK_FORMAT if "task_policy" in overrides else FORMAT,
         base_corpus=dict(
             path=os.path.relpath(base, root), manifest_sha256=sha256(base / "corpus-manifest.json")
         ),
@@ -378,6 +402,125 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
             grouping_audit_sha256=sha256(report_path),
             holdout_membership_sha256=prior_holdouts,
             excluded_training_groups=selected,
+            updated_unix=time.time(),
+            review=dict(
+                status="awaiting_manual_review",
+                sha256=sha256(review_path),
+                samples=review_counts,
+                prior_sha256=sha256(source / "review-samples.jsonl"),
+                removed_ids=sorted(previous_review - current_review),
+                added_ids=sorted(current_review - previous_review),
+            ),
+        ),
+    )
+    return result
+
+
+def create_task_classification_view(corpus_root, output):
+    """Correct source task metadata while preserving every QA, pixel and split identity."""
+    from collections import Counter
+
+    from minifrontier.data.media_tasks import task_policy
+    from minifrontier.data.minifrontier1 import write_json
+
+    source, root = Path(corpus_root).resolve(), Path(output).resolve()
+    if root.exists():
+        raise FileExistsError("task classification requires a new immutable view")
+    manifest = json.loads((source / "corpus-manifest.json").read_text())
+    audit = json.loads((source / "source-audit.json").read_text())
+    if audit.get("formal_admission") or audit["status"] not in {
+        "candidate_slice_complete_pending_admission",
+        "candidate_inventory_below_target",
+    }:
+        raise ValueError("task correction requires a completed, unadmitted corpus")
+    base = source
+    overrides: dict[str, Any] = dict(groups={}, excluded_groups=[])
+    if manifest.get("format") in VIEW_FORMATS:
+        base = (source / manifest["base_corpus"]["path"]).resolve()
+        overrides = json.loads((source / manifest["partition_file"]).read_text())
+    if "task_policy" in overrides:
+        raise ValueError("this corpus already binds a task policy")
+    policy = task_policy()
+    counts: dict[str, Counter[str]] = {}
+    changes: dict[str, Counter[str]] = {}
+    answers: dict[str, Counter[str]] = {}
+    reviews = []
+    review_counts: Counter[str] = Counter()
+    identity_hash, content_hash = hashlib.sha256(), hashlib.sha256()
+    with (
+        contextlib.closing(open_corpus(source)) as before,
+        contextlib.closing(
+            sqlite3.connect((base / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
+        ) as after,
+    ):
+        if sha256(base / "corpus.sqlite") != manifest["database_sha256"]:
+            raise ValueError("task correction source database changed")
+        _reserve(after, overrides["groups"], overrides.get("excluded_groups", []), policy)
+        query = "SELECT id,stage,split,group_root,task,payload FROM samples ORDER BY id"
+        for old, new in zip(before.execute(query), after.execute(query), strict=True):
+            if old[:4] != new[:4]:
+                raise ValueError("task correction changed a sample, stage, split or group")
+            old_row, row = json.loads(old[5]), json.loads(new[5])
+            old_task = old_row.pop("task")
+            new_task = row.pop("task")
+            if old_row != row or old[4] != old_task or new[4] != new_task:
+                raise ValueError("task correction changed content outside the domain label")
+            identity_hash.update(json.dumps(old[:4]).encode())
+            content_hash.update(json.dumps(row, sort_keys=True).encode())
+            split = old[2]
+            counts.setdefault(split, Counter())[new_task] += 1
+            answers.setdefault(split, Counter())[new_task] += row.get("answer_reference_tokens", 0)
+            if old_task != new_task:
+                changes.setdefault(split, Counter())[old_task + "->" + new_task] += 1
+            row["task"] = new_task
+            key = row["source"] + ":" + new_task
+            if split == "train" and review_counts[key] < 100:
+                reviews.append(dict(split=split, record=row))
+                review_counts[key] += 1
+    if not changes:
+        raise ValueError("the source corpus has no task labels requiring correction")
+    require_space(root, 16 * 1024**2, reserve_bytes=80 * GIB)
+    root.mkdir(parents=True)
+    write_json(root / "split-overrides.json", dict(overrides, task_policy=policy))
+    for name in ("source_allowlist.json", "reference-tokenizer.json"):
+        if (source / name).exists():
+            shutil.copyfile(source / name, root / name)
+    review_path = root / "review-samples.jsonl"
+    review_path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in reviews))
+    previous_review = {
+        json.loads(line)["record"]["sample_id"]
+        for line in (source / "review-samples.jsonl").read_text().splitlines()
+    }
+    current_review = {r["record"]["sample_id"] for r in reviews}
+    result = dict(
+        manifest,
+        format=TASK_FORMAT,
+        base_corpus=dict(
+            path=os.path.relpath(base, root), manifest_sha256=sha256(base / "corpus-manifest.json")
+        ),
+        partition_file="split-overrides.json",
+        partition_sha256=sha256(root / "split-overrides.json"),
+        previous_effective_manifest_sha256=sha256(source / "corpus-manifest.json"),
+        task_policy=policy,
+        formal_admission=False,
+    )
+    write_json(root / "corpus-manifest.json", result)
+    write_json(
+        root / "source-audit.json",
+        dict(
+            audit,
+            operation="correct_source_task_classification",
+            corpus=result,
+            task_policy=policy,
+            task_changes=changes,
+            effective_domain_records=counts,
+            split_answer_reference_tokens=answers,
+            sample_stage_split_group_sha256=identity_hash.hexdigest(),
+            all_content_except_task_sha256=content_hash.hexdigest(),
+            base_source_audit_sha256=sha256(source / "source-audit.json"),
+            original_database_and_pixels_unchanged=True,
+            formal_admission=False,
+            main_budget_eligible=False,
             updated_unix=time.time(),
             review=dict(
                 status="awaiting_manual_review",
