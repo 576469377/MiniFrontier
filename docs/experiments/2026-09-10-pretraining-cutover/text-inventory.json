@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "kind": "text_candidate_inventory_snapshot",
+  "observed_unix": 1789060185.6861172,
+  "formal_admission": false,
+  "run_id": "strategy-pretraining-data-v3",
+  "source_commit": "578b26d32454521cf851f7c137dce00c0f54dc4b",
+  "source_archive_sha256": "6a5db6b4fe45d57a48b727b51f95bb0fab72d09dd8ea04dfc70f9c5e0b1615fc",
+  "command": [
+    "python",
+    "-m",
+    "minifrontier.data.pretraining",
+    "merge",
+    "--inputs",
+    "data/pretraining-text-v2",
+    "data/pretraining-code-v1",
+    "--output",
+    "data/pretraining-canonical-text-v1",
+    "--evaluation",
+    "data/pretraining-evaluation-v1",
+    "--max-gib",
+    "12",
+    "--seed",
+    "20260910"
+  ],
+  "state": "candidate_slice_complete_pending_admission",
+  "time_to_final_audit_seconds": 482.51,
+  "inputs": [
+    {
+      "inventory": "pretraining-text-v2",
+      "source_audit_sha256": "04085b3a8f94f7c803a154cf1375a182ef75eaee05aed309caf88dfb2d7fe0af",
+      "corpus_manifest_sha256": "d3021454f6f04cb2867815e30d9405bb50cbad92c5f51708d3bc0ce33e8a65b4",
+      "database_sha256": "e928840ba939bcc1c198e9cb3daebdff52fa66b503a57871229ac4c6a2c60b19"
+    },
+    {
+      "inventory": "pretraining-code-v1",
+      "source_audit_sha256": "3ad6a59c10b38188b08c54f9f810f1a38590f528f178bc0546de0bc7369fef88",
+      "corpus_manifest_sha256": "ccec915a0d5e6712c317167c46cc6fd74ee00f916c8ee0e655d973fd73887c41",
+      "database_sha256": "012e65c6c174f5f206b357dfd42eb0956f5c87046f9ba3bf71f0b1d15cc77789"
+    }
+  ],
+  "reference_tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+  "reference_is_final_training_tokenizer": false,
+  "corpus_manifest_sha256": "8449703a6376089c084e9f72b78b918bd6f04e0098f8179cb080d38452d68827",
+  "source_audit_sha256": "b0f8842a56b14bfd1633d4517112b711174c022bc40b3cc6ad33e26dd1ea7a5e",
+  "counts": {
+    "accepted": 406934,
+    "near_duplicates": 936,
+    "repeated_boilerplate": 934,
+    "exact_duplicates": 111,
+    "excluded_group_records": 324
+  },
+  "train_reference_tokens": 554952646,
+  "split_reference_tokens": {
+    "train": {
+      "opencsg/Fineweb-Edu-Chinese-V2.1": 221643597,
+      "HuggingFaceFW/fineweb-edu": 147701678,
+      "open-web-math/open-web-math": 49245643,
+      "HuggingFaceH4/ultrachat_200k": 39419222,
+      "codeparrot/codeparrot-clean-train": 96942506
+    },
+    "test": {
+      "opencsg/Fineweb-Edu-Chinese-V2.1": 2263954,
+      "HuggingFaceFW/fineweb-edu": 1558471,
+      "open-web-math/open-web-math": 471806,
+      "HuggingFaceH4/ultrachat_200k": 397010,
+      "codeparrot/codeparrot-clean-train": 1667859
+    },
+    "val": {
+      "opencsg/Fineweb-Edu-Chinese-V2.1": 1095556,
+      "HuggingFaceFW/fineweb-edu": 739989,
+      "open-web-math/open-web-math": 272045,
+      "HuggingFaceH4/ultrachat_200k": 183846,
+      "codeparrot/codeparrot-clean-train": 503196
+    }
+  },
+  "contamination": {
+    "direct_matches": 324,
+    "matched_sources": {
+      "codeparrot/codeparrot-clean-train": 321,
+      "open-web-math/open-web-math": 3
+    },
+    "matches_sha256": "0cb232e954bb3d3685e5dd662447c2685989026b5cff8d7444d3eb202f21f2fc",
+    "evaluation_manifest_sha256": "9ecff011f4f5a3949764733f146107d285536a7a23c508008dcd0ce4c1af8257",
+    "rules": {
+      "normalization": "NFKC + casefold + Unicode word boundaries; matching only",
+      "prompt_min_characters": 32,
+      "overlapping_word_ngram": 13,
+      "ngram_min_characters": 64,
+      "matched_group_policy": "remove the complete connected document/repository group"
+    },
+    "limitations": [
+      "exact normalized prompts and 13-word overlaps do not detect all paraphrases/translations",
+      "this inventory does not audit visual benchmark identities",
+      "no benchmark solution is executed by data preparation"
+    ],
+    "prior_holdout_keys": 8512,
+    "protected_groups": 5741,
+    "excluded_groups": 4,
+    "excluded_records": 324,
+    "policy": "prior test takes precedence over prior val; whole matched groups removed",
+    "match_fields": {
+      "repo_id": 321,
+      "prompt": 3
+    }
+  },
+  "benchmark_sources": {
+    "humaneval": {
+      "repo": "openai/human-eval",
+      "revision": "6d43fb980f9fee3c892a914eda09951f772ad10d",
+      "file": "data/HumanEval.jsonl.gz",
+      "blob_sha1": "998d25196e17af24daf9b6cb3a975fe752528e46",
+      "license": "MIT",
+      "expected_rows": 164
+    },
+    "mbpp": {
+      "repo": "google-research/google-research",
+      "revision": "08a8d6736475776f42ffac23b2c13111a28e5795",
+      "file": "mbpp/mbpp.jsonl",
+      "blob_sha1": "96e2dc2f7dd95b7b87b38dc46e42cbed444251bb",
+      "license": "CC-BY-4.0 (dataset); upstream repository license retained separately",
+      "license_evidence": "https://huggingface.co/datasets/google-research-datasets/mbpp",
+      "expected_rows": 974
+    },
+    "gsm8k_test": {
+      "repo": "openai/grade-school-math",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "file": "grade_school_math/data/test.jsonl",
+      "blob_sha1": "e4c2ff4942b9a78bd74f04141224c11e28d12dc9",
+      "license": "MIT",
+      "expected_rows": 1319
+    },
+    "gsm8k_train": {
+      "repo": "openai/grade-school-math",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "file": "grade_school_math/data/train.jsonl",
+      "blob_sha1": "7d97154b91aef28d01c3301741c81ce90039a4b1",
+      "license": "MIT",
+      "expected_rows": 7473
+    }
+  },
+  "benchmark_counts": {
+    "humaneval": 164,
+    "mbpp": 974,
+    "gsm8k_test": 1319,
+    "gsm8k_train": 7473
+  },
+  "integrity": {
+    "database_hash_matches": true,
+    "sqlite_quick_check": "ok",
+    "cross_split_groups": 0,
+    "cross_split_origin_keys": 0
+  },
+  "source_splits": {
+    "HuggingFaceFW/fineweb-edu": {
+      "test": {
+        "records": 1492,
+        "groups": 1491
+      },
+      "train": {
+        "records": 145878,
+        "groups": 145873
+      },
+      "val": {
+        "records": 723,
+        "groups": 723
+      },
+      "validation_group_fraction": 0.004882265154942703
+    },
+    "HuggingFaceH4/ultrachat_200k": {
+      "test": {
+        "records": 340,
+        "groups": 340
+      },
+      "train": {
+        "records": 32451,
+        "groups": 32451
+      },
+      "val": {
+        "records": 162,
+        "groups": 162
+      },
+      "validation_group_fraction": 0.0049160926167571995
+    },
+    "codeparrot/codeparrot-clean-train": {
+      "test": {
+        "records": 568,
+        "groups": 151
+      },
+      "train": {
+        "records": 31377,
+        "groups": 8338
+      },
+      "val": {
+        "records": 186,
+        "groups": 70
+      },
+      "validation_group_fraction": 0.008178525528683258
+    },
+    "open-web-math/open-web-math": {
+      "test": {
+        "records": 293,
+        "groups": 292
+      },
+      "train": {
+        "records": 26428,
+        "groups": 26399
+      },
+      "val": {
+        "records": 128,
+        "groups": 128
+      },
+      "validation_group_fraction": 0.004772735747045005
+    },
+    "opencsg/Fineweb-Edu-Chinese-V2.1": {
+      "test": {
+        "records": 1699,
+        "groups": 1699
+      },
+      "train": {
+        "records": 164421,
+        "groups": 164421
+      },
+      "val": {
+        "records": 788,
+        "groups": 788
+      },
+      "validation_group_fraction": 0.004721163754882929
+    }
+  },
+  "review": {
+    "records": 500,
+    "source_domain_counts": {
+      "[\"HuggingFaceFW/fineweb-edu\", \"en_edu\"]": 100,
+      "[\"opencsg/Fineweb-Edu-Chinese-V2.1\", \"zh_edu\"]": 100,
+      "[\"open-web-math/open-web-math\", \"verified_math_science\"]": 100,
+      "[\"HuggingFaceH4/ultrachat_200k\", \"dialogue\"]": 100,
+      "[\"codeparrot/codeparrot-clean-train\", \"code\"]": 100
+    },
+    "sha256": "53dc36d8d640cd4364597d93e5894ea189c40002771cadca4906047340dbf8e5",
+    "status": "method_and_decisions_pending"
+  },
+  "validation_topup": {
+    "status": "prepared_not_yet_applied_to_consumers",
+    "additional_groups_by_source": {
+      "HuggingFaceFW/fineweb-edu": 18,
+      "HuggingFaceH4/ultrachat_200k": 3,
+      "codeparrot/codeparrot-clean-train": 0,
+      "open-web-math/open-web-math": 7,
+      "opencsg/Fineweb-Edu-Chinese-V2.1": 47
+    },
+    "affected_records": 75,
+    "affected_reference_tokens": 121956,
+    "reservation_sha256": "b6815deb0f4d0b3392ba20ceec41a1197f00d1fc81bb1cb96a22ff96ed67cc48"
+  },
+  "tests": {
+    "full_cpu_before_unicode_reader_fix": {
+      "passed": 394,
+      "skipped": 1,
+      "cuda_deselected": 54
+    },
+    "targeted_after_unicode_reader_fix": 5,
+    "real_benchmark_items_parsed": 9930
+  },
+  "limitations": [
+    "candidate data; formal CE remains zero for all four models",
+    "a 0.5% hash bucket does not ensure each finite source reaches a 0.5% empirical validation group fraction",
+    "75 additional validation groups are selected; consumers do not yet apply this reservation",
+    "manual review method and decisions, final tokenizer and encoded-data admission remain pending",
+    "image/OCR/chart/video admission is separate"
+  ]
+}
