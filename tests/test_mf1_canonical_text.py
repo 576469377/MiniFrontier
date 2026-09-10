@@ -10,7 +10,8 @@ import pytest
 import torch
 
 from minifrontier.data import sha256
-from minifrontier.data.corpus import CorpusBuilder, train_tokenizer
+from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokenizer
+from minifrontier.data.encoding_audit import audit_text_encoding
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS
 from minifrontier.data.minifrontier1_encoding import (
     CompactDataset,
@@ -164,3 +165,55 @@ def test_checkpoint_resume_retains_the_middle_of_a_canonical_document(encoded, t
     ]
     for key in ("model", "optimizer", "sampler", "router_balance", "ledger", "rng"):
         assert_state_equal(a[key], b[key])
+
+
+def test_compact_audit_decodes_all_documents_and_preserves_partition_counts(encoded, tmp_path):
+    root, _config, manifest = encoded
+    report = audit_text_encoding(root.parent / "canonical", root, tmp_path / "audit.json")
+    assert report["status"] == "mechanical_checks_passed_pending_quality_admission"
+    assert not report["formal_admission"] and not report["errors"]
+    for split in ("train", "val", "test"):
+        assert (
+            report["splits"][split]["counts"]["ce_tokens"]
+            == manifest["splits"][split]["counts"]["ce_tokens"]
+        )
+
+
+def test_source_audit_detects_literal_control_tokens_in_normal_documents(encoded, tmp_path):
+    root, _config, _manifest = encoded
+    corpus = root.parent / "canonical"
+    tokenizer = tmp_path / "source-tokenizer.json"
+    train_tokenizer(corpus, tokenizer, 350)
+    source = tmp_path / "source-encoded"
+    encode_corpus(corpus, tokenizer, source)
+    report = audit_text_encoding(corpus, source, tmp_path / "audit.json")
+    assert report["status"] == "failed"
+    assert report["errors"] == {"literal_control_encoded_as_protocol": 4}
+
+
+@pytest.mark.parametrize("fault", ["mask", "partition"])
+def test_audit_rejects_wrong_mask_or_partition_even_when_file_hashes_match(
+    encoded, tmp_path, fault
+):
+    root, _config, manifest = encoded
+    part = manifest["splits"]["train"]["parts"][0]
+    if fault == "mask":
+        entry = part["files"]["mask.bin"]
+        path = root / entry["name"]
+        raw = bytearray(path.read_bytes())
+        raw[0] |= 1
+        path.write_bytes(raw)
+    else:
+        entry = part["files"]["metadata.jsonl"]
+        path = root / entry["name"]
+        row = json.loads(path.read_text())
+        val_path = root / manifest["splits"]["val"]["parts"][0]["files"]["metadata.jsonl"]["name"]
+        row["sample_id"] = json.loads(val_path.read_text())["sample_id"]
+        path.write_text(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+    entry["sha256"] = sha256(path)
+    assert path.stat().st_size == entry["bytes"]
+    (root / "manifest.json").write_text(json.dumps(manifest))
+    output = tmp_path / "audit.json"
+    with pytest.raises(ValueError, match=r"loss mask|wrong partition"):
+        audit_text_encoding(root.parent / "canonical", root, output)
+    assert json.loads(output.read_text())["status"] == "failed"
