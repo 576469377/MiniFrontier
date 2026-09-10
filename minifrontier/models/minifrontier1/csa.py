@@ -6,6 +6,7 @@ from typing import cast
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from .indexer import (
     BlockIndexer,
@@ -14,6 +15,7 @@ from .indexer import (
     gather_support,
     index_kl,
     masked_probabilities,
+    prefill_directory,
     rope,
     sampled_queries,
     select_blocks,
@@ -59,6 +61,24 @@ class Compressor(nn.Module):
             pooled = (values * scores.softmax(1)).sum(1)
         return self.norm(pooled)
 
+    def batched(self, x, directory):
+        ids, valid = directory["members"], directory["valid"]
+        if not ids.shape[1]:
+            return x.new_empty((len(x), 0, self.dim))
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            kv = F.linear(x.float(), self.kv.weight.float())
+            gates = F.linear(x.float(), self.gate.weight.float())
+            batch = torch.arange(len(x), device=x.device)[:, None, None]
+            values, scores = kv[batch, ids], gates[batch, ids] + self.ape
+            previous = torch.arange(ids.shape[1], device=x.device).sub(1).clamp_min(0)
+            support = torch.cat((valid[:, previous] & directory["overlap"][..., None], valid), -1)
+            v = torch.cat((values[:, previous, :, : self.dim], values[..., self.dim :]), -2)
+            g = torch.cat((scores[:, previous, :, : self.dim], scores[..., self.dim :]), -2)
+            # Padded directory entries must have finite zero outputs/gradients.
+            probabilities = masked_probabilities(g.transpose(-1, -2), support[..., None, :])
+            pooled = (v * probabilities.transpose(-1, -2)).sum(-2)
+        return self.norm(pooled)
+
 
 class CSA(nn.Module):
     def __init__(self, c):
@@ -78,7 +98,9 @@ class CSA(nn.Module):
         self.training_phase = "dense_pretrain"
         self.indexer_loss_enabled = True
 
-    def forward(self, x, metadata, state=None):
+    def forward(self, x, metadata, state=None, *, cache_output=True):
+        if not cache_output and state is None and self.training_phase == "dense_pretrain":
+            return self.dense_prefill(x, metadata), None, x.sum() * 0, 0
         c = self.config
         outputs, states, terms = [], [], []
         query_count = 0
@@ -213,3 +235,48 @@ class CSA(nn.Module):
                 )
             )
         return torch.stack(outputs), states, sum(terms, x.sum() * 0), query_count
+
+    def dense_prefill(self, x, metadata):
+        """Batched CSA with bounded SDPA masks; no inference cache or unused indexer."""
+        c = self.config
+        directory = metadata.get("prefill_directory")
+        if directory is None:
+            directory = prefill_directory(metadata)
+        pos, seg = metadata["linear_positions"], metadata["segment_ids"]
+        q = self.q_up(self.q_norm(self.q_down(x))).unflatten(
+            -1, (c.num_attention_heads, c.csa_head_dim)
+        )
+        q = rope(q, pos, c.csa_rope_dim, c.rope_theta).transpose(1, 2)
+        raw = rope(self.kv_norm(self.kv(x)), pos, c.csa_rope_dim, c.rope_theta)
+        pooled = self.compressor.batched(x, directory)
+        pooled = rope(pooled, pos.gather(1, directory["starts"]), c.csa_rope_dim, c.rope_theta)
+        kv = torch.cat((raw, pooled.to(raw.dtype)), 1)[:, None].expand(
+            -1, c.num_attention_heads, -1, -1
+        )
+        kp = torch.arange(x.shape[1], device=x.device)
+        chunks = []
+        for start in range(0, x.shape[1], c.query_chunk_size):
+            stop = min(start + c.query_chunk_size, x.shape[1])
+            qp = kp[start:stop, None]
+            local = (
+                (qp >= kp)
+                & (qp - kp < c.window_size)
+                & (seg[:, start:stop, None] == seg[:, None])
+                & seg[:, start:stop, None].ge(0)
+            )
+            compressed = (
+                (directory["complete"][:, None] <= qp)
+                & (directory["segments"][:, None] == seg[:, start:stop, None])
+                & seg[:, start:stop, None].ge(0)
+            )
+            support = torch.cat((local, compressed), -1)[:, None]
+            chunks.append(
+                F.scaled_dot_product_attention(
+                    q[:, :, start:stop],
+                    kv,
+                    kv,
+                    attn_mask=support,
+                    dropout_p=0.0,
+                )
+            )
+        return self.out(torch.cat(chunks, 2).transpose(1, 2).flatten(-2))

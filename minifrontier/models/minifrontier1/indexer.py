@@ -170,6 +170,55 @@ def sampled_queries(segments, limit):
     return [valid[i] for i in indices]
 
 
+def prefill_directory(metadata):
+    """One immutable block directory shared by dense layers and checkpoint replay."""
+    segments, modalities, media = (
+        metadata[key].cpu() for key in ("segment_ids", "modality", "media_ids")
+    )
+    rows = [block_registry(s, m, v) for s, m, v in zip(segments, modalities, media, strict=True)]
+    size = max(map(len, rows), default=0)
+    device = metadata["segment_ids"].device
+    ids = torch.tensor(
+        [
+            [list(b.member_indices) + [-1] * (4 - len(b.member_indices)) for b in blocks]
+            + [[-1] * 4] * (size - len(blocks))
+            for blocks in rows
+        ],
+        device=device,
+        dtype=torch.long,
+    ).reshape(len(rows), size, 4)
+    result = dict(members=ids.clamp_min(0), valid=ids.ge(0))
+    for key, field, pad in (
+        ("complete", "complete_at", 2**60),
+        ("segments", "segment", -1),
+        ("starts", "start", 0),
+    ):
+        result[key] = torch.tensor(
+            [
+                [pad if getattr(b, field) is None else getattr(b, field) for b in blocks]
+                + [pad] * (size - len(blocks))
+                for blocks in rows
+            ],
+            device=device,
+            dtype=torch.long,
+        )
+    result["overlap"] = torch.tensor(
+        [
+            [
+                i > 0
+                and (b.segment, b.modality, b.media_id)
+                == (blocks[i - 1].segment, blocks[i - 1].modality, blocks[i - 1].media_id)
+                for i, b in enumerate(blocks)
+            ]
+            + [False] * (size - len(blocks))
+            for blocks in rows
+        ],
+        device=device,
+        dtype=torch.bool,
+    )
+    return result
+
+
 def index_kl(scores, target, visible):
     target = target.detach().float() * visible
     mass = target.sum(-1)

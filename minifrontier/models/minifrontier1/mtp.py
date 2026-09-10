@@ -54,7 +54,7 @@ class MF1MTPBlock(nn.Module):
             next_embedding
         ).unsqueeze(-2)
         h, weights = self.attention_gr.read(r)
-        update, _, _, _ = self.attention(h, metadata)
+        update, _, _, _ = self.attention(h, metadata, cache_output=False)
         r = self.attention_gr.inject(r, update, weights)
         h, weights = self.moe_gr.read(r)
         r = self.moe_gr.inject(r, self.moe(h, metadata.get("valid_token_indices")), weights)

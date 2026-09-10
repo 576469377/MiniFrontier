@@ -12,7 +12,7 @@ from minifrontier.models.minifrontier1 import (
     MiniFrontier1Config,
     MiniFrontier1ForCausalLM,
 )
-from minifrontier.models.minifrontier1.csa import Compressor
+from minifrontier.models.minifrontier1.csa import CSA, Compressor
 from minifrontier.models.minifrontier1.indexer import block_registry, mrope, rope, select_blocks
 from minifrontier.models.minifrontier1.kda import KDA
 from minifrontier.models.minifrontier1.moe import LatentMoE
@@ -35,6 +35,88 @@ def assert_gradients(left, right, *, atol=2e-5, rtol=2e-4):
             assert a.grad is None and b.grad is None, name
         else:
             torch.testing.assert_close(a.grad, b.grad, atol=atol, rtol=rtol, msg=name)
+
+
+def assert_batched_gradients(left, right):
+    actual, expected = [], []
+    for (name, a), (_, b) in zip(left.named_parameters(), right.named_parameters(), strict=True):
+        assert (a.grad is None) == (b.grad is None), name
+        if a.grad is not None:
+            actual.append(a.grad.flatten())
+            expected.append(b.grad.flatten())
+    a, b = torch.cat(actual), torch.cat(expected)
+    relative = torch.linalg.vector_norm(a - b) / torch.linalg.vector_norm(b)
+    cosine = torch.nn.functional.cosine_similarity(a, b, dim=0)
+    assert relative < 0.03 and cosine > 0.999, (float(relative), float(cosine))
+
+
+@pytest.mark.parametrize("device", ["cpu", pytest.param("cuda", marks=pytest.mark.cuda)])
+@pytest.mark.parametrize("kind", [CSA, QSAMLA])
+def test_batched_dense_attention_matches_reference_with_packing_padding_and_media(kind, device):
+    if device == "cuda" and not torch.cuda.is_available():
+        pytest.skip("CUDA required")
+    torch.manual_seed(231)
+    c = replace(MiniFrontier1Config.tiny(), query_chunk_size=7, window_size=5)
+    a = kind(c).to(device)
+    b = copy.deepcopy(a)
+    ids = torch.randint(24, 200, (3, 37), device=device)
+    ids[1, -6:], ids[2] = 0, 0
+    segments = torch.zeros_like(ids)
+    segments[0, 19:] = 1
+    meta = token_metadata(ids, c, segment_ids=segments)
+    meta["modality"][:2, 4:7] = 1
+    meta["media_ids"][:2, 4:7] = 0
+    meta["position_ids"][1, :2, 4:7] += 2
+    x = torch.randn(3, 37, c.hidden_size, device=device, requires_grad=True)
+    y = x.detach().clone().requires_grad_()
+    with torch.autocast(device, dtype=torch.bfloat16, enabled=device == "cuda"):
+        actual = a(x, meta, cache_output=False)[0]
+        expected = b(y, meta)[0]
+    tolerance = dict(atol=3e-3, rtol=3e-2) if device == "cuda" else dict(atol=2e-6, rtol=2e-5)
+    torch.testing.assert_close(actual, expected, **tolerance)
+    weights = torch.randn_like(actual)
+    (actual * weights).sum().backward()
+    (expected * weights).sum().backward()
+    if device == "cuda":
+        assert_batched_gradients(a, b)
+        relative = torch.linalg.vector_norm(x.grad - y.grad) / torch.linalg.vector_norm(y.grad)
+        cosine = torch.nn.functional.cosine_similarity(x.grad.flatten(), y.grad.flatten(), dim=0)
+        assert relative < 0.03 and cosine > 0.999, (float(relative), float(cosine))
+    else:
+        assert_gradients(a, b)
+        torch.testing.assert_close(x.grad, y.grad, **tolerance)
+    assert actual[2].count_nonzero() == 0
+
+
+@pytest.mark.parametrize("device", ["cpu", pytest.param("cuda", marks=pytest.mark.cuda)])
+def test_kda_bucketed_training_preserves_outputs_gradients_and_single_token_resets(device):
+    if device == "cuda" and not torch.cuda.is_available():
+        pytest.skip("CUDA required")
+    torch.manual_seed(329)
+    c = replace(MiniFrontier1Config.tiny(), kda_head_dim=16)
+    a = KDA(c).to(device)
+    a.core.A_log.data.zero_()
+    a.core.dt_bias.data.zero_()
+    b = copy.deepcopy(a)
+    x = torch.randn(3, 37, c.hidden_size, device=device, requires_grad=True)
+    y = x.detach().clone().requires_grad_()
+    segments = torch.tensor(
+        [[0] * 17 + [1] * 20, [0] * 15 + [1] * 19 + [-1] * 3, [0] + [1] * 36], device=device
+    )
+    with torch.autocast(device, dtype=torch.bfloat16, enabled=device == "cuda"):
+        actual, state = a(x, segments, cache_output=False)
+        expected = b(y, segments)[0]
+    assert state is None
+    tolerance = dict(atol=3e-3, rtol=3e-2) if device == "cuda" else dict(atol=2e-6, rtol=2e-5)
+    torch.testing.assert_close(actual, expected, **tolerance)
+    weights = torch.randn_like(actual)
+    (actual * weights).sum().backward()
+    (expected * weights).sum().backward()
+    if device == "cuda":
+        assert_batched_gradients(a, b)
+    else:
+        assert_gradients(a, b)
+    torch.testing.assert_close(x.grad, y.grad, **tolerance)
 
 
 def scalar_pool(module, x, blocks, offset):

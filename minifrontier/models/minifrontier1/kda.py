@@ -12,6 +12,34 @@ from minifrontier.models.minikimik3.kernels import chunk_kda, fused_recurrent_kd
 from minifrontier.models.minikimik3.upstream_layers import KimiDeltaAttention
 
 
+def prefill_groups(segments):
+    """Share reset-aware indices across KDA layers; bucket padding costs less than 2x."""
+    rows = segments.tolist()
+    direct = all(row[0] >= 0 and all(s == row[0] for s in row) for row in rows)
+    result: dict[str, Any] = dict(
+        direct=direct, has_padding=any(s < 0 for row in rows for s in row)
+    )
+    if direct:
+        return result
+    groups: dict[int, list[tuple[int, int]]] = {}
+    for batch, row in enumerate(rows):
+        starts = [0, *(i for i in range(1, len(row)) if row[i] != row[i - 1]), len(row)]
+        for left, right in pairwise(starts):
+            if row[left] >= 0:
+                groups.setdefault((right - left - 1).bit_length(), []).append(
+                    (batch * len(row) + left, right - left)
+                )
+    plans = []
+    for members in groups.values():
+        offsets_in_batch, lengths = torch.tensor(members, device=segments.device).unbind(-1)
+        offsets = torch.arange(max(length for _, length in members), device=segments.device)
+        valid = offsets[None] < lengths[:, None]
+        indices = (offsets_in_batch[:, None] + offsets).masked_fill(~valid, 0)
+        plans.append((indices, valid, indices[valid]))
+    result["plans"] = plans
+    return result
+
+
 class KDA(nn.Module):
     def __init__(self, c):
         super().__init__()
@@ -31,7 +59,11 @@ class KDA(nn.Module):
         )
         self.backend = c.kda_backend
 
-    def forward(self, x, segments, state=None):
+    def forward(self, x, segments, state=None, *, cache_output=True, layout=None):
+        if not cache_output and state is None:
+            return self.training_prefill(
+                x, prefill_groups(segments) if layout is None else layout
+            ), None
         if state is None:
             return self.prefill(x, segments)
         # Each contiguous independent sample is passed separately to the source primitive.
@@ -66,7 +98,7 @@ class KDA(nn.Module):
             next_states.append(previous)
         return torch.cat(rows), next_states
 
-    def _run(self, z, carry):
+    def _run(self, z, carry, *, cache_output=True):
         core = self.core
         convs = carry.get("conv") or (None, None, None)
         projected, histories = [], []
@@ -76,7 +108,7 @@ class KDA(nn.Module):
             convs,
             strict=True,
         ):
-            value, hist = conv(proj(z), cache=history, output_final_state=True)
+            value, hist = conv(proj(z), cache=history, output_final_state=cache_output)
             projected.append(value.unflatten(-1, (core.num_heads, core.head_dim)))
             histories.append(hist)
         # FLA's fused recurrent entry is forward-only. A one-token training
@@ -97,7 +129,7 @@ class KDA(nn.Module):
             A_log=core.A_log,
             dt_bias=core.dt_bias,
             initial_state=carry.get("recurrent"),
-            output_final_state=True,
+            output_final_state=cache_output,
             use_qk_l2norm_in_kernel=True,
             use_gate_in_kernel=True,
             use_beta_sigmoid_in_kernel=True,
@@ -111,6 +143,21 @@ class KDA(nn.Module):
             )
         )
         return out, tuple(histories), recurrent
+
+    def training_prefill(self, x, layout):
+        if layout["direct"]:
+            return self._run(x, {}, cache_output=False)[0]
+        flat, result = x.flatten(0, 1), None
+        for indices, valid, destinations in layout["plans"]:
+            z = flat[indices] * valid[..., None]
+            out = self._run(z, {}, cache_output=False)[0]
+            if result is None:
+                dtype = (
+                    torch.promote_types(x.dtype, out.dtype) if layout["has_padding"] else out.dtype
+                )
+                result = flat.to(dtype) * 0
+            result = result.index_copy(0, destinations, out[valid].to(result.dtype))
+        return (flat * 0 if result is None else result).reshape_as(x)
 
     def prefill(self, x, segments):
         """Batch independent runs of equal length; never carry across packed boundaries."""

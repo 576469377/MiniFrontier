@@ -3,6 +3,7 @@
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from .indexer import (
     BlockIndexer,
@@ -41,7 +42,13 @@ class QSAMLA(nn.Module):
         self.training_phase = "dense_pretrain"
         self.indexer_loss_enabled = True
 
-    def forward(self, x, metadata, state=None):
+    def forward(self, x, metadata, state=None, *, cache_output=True):
+        if (
+            not cache_output
+            and state is None
+            and (self.indexer is None or self.training_phase == "dense_pretrain")
+        ):
+            return self.dense_prefill(x, metadata), None, x.sum() * 0, 0
         c = self.config
         outputs, states, losses = [], [], []
         query_count = 0
@@ -197,3 +204,54 @@ class QSAMLA(nn.Module):
             states.append(dict(full, length=total, blocks=blocks, index_keys=keys))
         loss = sum(losses, x.sum() * 0)
         return torch.stack(outputs), states, loss, query_count
+
+    def dense_prefill(self, x, metadata):
+        """Native MLA projections with batched fused attention and exact packed masks."""
+        c = self.config
+        q = self.q_up(self.q_norm(self.q_down(x))).unflatten(
+            -1, (c.num_attention_heads, c.qk_nope_head_dim + c.qk_rope_head_dim)
+        )
+        qc, qr = q.split((c.qk_nope_head_dim, c.qk_rope_head_dim), -1)
+        qr = mrope(qr, metadata["position_ids"], c.mrope_sections, c.rope_theta)
+        latent, kr = self.kv_down(x).split((c.kv_lora_rank, c.qk_rope_head_dim), -1)
+        kr = mrope(kr, metadata["position_ids"], c.mrope_sections, c.rope_theta)
+        kc, values = (
+            self.kv_up(self.kv_norm(latent))
+            .unflatten(-1, (c.num_attention_heads, c.qk_nope_head_dim + c.v_head_dim))
+            .split((c.qk_nope_head_dim, c.v_head_dim), -1)
+        )
+        q = torch.cat((qc, qr), -1).transpose(1, 2)
+        k = torch.cat((kc, kr.unsqueeze(-2).expand_as(qr)), -1).transpose(1, 2)
+        v = values.transpose(1, 2)
+        # Matching widths also allow FlashAttention on hardware that requires it.
+        width = max(q.shape[-1], v.shape[-1])
+        q, k, v = (F.pad(t, (0, width - t.shape[-1])) for t in (q, k, v))
+        scale = (c.qk_nope_head_dim + c.qk_rope_head_dim) ** -0.5
+        if metadata.get("unpacked_prefill", False):
+            out = F.scaled_dot_product_attention(
+                q, k, v, is_causal=True, dropout_p=0.0, scale=scale
+            )
+        else:
+            segments = metadata["segment_ids"]
+            kp = torch.arange(x.shape[1], device=x.device)
+            chunks = []
+            for start in range(0, x.shape[1], c.query_chunk_size):
+                stop = min(start + c.query_chunk_size, x.shape[1])
+                support = (
+                    (kp[start:stop, None] >= kp)
+                    & (segments[:, start:stop, None] == segments[:, None])
+                    & segments[:, start:stop, None].ge(0)
+                )
+                chunks.append(
+                    F.scaled_dot_product_attention(
+                        q[:, :, start:stop],
+                        k,
+                        v,
+                        attn_mask=support[:, None],
+                        dropout_p=0.0,
+                        scale=scale,
+                    )
+                )
+            out = torch.cat(chunks, 2)
+        out = out[..., : c.v_head_dim].transpose(1, 2).flatten(-2)
+        return self.out(out * self.gate(x).sigmoid())

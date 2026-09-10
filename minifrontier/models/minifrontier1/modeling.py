@@ -13,7 +13,8 @@ from minifrontier.training.losses import causal_lm_loss, chunked_linear_ce
 
 from .configuration import MiniFrontier1Config
 from .csa import CSA, Compressor
-from .kda import KDA
+from .indexer import prefill_directory
+from .kda import KDA, prefill_groups
 from .lookup import NgramLookup
 from .moe import LatentMoE, Router
 from .mtp import MF1MTPBlock, mtp_targets
@@ -32,13 +33,21 @@ class MF1DecoderLayer(nn.Module):
         self.moe_gr = GatedResidual(c)
         self.moe = LatentMoE(c)
 
-    def forward(self, residual, metadata, state=None):
+    def forward(self, residual, metadata, state=None, *, cache_output=True):
         h, weights = self.attention_gr.read(residual)
         if self.kind == "kda":
-            update, state = self.attention(h, metadata["segment_ids"], state)
+            update, state = self.attention(
+                h,
+                metadata["segment_ids"],
+                state,
+                cache_output=cache_output,
+                layout=metadata.get("kda_prefill"),
+            )
             loss, count = h.sum() * 0, 0
         else:
-            update, state, loss, count = self.attention(h, metadata, state)
+            update, state, loss, count = self.attention(
+                h, metadata, state, cache_output=cache_output
+            )
         residual = self.attention_gr.inject(residual, update, weights)
         h, weights = self.moe_gr.read(residual)
         update = self.moe(h, metadata.get("valid_token_indices"))
@@ -150,6 +159,11 @@ class MiniFrontier1ForCausalLM(nn.Module):
         metadata["valid_token_indices"] = (
             valid_indices if len(valid_indices) != input_ids.numel() else None
         )
+        if cache is None:
+            metadata["kda_prefill"] = prefill_groups(metadata["segment_ids"])
+            metadata["unpacked_prefill"] = metadata["kda_prefill"]["direct"]
+            if self.training_phase == "dense_pretrain":
+                metadata["prefill_directory"] = prefill_directory(metadata)
         h = self.embed_tokens(input_ids) if inputs_embeds is None else inputs_embeds
         if h.shape != (*input_ids.shape, c.hidden_size):
             raise ValueError("input embedding shape differs from decoder")
@@ -184,13 +198,16 @@ class MiniFrontier1ForCausalLM(nn.Module):
             if self.training and c.gradient_checkpointing:
 
                 def run(r, layer=layer):
-                    value, _, loss, count = layer(r, metadata)
+                    value, _, loss, count = layer(r, metadata, cache_output=False)
                     return value, loss, count
 
                 residual, loss, count = checkpoint(run, residual, use_reentrant=False)
             else:
                 residual, state, loss, count = layer(
-                    residual, metadata, cache.layers[i] if cache is not None else None
+                    residual,
+                    metadata,
+                    cache.layers[i] if cache is not None else None,
+                    cache_output=cache is not None,
                 )
                 if cache is not None:
                     cache.layers[i] = state
