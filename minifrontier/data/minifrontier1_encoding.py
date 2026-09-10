@@ -708,7 +708,11 @@ class CompactDataset:
 
 
 def open_dataset(root, split, config):
+    from minifrontier.data.minifrontier1_components import COMPONENT_FORMAT, ComponentDataset
+
     manifest = json.loads((Path(root) / "manifest.json").read_text())
+    if manifest.get("format") == COMPONENT_FORMAT:
+        return ComponentDataset(root, split, config)
     return (CompactDataset if manifest.get("format") == FORMAT else RecordDataset)(
         root, split, config
     )

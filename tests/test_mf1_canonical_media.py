@@ -11,12 +11,17 @@ from PIL import Image
 from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder, train_tokenizer
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS, encode_record, safe_text
+from minifrontier.data.minifrontier1_components import ComponentDataset, assemble_components
 from minifrontier.data.minifrontier1_encoding import (
     CompactDataset,
     canonical_image_record,
     encode_canonical_images,
+    encode_canonical_text,
+    evaluation_items,
+    open_dataset,
 )
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
+from minifrontier.training.minifrontier1 import train
 from minifrontier.training.minifrontier1_curriculum import collate_records
 
 
@@ -152,3 +157,138 @@ def test_canonical_media_never_shortens_answers_to_fit_context(corpus, tmp_path)
         with pytest.raises(ValueError, match="complete grounded QA"):
             canonical_image_record(row, rows[0][2], max_features=49)
     assert not (tmp_path / "overflow/manifest.json").exists()
+
+
+@pytest.fixture
+def components(corpus, tmp_path):
+    root, tokenizer, config, _ = corpus
+    media = tmp_path / "media-component"
+    encode_canonical_images(root, tokenizer, media, config, max_features=49)
+    text_root = tmp_path / "text-corpus"
+    builder = CorpusBuilder(text_root)
+    for i in range(3):
+        rng = random.Random(i + 70)
+        assert builder.add(
+            dict(
+                source="text-fixture",
+                revision="pinned",
+                item_id=str(i),
+                group_id=str(i),
+                license="CC0-1.0",
+                task="en_edu",
+                lang="en",
+                stage="pretrain",
+                text="".join(rng.choices("abcdefghijklmnopqrstuvwxyz ", k=500)),
+            )
+        )
+    builder.finalize(
+        split_locks={"source-group:text-fixture:1": "val", "source-group:text-fixture:2": "test"}
+    )
+    builder.db.close()
+    (text_root / "source-audit.json").write_text(
+        json.dumps(
+            dict(status="candidate_slice_complete_pending_admission", formal_admission=False)
+        )
+    )
+    text = tmp_path / "text-component"
+    encode_canonical_text(text_root, tokenizer, text, config)
+    return [media, text], config
+
+
+def test_composition_reuses_shards_with_distinct_domain_indices_and_media_roots(
+    components, tmp_path
+):
+    roots, config = components
+    output = tmp_path / "joint"
+    manifest = assemble_components(roots, output, config)
+    assert manifest["shard_files_copied"] == 0 and not manifest["formal_admission"]
+    assert {p.name for p in output.iterdir()} == {"tokenizer.json", "manifest.json"}
+    for split in ("train", "val", "test"):
+        joint = open_dataset(output, split, config)
+        assert isinstance(joint, ComponentDataset)
+        offset = 0
+        for root in roots:
+            child = CompactDataset(root, split, config)
+            for i in range(len(child)):
+                assert joint.domain_at(offset + i) == child.domain_at(i)
+                assert joint.windowable_at(offset + i) == child.windowable_at(i)
+                assert joint.length_at(offset + i) == child.length_at(i)
+                a, b = joint[offset + i], child[i]
+                assert a["sample_id"] == b["sample_id"] and a["split_group"] == b["split_group"]
+                torch.testing.assert_close(a["input_ids"], b["input_ids"], atol=0, rtol=0)
+                torch.testing.assert_close(a["labels"], b["labels"], atol=0, rtol=0)
+            offset += len(child)
+        assert offset == len(joint)
+        assert joint[-1]["sample_id"] == joint[len(joint) - 1]["sample_id"]
+        with pytest.raises(IndexError):
+            joint[len(joint)]
+        assert (
+            sum(
+                int(x["labels"][:, 1:].ne(-100).sum())
+                for x in evaluation_items(joint, max_length=256)
+            )
+            == manifest["splits"][split]["counts"]["ce_tokens"]
+        )
+
+
+def test_composition_training_resume_retains_window_and_domain_ledgers(components, tmp_path):
+    roots, config = components
+    output = tmp_path / "joint"
+    assemble_components(roots, output, config)
+    args = dict(
+        data=output,
+        config=asdict(config),
+        steps=2,
+        input_batch_tokens=64,
+        weights={"caption": 0.25, "vqa": 0.25, "en_general": 0.5},
+        save_every=2,
+        eval_every=2,
+    )
+    train(**args, output=tmp_path / "continuous")
+    train(**args, output=tmp_path / "resume", stop_after_updates=1)
+    train(**args, output=tmp_path / "resume", resume=tmp_path / "resume/checkpoint.pt")
+    a, b = [
+        torch.load(tmp_path / x / "checkpoint.pt", weights_only=True)
+        for x in ("continuous", "resume")
+    ]
+    torch.testing.assert_close(a["model"], b["model"], atol=0, rtol=0)
+    torch.testing.assert_close(a["optimizer"]["state"], b["optimizer"]["state"], atol=0, rtol=0)
+    assert a["optimizer"]["param_groups"] == b["optimizer"]["param_groups"]
+    assert a["sampler"] == b["sampler"] and a["ledger"] == b["ledger"]
+
+
+def test_composition_rejects_duplicate_components_and_changed_child_manifest(components, tmp_path):
+    roots, config = components
+    with pytest.raises(ValueError, match="distinct components"):
+        assemble_components([roots[0], roots[0]], tmp_path / "duplicate", config)
+    output = tmp_path / "joint"
+    assemble_components(roots, output, config)
+    child_manifest = roots[0] / "manifest.json"
+    child_manifest.write_text(child_manifest.read_text() + "\n")
+    with pytest.raises(ValueError, match="manifest changed"):
+        open_dataset(output, "train", config)
+
+
+@pytest.mark.parametrize("fault", ["sample", "group", "media"])
+def test_composition_rejects_cross_split_identities_even_with_rehashed_metadata(
+    components, tmp_path, fault
+):
+    roots, config = components
+    child = roots[0]
+    manifest = json.loads((child / "manifest.json").read_text())
+    first = manifest["splits"]["train"]["parts"][0]["files"]["metadata.jsonl"]
+    saved = json.loads(next((child / first["name"]).open()))
+    entry = manifest["splits"]["val"]["parts"][0]["files"]["metadata.jsonl"]
+    path = child / entry["name"]
+    value = json.loads(path.read_text())
+    if fault == "media":
+        value["resources"][0]["rgb_sha256"] = saved["resources"][0]["rgb_sha256"]
+    else:
+        key = "sample_id" if fault == "sample" else "split_group"
+        value[key] = saved[key]
+    path.write_text(json.dumps(value) + "\n")
+    entry.update(bytes=path.stat().st_size, sha256=sha256(path))
+    (child / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match=r"duplicate|crosses"):
+        assemble_components(roots, tmp_path / "leaking", config)
+    assert not (tmp_path / "leaking").exists()
