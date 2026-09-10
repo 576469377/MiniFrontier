@@ -1,9 +1,11 @@
 """Pinned visual candidates and the historical small ALLaVA pilot."""
 
+import contextlib
 import hashlib
 import io
 import json
 import math
+import os
 import random
 import shutil
 import sqlite3
@@ -114,6 +116,18 @@ def _check_retained_media(db, audit, root):
 
 def _finalize_visual_inventory(builder, audit):
     root = builder.root
+    builder.db.commit()
+    metadata_bytes = sum(p.stat().st_size for p in root.iterdir() if p.is_file())
+    finalization_peak = metadata_bytes + (root / "corpus.sqlite").stat().st_size + 16 * 1024**2
+    if finalization_peak > audit["metadata_gib"] * GIB:
+        raise ValueError("visual metadata finalization exceeds the measured storage budget")
+    require_space(root, finalization_peak - metadata_bytes, reserve_bytes=80 * GIB)
+    audit["metadata_storage"] = dict(
+        measurement="physical metadata plus worst-case database rollback journal and reports",
+        before_finalize_bytes=metadata_bytes,
+        finalization_peak_bound_bytes=finalization_peak,
+        budget_bytes=int(audit["metadata_gib"] * GIB),
+    )
     audit["corpus"] = builder.finalize()
     split_media: dict[str, set[str]] = {}
     split_tokens: dict[str, dict[str, int]] = {}
@@ -238,6 +252,145 @@ def finalize_storage_limited_slice(output, construction_run):
         finally:
             builder.db.close()
         return audit
+
+
+def compact_visual_inventory(corpus, output):
+    """Copy immutable metadata with unique aliases; hard-link verified raw pixels."""
+    source, root = Path(corpus).resolve(), Path(output).resolve()
+    if root.exists():
+        raise FileExistsError("compaction requires a new candidate version")
+    audit_path, manifest_path = source / "source-audit.json", source / "corpus-manifest.json"
+    audit, manifest = json.loads(audit_path.read_text()), json.loads(manifest_path.read_text())
+    if (
+        audit.get("formal_admission")
+        or audit.get("status")
+        not in {"candidate_slice_complete_pending_admission", "candidate_inventory_below_target"}
+        or audit.get("kind") != "visual_candidate_inventory"
+    ):
+        raise ValueError("compaction requires a finalized unadmitted visual inventory")
+    original_hash = sha256(source / "corpus.sqlite")
+    if original_hash != manifest["database_sha256"] or audit["corpus"] != manifest:
+        raise ValueError("original corpus/audit hashes disagree")
+    metadata_limit = int(audit["metadata_gib"] * GIB)
+    # One bounded destination database plus its possible rollback journal and reports.
+    database_cap = min(
+        (metadata_limit - 16 * 1024**2) // 2,
+        (source / "corpus.sqlite").stat().st_size + 8 * 1024**2,
+    )
+    if database_cap < 64 * 1024:
+        raise ValueError("metadata budget is smaller than the destination schema")
+    incoming = 2 * database_cap + 48 * 1024**2
+    if (
+        audit["media_bytes"]
+        + sum(p.stat().st_size for p in source.iterdir() if p.is_file())
+        + incoming
+        > audit["max_gib"] * GIB
+    ):
+        raise ValueError("compaction overlap exceeds the original total storage budget")
+    require_space(root, incoming, reserve_bytes=80 * GIB)
+    with contextlib.closing(
+        sqlite3.connect((source / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
+    ) as db:
+        _check_retained_media(db, audit, source)
+    builder = CorpusBuilder(root, seed=audit["seed"], max_gib=audit["metadata_gib"])
+    report = dict(
+        kind="visual_metadata_compaction",
+        status="building",
+        formal_admission=False,
+        main_budget_eligible=False,
+        started_unix=time.time(),
+        source_manifest_sha256=sha256(manifest_path),
+        source_audit_sha256=sha256(audit_path),
+        source_database_sha256=original_hash,
+        source_path=os.path.relpath(source, root),
+        processor_files={
+            "visual_sources.py": sha256(__file__),
+            "corpus.py": sha256(Path(__file__).with_name("corpus.py")),
+        },
+        metadata_budget_bytes=metadata_limit,
+        new_media_bytes=0,
+        database_cap_bytes=database_cap,
+        construction_peak_bound_bytes=incoming,
+        tables={},
+    )
+    write_json(root / "compaction.json", report)
+    try:
+        db = builder.db
+        db.execute("PRAGMA temp_store=MEMORY")
+        db.execute("PRAGMA cache_size=-32768")
+        pages = report["database_cap_bytes"] // db.execute("PRAGMA page_size").fetchone()[0]
+        actual_cap = db.execute(f"PRAGMA max_page_count={pages}").fetchone()[0]
+        if actual_cap > pages:
+            raise ValueError("metadata budget is smaller than the destination schema")
+        db.execute(
+            "ATTACH DATABASE ? AS original", ((source / "corpus.sqlite").as_uri() + "?mode=ro",)
+        )
+        for table in ("samples", "bands", "image_bands", "links"):
+            before = db.execute(f"SELECT COUNT(*) FROM original.{table}").fetchone()[0]
+            columns = "id,key" if table == "links" else "*"
+            db.execute(f"INSERT OR IGNORE INTO main.{table} SELECT {columns} FROM original.{table}")
+            db.commit()
+            after = db.execute(f"SELECT COUNT(*) FROM main.{table}").fetchone()[0]
+            if table != "links" and before != after:
+                raise ValueError("compaction changed a non-alias table count")
+            for left, right in (("main", "original"), ("original", "main")):
+                if db.execute(
+                    f"SELECT {columns} FROM {left}.{table} EXCEPT SELECT {columns} FROM {right}.{table} LIMIT 1"
+                ).fetchone():
+                    raise ValueError("compaction changed corpus contents or grouping identities")
+            report["tables"][table] = dict(
+                original_rows=before, compact_rows=after, exact_set_equal=True
+            )
+            write_json(root / "compaction.json", report)
+        if db.execute("PRAGMA quick_check").fetchone() != ("ok",):
+            raise ValueError("compacted database integrity failed")
+        db.execute("DETACH DATABASE original")
+        db.close()
+        images = root / "images"
+        for old in (source / "images").rglob("*.image"):
+            destination = images / old.relative_to(source / "images")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            os.link(old, destination)
+        for name in ("source_allowlist.json", "reference-tokenizer.json", "review-samples.jsonl"):
+            if (source / name).exists():
+                shutil.copyfile(source / name, root / name)
+        if sha256(source / "corpus.sqlite") != original_hash:
+            raise ValueError("source database changed during compaction")
+        manifest = dict(manifest, database_sha256=sha256(root / "corpus.sqlite"))
+        audit = dict(
+            audit,
+            corpus=manifest,
+            database_bytes=(root / "corpus.sqlite").stat().st_size,
+            updated_unix=time.time(),
+            free_gib=shutil.disk_usage(root).free / GIB,
+            metadata_compaction="compaction.json",
+        )
+        with contextlib.closing(
+            sqlite3.connect((root / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
+        ) as check:
+            _check_retained_media(check, audit, root)
+        report.update(
+            status="mechanical_checks_passed_pending_quality_admission",
+            database_sha256=manifest["database_sha256"],
+            database_bytes=audit["database_bytes"],
+            saved_database_bytes=(source / "corpus.sqlite").stat().st_size
+            - audit["database_bytes"],
+            completed_unix=time.time(),
+            media_files=audit["unique_images"],
+            original_content_and_splits_unchanged=True,
+        )
+        write_json(root / "compaction.json", report)
+        write_json(root / "source-audit.json", audit)
+        write_json(root / "corpus-manifest.json", manifest)
+        actual_bytes = sum(p.stat().st_size for p in root.iterdir() if p.is_file())
+        if actual_bytes > metadata_limit:
+            raise ValueError("compacted metadata exceeds its original budget")
+        return report
+    except BaseException as error:
+        builder.db.close()
+        report.update(status="failed_unadmitted", error=f"{type(error).__name__}: {error}")
+        write_json(root / "compaction.json", report)
+        raise
 
 
 def candidate_turns(subset, row):
@@ -731,6 +884,9 @@ def main(argv=None):
     parser.add_argument("--metadata-gib", type=float, default=3)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
+        "--compact-from", help="completed visual inventory; create a new compact version"
+    )
+    mode.add_argument(
         "--resume", action="store_true", help="resume a transport-interrupted visual inventory"
     )
     mode.add_argument(
@@ -742,6 +898,9 @@ def main(argv=None):
         "--construction-run", help="original producer run.json; required to close a slice"
     )
     args = parser.parse_args(argv)
+    if args.compact_from:
+        print(json.dumps(compact_visual_inventory(args.compact_from, args.output), indent=2))
+        return
     if args.finalize_slice:
         if not args.construction_run:
             parser.error("--finalize-slice requires --construction-run")

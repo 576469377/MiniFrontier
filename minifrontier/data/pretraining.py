@@ -495,7 +495,7 @@ def merge_text_slices(inputs, output, evaluation, *, seed=20260910, max_gib=12):
                 # Preserve aliases of duplicates removed during source construction,
                 # including aliases now mapped to a cross-source retained document.
                 builder.db.executemany(
-                    "INSERT INTO links VALUES (?,?)",
+                    "INSERT OR IGNORE INTO links VALUES (?,?)",
                     (
                         (aliases[i], key)
                         for i, key in db.execute("SELECT id,key FROM links")

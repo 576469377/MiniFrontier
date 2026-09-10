@@ -203,3 +203,60 @@ def test_slice_finalization_rejects_unverified_inventory_without_repartitioning(
         visual_sources.finalize_storage_limited_slice(root, run)
     assert sha256(root / "corpus.sqlite") == before
     assert not (root / "corpus-manifest.json").exists()
+
+
+def test_compact_legacy_visual_metadata_preserves_all_rows_splits_and_pixels(quota_stopped):
+    import sqlite3
+
+    root, run = quota_stopped
+    audit = visual_sources.finalize_storage_limited_slice(root, run)
+    with sqlite3.connect(root / "corpus.sqlite") as db:
+        db.execute("ALTER TABLE links RENAME TO unique_links")
+        db.execute("CREATE TABLE links(id TEXT,key TEXT)")
+        db.execute("CREATE INDEX link_key_idx ON links(key)")
+        for _ in range(7):
+            db.execute("INSERT INTO links SELECT * FROM unique_links")
+        db.execute("DROP TABLE unique_links")
+    manifest_path = root / "corpus-manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["database_sha256"] = sha256(root / "corpus.sqlite")
+    manifest_path.write_text(json.dumps(manifest))
+    audit["corpus"] = manifest
+    (root / "source-audit.json").write_text(json.dumps(audit))
+    before = {p.name: sha256(p) for p in root.iterdir() if p.is_file()}
+    output = root.with_name("compacted")
+    result = visual_sources.compact_visual_inventory(root, output)
+    assert result["status"] == "mechanical_checks_passed_pending_quality_admission"
+    assert result["original_content_and_splits_unchanged"] and result["new_media_bytes"] == 0
+    counts = result["tables"]["links"]
+    assert counts["original_rows"] == 7 * counts["compact_rows"]
+    assert result["database_bytes"] <= result["database_cap_bytes"]
+    assert {p.name: sha256(p) for p in root.iterdir() if p.is_file()} == before
+    old = next((root / "images").rglob("*.image"))
+    assert os.path.samefile(old, output / old.relative_to(root))
+    copied = json.loads((output / "source-audit.json").read_text())
+    assert copied["split_independent_images"] == audit["split_independent_images"]
+    assert copied["review"] == audit["review"] and not copied["formal_admission"]
+    with pytest.raises(FileExistsError):
+        visual_sources.compact_visual_inventory(root, output)
+
+
+@pytest.mark.parametrize("fault", ["hash", "pixels", "budget", "admitted"])
+def test_compaction_rejects_invalid_source_before_publishing_candidate(quota_stopped, fault):
+    root, run = quota_stopped
+    audit = visual_sources.finalize_storage_limited_slice(root, run)
+    if fault == "hash":
+        audit["corpus"]["database_sha256"] = "0" * 64
+    elif fault == "pixels":
+        next((root / "images").rglob("*.image")).write_bytes(b"broken")
+    elif fault == "budget":
+        audit["metadata_gib"] = 0.001
+    else:
+        audit["formal_admission"] = True
+    (root / "source-audit.json").write_text(json.dumps(audit))
+    before = sha256(root / "corpus.sqlite")
+    output = root.with_name("invalid-compaction")
+    with pytest.raises(ValueError):
+        visual_sources.compact_visual_inventory(root, output)
+    assert sha256(root / "corpus.sqlite") == before
+    assert not output.exists()

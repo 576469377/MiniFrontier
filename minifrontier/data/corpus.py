@@ -75,7 +75,7 @@ class CorpusBuilder:
             raise FileExistsError("corpus is immutable; choose a new data version")
         self.seed, self.max_bytes = seed, int(max_gib * GIB)
         require_space(self.root, 16 * 1024**2)
-        self.db = sqlite3.connect(self.root / "corpus.sqlite")
+        self.db = sqlite3.connect((self.root / "corpus.sqlite").as_uri(), uri=True)
         self.db.executescript("""
             CREATE TABLE IF NOT EXISTS samples (
                 id TEXT PRIMARY KEY, stage TEXT, source TEXT, task TEXT, first_question TEXT,
@@ -83,11 +83,17 @@ class CorpusBuilder:
             CREATE INDEX IF NOT EXISTS first_question_idx ON samples(first_question);
             CREATE TABLE IF NOT EXISTS bands (band INTEGER, value INTEGER, id TEXT);
             CREATE INDEX IF NOT EXISTS band_idx ON bands(band,value);
-            CREATE TABLE IF NOT EXISTS links (id TEXT, key TEXT);
-            CREATE INDEX IF NOT EXISTS link_key_idx ON links(key);
+            CREATE TABLE IF NOT EXISTS links (
+                id TEXT NOT NULL, key TEXT NOT NULL, PRIMARY KEY(key,id)) WITHOUT ROWID;
             CREATE TABLE IF NOT EXISTS image_bands (band INTEGER, value INTEGER, phash TEXT, id TEXT);
             CREATE INDEX IF NOT EXISTS image_band_idx ON image_bands(band,value);
         """)
+        # Existing interrupted databases retain their schema until explicitly compacted.
+        link_schema = self.db.execute(
+            "SELECT sql FROM sqlite_schema WHERE name='links'"
+        ).fetchone()[0]
+        if "WITHOUT ROWID" not in link_schema.upper():
+            self.db.execute("CREATE INDEX IF NOT EXISTS link_key_idx ON links(key)")
         self.counts: Counter[str] = Counter()
         self.last_retained_id: str | None = None
         self.approximate_bytes = (self.root / "corpus.sqlite").stat().st_size
@@ -219,10 +225,43 @@ class CorpusBuilder:
             quality_flags=record.get("quality_flags", []),
         )
         payload = json.dumps(record, ensure_ascii=False, sort_keys=True)
-        incoming = 4 * len(payload.encode()) + 1024
-        self.approximate_bytes += incoming
-        if self.approximate_bytes > self.max_bytes:
-            raise ValueError("corpus storage budget reached; accepted rows retained")
+        keys = ["source-group:" + record["source"] + ":" + record["group_id"]]
+        if question:
+            keys.append("question:" + question)
+            # The question identity above includes ordered media hashes. Generic
+            # "describe this image" prompts are different contexts on different
+            # images; merging their templates would connect the whole visual corpus.
+        links = set()
+        image_bands = []
+        for media in record.get("media", []):
+            keys.append("rgb:" + media["rgb_sha256"])
+            keys.extend("rgb:" + value for value in media.get("frame_rgb_sha256", []))
+            if media.get("phash"):
+                image_code = int(media["phash"], 16)
+                # Seven disjoint bands guarantee a candidate for <=6 bit changes.
+                for band, (offset, width) in enumerate(
+                    ((0, 10), (10, 9), (19, 9), (28, 9), (37, 9), (46, 9), (55, 9))
+                ):
+                    value = (image_code >> offset) & ((1 << width) - 1)
+                    for old_hash, old_id in self.db.execute(
+                        "SELECT phash,id FROM image_bands WHERE band=? AND value=?", (band, value)
+                    ):
+                        if (image_code ^ int(old_hash, 16)).bit_count() <= 6:
+                            keys.append("phash-neighbor:" + old_id)
+                            links.add((old_id, "phash-neighbor:" + old_id))
+                    image_bands.append((band, value, media["phash"], identity))
+            for field in ("document_id", "video_id", "origin_id"):
+                if media.get(field):
+                    keys.append(field + ":" + media[field])
+        if record.get("repo_id"):
+            keys.append("repo:" + record["repo_id"])
+        if record.get("document_id"):
+            keys.append("document:" + record["document_id"])
+        links.update((identity, key) for key in keys)
+        # Include aliases and image indexes, whose fan-out is unrelated to text size.
+        incoming = 4 * len(payload.encode()) + 1024 + 256 * len(image_bands)
+        incoming += 4 * sum(len(i.encode()) + len(k.encode()) + 32 for i, k in links)
+        self._reserve_metadata(incoming)
         if self.counts["accepted"] % 1000 == 0:
             self.db.commit()
             require_space(self.root, 64 * 1024**2)
@@ -243,48 +282,21 @@ class CorpusBuilder:
             "INSERT INTO bands VALUES (?,?,?)",
             [(b, code >> (b * 16) & 65535, identity) for b in range(4)],
         )
-        keys = ["source-group:" + record["source"] + ":" + record["group_id"]]
-        if question:
-            keys.append("question:" + question)
-            # The question identity above includes ordered media hashes. Generic
-            # "describe this image" prompts are different contexts on different
-            # images; merging their templates would connect the whole visual corpus.
-        for media in record.get("media", []):
-            if not media.get("rgb_sha256"):
-                raise ValueError("media must be decoded and hashed before corpus admission")
-            keys.append("rgb:" + media["rgb_sha256"])
-            keys.extend("rgb:" + value for value in media.get("frame_rgb_sha256", []))
-            if media.get("phash"):
-                code = int(media["phash"], 16)
-                # Seven disjoint bands guarantee a candidate for <=6 bit changes.
-                for band, (offset, width) in enumerate(
-                    ((0, 10), (10, 9), (19, 9), (28, 9), (37, 9), (46, 9), (55, 9))
-                ):
-                    value = (code >> offset) & ((1 << width) - 1)
-                    for old_hash, old_id in self.db.execute(
-                        "SELECT phash,id FROM image_bands WHERE band=? AND value=?", (band, value)
-                    ):
-                        if (code ^ int(old_hash, 16)).bit_count() <= 6:
-                            keys.append("phash-neighbor:" + old_id)
-                            self.db.execute(
-                                "INSERT INTO links VALUES (?,?)",
-                                (old_id, "phash-neighbor:" + old_id),
-                            )
-                    self.db.execute(
-                        "INSERT INTO image_bands VALUES (?,?,?,?)",
-                        (band, value, media["phash"], identity),
-                    )
-            for field in ("document_id", "video_id", "origin_id"):
-                if media.get(field):
-                    keys.append(field + ":" + media[field])
-        if record.get("repo_id"):
-            keys.append("repo:" + record["repo_id"])
-        if record.get("document_id"):
-            keys.append("document:" + record["document_id"])
-        self.db.executemany("INSERT INTO links VALUES (?,?)", [(identity, key) for key in keys])
+        self.db.executemany("INSERT INTO image_bands VALUES (?,?,?,?)", image_bands)
+        self.db.executemany("INSERT OR IGNORE INTO links VALUES (?,?)", sorted(links))
         self.counts["accepted"] += 1
         self.last_retained_id = identity
         return True
+
+    def _reserve_metadata(self, incoming):
+        page_bytes = (
+            self.db.execute("PRAGMA page_count").fetchone()[0]
+            * self.db.execute("PRAGMA page_size").fetchone()[0]
+        )
+        proposed = max(self.approximate_bytes, page_bytes) + incoming
+        if proposed > self.max_bytes:
+            raise ValueError("corpus storage budget reached; accepted rows retained")
+        self.approximate_bytes = proposed
 
     def _link_origin(self, identity, record):
         # Rejected duplicates still connect their origin groups to the retained
@@ -294,7 +306,15 @@ class CorpusBuilder:
             keys.append("document:" + record["document_id"])
         if record.get("repo_id"):
             keys.append("repo:" + record["repo_id"])
-        self.db.executemany("INSERT INTO links VALUES (?,?)", [(identity, key) for key in keys])
+        links = [
+            (identity, key)
+            for key in set(keys)
+            if not self.db.execute(
+                "SELECT 1 FROM links WHERE key=? AND id=?", (key, identity)
+            ).fetchone()
+        ]
+        self._reserve_metadata(4 * sum(len(i.encode()) + len(k.encode()) + 32 for i, k in links))
+        self.db.executemany("INSERT OR IGNORE INTO links VALUES (?,?)", links)
 
     def finalize(self, *, split_locks=None, excluded_ids=()):
         controlled_split = split_locks is not None or bool(excluded_ids)

@@ -126,3 +126,84 @@ def test_chunked_zero_supervision_has_zero_gradients():
     loss = chunked_linear_ce(h, w, torch.full((1, 5), -100))
     loss.backward()
     assert loss == 0 and h.grad.abs().sum() == 0 and w.grad.abs().sum() == 0
+
+
+def test_phash_aliases_are_unique_and_preserve_transitive_groups(tmp_path):
+    from minifrontier.data.corpus import simhash
+
+    builder = CorpusBuilder(tmp_path / "corpus")
+    rows = [
+        record(
+            1,
+            "A blue mountain lake reflects the distant forest landscape.",
+            media=[dict(rgb_sha256="a", phash="0000000000000000")],
+        ),
+        record(
+            2,
+            "Several red garden tools rest beside a wooden fence.",
+            media=[dict(rgb_sha256="b", phash="000000000000003f")],
+        ),
+        record(
+            3,
+            "A train travels across the metal bridge above the river.",
+            media=[dict(rgb_sha256="c", phash="0000000000000fff")],
+        ),
+        record(
+            4,
+            "Three oranges sit in the center of a large ceramic bowl.",
+            media=[dict(rgb_sha256="d", phash="ffffffffffffffff")],
+        ),
+    ]
+    for row in rows:
+        assert builder.add(row)
+    alias = dict(rows[0], source="second-source", group_id="alias")
+    assert not builder.add(alias)
+    before = builder.db.execute("SELECT COUNT(*) FROM links").fetchone()[0]
+    assert not builder.add(alias)
+    assert builder.db.execute("SELECT COUNT(*) FROM links").fetchone()[0] == before
+    assert (
+        builder.db.execute(
+            "SELECT COUNT(*) FROM (SELECT id,key FROM links GROUP BY id,key HAVING COUNT(*)>1)"
+        ).fetchone()[0]
+        == 0
+    )
+    builder.finalize()
+    groups = {}
+    for payload, code, group in builder.db.execute(
+        "SELECT payload,simhash,group_root FROM samples"
+    ):
+        row = json.loads(payload)
+        assert code == f"{simhash(row['text']):016x}"
+        groups[row["item_id"]] = group
+    assert groups["1"] == groups["2"] == groups["3"] != groups["4"]
+    builder.db.close()
+
+
+def test_metadata_reservation_counts_media_alias_fanout_before_mutation(tmp_path):
+    import pytest
+
+    builder = CorpusBuilder(tmp_path / "corpus")
+    for i in range(20):
+        assert builder.add(
+            record(
+                i,
+                f"This photograph numbered {i} has its own distinct pixel identity.",
+                media=[dict(rgb_sha256=str(i), phash="0000000000000000")],
+            )
+        )
+    builder.db.commit()
+    tables = ("samples", "bands", "links", "image_bands")
+    before = [builder.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in tables]
+    builder.max_bytes = builder.approximate_bytes + 4096
+    with pytest.raises(ValueError, match="storage budget"):
+        builder.add(
+            record(
+                21,
+                "A final photograph connects to all the similar preceding images.",
+                media=[dict(rgb_sha256="last", phash="0000000000000000")],
+            )
+        )
+    assert [
+        builder.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in tables
+    ] == before
+    builder.db.close()
