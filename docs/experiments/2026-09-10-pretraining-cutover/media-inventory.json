@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789067974.6150563,
+  "observed_unix": 1789070181.0615609,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -86,13 +86,13 @@
   "remote_documents_charts": {
     "source": "HuggingFaceM4/FineVision",
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
-    "status": "building",
+    "status": "candidate_slice_complete_pending_admission",
     "formal_admission": false,
-    "observed_unix": 1789068095.4377563,
-    "process_identity_verified": true,
+    "observed_unix": 1789070113.1712325,
+    "process_identity_verified": false,
     "source_commit": "642aced7a6b849e608259857421c566c9abfc687",
-    "independent_images": 38750,
-    "media_bytes": 10825744029,
+    "independent_images": 40000,
+    "media_bytes": 11090765087,
     "sources": {
       "CoSyn_400k_document": {
         "status": "candidate_target_reached",
@@ -101,26 +101,377 @@
         "answer_reference_tokens": 1272888
       },
       "CoSyn_400k_chart": {
-        "status": "reading",
-        "unique_images": 18750,
-        "accepted_records": 102495,
-        "answer_reference_tokens": 4660368
+        "status": "candidate_target_reached",
+        "unique_images": 20000,
+        "accepted_records": 109310,
+        "answer_reference_tokens": 4967692
       }
     },
     "local_copy_performed": false,
     "storage_observation": {
-      "observed_unix": 1789068095.4378412,
+      "observed_unix": 1789069013.5427725,
       "free_gib": 1037.0001182556152,
-      "metadata_files_bytes": 3557872667,
-      "database_bytes": 3527626752,
-      "media_bytes": 10825744029,
+      "metadata_files_bytes": 3675142117,
+      "database_bytes": 3674583040,
+      "media_bytes": 11090765087,
       "configured_metadata_budget_gib": 3.0,
       "configured_total_budget_gib": 60.0,
       "metadata_budget_exceeded": true,
       "within_total_budget": true
     },
     "storage_admission": false,
-    "storage_issue": "Perceptual-hash association indexes exceeded the configured metadata budget; total data remains below its 60 GiB limit. Physical accounting and index redundancy need correction before admission."
+    "storage_issue": "Original v1 exceeded the 3 GiB metadata sub-budget. New immutable v2 passed compaction checks; v1 is retained as construction evidence, not declared storage-admitted.",
+    "producer_terminal": true,
+    "records": 159195,
+    "original_split_records": {
+      "train": 157236,
+      "test": 1277,
+      "val": 682
+    },
+    "original_split_independent_images": {
+      "train": 39496,
+      "test": 335,
+      "val": 169
+    },
+    "original_database_sha256": "c5947986c51ba06106965793f9276fbe6d8964301ddf0b6e2ee7db1c700c88ad",
+    "metadata_inspection": {
+      "kind": "candidate_metadata_storage_inspection",
+      "formal_admission": false,
+      "source_commit": "642aced7a6b849e608259857421c566c9abfc687",
+      "database_sha256": "c5947986c51ba06106965793f9276fbe6d8964301ddf0b6e2ee7db1c700c88ad",
+      "query_memory_limit_gib": 8,
+      "queries": {
+        "storage_by_object": "SELECT name,sum(pgsize),count(*) FROM dbstat GROUP BY name ORDER BY sum(pgsize) DESC",
+        "duplicate_links": "SELECT sum(n-1),count(*) FROM (SELECT id,key,count(*) n FROM links GROUP BY id,key HAVING count(*)>1)",
+        "split_groups": "SELECT split,count(*),count(distinct group_root) FROM samples GROUP BY split",
+        "link_rows": "SELECT count(*) FROM links"
+      },
+      "started_unix": 1789068988.166096,
+      "configured_metadata_budget_gib": 3.0,
+      "configured_total_budget_gib": 60.0,
+      "metadata_files_bytes": 3675142117,
+      "media_bytes": 11090765087,
+      "source_audit_status": "candidate_slice_complete_pending_admission",
+      "storage_by_object": [
+        [
+          "links",
+          1693556736,
+          413466
+        ],
+        [
+          "link_key_idx",
+          1130668032,
+          276042
+        ],
+        [
+          "samples",
+          653836288,
+          159628
+        ],
+        [
+          "image_bands",
+          106422272,
+          25982
+        ],
+        [
+          "bands",
+          50266112,
+          12272
+        ],
+        [
+          "image_band_idx",
+          15896576,
+          3881
+        ],
+        [
+          "sqlite_autoindex_samples_1",
+          13283328,
+          3243
+        ],
+        [
+          "band_idx",
+          9031680,
+          2205
+        ],
+        [
+          "first_question_idx",
+          1609728,
+          393
+        ],
+        [
+          "sqlite_schema",
+          4096,
+          1
+        ]
+      ],
+      "duplicate_links": [
+        [
+          9015609,
+          1322652
+        ]
+      ],
+      "split_groups": [
+        [
+          "test",
+          1277,
+          325
+        ],
+        [
+          "train",
+          157236,
+          33169
+        ],
+        [
+          "val",
+          682,
+          157
+        ]
+      ],
+      "link_rows": [
+        [
+          10690404
+        ]
+      ],
+      "media_by_source": {
+        "HuggingFaceM4/FineVision/CoSyn_400k_document": {
+          "unique_files": 20000,
+          "bytes": 6768452550
+        },
+        "HuggingFaceM4/FineVision/CoSyn_400k_chart": {
+          "unique_files": 20000,
+          "bytes": 4322312537
+        }
+      },
+      "status": "completed_pending_storage_correction",
+      "completed_unix": 1789069013.5427725,
+      "peak_rss_gib": 1.9370574951171875
+    },
+    "compacted_candidate": {
+      "output": "data/pretraining-media-doc-chart-v2",
+      "source_commit": "5e36c4e0624cad695f59d836604017ed0a9038f8",
+      "report": {
+        "kind": "visual_metadata_compaction",
+        "status": "mechanical_checks_passed_pending_quality_admission",
+        "formal_admission": false,
+        "main_budget_eligible": false,
+        "started_unix": 1789069535.6237526,
+        "source_manifest_sha256": "01044641cb74dc7b46354edfc487caf58371103a42f521a9240c89772862e785",
+        "source_audit_sha256": "33821dda4457b86b1a9f26ea554a7dbea0598ec75cea7fed56b19ccc1753388e",
+        "source_database_sha256": "c5947986c51ba06106965793f9276fbe6d8964301ddf0b6e2ee7db1c700c88ad",
+        "source_path": "../pretraining-media-doc-chart-v1",
+        "processor_files": {
+          "visual_sources.py": "063434b741b12396135657aa8d6dce04dce630060d0e226838fa75bf70ef225d",
+          "corpus.py": "d1d574631df08e41012c507caf977543470645aceb74a8280972f9ba20b903bb"
+        },
+        "metadata_budget_bytes": 3221225472,
+        "new_media_bytes": 0,
+        "database_cap_bytes": 1602224128,
+        "construction_peak_bound_bytes": 3254779904,
+        "tables": {
+          "samples": {
+            "original_rows": 159195,
+            "compact_rows": 159195,
+            "exact_set_equal": true
+          },
+          "bands": {
+            "original_rows": 636780,
+            "compact_rows": 636780,
+            "exact_set_equal": true
+          },
+          "image_bands": {
+            "original_rows": 1114365,
+            "compact_rows": 1114365,
+            "exact_set_equal": true
+          },
+          "links": {
+            "original_rows": 10690404,
+            "compact_rows": 1674795,
+            "exact_set_equal": true
+          }
+        },
+        "database_sha256": "e531bb5083fb8614d12c7587a787db9124637763186cdd31b2b6ed267eaaa17b",
+        "database_bytes": 1159458816,
+        "saved_database_bytes": 2515124224,
+        "completed_unix": 1789069650.094389,
+        "media_files": 40000,
+        "original_content_and_splits_unchanged": true
+      },
+      "metadata_files_bytes": 1160016093,
+      "metadata_budget_exceeded": false,
+      "storage_admission": true,
+      "formal_admission": false,
+      "old_version_retained": true,
+      "raw_image_storage": "verified same-filesystem hard links; no new pixel payload bytes",
+      "freed_filesystem_bytes": 0
+    },
+    "mf1_p0_preparation": {
+      "source_commit": "d3ac05c3c8fc6375f15ba205655b080ae690d7dd",
+      "driver_sha256": "7eca7b216fd26c14b760d10c843506a61f2f588aa67e9644fa5edb8664cf5ed6",
+      "state": "encoding_mf1_p0",
+      "formal_admission": false,
+      "canonical_data": "data/pretraining-media-doc-chart-v2",
+      "effective_partition": "data/pretraining-doc-chart-partition-v1",
+      "output": "data/pretraining-mf1-doc-chart-p0-v1",
+      "tokenizer_sha256": "07ca259a4ff33db77c7576f8461dfbda367072361d7156c66879325f6b6be0d2",
+      "config_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8",
+      "budgets": {
+        "encoded_gib": 1,
+        "new_raw_media_bytes": 0,
+        "max_features": 49,
+        "document_tiles": false
+      },
+      "attempt": 2,
+      "previous_failure": "Legacy source audit omitted per-split answer totals; driver now computes these from immutable records and checks original per-source totals before reservation.",
+      "remaining": [
+        "P0 encoding and full encoded-media integrity audit",
+        "cross-pool identity exclusion, source quality and per-domain exposure admission"
+      ],
+      "process_identity_verified": true,
+      "observed_unix": 1789070181.0619752,
+      "partition_manifest_sha256": "78a92272c0560c310de50b5e6ed75d9155b8e1a3a2550fd87a80cfd43ff5d5ab",
+      "new_reserved_groups": 843,
+      "validation_groups": 1000,
+      "source_splits": {
+        "HuggingFaceM4/FineVision/CoSyn_400k_chart": {
+          "test": {
+            "records": 853,
+            "groups": 146,
+            "reference_tokens": 57174
+          },
+          "train": {
+            "records": 105516,
+            "groups": 15678,
+            "reference_tokens": 7247743
+          },
+          "val": {
+            "records": 2941,
+            "groups": 500,
+            "reference_tokens": 201617
+          },
+          "validation_group_fraction": 0.030629747610879686
+        },
+        "HuggingFaceM4/FineVision/CoSyn_400k_document": {
+          "test": {
+            "records": 424,
+            "groups": 179,
+            "reference_tokens": 19126
+          },
+          "train": {
+            "records": 48124,
+            "groups": 16692,
+            "reference_tokens": 2141844
+          },
+          "val": {
+            "records": 1337,
+            "groups": 503,
+            "reference_tokens": 59300
+          },
+          "validation_group_fraction": 0.028951306550017267
+        }
+      },
+      "effective_split_records": {
+        "test": 1277,
+        "train": 153640,
+        "val": 4278
+      },
+      "effective_split_independent_images": {
+        "train": 38604,
+        "val": 1061,
+        "test": 335
+      },
+      "effective_split_independent_groups": {
+        "test": 325,
+        "train": 32326,
+        "val": 1000
+      },
+      "effective_split_answer_reference_tokens": {
+        "test": {
+          "chart_table": 37429,
+          "ocr_document": 11062
+        },
+        "train": {
+          "chart_table": 4797054,
+          "ocr_document": 1228021
+        },
+        "val": {
+          "chart_table": 133209,
+          "ocr_document": 33805
+        }
+      },
+      "reservation": {
+        "kind": "private_visual_validation_reservation",
+        "formal_admission": false,
+        "seed": 20260910,
+        "corpus_manifest_sha256": "d7b7872e58e8dcc99f2c5eb484c16deb640a4c14628008d44715a2e757d82c38",
+        "integrity_audit_sha256": "1c774b370336d4b184e4a7184d55ef5c99377c14dea8cadf576c293948c809b1",
+        "minimum_validation_group_fraction": 0.005,
+        "policy": "Preserve prior val/test and all fixed review samples; reserve whole groups until at least 500 per source and 1000 globally, using seed-bound SHA256 order. No new group moves back to train.",
+        "reason": "pretraining plan section 5.3 requires 1000 independent visual evaluation groups; the small initial candidate inventory has only 157 by default",
+        "before_validation_groups": 157,
+        "after_validation_groups": 1000,
+        "per_source_validation_groups": {
+          "HuggingFaceM4/FineVision/CoSyn_400k_chart": 500,
+          "HuggingFaceM4/FineVision/CoSyn_400k_document": 503
+        }
+      },
+      "canonical_integrity": {
+        "kind": "finalized_visual_slice_integrity",
+        "status": "mechanical_checks_passed_pending_quality_admission",
+        "formal_admission": false,
+        "updated_unix": 1789070044.3692224,
+        "corpus_manifest_sha256": "d7b7872e58e8dcc99f2c5eb484c16deb640a4c14628008d44715a2e757d82c38",
+        "database_sha256": "e531bb5083fb8614d12c7587a787db9124637763186cdd31b2b6ed267eaaa17b",
+        "source_audit_sha256": "f8764cf87e0e8d8b5f6b6db936489eb03999ff2c760cea407828b77f88c8200f",
+        "compaction_report_sha256": "561cface5dd44a3b89fde63450103125e4eb161e7ff85e3ab080f0a0505fe16b",
+        "processor_sha256": "7eca7b216fd26c14b760d10c843506a61f2f588aa67e9644fa5edb8664cf5ed6",
+        "records": {
+          "train": 157236,
+          "val": 682,
+          "test": 1277
+        },
+        "independent_images": {
+          "train": 39496,
+          "val": 169,
+          "test": 335
+        },
+        "independent_groups": {
+          "train": 33169,
+          "val": 157,
+          "test": 325
+        },
+        "answer_reference_tokens": {
+          "train": {
+            "ocr_document": 1255547,
+            "chart_table": 4910577
+          },
+          "val": {
+            "ocr_document": 6279,
+            "chart_table": 19686
+          },
+          "test": {
+            "ocr_document": 11062,
+            "chart_table": 37429
+          }
+        },
+        "cross_split_connected_groups": 0,
+        "cross_split_origin_keys": 0,
+        "cross_split_rgb_identities": 0,
+        "review_sha256": "0cb184292922b3e13291092af7c7082b6440b219aa4ad2027b1c70c8e8dea1b9",
+        "review_rows": {
+          "HuggingFaceM4/FineVision/CoSyn_400k_chart:chart_table": 100,
+          "HuggingFaceM4/FineVision/CoSyn_400k_document:ocr_document": 100
+        },
+        "review_status": "awaiting_manual_review",
+        "original_split_answer_counts_recorded": false,
+        "raw_media_verification": "reuse full immutable-pixel checks in the bound successful compaction report",
+        "limitations": [
+          "upstream validation/benchmark image identity exclusion",
+          "stratified source/domain manual review and fixed visual evaluation",
+          "full OCR transcription, Chinese OCR, multiimage and video coverage",
+          "per-model tokenizer, complete media/answer length and phase exposure audit"
+        ]
+      }
+    }
   },
   "mf1_natural_p0_encoding": {
     "source_commit": "713eb786a71276729fa710102747d94545b9890e",
@@ -413,5 +764,17 @@
       "source_commit": "fe58029",
       "text_media_targeted_tests": 27
     }
+  },
+  "metadata_compaction_validation": {
+    "source_commit": "5e36c4e0624cad695f59d836604017ed0a9038f8",
+    "cpu": {
+      "passed": 446,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "seconds": 141.99
+    },
+    "mypy_source_files": 179,
+    "visual_partition_targeted_tests": 38,
+    "visual_partition_source_commit": "d3ac05c3c8fc6375f15ba205655b080ae690d7dd"
   }
 }
