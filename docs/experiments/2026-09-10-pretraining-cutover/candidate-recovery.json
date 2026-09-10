@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "kind": "candidate_recovery_observation",
+  "observed_unix": 1789057702.7409034,
+  "main_budget_eligible": false,
+  "tests": {
+    "cpu": {
+      "passed": 390,
+      "skipped": 1,
+      "cuda_deselected": 54
+    },
+    "data_targeted_passed": 18,
+    "storage_lock_targeted_passed": 10
+  },
+  "inventories": [
+    {
+      "inventory": "code",
+      "run_id": "strategy-pretraining-code-v1",
+      "source_commit": "642aced7a6b849e608259857421c566c9abfc687",
+      "source_archive_sha256": "83e70ffc36b2c948dd28883ee3eb25017b92890c2a1212ee09b8fff998a60b4f",
+      "attempt": 2,
+      "resume_audit_sha256": "0600fd79e7045a7df42d7f647e0695c5b552dfa8a275c0970fc0c30dec9af3db",
+      "retained_at_resume": {
+        "unique_images": null,
+        "media_bytes": null,
+        "dedup_counts": null,
+        "dedup_and_quality_counts": {
+          "accepted": 9288,
+          "repeated_boilerplate": 376,
+          "near_duplicates": 1
+        }
+      },
+      "observed": {
+        "status": "building",
+        "updated_unix": 1789057701.1951275,
+        "unique_images": null,
+        "sources": {
+          "code_licensed": {
+            "accepted_records": 13000,
+            "accepted_reference_tokens": 39406197,
+            "read_rows": 160559,
+            "completed_read_rows": 160558,
+            "unique_images": null,
+            "reader_rejections": {
+              "oversized_json_record": 1
+            },
+            "downloaded_bytes": 945122454
+          }
+        }
+      },
+      "audit_snapshot_sha256": "8c597c039dd9c700e7a92c898bb4bc5a6c8c65c25b824e2c0729f488723e4d97",
+      "formal_admission": false
+    },
+    {
+      "inventory": "document_chart",
+      "run_id": "strategy-pretraining-media-doc-chart-v1",
+      "source_commit": "642aced7a6b849e608259857421c566c9abfc687",
+      "source_archive_sha256": "83e70ffc36b2c948dd28883ee3eb25017b92890c2a1212ee09b8fff998a60b4f",
+      "attempt": 3,
+      "resume_audit_sha256": "b854a4626ede48216eedc84cb6660d5f49eccb348af6c13547fdc1c21271df02",
+      "retained_at_resume": {
+        "unique_images": 244,
+        "media_bytes": 81274020,
+        "dedup_counts": {
+          "accepted": 597
+        },
+        "dedup_and_quality_counts": null
+      },
+      "observed": {
+        "status": "building",
+        "updated_unix": 1789057476.0798624,
+        "unique_images": 250,
+        "sources": {
+          "CoSyn_400k_document": {
+            "accepted_records": 608,
+            "accepted_reference_tokens": 26634,
+            "read_rows": 306,
+            "completed_read_rows": null,
+            "unique_images": 250,
+            "reader_rejections": null,
+            "downloaded_bytes": null
+          }
+        }
+      },
+      "audit_snapshot_sha256": "cba50266812f9b87ef95ffa13e685bc4f97a4303ad4c1f4ea6f0bb6bdd14cb3a",
+      "formal_admission": false
+    }
+  ],
+  "formal_main_ce": {
+    "minikimik3": 0,
+    "miniqwen4": 0,
+    "minideepseekv4": 0,
+    "minifrontier1": 0
+  },
+  "limitations": [
+    "snapshot only; live status is maintained by the existing experiment registry",
+    "candidate quantities are reference-token/image counts, not formal training consumption",
+    "3c4bc39 reduces the storage lock duration for future starts; active jobs retain 642aced"
+  ]
+}
