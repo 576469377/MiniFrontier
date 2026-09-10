@@ -57,6 +57,22 @@ def test_candidate_data_progress_is_not_training_ce_or_formal_admission(tmp_path
     assert entry["state"] == "interrupted_unadmitted"
 
 
+def test_performance_updates_stay_outside_the_formal_training_budget(tmp_path):
+    run = tmp_path / "outputs/strategy-mf1-qualification/p0"
+    write(run / "run.json", dict(kind="performance", model_name="minifrontier1"))
+    write(
+        run / "status.json",
+        dict(
+            state="measurement_complete_unqualified",
+            ledger=dict(ce_tokens=4_000_000, optimizer_updates=250),
+        ),
+    )
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["kind"] == "performance" and entry["main_budget_eligible"] is False
+    assert entry["ce_tokens"] == 4_000_000 and entry["optimizer_updates"] == 250
+    assert entry["state"] == "measurement_complete_unqualified"
+
+
 def test_supervisor_resumed_training_overrides_old_paused_checkpoint(tmp_path):
     trial = tmp_path / "outputs/mf1-language-instructions-v1/trial"
     write(trial / "run.json", dict(model_name="minifrontier1", kind="acceptance"))

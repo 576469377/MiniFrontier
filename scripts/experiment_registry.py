@@ -156,6 +156,8 @@ def collect(workspace):
             )
             if run.get("kind") == "data_construction":
                 kind = "data_construction"
+            elif run.get("kind") == "performance":
+                kind = "performance"
             status = (
                 interruption.get("state")
                 or supervisor.get("state")
@@ -294,7 +296,7 @@ def collect(workspace):
                 performance_measured_updates=profile.get("measured_updates"),
                 capability_status=state.get("capability_status", "unassessed"),
                 main_budget_eligible=False
-                if kind in {"synthetic", "sweep", "data_construction"}
+                if kind in {"synthetic", "sweep", "data_construction", "performance"}
                 or run.get("kind") == "acceptance"
                 else None,
                 retention=experiment.get("retention", "original_run_policy"),

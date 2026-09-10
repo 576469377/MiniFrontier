@@ -119,6 +119,21 @@ def main(argv=None):
     t.add_argument("--save-every", type=int, default=100)
     t.add_argument("--eval-every", type=int, default=100)
     t.add_argument("--mixture", help="JSON mapping every data domain to CE proportions")
+    benchmark = commands.add_parser(
+        "benchmark", help="bounded P0 production-path measurement without exporting weights"
+    )
+    benchmark.add_argument("--data", required=True)
+    benchmark.add_argument("--output", required=True)
+    benchmark.add_argument("--config", required=True)
+    benchmark.add_argument("--device", default="cuda")
+    benchmark.add_argument("--input-batch-tokens", type=int, default=16384)
+    benchmark.add_argument("--batch-size", type=int, default=8)
+    benchmark.add_argument("--seed", type=int, default=42)
+    benchmark.add_argument("--lr", type=float, default=3e-4)
+    benchmark.add_argument("--vision-lr", type=float, default=1e-4)
+    benchmark.add_argument("--mixture", help="JSON mapping every data domain to CE proportions")
+    benchmark.add_argument("--profile-warmup", type=int, default=50)
+    benchmark.add_argument("--profile-updates", type=int, default=200)
     e = commands.add_parser("evaluate")
     e.add_argument("--checkpoint", required=True)
     e.add_argument("--data", required=True)
@@ -237,9 +252,11 @@ def main(argv=None):
 
         args["config"] = MiniFrontier1Config(**json.loads(Path(args["config"]).read_text()))
         result = encode_dataset(**args)
-    elif command == "train":
+    elif command in {"train", "benchmark"}:
         from minifrontier.training.minifrontier1 import train
 
+        if command == "benchmark":
+            args.update(run_kind="performance", phase="p0")
         mixture = args.pop("mixture")
         result = train(**args, weights=json.loads(mixture) if mixture else None)
     elif command == "posttrain":

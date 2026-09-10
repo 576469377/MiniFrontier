@@ -21,8 +21,9 @@ from minifrontier.data.minifrontier1_encoding import (
     open_dataset,
 )
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
-from minifrontier.training.minifrontier1 import train
+from minifrontier.training.minifrontier1 import Sampler, train
 from minifrontier.training.minifrontier1_curriculum import collate_records
+from minifrontier.training.minifrontier1_strategy import scheduler_factor
 
 
 @pytest.fixture
@@ -292,3 +293,98 @@ def test_composition_rejects_cross_split_identities_even_with_rehashed_metadata(
     with pytest.raises(ValueError, match=r"duplicate|crosses"):
         assemble_components(roots, tmp_path / "leaking", config)
     assert not (tmp_path / "leaking").exists()
+
+
+def test_performance_window_uses_production_schedule_and_never_exports_weights(
+    components, tmp_path
+):
+    roots, config = components
+    data, output = tmp_path / "joint", tmp_path / "performance"
+    assemble_components(roots, data, config)
+    result = train(
+        data=data,
+        output=output,
+        config=asdict(config),
+        phase="p0",
+        run_kind="performance",
+        input_batch_tokens=64,
+        batch_size=2,
+        profile_warmup=1,
+        profile_updates=2,
+        weights={"caption": 0.25, "vqa": 0.25, "en_general": 0.5},
+    )
+    assert result["state"] == "measurement_complete_unqualified"
+    assert result["measured_updates"] == 2
+    assert [r["step"] for r in result["updates"]] == [2, 3]
+    assert result["all_updates_ledger"]["optimizer_updates"] == 3
+    assert result["all_updates_ledger"]["media_exposures"] > 0
+    assert not result["exports_model_weights"] and not result["main_budget_eligible"]
+    assert not result["formal_admission"] and not result["capability_qualified"]
+    assert not list(output.glob("*.pt")) and not (output / "evaluation.json").exists()
+    status = json.loads((output / "status.json").read_text())
+    assert not status["resumable"]
+    metrics = [json.loads(line) for line in (output / "metrics.jsonl").open()]
+    assert (
+        len(metrics) == 3 and result["all_updates_ledger"]["ce_tokens"] == metrics[-1]["ce_tokens"]
+    )
+    for row in result["updates"]:
+        m = metrics[row["step"] - 1]
+        factor = scheduler_factor("p0", m["phase_tokens"], m["main_ce_tokens"])
+        assert row["context_length"] in {512, 1024}
+        assert row["input_tokens"] == m["input_batch_actual"]
+        assert row["ce_tokens"] == m["ce_tokens"] - metrics[row["step"] - 2]["ce_tokens"]
+        for group in result["recipe"]["optimizer_groups"]:
+            assert row["learning_rates"][group["name"]] == pytest.approx(group["base_lr"] * factor)
+    assert result["ce_tokens_per_second"] == pytest.approx(
+        sum(r["ce_tokens"] for r in result["updates"])
+        / sum(r["seconds"] for r in result["updates"])
+    )
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"init": "old.pt"},
+        {"resume": "old.pt"},
+        {"steps": 250},
+        {"token_budget": 4_000_000},
+        {"phase": "p1"},
+        {"profile_updates": 201},
+    ],
+)
+def test_performance_entry_rejects_inheritance_and_unbounded_controls(tmp_path, override):
+    args = dict(
+        data=tmp_path / "absent", output=tmp_path / "output", run_kind="performance", phase="p0"
+    )
+    with pytest.raises(ValueError, match="fresh bounded"):
+        train(**dict(args, **override))
+    assert not (tmp_path / "output").exists()
+
+
+def test_acceptance_actual_token_limit_is_checked_before_any_optimizer_update(
+    components, tmp_path, monkeypatch
+):
+    roots, config = components
+    data, output = tmp_path / "joint", tmp_path / "acceptance"
+    assemble_components(roots, data, config)
+
+    def oversized(self, dataset, capacity):
+        ids = torch.ones(1, 2_000_002, dtype=torch.long)
+        labels = ids.clone()
+        labels[:, 0] = -100
+        return dict(input_ids=ids, labels=labels), "all"
+
+    monkeypatch.setattr(Sampler, "next_item", oversized)
+    with pytest.raises(ValueError, match="2M actual-token limit"):
+        train(
+            data=data,
+            output=output,
+            config=asdict(config),
+            phase="p0",
+            steps=1,
+            input_batch_tokens=64,
+        )
+    status = json.loads((output / "status.json").read_text())
+    assert status["step"] == 0 and status["ledger"]["ce_tokens"] == 0
+    assert status["state"] == "acceptance_token_limit"
+    assert not (output / "checkpoint.pt").exists()

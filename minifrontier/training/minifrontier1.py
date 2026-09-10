@@ -264,7 +264,25 @@ def train(
     eval_every=100,
     weights=None,
     diagnostic_attention=None,
+    profile_warmup=50,
+    profile_updates=200,
 ):
+    performance_only = run_kind == "performance"
+    if performance_only:
+        if (
+            phase != "p0"
+            or init
+            or resume
+            or stop_after_updates is not None
+            or token_budget is not None
+            or steps is not None
+            or not 1 <= profile_warmup < 250
+            or not 1 <= profile_updates <= 250 - profile_warmup
+        ):
+            raise ValueError(
+                "P0 performance requires a fresh bounded warmup/measurement window, without weights or token budgets"
+            )
+        steps = profile_warmup + profile_updates
     if diagnostic_attention is not None and (
         run_kind != "acceptance" or phase != "sft" or diagnostic_attention != "dense_pretrain"
     ):
@@ -279,7 +297,7 @@ def train(
         or eval_every < 1
     ):
         raise ValueError("invalid training controls")
-    if run_kind not in {"acceptance", "strategy"}:
+    if run_kind not in {"acceptance", "strategy", "performance"}:
         raise ValueError("unknown run kind")
     if steps is None and token_budget is None:
         token_budget = PHASES[phase]["budget"]
@@ -305,6 +323,8 @@ def train(
     torch.manual_seed(seed)
     random.seed(seed)
     output, data = Path(output).resolve(), Path(data).resolve()
+    if performance_only and output.exists():
+        raise FileExistsError("performance measurement requires a new output directory")
     output.mkdir(parents=True, exist_ok=True)
     if (output / "checkpoint.pt").exists() and not resume:
         raise FileExistsError(
@@ -327,7 +347,8 @@ def train(
     if dataset.tokenizer.get_vocab_size() > c.vocab_size:
         raise ValueError("tokenizer vocabulary exceeds output head")
     bound = bindings(c, data, init)
-    if run_kind == "strategy" and weights is None:
+    production_path = run_kind in {"strategy", "performance"}
+    if production_path and weights is None:
         if phase == "sft":
             weights = SFT_MIX
         else:
@@ -399,8 +420,20 @@ def train(
         chat_template=CONTROL_VERSION,
         diagnostic_attention=diagnostic_attention,
     )
+    if performance_only:
+        largest_context = max(n for n in PHASES[phase]["lengths"] if n <= c.max_position_embeddings)
+        run.update(
+            main_budget_eligible=False,
+            formal_admission=False,
+            exports_model_weights=False,
+            performance_profile=dict(warmup=profile_warmup, measured_updates=profile_updates),
+            input_token_upper_bound=steps * (input_batch_tokens + largest_context - 1),
+            model_config=asdict(c),
+            optimizer_groups=group_manifest,
+            schedule="shared production P0 main-CE warmup; measurement warmup is separate",
+        )
     sampler, balance = (
-        Sampler(dataset, seed, weights, length_filter=run_kind == "strategy"),
+        Sampler(dataset, seed, weights, length_filter=production_path),
         QuantileBalance(model),
     )
     evaluation_length = (
@@ -409,7 +442,7 @@ def train(
             for length in PHASES[phase].get("lengths", {c.max_position_embeddings: 1})
             if length <= c.max_position_embeddings
         )
-        if run_kind == "strategy"
+        if production_path
         else c.max_position_embeddings
     )
     ledger = dict(
@@ -484,7 +517,11 @@ def train(
         from torch.utils.tensorboard import SummaryWriter
 
         writer = SummaryWriter(str(output / "tensorboard"))
+    if performance_only and device.type == "cuda":
+        torch.cuda.synchronize(device)
+        torch.cuda.reset_peak_memory_stats(device)
     started, step_started = time.monotonic(), time.monotonic()
+    profile = []
     unique_media = set(cast(dict, saved).get("seen_media", [])) if resume else set()
     step = ledger["optimizer_updates"]
 
@@ -497,6 +534,22 @@ def train(
             writer.flush()
 
     def save(state):
+        if performance_only:
+            write_json(
+                output / "status.json",
+                dict(
+                    kind="performance",
+                    mf1_phase=phase,
+                    state=state,
+                    step=step,
+                    ledger=ledger,
+                    main_budget_eligible=False,
+                    formal_admission=False,
+                    exported_model_weights=False,
+                    resumable=False,
+                ),
+            )
+            return
         continuous_states = dict(inherited_states)
         continuous_states.update(_optimizer_named(model, opt))
         artifact = dict(
@@ -561,7 +614,7 @@ def train(
                 context_length(
                     phase, sampler.rng, ledger["phase_tokens"], c.max_position_embeddings
                 )
-                if run_kind == "strategy"
+                if production_path
                 else None
             )
             packed: list[dict[str, Any]] = []
@@ -586,9 +639,27 @@ def train(
                 inputs += item["input_ids"].numel()
             if packed:
                 window.append(pack_records(packed, capacity))
-            ce_count, mtp_count = 0, 0
+            ce_count = sum(int(item["labels"][:, 1:].ne(-100).sum()) for item in window)
+            if (
+                run_kind == "acceptance"
+                and ledger["phase_tokens"] + (inputs if phase == "indexer" else ce_count)
+                > 2_000_000
+            ):
+                # The current window has advanced the sampler but is not trained.
+                # Keep any earlier checkpoint intact instead of saving this cursor.
+                write_json(
+                    output / "status.json",
+                    dict(
+                        kind=run_kind,
+                        state="acceptance_token_limit",
+                        step=step,
+                        ledger=ledger,
+                        rejected_window_tokens=inputs if phase == "indexer" else ce_count,
+                    ),
+                )
+                raise ValueError("acceptance would exceed its 2M actual-token limit")
+            mtp_count = 0
             for item in window:
-                ce_count += int(item["labels"][:, 1:].ne(-100).sum())
                 metadata = token_metadata(
                     item["input_ids"], c, item.get("media"), segment_ids=item.get("segment_ids")
                 )
@@ -693,6 +764,8 @@ def train(
                 "media_exposures",
             ):
                 ledger[name] += int(totals[name])
+            if performance_only and device.type == "cuda":
+                torch.cuda.synchronize(device)
             elapsed = time.monotonic() - step_started
             metrics = dict(
                 step=step,
@@ -717,14 +790,41 @@ def train(
                 )
                 if torch.cuda.max_memory_reserved(device) > 22 * 1024**3:
                     save("memory_limit")
-                    raise RuntimeError(
-                        "MF1 exceeded the 22 GiB single-device admission limit; checkpoint retained"
+                    raise RuntimeError("MF1 exceeded the 22 GiB single-device admission limit")
+            if performance_only:
+                if device.type == "cuda":
+                    metrics["device_free_gib"] = torch.cuda.mem_get_info(device)[0] / 1024**3
+                    if metrics["device_free_gib"] < 2:
+                        save("memory_limit")
+                        raise RuntimeError("MF1 performance device has less than 2 GiB free")
+                if profile_warmup < step <= profile_warmup + profile_updates:
+                    profile.append(
+                        dict(
+                            step=step,
+                            seconds=elapsed,
+                            data_preparation_seconds=data_seconds,
+                            ce_tokens=ce_count,
+                            input_tokens=inputs,
+                            context_length=capacity,
+                            vision_tokens=int(totals["vision_tokens"]),
+                            media_exposures=int(totals["media_exposures"]),
+                            microbatch_samples=actual_batches,
+                            padding_fraction=metrics["padding_fraction"],
+                            lm_loss=metrics["train_lm_loss"],
+                            grad_norm=metrics["grad_norm"],
+                            learning_rates={g["name"]: g["lr"] for g in opt.param_groups},
+                            peak_allocated_gib=metrics.get("peak_allocated_gib"),
+                            peak_reserved_gib=metrics.get("peak_reserved_gib"),
+                            device_free_gib=metrics.get("device_free_gib"),
+                        )
                     )
+                if step == profile_warmup and device.type == "cuda":
+                    torch.cuda.reset_peak_memory_stats(device)
             record(metrics)
             if router_metrics:
                 with (output / "router_metrics.jsonl").open("a") as handle:
                     handle.write(json.dumps(dict(step=step, routers=router_metrics)) + "\n")
-            if step % eval_every == 0:
+            if not performance_only and step % eval_every == 0:
                 record(
                     dict(
                         event="validation",
@@ -743,6 +843,46 @@ def train(
             and step >= stop_after_updates
             and (steps is None or step < steps)
         )
+        if performance_only:
+            if (
+                len(profile) != profile_updates
+                or ledger["input_tokens"] > run["input_token_upper_bound"]
+            ):
+                raise ValueError("performance measurement window or input budget differs")
+            seconds = sum(row["seconds"] for row in profile)
+            result = dict(
+                recipe=run,
+                updates=profile,
+                measured_updates=len(profile),
+                ce_tokens_per_second=sum(row["ce_tokens"] for row in profile) / seconds,
+                input_tokens_per_second=sum(row["input_tokens"] for row in profile) / seconds,
+                measurement_seconds=seconds,
+                total_elapsed_seconds=time.monotonic() - started,
+                all_updates_ledger=ledger,
+                domain_ce=dict(sampler.ce),
+                unique_media=len(unique_media),
+                context_updates=dict(Counter(row["context_length"] for row in profile)),
+                device=str(device),
+                formal_admission=False,
+                main_budget_eligible=False,
+                capability_qualified=False,
+                exports_model_weights=False,
+                state="measurement_complete_unqualified",
+                scope="P0 production batch/loss/optimizer path; performance evidence only, not data, resume or capability admission",
+                includes=[
+                    "data",
+                    "media_processing",
+                    "packing",
+                    "forward",
+                    "backward",
+                    "mtp",
+                    "optimizer",
+                    "router_balance",
+                ],
+            )
+            write_json(output / "performance.json", result)
+            save(result["state"])
+            return result
         save("paused" if paused else "budget_complete_unqualified")
         evaluation = evaluate(model, validation, device, max_length=evaluation_length)
         write_json(
@@ -754,6 +894,14 @@ def train(
                 diagnostic_only=run_kind == "acceptance",
             ),
         )
+    except BaseException as error:
+        if performance_only:
+            save("measurement_failed")
+            write_json(
+                output / "failure.json",
+                dict(error=type(error).__name__ + ": " + str(error), step=step, ledger=ledger),
+            )
+        raise
     finally:
         if writer:
             writer.close()
