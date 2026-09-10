@@ -42,6 +42,47 @@ uv run minifrontier mf1 encode --data data/mf1-candidate-v1 \
 
 正式 tokenizer 比较需要清洗后的同分布训练文本及独立留出样本，不能使用 quickstart 的小 BPE 代替 5–10GB、32K/64K 对比。普通用户输入里与控制 token 同形的字符串会插入 WORD JOINER 转义；代码、数字、空格及缩进不做 NFKC 破坏性规范化。正式 vocab mapping/SHA 未冻结前，不启动主训练。
 
+## 跨机器媒体读取
+
+紧凑组件可以保留原机器的媒体根目录，通过有界缓存读取原图；token、标签和媒体 span 仍来自同一份已核验编码。先将编码文件和审计复制到训练机器并核对 hash，再为该组件配置访问方式。无需复制整库图片，也不缓存视觉塔的输出。
+
+例如，在数据主机仅对本机开放图片目录，再从训练主机建立 SSH 转发：
+
+```bash
+# 数据主机：目录内是原始图片，不能指向包含其他资料的工作区
+python -m http.server 18390 --bind 127.0.0.1 --directory /path/to/corpus/images
+# 训练主机
+ssh -NT -L 127.0.0.1:18390:127.0.0.1:18390 user@data-host
+```
+
+通过现有组合接口绑定缓存策略。下面的 `uri_prefix` 对应原编码中的 `images/` 路径；`cache_dir` 相对于组合输出目录。组件顺序、访问配置和原 manifest 校验值都保存在组合 manifest 中。
+
+```python
+import json
+from pathlib import Path
+from minifrontier.data.minifrontier1_components import assemble_components
+from minifrontier.models.minifrontier1 import MiniFrontier1Config
+
+config = MiniFrontier1Config(**json.loads(
+    Path("configs/minifrontier1/model_228m_native.json").read_text()
+))
+components = ["data/mf1-text", "data/mf1-natural", "data/mf1-documents"]
+assemble_components(components, "data/mf1-combined", config, media_access={
+    components[2]: {
+        "base_url": "http://127.0.0.1:18390/",
+        "uri_prefix": "images/",
+        "cache_dir": "../media-cache-documents",
+        "max_bytes": 6 * 1024**3,
+        "max_file_bytes": 64 * 1024**2,
+        "reserve_bytes": 80 * 1024**3,
+    }
+})
+```
+
+缓存按内容 SHA256 共用文件，每次返回经过校验的原始字节，再执行原媒体变换。容量包括索引、临时写入与图片，最多保留 32,768 个文件；仅驱逐本缓存持有的训练文件。验证／测试读取会持久标记保留，正式训练前应预取固定验证媒体。保留图片填满缓存、来源校验失败或剩余空间不足时停止新增写入。原库由数据主机保留，缓存命中时可离线读取；缺失文件需要原服务与隧道可用。
+
+这一接口解决数据消费与存储问题。来源质量、阶段供给、固定评估和真实训练性能仍按[预训练计划](../pretraining-plan.md)验收。
+
 ## 阶段与恢复
 
 ```bash

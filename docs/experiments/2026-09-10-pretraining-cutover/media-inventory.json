@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789078841.042465,
+  "observed_unix": 1789080290.0750713,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -671,20 +671,21 @@
     }
   },
   "mf1_partial_p0_composition": {
-    "output": "data/pretraining-mf1-p0-components-v3",
-    "state": "partial_p0_composition_pending_ocr_chart_and_admission",
+    "output": "data/pretraining-mf1-p0-components-v4",
+    "state": "p0_domain_components_assembled_pending_supply_and_quality_admission",
     "formal_admission": false,
-    "source_commit": "130a53fb4ba24406a6cbce519d56285463eac0b1",
-    "manifest_sha256": "bd24f1ba4e3f02ba28079a32d1447662ef3cc2f11053fdbc65913f9561a332a0",
+    "source_commit": "eb0c59011e4d847bfb3f6f03e54710ba3faa25bf",
+    "manifest_sha256": "cecd883d4deb95b1cb7bfa542c3d796d360f2fabe59488e20a5d2438f52192f0",
+    "output_bytes": 2491600,
     "splits": {
       "train": {
         "counts": {
-          "records": 441731,
-          "input_tokens": 587950316,
-          "ce_tokens": 584555415,
+          "records": 595367,
+          "input_tokens": 604473685,
+          "ce_tokens": 591443061,
           "text_documents": 398807,
-          "media_exposures": 42924,
-          "vision_tokens": 1875108
+          "media_exposures": 196560,
+          "vision_tokens": 8312983
         },
         "domain_ce": {
           "en_general": 158229730,
@@ -693,18 +694,20 @@
           "structured": 41730917,
           "code": 91698915,
           "vqa": 5542036,
-          "caption": 1911515
+          "caption": 1911515,
+          "chart_table": 5416136,
+          "ocr_document": 1471510
         },
-        "unique_media": 22930
+        "unique_media": 61532
       },
       "val": {
         "counts": {
-          "records": 3940,
-          "input_tokens": 5470050,
-          "ce_tokens": 5451947,
+          "records": 8218,
+          "input_tokens": 5928810,
+          "ce_tokens": 5642613,
           "text_documents": 3735,
-          "media_exposures": 205,
-          "vision_tokens": 8898
+          "media_exposures": 4483,
+          "vision_tokens": 187906
         },
         "domain_ce": {
           "en_general": 1528753,
@@ -713,18 +716,20 @@
           "math": 510557,
           "code": 745814,
           "caption": 9582,
-          "vqa": 25577
+          "vqa": 25577,
+          "chart_table": 150274,
+          "ocr_document": 40392
         },
-        "unique_media": 111
+        "unique_media": 1172
       },
       "test": {
         "counts": {
-          "records": 4792,
-          "input_tokens": 6689031,
-          "ce_tokens": 6656363,
+          "records": 6069,
+          "input_tokens": 6824669,
+          "ce_tokens": 6711827,
           "text_documents": 4392,
-          "media_exposures": 400,
-          "vision_tokens": 17582
+          "media_exposures": 1677,
+          "vision_tokens": 71350
         },
         "domain_ce": {
           "en_general": 1676165,
@@ -733,16 +738,18 @@
           "math": 476148,
           "structured": 422555,
           "vqa": 52852,
-          "caption": 17501
+          "caption": 17501,
+          "chart_table": 42202,
+          "ocr_document": 13262
         },
-        "unique_media": 211
+        "unique_media": 546
       }
     },
-    "missing_p0_domains": [
-      "ocr_document",
-      "chart_table"
-    ],
-    "output_bytes": 2490073,
+    "identity_checks": {
+      "duplicate_samples": 0,
+      "cross_split_connected_groups": 0,
+      "cross_split_media_identities": 0
+    },
     "components": [
       {
         "path": "../pretraining-mf1-text-v2",
@@ -751,15 +758,22 @@
       {
         "path": "../pretraining-mf1-natural-p0-v2",
         "manifest_sha256": "b2820540e8448695b3b3868681c94d71b27110a5baf5153f6c9c5fe406f13810"
+      },
+      {
+        "path": "../pretraining-mf1-doc-chart-p0-v2",
+        "manifest_sha256": "3cd0de81a95cab21480ab868ea8a77fb5a61c20108b1d3f4ef9ca3aca26385b8",
+        "media_access": {
+          "base_url": "http://127.0.0.1:18390/",
+          "uri_prefix": "images/",
+          "cache_dir": "../pretraining-media-cache-doc-chart-v1",
+          "max_bytes": 6442450944,
+          "max_file_bytes": 67108864,
+          "reserve_bytes": 85899345920
+        }
       }
     ],
-    "identity_checks": {
-      "duplicate_samples": 0,
-      "cross_split_connected_groups": 0,
-      "cross_split_media_identities": 0
-    },
     "shard_files_copied": 0,
-    "fixed_validation_unchanged": true,
+    "missing_p0_domains": [],
     "validation": {
       "policy": {
         "periodic_ce_tokens": 1000000,
@@ -772,40 +786,46 @@
       "selection": "fixed_without_replacement",
       "periodic": {
         "requested_ce_tokens": 1000000,
-        "actual_ce_tokens": 1000974,
-        "examples": 1353,
+        "actual_ce_tokens": 1000373,
+        "examples": 2058,
         "domain_ce": {
-          "zh_general": 422666,
-          "code": 123804,
-          "vqa": 5255,
-          "structured": 59270,
-          "en_general": 298389,
-          "math": 90350,
-          "caption": 1240
+          "zh_general": 394700,
+          "structured": 68234,
+          "en_general": 287302,
+          "chart_table": 26014,
+          "ocr_document": 6992,
+          "math": 86731,
+          "code": 123573,
+          "vqa": 5097,
+          "caption": 1730
         },
-        "indices_sha256": "c835f6c699cc0fc9f2390b7540dda8fd51c337eacc95ebaa327e73f5c14927cc",
+        "indices_sha256": "df7cd47686ca90d05c887e295e36323931b4064df1b74df81ed87d958e28ed39",
         "overshoot_bound_ce": 1023
       },
       "phase_end": {
         "requested_ce_tokens": 5000000,
-        "actual_ce_tokens": 5000766,
-        "examples": 6783,
+        "actual_ce_tokens": 5000244,
+        "examples": 10305,
         "domain_ce": {
-          "zh_general": 2043122,
-          "code": 684177,
-          "vqa": 22685,
-          "structured": 364470,
-          "en_general": 1405646,
-          "math": 471778,
-          "caption": 8888
+          "zh_general": 1972561,
+          "structured": 353899,
+          "en_general": 1369105,
+          "chart_table": 131104,
+          "ocr_document": 35677,
+          "math": 448413,
+          "code": 659572,
+          "vqa": 22615,
+          "caption": 7298
         },
-        "indices_sha256": "18f5afc08e03ed448696407512854a7119e9f6cfdd113aca74232018d6adfc5b",
+        "indices_sha256": "bd5befe78d7d68e07b8512afa85de4391be2a9e820a1a3dd4df681fcfd7adfcf",
         "overshoot_bound_ce": 1023
       },
       "context_length": 1024,
-      "window_descriptors_sha256": "c01307082a87c7ebea1d00306180db5528f27e9d3b1209be2a35f74394c9a1a3",
+      "window_descriptors_sha256": "2ed7718a4bfdeaa06c678ec5f8bace7d25cb5fdfd41775055b3947eaa12c7dc4",
       "units": "complete native answers or text context windows with unique CE positions"
-    }
+    },
+    "previous": "data/pretraining-mf1-p0-components-v3",
+    "validation_change": "added the document/chart held-out component; fixed selection regenerated for this new composition before training"
   },
   "composition_and_performance_validation": {
     "source_commit": "a2bad9c82aeba27adbe47955d3387ab87ebaf132",
@@ -1021,7 +1041,7 @@
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
     "output": "data/pretraining-media-natural-extension-v1",
     "state": "extracting_next_natural_image_slice",
-    "observed_unix": 1789078768.6635213,
+    "observed_unix": 1789080198.4383318,
     "process_identity_verified": true,
     "source_commit": "c96973035a22c983b8ec6c705ca7f29908d43d57",
     "source_archive_sha256": "6132b492456fe6aa0657ddb694e01a596420675b885b58b50e6b7b74c336255a",
@@ -1031,7 +1051,7 @@
     "source_row_offset": 23790,
     "prior_pixels_excluded": 23260,
     "target_additional_images": 36740,
-    "observed_additional_images": 7250,
+    "observed_additional_images": 10750,
     "max_examined_new_rows": 146960,
     "storage": {
       "new_slice_max_gib": 40,
@@ -1042,7 +1062,7 @@
       "observed_free_gib": 1035.3094062805176,
       "required_free_reserve_gib": 80,
       "local_raw_copy_bytes": 0,
-      "latest_free_gib": 1029.3613319396973
+      "latest_free_gib": 1026.8850784301758
     },
     "reference_tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
     "formal_admission": false,
@@ -1057,8 +1077,8 @@
       "candidate supply is not human quality or phase exposure admission",
       "first-slice native encoders are still active; no new token encodings or formal CE claimed"
     ],
-    "observed_additional_qa_records": 13557,
-    "observed_media_bytes": 5729565052
+    "observed_additional_qa_records": 20077,
+    "observed_media_bytes": 8272492213
   },
   "cross_pool_grouping": {
     "observed_unix": 1789078841.042465,
@@ -1513,5 +1533,86 @@
       },
       "observed_unix": 1789078841.042465
     }
+  },
+  "mf1_media_access": {
+    "source_commit": "eb0c59011e4d847bfb3f6f03e54710ba3faa25bf",
+    "source_archive_sha256": "e7f975e8d7a8cd07791e39f3ed8866c5e30cf93a0a5daebbef7937c9a087eaa0",
+    "driver_sha256": "0b5cf3fb07c9ea626bec7df977412c56521e558bb91b8444652226adbc51985c",
+    "arguments_sha256": "ed937e9d357b2c2879066981e48bb02d388e7c5d76c91871503d59bd44362eff",
+    "state": "p0_domain_components_assembled_pending_supply_and_quality_admission",
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "encoded_transfer": {
+      "actual_bytes": 260477142,
+      "all_files_sha256_verified": true,
+      "receipt_sha256": "bbf493920cbdfd7b8874e4cf8c7f12b457a2e23e2b12c47e12202994d0c24289"
+    },
+    "cache": {
+      "payload_bytes": 304610759,
+      "files": 1077,
+      "pinned_files": 1061,
+      "actual_bytes": 304836187,
+      "max_bytes": 6442450944,
+      "downloads": 1077,
+      "downloaded_bytes": 304610759,
+      "hits": 8
+    },
+    "validation_media_pinned": 1061,
+    "validation_media_fetch_seconds": 30.85784673690796,
+    "direct_remote_comparison": {
+      "train": 16,
+      "val": 8
+    },
+    "pixel_reference_sha256": "859b7aaf3849c1a5e34a047aa009bb48571b25efc7be459f5f27780fb49a8f2a",
+    "model_forward_executed": false,
+    "cache_policy": {
+      "base_url": "http://127.0.0.1:18390/",
+      "uri_prefix": "images/",
+      "cache_dir": "../pretraining-media-cache-doc-chart-v1",
+      "max_bytes": 6442450944,
+      "max_file_bytes": 67108864,
+      "reserve_bytes": 85899345920
+    },
+    "validation": {
+      "full_cpu_passed": 483,
+      "full_cpu_skipped": 1,
+      "cuda_deselected": 54,
+      "full_cpu_seconds": 153.03,
+      "full_cpu_scope": "shared loader integration; final cache read-buffer/page bounds covered by subsequent targeted run",
+      "final_targeted_passed": 29,
+      "final_targeted_seconds": 12.84,
+      "mypy_source_files": 183,
+      "ruff": "passed"
+    },
+    "p0_visual_supply": {
+      "caption": {
+        "phase_ce_target": 14000000,
+        "available_ce": 1911515,
+        "ce_gap_without_replay": 12088485
+      },
+      "ocr_document": {
+        "phase_ce_target": 14000000,
+        "available_ce": 1471510,
+        "ce_gap_without_replay": 12528490
+      },
+      "vqa": {
+        "phase_ce_target": 8000000,
+        "available_ce": 5542036,
+        "ce_gap_without_replay": 2457964
+      },
+      "chart_table": {
+        "phase_ce_target": 4000000,
+        "available_ce": 5416136,
+        "ce_gap_without_replay": 0
+      }
+    },
+    "minimum_free_gib": 80,
+    "local_free_gib": 141.18728256225586,
+    "observed_unix": 1789080290.0750713,
+    "remaining": [
+      "source quality review and tokenizer freeze",
+      "external visual benchmark identity exclusion",
+      "complete per-domain CE/exposure supply and production qualification"
+    ]
   }
 }
