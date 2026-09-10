@@ -2,6 +2,7 @@
 
 import io
 import json
+import os
 import random
 import shutil
 from types import SimpleNamespace
@@ -10,7 +11,7 @@ import pytest
 from PIL import Image
 from tokenizers import Tokenizer, models, pre_tokenizers
 
-from minifrontier.data import visual_sources
+from minifrontier.data import sha256, visual_sources
 
 
 def row(seed=1):
@@ -112,3 +113,93 @@ def test_pinned_catalog_transport_retry_is_bounded_and_does_not_retry_schema_err
     with pytest.raises(ValueError, match="schema"):
         public_sources.retry_transport(invalid_schema, audit=unchanged, operation="test_schema")
     assert unchanged == {}
+
+
+@pytest.fixture
+def quota_stopped(tmp_path, monkeypatch):
+    monkeypatch.setattr(shutil, "disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3))
+    items = [row(1), row(2)]
+
+    def rows(*args, **kwargs):
+        yield from ((item, f"fixture:row{i}") for i, item in enumerate(items))
+
+    monkeypatch.setattr(visual_sources, "source_rows", rows)
+    tokenizer = Tokenizer(models.WordLevel({"[UNK]": 0}, unk_token="[UNK]"))
+    tokenizer.save(str(tmp_path / "tokenizer.json"))
+    root = tmp_path / "media"
+    media_bytes = sum(len(i["images"][0]["bytes"]) for i in items)
+    with pytest.raises(ValueError, match="media byte budget"):
+        visual_sources.build_visual_candidates(
+            root,
+            tmp_path / "tokenizer.json",
+            targets={"allava_laion": 2, "CoSyn_400k_document": 3},
+            max_gib=3 + media_bytes * 0.75 / 1024**3,
+            metadata_gib=3,
+        )
+    run = tmp_path / "run.json"
+    run.write_text(
+        json.dumps(
+            dict(
+                kind="data_construction",
+                pid=2**31 - 1,
+                command=["python", "-m", "minifrontier.data.visual_sources", "--output", str(root)],
+            )
+        )
+    )
+    return root, run
+
+
+def test_finalize_quota_slice_keeps_pixels_and_explicit_unfilled_targets(
+    quota_stopped, monkeypatch
+):
+    root, run = quota_stopped
+    before = {p.name: sha256(p) for p in (root / "images").rglob("*.image")}
+    old_audit = sha256(root / "source-audit.json")
+
+    def no_download(*args, **kwargs):
+        raise AssertionError("closing retained inventory must not contact a source")
+
+    monkeypatch.setattr(visual_sources, "source_rows", no_download)
+    report = visual_sources.finalize_storage_limited_slice(root, run)
+    assert report["status"] == "candidate_inventory_below_target"
+    assert report["remaining_independent_image_targets"] == {
+        "allava_laion": 1,
+        "CoSyn_400k_document": 3,
+    }
+    assert report["unique_images"] == sum(report["split_independent_images"].values()) == 1
+    assert report["finalization"]["new_download_bytes"] == 0
+    assert not report["formal_admission"] and not report["main_budget_eligible"]
+    assert {p.name: sha256(p) for p in (root / "images").rglob("*.image")} == before
+    assert sha256(root / "source-audit-before-slice-finalize.json") == old_audit
+    assert report["review"]["sha256"] == sha256(root / "review-samples.jsonl")
+    with pytest.raises(ValueError, match="unfinalized"):
+        visual_sources.finalize_storage_limited_slice(root, run)
+
+
+@pytest.mark.parametrize("fault", ["live", "pixels", "orphan", "counters", "transport"])
+def test_slice_finalization_rejects_unverified_inventory_without_repartitioning(
+    quota_stopped, fault
+):
+    root, run = quota_stopped
+    before = sha256(root / "corpus.sqlite")
+    if fault == "live":
+        r = json.loads(run.read_text())
+        r["pid"] = os.getpid()
+        run.write_text(json.dumps(r))
+    elif fault == "pixels":
+        path = next((root / "images").rglob("*.image"))
+        path.write_bytes(b"damaged")
+    elif fault == "orphan":
+        (root / "images/orphan.image").write_bytes(b"unreferenced")
+    else:
+        p = root / "source-audit.json"
+        a = json.loads(p.read_text())
+        if fault == "counters":
+            a["sources"]["allava_laion"]["answer_reference_tokens"] += 1
+        else:
+            a["error"] = "ReadTimeoutError: source interrupted"
+        p.write_text(json.dumps(a))
+    with pytest.raises(ValueError):
+        visual_sources.finalize_storage_limited_slice(root, run)
+    assert sha256(root / "corpus.sqlite") == before
+    assert not (root / "corpus-manifest.json").exists()

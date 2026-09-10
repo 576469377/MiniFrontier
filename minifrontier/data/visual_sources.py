@@ -6,6 +6,7 @@ import json
 import math
 import random
 import shutil
+import sqlite3
 import time
 from collections import Counter
 from pathlib import Path
@@ -48,6 +49,195 @@ VISUAL_CANDIDATES = {
     ),
 }
 VISUAL_TARGETS = dict(allava_laion=60_000, CoSyn_400k_document=20_000, CoSyn_400k_chart=20_000)
+
+
+def _check_retained_media(db, audit, root):
+    """Verify immutable pixels and the complete record inventory before further work."""
+    rows = db.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
+    if rows != audit["dedup_counts"].get("accepted", 0) or rows != sum(
+        s["accepted_records"] for s in audit["sources"].values()
+    ):
+        raise ValueError("interrupted media audit and retained records disagree")
+    seen: set[str] = set()
+    media_files: dict[str, str] = {}
+    source_counts: dict[str, Counter] = {}
+    source_images: dict[str, set[str]] = {}
+    source_domains: dict[str, Counter] = {}
+    for (payload,) in db.execute("SELECT payload FROM samples"):
+        record = json.loads(payload)
+        source_counts.setdefault(record["source"], Counter()).update(
+            accepted_records=1,
+            accepted_reference_tokens=record["reference_tokens"],
+            answer_reference_tokens=record["answer_reference_tokens"],
+        )
+        source_domains.setdefault(record["source"], Counter())[record["task"]] += 1
+        for media in record["media"]:
+            seen.add(media["rgb_sha256"])
+            source_images.setdefault(record["source"], set()).add(media["rgb_sha256"])
+            previous = media_files.setdefault(media["path"], media["sha256"])
+            if previous != media["sha256"]:
+                raise ValueError("retained records disagree on their media checksum")
+    if set(source_counts) != {
+        REPO + "/" + name for name, s in audit["sources"].items() if s["accepted_records"]
+    }:
+        raise ValueError("retained media source identities disagree")
+    for name, source in audit["sources"].items():
+        key = REPO + "/" + name
+        if (
+            any(
+                source_counts.get(key, Counter())[field] != source[field]
+                for field in (
+                    "accepted_records",
+                    "accepted_reference_tokens",
+                    "answer_reference_tokens",
+                )
+            )
+            or len(source_images.get(key, set())) != source["unique_images"]
+            or source_domains.get(key, Counter()) != source["domain_records"]
+        ):
+            raise ValueError("retained media source counters disagree")
+    total = 0
+    images = root / "images"
+    for relative, expected in media_files.items():
+        path = (root / relative).resolve()
+        if not path.is_relative_to(images) or sha256(path) != expected:
+            raise ValueError("retained candidate media path/hash differs")
+        total += path.stat().st_size
+    if len(seen) != audit["unique_images"] or total != audit["media_bytes"]:
+        raise ValueError("interrupted media byte/image counters disagree")
+    if {str(p.relative_to(root)) for p in images.rglob("*.image")} != set(media_files):
+        raise ValueError("media inventory has unreferenced or missing files")
+    if db.execute("PRAGMA quick_check").fetchone() != ("ok",):
+        raise ValueError("retained corpus integrity check failed")
+    return seen
+
+
+def _finalize_visual_inventory(builder, audit):
+    root = builder.root
+    audit["corpus"] = builder.finalize()
+    split_media: dict[str, set[str]] = {}
+    split_tokens: dict[str, dict[str, int]] = {}
+    review_counts: Counter[str] = Counter()
+    with (root / "review-samples.jsonl").open("w") as review:
+        for split, payload in builder.db.execute("SELECT split,payload FROM samples ORDER BY id"):
+            record = json.loads(payload)
+            split_media.setdefault(split, set()).update(m["rgb_sha256"] for m in record["media"])
+            tokens = split_tokens.setdefault(split, {})
+            tokens[record["task"]] = (
+                tokens.get(record["task"], 0) + record["answer_reference_tokens"]
+            )
+            key = record["source"] + ":" + record["task"]
+            if split == "train" and review_counts[key] < 100:
+                review.write(
+                    json.dumps(dict(split=split, record=record), ensure_ascii=False) + "\n"
+                )
+                review_counts[key] += 1
+    targets_met = set(audit["sources"]) == set(audit["target_independent_images"]) and all(
+        s["status"] == "candidate_target_reached" for s in audit["sources"].values()
+    )
+    audit.update(
+        status="candidate_slice_complete_pending_admission"
+        if targets_met
+        else "candidate_inventory_below_target",
+        split_independent_images={k: len(v) for k, v in split_media.items()},
+        split_answer_reference_tokens=split_tokens,
+        review=dict(
+            status="awaiting_manual_review",
+            samples=dict(review_counts),
+            sha256=sha256(root / "review-samples.jsonl"),
+        ),
+    )
+
+
+def finalize_storage_limited_slice(output, construction_run):
+    """Close retained media after a verified quota stop; no download or admission."""
+    import fcntl
+
+    root = Path(output).resolve()
+    with (root / ".finalize.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        audit_path = root / "source-audit.json"
+        audit = json.loads(audit_path.read_text())
+        run = json.loads(Path(construction_run).read_text())
+        command = run.get("command", [])
+        pid = run.get("pid")
+        if (
+            run.get("kind") != "data_construction"
+            or "--output" not in command
+            or Path(command[command.index("--output") + 1]).resolve() != root
+            or not isinstance(pid, int)
+            or pid < 1
+        ):
+            raise ValueError("construction identity does not bind this media output")
+        if Path(f"/proc/{pid}").exists():
+            raise ValueError("construction process is still present; do not finalize its database")
+        if (
+            audit.get("status") != "interrupted_unadmitted"
+            or audit.get("formal_admission")
+            or audit.get("source") != REPO
+            or audit.get("revision") != REVISION
+            or audit.get("error")
+            != "ValueError: media byte budget reached; inventory remains unadmitted"
+            or (root / "corpus-manifest.json").exists()
+        ):
+            raise ValueError("only an unfinalized media-byte-limited candidate can be closed")
+        peak = 2 * (root / "corpus.sqlite").stat().st_size + 16 * 1024**2
+        if peak > audit["metadata_gib"] * GIB:
+            raise ValueError("finalization peak would exceed the existing metadata budget")
+        require_space(root, peak, reserve_bytes=80 * GIB)
+        db = sqlite3.connect((root / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
+        try:
+            seen = _check_retained_media(db, audit, root)
+            if db.execute("SELECT COUNT(*) FROM samples WHERE split IS NOT NULL").fetchone()[0]:
+                raise ValueError("the interrupted inventory already has a partition")
+        finally:
+            db.close()
+        before_hash = sha256(audit_path)
+        backup = root / "source-audit-before-slice-finalize.json"
+        if backup.exists():
+            raise ValueError("a previous finalization attempt needs inspection")
+        shutil.copyfile(audit_path, backup)
+        audit["finalization"] = dict(
+            operation="close_media_byte_limited_slice",
+            started_unix=time.time(),
+            before_audit_sha256=before_hash,
+            before_database_sha256=sha256(root / "corpus.sqlite"),
+            construction_run_sha256=sha256(construction_run),
+            construction_stop_reason=audit.pop("error"),
+            processor_files={
+                "visual_sources.py": sha256(__file__),
+                "corpus.py": sha256(Path(__file__).with_name("corpus.py")),
+            },
+            media_files_unchanged=True,
+            new_download_bytes=0,
+        )
+        builder = CorpusBuilder(
+            root,
+            seed=audit["seed"],
+            max_gib=audit["metadata_gib"],
+            val_buckets=50,
+            test_buckets=100,
+        )
+        try:
+            builder.counts = Counter(audit["dedup_counts"])
+            for source in audit["sources"].values():
+                if source["status"] == "reading":
+                    source["status"] = "storage_slice_closed_below_target"
+            _finalize_visual_inventory(builder, audit)
+            audit.update(
+                unique_images=len(seen),
+                updated_unix=time.time(),
+                database_bytes=(root / "corpus.sqlite").stat().st_size,
+                free_gib=shutil.disk_usage(root).free / GIB,
+                remaining_independent_image_targets={
+                    name: max(0, target - audit["sources"].get(name, {}).get("unique_images", 0))
+                    for name, target in audit["target_independent_images"].items()
+                },
+            )
+            write_json(audit_path, audit)
+        finally:
+            builder.db.close()
+        return audit
 
 
 def candidate_turns(subset, row):
@@ -185,26 +375,11 @@ def build_visual_candidates(
     seen: set[str] = set()
     if previous:
         rows = builder.db.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
-        if rows != previous["dedup_counts"].get("accepted", 0) or rows != sum(
-            source["accepted_records"] for source in previous["sources"].values()
-        ):
+        try:
+            seen = _check_retained_media(builder.db, previous, root)
+        except BaseException:
             builder.db.close()
-            raise ValueError("interrupted media audit and retained records disagree")
-        media_files = {}
-        for (payload,) in builder.db.execute("SELECT payload FROM samples"):
-            for media in json.loads(payload)["media"]:
-                seen.add(media["rgb_sha256"])
-                media_files[media["path"]] = media["sha256"]
-        total = 0
-        for relative, expected in media_files.items():
-            path = (root / relative).resolve()
-            if not path.is_relative_to(images) or sha256(path) != expected:
-                builder.db.close()
-                raise ValueError("retained candidate media path/hash differs")
-            total += path.stat().st_size
-        if len(seen) != previous["unique_images"] or total != previous["media_bytes"]:
-            builder.db.close()
-            raise ValueError("interrupted media byte/image counters disagree")
+            raise
         write_json(
             root / f"source-audit-resume-{len(previous.get('resumes', [])) + 1}.json", previous
         )
@@ -379,32 +554,7 @@ def build_visual_candidates(
                 else "source_exhausted_below_target"
             )
             progress()
-        audit["corpus"] = builder.finalize()
-        split_media: dict[str, set[str]] = {}
-        review_counts: Counter[str] = Counter()
-        with (root / "review-samples.jsonl").open("w") as review:
-            for split, payload in builder.db.execute(
-                "SELECT split,payload FROM samples ORDER BY id"
-            ):
-                record = json.loads(payload)
-                split_media.setdefault(split, set()).update(
-                    m["rgb_sha256"] for m in record["media"]
-                )
-                key = record["source"] + ":" + record["task"]
-                if split == "train" and review_counts[key] < 100:
-                    review.write(
-                        json.dumps(dict(split=split, record=record), ensure_ascii=False) + "\n"
-                    )
-                    review_counts[key] += 1
-        audit.update(
-            status=(
-                "candidate_slice_complete_pending_admission"
-                if all(s["status"] == "candidate_target_reached" for s in audit["sources"].values())
-                else "candidate_inventory_below_target"
-            ),
-            split_independent_images={k: len(v) for k, v in split_media.items()},
-            review=dict(status="awaiting_manual_review", samples=dict(review_counts)),
-        )
+        _finalize_visual_inventory(builder, audit)
         progress()
     except BaseException as error:
         audit.update(
@@ -574,15 +724,35 @@ def main(argv=None):
         description="Build a bounded shared visual candidate inventory"
     )
     parser.add_argument("--output", required=True)
-    parser.add_argument("--reference-tokenizer", required=True)
+    parser.add_argument("--reference-tokenizer")
     parser.add_argument("--targets", help="JSON object of independent-image targets by subset")
     parser.add_argument("--seed", type=int, default=20260911)
     parser.add_argument("--max-gib", type=float, default=20)
     parser.add_argument("--metadata-gib", type=float, default=3)
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--resume", action="store_true", help="resume a transport-interrupted visual inventory"
     )
+    mode.add_argument(
+        "--finalize-slice",
+        action="store_true",
+        help="close a storage-limited slice using its original settings; no download",
+    )
+    parser.add_argument(
+        "--construction-run", help="original producer run.json; required to close a slice"
+    )
     args = parser.parse_args(argv)
+    if args.finalize_slice:
+        if not args.construction_run:
+            parser.error("--finalize-slice requires --construction-run")
+        print(
+            json.dumps(finalize_storage_limited_slice(args.output, args.construction_run), indent=2)
+        )
+        return
+    if not args.reference_tokenizer or args.construction_run:
+        parser.error(
+            "building needs --reference-tokenizer; --construction-run is for slice finalization"
+        )
     build_visual_candidates(
         args.output,
         args.reference_tokenizer,
