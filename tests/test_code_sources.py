@@ -1,5 +1,6 @@
 """File-grant filtering and syntax-preserving candidate storage; no code execution."""
 
+import contextlib
 import gzip
 import hashlib
 import json
@@ -95,6 +96,20 @@ def test_code_download_checks_fixed_hash_and_closes_its_only_shard(tmp_path, mon
             )
         ),
     )
+    writing = False
+    reservations = []
+
+    @contextlib.contextmanager
+    def reserve(path, size, *, reserve_bytes):
+        nonlocal writing
+        writing = True
+        reservations.append(size)
+        try:
+            yield
+        finally:
+            writing = False
+
+    monkeypatch.setattr("minifrontier.data.code_sources.reserve_write", reserve)
 
     class Response:
         def __enter__(self):
@@ -107,7 +122,9 @@ def test_code_download_checks_fixed_hash_and_closes_its_only_shard(tmp_path, mon
             pass
 
         def iter_content(self, _size):
-            yield content
+            for chunk in (content[:7], content[7:]):
+                assert not writing, "network wait blocks unrelated filesystem writers"
+                yield chunk
 
     monkeypatch.setattr(requests.Session, "get", lambda *args, **kwargs: Response())
     audit = {}
@@ -122,3 +139,4 @@ def test_code_download_checks_fixed_hash_and_closes_its_only_shard(tmp_path, mon
         assert audit["downloaded_bytes"] == len(content)
     reader.close()
     assert not (tmp_path / ".code-source.json.gz").exists()
+    assert reservations == [7, len(content) - 7]

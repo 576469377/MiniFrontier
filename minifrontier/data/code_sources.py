@@ -200,21 +200,23 @@ def code_rows(*, root, seed, audit, resume=False):
                     return
                 url = f"https://huggingface.co/datasets/{source['repo']}/resolve/{source['revision']}/{file.rfilename}"
                 digest, size = hashlib.sha256(), 0
-                with reserve_write(cache, file.size, reserve_bytes=80 * GIB):
-                    with (
-                        session.get(url, stream=True, timeout=(30, 90)) as response,
-                        cache.open("wb") as handle,
-                    ):
-                        response.raise_for_status()
-                        for chunk in response.iter_content(1024**2):
-                            size += len(chunk)
-                            audit["downloaded_bytes"] += len(chunk)
-                            if size > file.size:
-                                raise ValueError("code download exceeds pinned shard size")
-                            digest.update(chunk)
+                with (
+                    session.get(url, stream=True, timeout=(30, 90)) as response,
+                    cache.open("wb") as handle,
+                ):
+                    response.raise_for_status()
+                    for chunk in response.iter_content(1024**2):
+                        size += len(chunk)
+                        audit["downloaded_bytes"] += len(chunk)
+                        if size > file.size:
+                            raise ValueError("code download exceeds pinned shard size")
+                        digest.update(chunk)
+                        # Network waits must not hold the filesystem-wide writer lock.
+                        with reserve_write(cache, len(chunk), reserve_bytes=80 * GIB):
                             handle.write(chunk)
-                    if size != file.size or digest.hexdigest() != file.lfs.sha256:
-                        raise ValueError("code source shard hash/size mismatch")
+                            handle.flush()
+                if size != file.size or digest.hexdigest() != file.lfs.sha256:
+                    raise ValueError("code source shard hash/size mismatch")
                 audit["files"][file.rfilename] = dict(size=size, sha256=digest.hexdigest())
                 decompressed = 0
                 with gzip.open(cache, "rb") as stream:
