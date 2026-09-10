@@ -169,6 +169,18 @@ def test_merge_rejects_a_mutated_source_before_creating_output(evaluation, tmp_p
     assert not output.exists()
 
 
+def test_jsonl_reader_preserves_unicode_separators_inside_a_string(evaluation):
+    text = PROMPT.replace("apple", "apple\u2028").replace("pear", "pear\u0085")
+    path = evaluation / "items.jsonl"
+    path.write_text(
+        json.dumps(dict(id="unicode:1", prompt=text, answer="51"), ensure_ascii=False) + "\n"
+    )
+    manifest = json.loads((evaluation / "manifest.json").read_text())
+    manifest["files"][path.name] = sha256(path)
+    (evaluation / "manifest.json").write_text(json.dumps(manifest))
+    assert BenchmarkMatcher(evaluation).match(dict(text=PROMPT))["item_id"] == "unicode:1"
+
+
 def test_download_checks_blob_before_persisting(monkeypatch, tmp_path):
     class Response:
         def __enter__(self):

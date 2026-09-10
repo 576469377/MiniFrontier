@@ -172,27 +172,28 @@ class BenchmarkMatcher:
             if not path.is_relative_to(root.resolve()) or sha256(path) != expected:
                 raise ValueError("benchmark inventory file path/hash differs")
         self.automaton = ahocorasick.Automaton()
-        for line in (root / "items.jsonl").read_text().splitlines():
-            item = json.loads(line)
-            for field in ("prompt", "answer"):
-                words = match_text(item[field]).split()
-                phrases = [" ".join(words)] if field == "prompt" else []
-                ngram = RULES["overlapping_word_ngram"]
-                phrases.extend(
-                    " ".join(words[i : i + ngram])
-                    for i in range(len(words) - ngram + 1)
-                    if len(" ".join(words[i : i + ngram])) >= RULES["ngram_min_characters"]
-                )
-                for phrase in phrases:
-                    if len(phrase) >= RULES["prompt_min_characters"]:
-                        self.automaton.add_word(
-                            " " + phrase + " ",
-                            dict(
-                                item_id=item["id"],
-                                field=field,
-                                phrase_sha256=hashlib.sha256(phrase.encode()).hexdigest(),
-                            ),
-                        )
+        with (root / "items.jsonl").open() as stream:
+            for line in stream:
+                item = json.loads(line)
+                for field in ("prompt", "answer"):
+                    words = match_text(item[field]).split()
+                    phrases = [" ".join(words)] if field == "prompt" else []
+                    ngram = RULES["overlapping_word_ngram"]
+                    phrases.extend(
+                        " ".join(words[i : i + ngram])
+                        for i in range(len(words) - ngram + 1)
+                        if len(" ".join(words[i : i + ngram])) >= RULES["ngram_min_characters"]
+                    )
+                    for phrase in phrases:
+                        if len(phrase) >= RULES["prompt_min_characters"]:
+                            self.automaton.add_word(
+                                " " + phrase + " ",
+                                dict(
+                                    item_id=item["id"],
+                                    field=field,
+                                    phrase_sha256=hashlib.sha256(phrase.encode()).hexdigest(),
+                                ),
+                            )
         if not len(self.automaton):
             raise ValueError("empty benchmark exclusion inventory")
         self.automaton.make_automaton()
