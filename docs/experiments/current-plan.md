@@ -114,4 +114,6 @@ MF1 借用 KDA、压缩历史、索引读取、GR、LatentMoE 与浅层查表。
 
 2026-09-10 后续已派发 [14 组受控执行短测](2026-09-10-batch-frontier/execution-matrix-plan.json)：Kimi 固定 16K input、microbatch 上限 16/32/64/128，并补固定 64K 的 32/64；Qwen 和 DeepSeek 各比较固定 16K/64K，分别使用 16/64 和 16/32 上限。每组 seed 42、约 1M CE，使用已验证的 `dd2b519` 合批实现，同一比较组固定数据和全部更新窗口。沿用 WSD/400K warmup 只为比较执行，不作为官方配方建议。结果仍需核对实际窗口和完整成本，不能自动进入长训；50+200 性能准入另行安排。TensorBoard 统一归入 `batch-controlled-matrix`，实时完成状态以台账为准。
 
+本轮 **14/14 组已完成**，[结果与完整曲线](2026-09-10-batch-frontier/execution-matrix-results.json)已归档，六个比较组的全部样本窗口和 token/media 账本一致。Kimi 的 16K 窗口最多只有 53 个样本，microbatch 上限 64 与 128 实际相同；固定 64K 的 64 档约 7,054 CE/s、10.57 GiB reserved，值得保留为省显存候选。DeepSeek 从 16 增至 32，在固定 16K/64K 时分别约加速 1.33/1.46 倍；Qwen 从 16 增至 64 分别约加速 1.85/1.92 倍。不同物理卡、短测与单种子的限制继续保留，不能仅凭显存余量和利用率冻结配方。Kimi 首次输入配比错误的排除记录与修正后的运行分别归档。
+
 磁盘统一保留至少 50 GiB，启动还预留原子 checkpoint 写入空间。短测仅清理其新建目录中明确声明为临时的权重，先保存 hash/大小和数值曲线；代表性和可恢复检查点按[产物规则](../operations/artifact-retention.md)保留。

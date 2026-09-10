@@ -203,7 +203,7 @@
         "miniqwen4",
         "minideepseekv4"
       ],
-      "status": "kimi_fixed64k_verified_remaining_matrix_dispatched",
+      "status": "short_matrix_complete_full_phase_qualification_pending",
       "question": "固定实际全局 batch 时，增大 microbatch ceiling 能提高多少端到端吞吐？",
       "variable": "microbatch ceiling",
       "input_batch_policy": "sample-bounded",
@@ -254,9 +254,8 @@
       ],
       "completed_evidence": "docs/experiments/2026-09-10-batch-frontier/controlled-batch-comparison.json",
       "dispatched_plan": "docs/experiments/2026-09-10-batch-frontier/execution-matrix-plan.json",
+      "matrix_evidence": "docs/experiments/2026-09-10-batch-frontier/execution-matrix-results.json",
       "remaining": [
-        "fixed16K ceiling comparison",
-        "Qwen/DeepSeek real-data controlled comparisons",
         "full 50+200 phase profiles"
       ]
     },
