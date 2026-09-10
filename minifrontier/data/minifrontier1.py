@@ -145,6 +145,29 @@ def validate_record(record, root, *, allow_sources=None):
     return record
 
 
+def prepare_media(resource, config, root, remaining):
+    """Apply the same deterministic pixel transform in record and binary loaders."""
+    frames = []
+    for uri in resource.get("frames", [resource.get("uri")]):
+        with Image.open(Path(root) / uri) as image:
+            frames.append(image.convert("RGB"))
+    samples = (
+        process_document(frames[0], patch_size=config.vision_config.patch_size)
+        if resource.get("representation") == "document"
+        else [
+            process_frames(
+                frames,
+                max_features=min(resource.get("max_features", remaining), remaining),
+                patch_size=config.vision_config.patch_size,
+                timestamps=resource.get("timestamps"),
+            )
+        ]
+    )
+    if sum(s["feature_count"] for s in samples) > remaining:
+        raise ValueError("document global view and source crops exceed media budget")
+    return samples
+
+
 def encode_record(record, tokenizer, config, root, *, generation_prompt=False):
     if any(tokenizer.token_to_id(s) != i for i, s in enumerate(SPECIAL_TOKENS)):
         raise ValueError("MF1 needs its own frozen control-token mapping")
@@ -175,25 +198,8 @@ def encode_record(record, tokenizer, config, root, *, generation_prompt=False):
                 labels.extend(tokens if supervise else [-100] * len(tokens))
             else:
                 resource = resources[part["media_id"]]
-                frames = []
-                for uri in resource.get("frames", [resource.get("uri")]):
-                    with Image.open(Path(root) / uri) as image:
-                        frames.append(image.convert("RGB"))
                 remaining = config.protected_media_tokens - sum(s["feature_count"] for s in spans)
-                samples = (
-                    process_document(frames[0], patch_size=config.vision_config.patch_size)
-                    if resource.get("representation") == "document"
-                    else [
-                        process_frames(
-                            frames,
-                            max_features=min(resource.get("max_features", remaining), remaining),
-                            patch_size=config.vision_config.patch_size,
-                            timestamps=resource.get("timestamps"),
-                        )
-                    ]
-                )
-                if sum(s["feature_count"] for s in samples) > remaining:
-                    raise ValueError("document global view and source crops exceed media budget")
+                samples = prepare_media(resource, config, root, remaining)
                 video = part["type"] == "video"
                 for sample in samples:
                     ids.append(20 if video else 9)

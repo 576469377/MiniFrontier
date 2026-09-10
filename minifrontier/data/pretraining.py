@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 import shutil
 import time
@@ -58,6 +59,14 @@ def clean_record(name, row, identity):
             source_metadata={k: row[k] for k in ("url", "date", "metadata") if k in row},
         )
     else:
+        if name == "zh_edu":
+            score = row.get("score")
+            if (
+                not isinstance(score, (int, float))
+                or not math.isfinite(score)
+                or not 0 <= score <= 1
+            ):
+                return None, "score_outside_declared_0_1_range"
         record = normalized_source(name, row, identity)
         if record is None:
             return None, "missing_payload"
@@ -172,6 +181,7 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
                 accepted_records=0,
                 accepted_reference_tokens=0,
                 rejected=Counter(),
+                rejection_examples={},
                 status="reading",
             )
             audit["sources"][name] = entry
@@ -185,6 +195,15 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
                 record, reason = clean_record(name, row, identity)
                 if record is None:
                     entry["rejected"][reason] += 1
+                    examples = entry["rejection_examples"].setdefault(reason, [])
+                    if len(examples) < 20:
+                        examples.append(
+                            dict(
+                                identity=identity,
+                                score=str(row.get("score")),
+                                subsource=row.get("source"),
+                            )
+                        )
                     continue
                 ids = tokenizer.encode(record["text"], add_special_tokens=False).ids
                 record["reference_tokens"] = len(ids)

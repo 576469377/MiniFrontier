@@ -141,12 +141,19 @@ def collect(workspace):
                         )
                         break
             train = latest_train(target / "metrics.jsonl")
+            data_audit = {}
+            if run.get("kind") == "data_construction" and host == "local":
+                data_root = (workspace / run.get("data_output", "")).resolve()
+                if data_root.is_relative_to(workspace / "data"):
+                    data_audit = read_json(data_root / "source-audit.json")
             ledger = train.get("token_ledger", {}) or state.get(
                 "token_ledger", state.get("ledger", {})
             )
             kind = (
                 "synthetic" if report.get("controls") else "sweep" if own_experiment else "training"
             )
+            if run.get("kind") == "data_construction":
+                kind = "data_construction"
             status = (
                 interruption.get("state")
                 or supervisor.get("state")
@@ -156,6 +163,18 @@ def collect(workspace):
                 or parent_case_state
                 or "unverified"
             )
+            if data_audit:
+                status = data_audit.get("status", "unverified")
+                if status == "building":
+                    try:
+                        command = Path(f"/proc/{int(run['pid'])}/cmdline").read_bytes()
+                        status = (
+                            "running"
+                            if b"minifrontier.data.pretraining" in command
+                            else "unverified_process_identity"
+                        )
+                    except (OSError, KeyError, ValueError):
+                        status = "interrupted_without_final_status"
             if binding.get("dispatch_paused") and status.startswith(("waiting", "pending")):
                 status = "paused_for_review"
             if state.get("state") == "complete" and not interruption:
@@ -189,6 +208,8 @@ def collect(workspace):
                 if p.exists()
             ]
             newest = max((p.stat().st_mtime for p in files), default=0)
+            if data_audit:
+                newest = max(newest, data_audit.get("updated_unix", 0))
             if own_experiment:
                 newest = max(
                     [newest, *(p.stat().st_mtime for p in target.glob("real/mb*/metrics.jsonl"))]
@@ -220,6 +241,8 @@ def collect(workspace):
                     ),
                     "minifrontier1" if "mf1" in relative else "unknown",
                 )
+            if kind == "data_construction":
+                model = "shared-corpus"
             entry = dict(
                 id=experiment_id(host, relative),
                 host=host,
@@ -258,7 +281,8 @@ def collect(workspace):
                 performance_measured_updates=profile.get("measured_updates"),
                 capability_status=state.get("capability_status", "unassessed"),
                 main_budget_eligible=False
-                if kind in {"synthetic", "sweep"} or run.get("kind") == "acceptance"
+                if kind in {"synthetic", "sweep", "data_construction"}
+                or run.get("kind") == "acceptance"
                 else None,
                 retention=experiment.get("retention", "original_run_policy"),
                 interruption_reason=interruption.get("reason"),
@@ -275,6 +299,20 @@ def collect(workspace):
                     for key in ("synthetic", "real")
                 },
             )
+            if kind == "data_construction":
+                entry["data_progress"] = dict(
+                    formal_admission=data_audit.get("formal_admission", False),
+                    accepted_records=sum(
+                        s.get("accepted_records", 0) for s in data_audit.get("sources", {}).values()
+                    ),
+                    candidate_reference_tokens=sum(
+                        s.get("accepted_reference_tokens", 0)
+                        for s in data_audit.get("sources", {}).values()
+                    ),
+                    split_reference_tokens=data_audit.get("split_reference_tokens"),
+                    database_bytes=data_audit.get("database_bytes"),
+                    error=data_audit.get("error"),
+                )
             families = [
                 family
                 for family in review.get("families", [])
@@ -374,8 +412,13 @@ def render(snapshot):
     for e in sorted(
         snapshot["experiments"], key=lambda e: (e["state"] != "running", e["host"], e["output"])
     ):
+        progress = (
+            f"候选参考 token {e['data_progress']['candidate_reference_tokens']}"
+            if e["kind"] == "data_construction"
+            else f"{e['ce_tokens']} / {e['ce_token_budget'] or '—'}"
+        )
         lines.append(
-            f"| {e['id']} | {e['host']} | {e['model']} | {e['kind']} | {e['state']} | {e['batch'] or '—'} | {e['ce_tokens']} / {e['ce_token_budget'] or '—'} | `{e['output']}` |"
+            f"| {e['id']} | {e['host']} | {e['model']} | {e['kind']} | {e['state']} | {e['batch'] or '—'} | {progress} | `{e['output']}` |"
         )
     if snapshot["issues"]:
         lines.extend(

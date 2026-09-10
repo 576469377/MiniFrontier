@@ -38,6 +38,10 @@ def test_pretraining_sources_reject_missing_origin_and_language_mismatch():
     assert row["document_id"] == "https://example.org/math"
     assert row["source_metadata"]["url"].endswith("#section")
     assert "candidate-not-formally-admitted" in row["quality_flags"]
+    assert (
+        clean_record("zh_edu", dict(text=text, score=1.0126953125, source="WuDao"), "row")[1]
+        == "score_outside_declared_0_1_range"
+    )
 
 
 def test_duplicate_alias_preserves_transitive_origin_groups(tmp_path):

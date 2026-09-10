@@ -33,6 +33,30 @@ def test_stopped_trial_is_not_complete_and_preserves_last_observed_tokens(tmp_pa
     )
 
 
+def test_candidate_data_progress_is_not_training_ce_or_formal_admission(tmp_path):
+    run = tmp_path / "outputs/strategy-pretraining-data-v1"
+    write(
+        run / "run.json",
+        dict(kind="data_construction", data_output="data/candidate", pid=999999999),
+    )
+    write(
+        tmp_path / "data/candidate/source-audit.json",
+        dict(
+            status="interrupted_unadmitted",
+            formal_admission=False,
+            sources={"zh": dict(accepted_records=10, accepted_reference_tokens=12345)},
+            error="schema mismatch",
+            updated_unix=time.time(),
+        ),
+    )
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["kind"] == "data_construction" and entry["model"] == "shared-corpus"
+    assert entry["ce_tokens"] == 0 and entry["main_budget_eligible"] is False
+    assert entry["data_progress"]["candidate_reference_tokens"] == 12345
+    assert not entry["data_progress"]["formal_admission"]
+    assert entry["state"] == "interrupted_unadmitted"
+
+
 def test_supervisor_resumed_training_overrides_old_paused_checkpoint(tmp_path):
     trial = tmp_path / "outputs/mf1-language-instructions-v1/trial"
     write(trial / "run.json", dict(model_name="minifrontier1", kind="acceptance"))

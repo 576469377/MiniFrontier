@@ -46,8 +46,19 @@ def assert_tree_equal(a, b):
         assert a == b
 
 
-def test_real_pause_resume_matches_uninterrupted_optimizer_router_rng(fixture_data, tmp_path):
+@pytest.mark.parametrize("compact", [False, True])
+def test_real_pause_resume_matches_uninterrupted_optimizer_router_rng(
+    fixture_data, tmp_path, compact
+):
     c = asdict(MiniFrontier1Config.tiny())
+    if compact:
+        from minifrontier.data.minifrontier1_encoding import encode_dataset
+
+        encoded = tmp_path / "compact"
+        encode_dataset(
+            fixture_data, encoded, MiniFrontier1Config(**c), compact=True, shard_tokens=512
+        )
+        fixture_data = encoded
     args = dict(
         data=fixture_data,
         phase="pilot",

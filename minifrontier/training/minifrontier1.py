@@ -14,7 +14,8 @@ from typing import Any, cast
 import torch
 
 from minifrontier.data import sha256
-from minifrontier.data.minifrontier1 import RecordDataset, digest, write_json
+from minifrontier.data.minifrontier1 import digest, write_json
+from minifrontier.data.minifrontier1_encoding import open_dataset
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
 from minifrontier.models.minifrontier1.mtp import mtp_targets
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, token_metadata
@@ -48,13 +49,26 @@ class Sampler:
     def __init__(self, dataset, seed, weights=None, *, length_filter=False):
         self.seed, self.rng = seed, random.Random(seed)
         self.lengths = (
-            {i: dataset[i]["input_ids"].shape[1] for i in range(len(dataset))}
+            {
+                i: dataset.length_at(i)
+                if hasattr(dataset, "length_at")
+                else dataset[i]["input_ids"].shape[1]
+                for i in range(len(dataset))
+            }
             if length_filter
             else {}
         )
         self.buckets: dict[str, list[int]] = {}
         for i in range(len(dataset)):
-            domain = dataset.record(i)["domain"] if weights else "all"
+            domain = (
+                (
+                    dataset.domain_at(i)
+                    if hasattr(dataset, "domain_at")
+                    else dataset.record(i)["domain"]
+                )
+                if weights
+                else "all"
+            )
             self.buckets.setdefault(domain, []).append(i)
         self.weights = weights or {"all": 1.0}
         if (
@@ -270,7 +284,7 @@ def train(
         if values or saved
         else MiniFrontier1Config()
     )
-    dataset, validation = RecordDataset(data, "train", c), RecordDataset(data, "val", c)
+    dataset, validation = open_dataset(data, "train", c), open_dataset(data, "val", c)
     if not len(dataset) or not len(validation):
         raise ValueError("training and held-out validation must both be nonempty")
     if dataset.tokenizer.get_vocab_size() > c.vocab_size:

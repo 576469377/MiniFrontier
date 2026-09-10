@@ -88,6 +88,8 @@ def main(argv=None):
     encode.add_argument("--output", required=True)
     encode.add_argument("--config", required=True)
     encode.add_argument("--max-gib", type=float, default=16)
+    encode.add_argument("--compact", action="store_true", help="consumable compact binary shards")
+    encode.add_argument("--shard-tokens", type=int, default=64_000_000)
     q = commands.add_parser("quickstart")
     q.add_argument("--output", required=True)
     q.add_argument("--device", default="cpu")
