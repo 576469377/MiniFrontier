@@ -1,12 +1,20 @@
 import json
 import random
 from contextlib import closing
+from dataclasses import asdict
 
 import pytest
+from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.data.corpus import CorpusBuilder
+from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokenizer
+from minifrontier.data.encoding_audit import audit_image_encoding
+from minifrontier.data.encoding_filters import filter_media_encoding
+from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.data.media_tasks import REVISION, SOURCE, allava_task
+from minifrontier.data.minifrontier1 import SPECIAL_TOKENS
+from minifrontier.data.minifrontier1_encoding import encode_canonical_images
+from minifrontier.data.native import audit_native_encoding, encode_native
 from minifrontier.data.partitions import (
     TASK_FORMAT,
     create_media_exclusion_view,
@@ -15,6 +23,7 @@ from minifrontier.data.partitions import (
     open_corpus,
 )
 from minifrontier.data.visual_sources import candidate_turns
+from minifrontier.models.minifrontier1 import MiniFrontier1Config
 
 CAPTION = "Please provide a detailed narrative of the image."
 QUESTION = "What do the small label details tell us about the year shown?"
@@ -55,6 +64,9 @@ def corpus(tmp_path, monkeypatch):
         rng = random.Random(i)
         answer = " ".join(rng.randbytes(8).hex() for _ in range(40))
         question = CAPTION if i % 2 == 0 else QUESTION
+        image = Image.frombytes("RGB", (32, 24), rng.randbytes(32 * 24 * 3))
+        path = root / f"{i}.png"
+        image.save(path)
         assert builder.add(
             dict(
                 source=SOURCE,
@@ -69,7 +81,9 @@ def corpus(tmp_path, monkeypatch):
                 visual_question=question,
                 visual_answer=answer,
                 answer_reference_tokens=30,
-                media=[],
+                media=[
+                    dict(kind="image", path=path.name, sha256=sha256(path), **decoded_hashes(image))
+                ],
             )
         )
     locks = {"source-group:" + SOURCE + ":" + str(i): "val" if i == 4 else "test" for i in (4, 5)}
@@ -160,3 +174,94 @@ def test_task_view_keeps_contents_partitions_and_subsequent_group_exclusions(cor
     (target / "split-overrides.json").write_text(json.dumps(overrides))
     with pytest.raises(ValueError, match="reservation hash"):
         open_corpus(target)
+
+
+@pytest.mark.parametrize("family", ["mf1", "minikimik3", "miniqwen4"])
+def test_task_repacking_preserves_all_supervision_and_passes_independent_audit(
+    corpus, tmp_path, monkeypatch, family
+):
+    root, _, _ = corpus
+    tokenizer = tmp_path / "tokenizer.json"
+    if family == "mf1":
+        train_tokenizer(root, tokenizer, 400, special_tokens=SPECIAL_TOKENS)
+    else:
+        train_tokenizer(root, tokenizer, 400)
+    parent, output = tmp_path / "parent", tmp_path / "corrected-encoding"
+    config = MiniFrontier1Config(
+        **dict(asdict(MiniFrontier1Config.tiny(400)), max_position_embeddings=2048)
+    )
+    if family == "mf1":
+        before = encode_canonical_images(root, tokenizer, parent, config, max_features=4)
+        proof = audit_image_encoding(root, parent, parent / "encoding-audit.json", asdict(config))
+    else:
+        text = CorpusBuilder(tmp_path / "text-corpus")
+        assert text.add(
+            dict(
+                source="fixture",
+                revision="fixed",
+                item_id="1",
+                group_id="1",
+                license="fixture",
+                task="en_edu",
+                stage="pretrain",
+                lang="en",
+                text="Clouds form when water vapour condenses in the cool air above us.",
+            )
+        )
+        text.finalize()
+        text.db.close()
+        shared = tmp_path / "shared-text"
+        encode_corpus(text.root, tokenizer, shared, max_length=2048)
+        before = encode_native(
+            root,
+            tokenizer,
+            parent,
+            family,
+            max_length=2048,
+            max_features=4,
+            min_pixels=1024 if family == "miniqwen4" else None,
+            text_encoding=shared,
+            max_gib=0.01,
+        )
+        proof = audit_native_encoding(root, parent, parent / "encoding-audit.json")
+    (parent / "source-audit.json").write_text(
+        json.dumps(
+            dict(
+                status=proof["status"],
+                producer_finished=True,
+                manifest_sha256=sha256(parent / "manifest.json"),
+                integrity_report="encoding-audit.json",
+                integrity_report_sha256=sha256(parent / "encoding-audit.json"),
+            )
+        )
+    )
+    view = tmp_path / "task-view"
+    create_task_classification_view(root, view)
+
+    def no_pixels(*args, **kwargs):
+        raise AssertionError("task correction must reuse tokenized records without pixel encoding")
+
+    with monkeypatch.context() as patch:
+        patch.setattr("minifrontier.data.minifrontier1_encoding.prepare_media", no_pixels)
+        patch.setattr("minifrontier.data.encoding_filters.prepare_record", no_pixels)
+        after = filter_media_encoding(view, parent, output, config=asdict(config), reclassify=True)
+    audit = json.loads((output / "encoding-audit.json").read_text())
+    assert audit["kind"] == "encoded_media_task_derivation"
+    assert not audit["formal_admission"] and not audit["sealed_holdout_payloads_unchanged"]
+    assert audit["sealed_holdout_contents_and_membership_unchanged"]
+    if family == "mf1":
+        independent = audit_image_encoding(
+            view, output, tmp_path / "independent.json", asdict(config)
+        )
+        for split in ("train", "val", "test"):
+            assert before["splits"][split]["counts"] == after["splits"][split]["counts"]
+    else:
+        independent = audit_native_encoding(view, output, tmp_path / "independent.json")
+        for stage in ("pretrain", "sft"):
+            for split in ("train", "val", "test"):
+                a, b = before["stages"][stage][split], after["stages"][stage][split]
+                assert a["supervised_tokens"] == b["supervised_tokens"]
+                assert a["examples"] == b["examples"] and a["text"] == b["text"]
+    assert independent["status"] == proof["status"] and not independent.get("errors")
+    with pytest.raises(ValueError, match="declared refinement"):
+        filter_media_encoding(view, parent, tmp_path / "wrong-operation", config=asdict(config))
