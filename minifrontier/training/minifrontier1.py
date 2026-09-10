@@ -19,6 +19,7 @@ from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1
 from minifrontier.models.minifrontier1.mtp import mtp_targets
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, token_metadata
 from minifrontier.multimodal import move
+from minifrontier.training.metrics import mf1_scalars
 from minifrontier.training.minifrontier1_curriculum import context_length, pack_records
 from minifrontier.training.minifrontier1_optim import (
     QuantileBalance,
@@ -419,10 +420,8 @@ def train(
         with (output / "metrics.jsonl").open("a") as handle:
             handle.write(json.dumps(values, allow_nan=False) + "\n")
         if writer:
-            for key, value in values.items():
-                if isinstance(value, (int, float)) and not isinstance(value, bool):
-                    tag = f"validation/{key}" if values.get("event") == "validation" else key
-                    writer.add_scalar(tag, value, step)
+            for tag, value in mf1_scalars(values).items():
+                writer.add_scalar(tag, value, step)
             writer.flush()
 
     def save(state):
