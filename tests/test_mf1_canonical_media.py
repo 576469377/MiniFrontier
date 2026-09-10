@@ -155,8 +155,9 @@ def test_canonical_media_rejects_changed_pixels_and_unfinished_inventory(corpus,
     assert not (tmp_path / "changed/manifest.json").exists()
 
 
+@pytest.mark.parametrize("audit_binding", ["integrity_report", "encoding_audit_sha256"])
 def test_compact_exclusion_preserves_tokens_spans_holdout_bytes_and_actual_loader(
-    corpus, tmp_path, monkeypatch
+    corpus, tmp_path, monkeypatch, audit_binding
 ):
     monkeypatch.setattr(
         "minifrontier.storage.shutil.disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3)
@@ -165,14 +166,19 @@ def test_compact_exclusion_preserves_tokens_spans_holdout_bytes_and_actual_loade
     parent = tmp_path / "parent"
     manifest = encode_canonical_images(root, tokenizer, parent, config, max_features=49)
     audit_image_encoding(root, parent, parent / "encoding-audit.json", asdict(config))
+    report_hash = sha256(parent / "encoding-audit.json")
+    report_binding = (
+        dict(integrity_report="encoding-audit.json", integrity_report_sha256=report_hash)
+        if audit_binding == "integrity_report"
+        else dict(encoding_audit_sha256=report_hash)
+    )
     (parent / "source-audit.json").write_text(
         json.dumps(
             dict(
                 status="mechanical_checks_passed_pending_quality_admission",
                 producer_finished=True,
                 manifest_sha256=sha256(parent / "manifest.json"),
-                integrity_report="encoding-audit.json",
-                integrity_report_sha256=sha256(parent / "encoding-audit.json"),
+                **report_binding,
             )
         )
     )
@@ -231,6 +237,13 @@ def test_compact_exclusion_preserves_tokens_spans_holdout_bytes_and_actual_loade
             view, parent, tmp_path / "tiny-cap", config=asdict(config), max_gib=1e-9
         )
     assert not (tmp_path / "tiny-cap").exists()
+    proof = parent / "encoding-audit.json"
+    original_proof = proof.read_bytes()
+    proof.write_bytes(original_proof + b" ")
+    with pytest.raises(ValueError, match="hash/size differs"):
+        filter_media_encoding(view, parent, tmp_path / "corrupt-proof", config=asdict(config))
+    assert not (tmp_path / "corrupt-proof").exists()
+    proof.write_bytes(original_proof)
     # A completed audit cannot justify mutated parent token bytes.
     token_path = parent / manifest["splits"]["train"]["parts"][0]["files"]["tokens.bin"]["name"]
     token_path.write_bytes(b"x" + token_path.read_bytes()[1:])

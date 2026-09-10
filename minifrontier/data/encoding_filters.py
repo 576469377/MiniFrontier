@@ -33,7 +33,15 @@ def _inputs(corpus, encoded):
     source_audit = json.loads((corpus / "source-audit.json").read_text())
     manifest = json.loads((encoded / "manifest.json").read_text())
     parent = json.loads((encoded / "source-audit.json").read_text())
-    proof_path = _checked(encoded, parent["integrity_report"], parent["integrity_report_sha256"])
+    # Earlier canonical image producers bind the same fixed report by this key.
+    # Both layouts require a recorded hash; an unbound file is never sufficient.
+    if "integrity_report" in parent:
+        report_name, report_hash = parent["integrity_report"], parent.get("integrity_report_sha256")
+    else:
+        report_name, report_hash = "encoding-audit.json", parent.get("encoding_audit_sha256")
+    if not report_hash:
+        raise ValueError("parent encoding has no bound integrity report")
+    proof_path = _checked(encoded, report_name, report_hash)
     proof = json.loads(proof_path.read_text())
     parent_hash = sha256(encoded / "manifest.json")
     if (
