@@ -88,9 +88,11 @@ class CorpusBuilder:
             CREATE INDEX IF NOT EXISTS image_band_idx ON image_bands(band,value);
         """)
         self.counts: Counter[str] = Counter()
+        self.last_retained_id: str | None = None
         self.approximate_bytes = (self.root / "corpus.sqlite").stat().st_size
 
     def add(self, record):
+        self.last_retained_id = None
         required = ("source", "revision", "item_id", "group_id", "license", "lang", "task", "stage")
         if any(not record.get(key) for key in required):
             raise ValueError(f"record lacks provenance fields: {required}")
@@ -157,6 +159,7 @@ class CorpusBuilder:
             else fingerprint(text + ("|media:" + media_context if media_context else ""))
         )
         if self.db.execute("SELECT 1 FROM samples WHERE id=?", (identity,)).fetchone():
+            self.last_retained_id = identity
             self._link_origin(identity, record)
             self.counts["exact_duplicates"] += 1
             return False
@@ -204,6 +207,7 @@ class CorpusBuilder:
                 own_shingles = own_shingles or text_shingles(text)
                 other = text_shingles(other_text)
                 if len(own_shingles & other) / max(1, len(own_shingles | other)) >= 0.85:
+                    self.last_retained_id = candidate
                     self._link_origin(candidate, record)
                     self.counts["near_duplicates"] += 1
                     return False
@@ -278,6 +282,7 @@ class CorpusBuilder:
             keys.append("document:" + record["document_id"])
         self.db.executemany("INSERT INTO links VALUES (?,?)", [(identity, key) for key in keys])
         self.counts["accepted"] += 1
+        self.last_retained_id = identity
         return True
 
     def _link_origin(self, identity, record):
@@ -290,7 +295,11 @@ class CorpusBuilder:
             keys.append("repo:" + record["repo_id"])
         self.db.executemany("INSERT INTO links VALUES (?,?)", [(identity, key) for key in keys])
 
-    def finalize(self):
+    def finalize(self, *, split_locks=None, excluded_ids=()):
+        controlled_split = split_locks is not None or bool(excluded_ids)
+        split_locks = split_locks or {}
+        if any(split not in {"val", "test"} for split in split_locks.values()):
+            raise ValueError("prior split locks may only preserve validation or sealed test")
         self.db.commit()
         # Union identifiers before splitting; same-image questions and translated
         # variants form one transitive component, including cross-source links.
@@ -311,9 +320,22 @@ class CorpusBuilder:
                 parents[max(a, b)] = min(a, b)
             else:
                 first[key] = identity
+        protected: dict[str, str] = {}
+        for key, split in split_locks.items():
+            if key in first:
+                group = find(first[key])
+                if protected.get(group) != "test":
+                    protected[group] = split
+        if set(excluded_ids) - parents.keys():
+            raise ValueError("excluded identity does not belong to the corpus")
+        excluded_groups = {find(identity) for identity in excluded_ids}
+        removed = []
         split_counts: Counter[str] = Counter()
         for identity in parents:
             root = find(identity)
+            if root in excluded_groups:
+                removed.append((identity,))
+                continue
             bucket = (
                 int(hashlib.sha256(f"{self.seed}:{root}".encode()).hexdigest()[:16], 16) % 10000
             )
@@ -324,10 +346,21 @@ class CorpusBuilder:
                 if bucket < self.val_buckets + self.test_buckets
                 else "train"
             )
+            split = protected.get(root, split)
             self.db.execute(
                 "UPDATE samples SET group_root=?, split=? WHERE id=?", (root, split, identity)
             )
             split_counts[split] += 1
+        if removed:
+            self.db.execute("CREATE TEMP TABLE excluded_records(id TEXT PRIMARY KEY)")
+            self.db.executemany("INSERT INTO excluded_records VALUES (?)", removed)
+            for table in ("samples", "links", "bands", "image_bands"):
+                self.db.execute(
+                    f"DELETE FROM {table} WHERE id IN (SELECT id FROM excluded_records)"
+                )
+            self.db.execute("DROP TABLE excluded_records")
+            self.counts["accepted"] -= len(removed)
+            self.counts["excluded_group_records"] += len(removed)
         self.db.commit()
         self.db.execute("PRAGMA wal_checkpoint(FULL)")
         manifest = dict(
@@ -342,6 +375,14 @@ class CorpusBuilder:
             dedup="exact hash, first-question cap3, answer shingles0.8, simhash64+Jaccard0.85",
             database_sha256=sha256(self.root / "corpus.sqlite"),
         )
+        if controlled_split:
+            manifest["retained_split_controls"] = dict(
+                prior_holdout_keys=len(split_locks),
+                protected_groups=len(protected),
+                excluded_groups=len(excluded_groups),
+                excluded_records=len(removed),
+                policy="prior test takes precedence over prior val; whole matched groups removed",
+            )
         (self.root / "corpus-manifest.json").write_text(json.dumps(manifest, indent=2))
         return manifest
 
