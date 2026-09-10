@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "text_candidate_inventory_snapshot",
-  "observed_unix": 1789071421.4932296,
+  "observed_unix": 1789072727.8953192,
   "formal_admission": false,
   "run_id": "strategy-pretraining-data-v3",
   "source_commit": "578b26d32454521cf851f7c137dce00c0f54dc4b",
@@ -1118,30 +1118,153 @@
     "encodings": {
       "source": {
         "output": "data/pretraining-text-64k-v3",
-        "state": "encoding_new_validation_partition",
+        "state": "mechanical_checks_passed_pending_quality_admission",
         "source_commit": "54498be4e5589ce3e1a9095abe6325b84fe8549b",
         "driver_sha256": "6b2a63c43727a0876f96312e0af34283e7ecbd3b4ef647ffffae9220a2a89c2f",
         "max_gib": 7.1,
         "formal_admission": false,
-        "observed_unix": 1789071421.4927452,
-        "process_identity_verified": true,
-        "actual_bytes_at_observation": 915687083
+        "observed_unix": 1789072727.9115062,
+        "process_identity_verified": false,
+        "actual_bytes_at_observation": 7384394453,
+        "allocated_bytes_at_observation": 7384453120,
+        "manifest_sha256": "55665f9eb579d9309174971b79dfe7e91ffe6d096508e297b0949fae8dc993e2",
+        "fixed_validation_selection_check": {
+          "kind": "fixed_validation_selection_metadata_check",
+          "formal_admission": false,
+          "dataset": "pretraining-text-64k-v3",
+          "split": "val",
+          "context_length": 1024,
+          "manifest_sha256": "55665f9eb579d9309174971b79dfe7e91ffe6d096508e297b0949fae8dc993e2",
+          "source_file_sha256": {
+            "minifrontier/training/validation.py": "e3e21b2b8a8ca21555c1bd350c58bc8f04c2ec056b1850270e0dff3336b275f2",
+            "minifrontier/data/corpus.py": "d1d574631df08e41012c507caf977543470645aceb74a8280972f9ba20b903bb"
+          },
+          "validation": {
+            "policy": {
+              "periodic_ce_tokens": 1000000,
+              "phase_end_ce_tokens": 5000000,
+              "early_interval_ce": 10000000,
+              "early_until_ce": 100000000,
+              "later_interval_ce": 50000000
+            },
+            "seed": 42,
+            "selection": "fixed_without_replacement",
+            "periodic": {
+              "requested_ce_tokens": 1000000,
+              "actual_ce_tokens": 1000696,
+              "examples": 1341,
+              "domain_ce": {
+                "zh_edu": 419740,
+                "en_edu": 274314,
+                "code": 137244,
+                "dialogue": 74702,
+                "verified_math_science": 94696
+              },
+              "indices_sha256": "60204a1f6750fc0bba2db74ecbf4aff5cd22bc712e33b34c453fa120ad462cfa",
+              "overshoot_bound_ce": 1023
+            },
+            "phase_end": {
+              "requested_ce_tokens": 5000000,
+              "actual_ce_tokens": 5000771,
+              "examples": 6776,
+              "domain_ce": {
+                "zh_edu": 2029154,
+                "en_edu": 1415654,
+                "code": 713623,
+                "dialogue": 363716,
+                "verified_math_science": 478624
+              },
+              "indices_sha256": "e5ecdcd7067744f89316af60f4cc035b9c4dab1dd2d62d09238d9a94913c224f",
+              "overshoot_bound_ce": 1023
+            }
+          },
+          "inventory_ce_tokens": 5065923,
+          "context_windows": 6868,
+          "seconds": 0.3584672696888447,
+          "model_forward_executed": false,
+          "media_processing_executed": false,
+          "full_encoding_audit": "running independently; this selection check does not replace it",
+          "source_commit": "d7d8b6918499db725ef6fb4bab25079eee18ffd7"
+        }
       },
       "mf1": {
         "output": "data/pretraining-mf1-text-v2",
-        "state": "encoding_new_validation_partition",
+        "state": "mechanical_checks_passed_pending_quality_admission",
         "source_commit": "54498be4e5589ce3e1a9095abe6325b84fe8549b",
         "driver_sha256": "6b2a63c43727a0876f96312e0af34283e7ecbd3b4ef647ffffae9220a2a89c2f",
         "max_gib": 1.5,
         "formal_admission": false,
-        "observed_unix": 1789071421.4930007,
-        "process_identity_verified": true,
-        "actual_bytes_at_observation": 180811678
+        "observed_unix": 1789072727.9299247,
+        "process_identity_verified": false,
+        "actual_bytes_at_observation": 1464982745,
+        "allocated_bytes_at_observation": 1465118720,
+        "manifest_sha256": "548993928f0d3c5e292380a3f0c91930ca538a83340d658d7087c3c76301de0b",
+        "fixed_validation_selection_check": {
+          "kind": "fixed_validation_selection_metadata_check",
+          "formal_admission": false,
+          "dataset": "pretraining-mf1-text-v2",
+          "split": "val",
+          "manifest_sha256": "548993928f0d3c5e292380a3f0c91930ca538a83340d658d7087c3c76301de0b",
+          "source_file_sha256": {
+            "minifrontier/training/validation.py": "e3e21b2b8a8ca21555c1bd350c58bc8f04c2ec056b1850270e0dff3336b275f2",
+            "minifrontier/data/minifrontier1_encoding.py": "ad4e7743b3e6390f4bf97c8d7ad74ac924bd26b2c3a3ae3428e77167c8e42411"
+          },
+          "validation": {
+            "policy": {
+              "periodic_ce_tokens": 1000000,
+              "phase_end_ce_tokens": 5000000,
+              "early_interval_ce": 10000000,
+              "early_until_ce": 100000000,
+              "later_interval_ce": 50000000
+            },
+            "seed": 42,
+            "selection": "fixed_without_replacement",
+            "periodic": {
+              "requested_ce_tokens": 1000000,
+              "actual_ce_tokens": 1000034,
+              "examples": 1296,
+              "domain_ce": {
+                "en_general": 280841,
+                "math": 89379,
+                "code": 133737,
+                "zh_general": 420325,
+                "structured": 75752
+              },
+              "indices_sha256": "a8b2a1a47f6e3878d9c9eb9f5cc380d19b93f97f01797e529f97d7ea743a9004",
+              "overshoot_bound_ce": 1023
+            },
+            "phase_end": {
+              "requested_ce_tokens": 5000000,
+              "actual_ce_tokens": 5000347,
+              "examples": 6625,
+              "domain_ce": {
+                "en_general": 1393450,
+                "math": 472244,
+                "code": 693563,
+                "zh_general": 2085686,
+                "structured": 355404
+              },
+              "indices_sha256": "c1eb3a05e335b4611022cb629168e8798165fb820e8035c52deb1fddfff5d22f",
+              "overshoot_bound_ce": 1023
+            },
+            "context_length": 1024,
+            "window_descriptors_sha256": "3b89984dd7e92e5da39beb3be7e9b1d31a235ca8a07b0de09c2542642e476018",
+            "units": "complete native answers or text context windows with unique CE positions"
+          },
+          "inventory_ce_tokens": 5416788,
+          "unique_documents": 3735,
+          "context_windows": 7190,
+          "seconds": 0.19326570443809032,
+          "model_forward_executed": false,
+          "media_processing_executed": false,
+          "full_encoding_audit": "running independently; this selection check does not replace it",
+          "source_commit": "d7d8b6918499db725ef6fb4bab25079eee18ffd7"
+        }
       }
     },
     "storage_transition": {
       "kind": "atomic_token_cache_repartition_transition",
-      "state": "encoding_replacements",
+      "state": "replacement_encodings_written_full_audits_running",
       "started_unix": 1789071263.7116923,
       "free_bytes_before": 153689075712,
       "temporary_replacement_cap_gib": 8.6,
@@ -1152,7 +1275,15 @@
       "mf1_cap_gib": 1.5,
       "raw_data_new_bytes": 0,
       "retention": "Original caches and the partial joint manifest remain until both replacements pass full audits and consumer references are moved. Retire superseded derived payloads after dependency checks; retain manifests and experiment evidence.",
-      "formal_admission": false
+      "formal_admission": false,
+      "observed_unix": 1789072645.9185011,
+      "replacement_allocated_bytes": {
+        "source": 7384444928,
+        "mf1": 1465110528
+      },
+      "temporary_replacement_allocated_bytes": 8849555456,
+      "free_bytes_at_observation": 144839270400,
+      "retired_bytes": 0
     }
   },
   "source_pretraining_validation": {
@@ -1167,12 +1298,37 @@
     "best_checkpoint": "compare periodic subsets only; phase-end metrics are separate",
     "formal_main_phase_requires_flag": true,
     "actual_phase_end_inventory_required": true,
-    "mf1_evaluator_aligned": false,
+    "mf1_evaluator_aligned": true,
     "cpu_validation": {
       "passed": 451,
       "skipped": 1,
       "cuda_deselected": 54,
       "seconds": 146.69
     }
+  },
+  "mf1_pretraining_validation": {
+    "source_commit": "d7d8b6918499db725ef6fb4bab25079eee18ffd7",
+    "scope": "main CE phases P0/P1/P2/P3; independent indexer validation remains separate",
+    "activation": "automatic for strategy main phases; --pretraining-eval for acceptance checks",
+    "checks": [
+      "encoded CE windows without decoding pixels",
+      "complete native answers and nonoverlapping text targets",
+      "batched versus individual NLL and media-only blackout denominators",
+      "fixed periodic/phase-end sets, actual CE and domain totals",
+      "exact model/optimizer/sampler/router/RNG resume",
+      "P2 evaluation uses declared sparse phase and restores dense replay state even on failure"
+    ],
+    "cpu_validation": {
+      "passed": 456,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "seconds": 151.52,
+      "log_sha256": "23d1bcb4ad1058ed5a2f7f99002922a8a49713a03c10baa89ed07b5daf6fb324"
+    },
+    "mypy_source_files": 180,
+    "ruff": "check and formatting passed",
+    "evaluation_time_fraction_measured_on_production_gpu": false,
+    "capability_qualified": false,
+    "formal_admission": false
   }
 }
