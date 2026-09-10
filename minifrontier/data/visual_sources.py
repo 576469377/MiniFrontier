@@ -591,6 +591,7 @@ def build_visual_candidates(
         continuation=continuation_identity,
         processor_files={
             str(Path(__file__).name): sha256(__file__),
+            "media_tasks.py": sha256(Path(__file__).with_name("media_tasks.py")),
             "corpus.py": sha256(Path(__file__).with_name("corpus.py")),
             "public_sources.py": sha256(Path(__file__).with_name("public_sources.py")),
             "remote.py": sha256(Path(__file__).with_name("remote.py")),

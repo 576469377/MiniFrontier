@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789080290.0750713,
+  "observed_unix": 1789082085.8096046,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -74,9 +74,14 @@
         "stratified source/domain manual review and fixed visual evaluation",
         "full OCR transcription, Chinese OCR, multiimage and video coverage",
         "per-model tokenizer, complete media/answer length and phase exposure audit"
-      ]
+      ],
+      "task_counts_are_historical": true
     },
-    "remaining_natural_image_target": 36740
+    "remaining_natural_image_target": 36740,
+    "effective_partition": {
+      "output": "data/pretraining-natural-partition-v2",
+      "manifest_sha256": "0e8a593ba3989ff7d3621db4aa90b3814e944c82e5811e89c616b1572d7832fd"
+    }
   },
   "limitations": [
     "This is a retained storage-limited slice, not completion of the 60K natural-image target.",
@@ -649,10 +654,11 @@
     "actual_encoded_bytes": 84127653,
     "completed_unix": 1789067223.291081,
     "current_filtered_encoding": {
-      "output": "data/pretraining-mf1-natural-p0-v2",
-      "manifest_sha256": "b2820540e8448695b3b3868681c94d71b27110a5baf5153f6c9c5fe406f13810",
+      "output": "data/pretraining-mf1-natural-p0-v3",
+      "manifest_sha256": "92d6daf75b63047636370bd58efefb6bb48d9c35213638f7d74bda5c7a1ae860",
       "state": "mechanical_checks_passed_pending_quality_admission"
-    }
+    },
+    "historical_task_counts_superseded_by": "source_task_classification"
   },
   "canonical_components_validation": {
     "source_commit": "713eb786a71276729fa710102747d94545b9890e",
@@ -671,12 +677,13 @@
     }
   },
   "mf1_partial_p0_composition": {
-    "output": "data/pretraining-mf1-p0-components-v4",
+    "output": "data/pretraining-mf1-p0-components-v5",
     "state": "p0_domain_components_assembled_pending_supply_and_quality_admission",
     "formal_admission": false,
-    "source_commit": "eb0c59011e4d847bfb3f6f03e54710ba3faa25bf",
-    "manifest_sha256": "cecd883d4deb95b1cb7bfa542c3d796d360f2fabe59488e20a5d2438f52192f0",
-    "output_bytes": 2491600,
+    "source_commit": "1625d13",
+    "manifest_sha256": "f18024bbe645d02e5b0458f9bb0a36165f51466cad74794418d86c74e20ca268",
+    "source_audit_sha256": "281ac29e3b46014b04bceed8fe6dc289ced51537722e556e56bca6d8e8df2a8c",
+    "output_bytes": 2491898,
     "splits": {
       "train": {
         "counts": {
@@ -693,8 +700,8 @@
           "math": 49533456,
           "structured": 41730917,
           "code": 91698915,
-          "vqa": 5542036,
-          "caption": 1911515,
+          "vqa": 2700798,
+          "caption": 4752753,
           "chart_table": 5416136,
           "ocr_document": 1471510
         },
@@ -715,8 +722,8 @@
           "structured": 387872,
           "math": 510557,
           "code": 745814,
-          "caption": 9582,
-          "vqa": 25577,
+          "caption": 22871,
+          "vqa": 12288,
           "chart_table": 150274,
           "ocr_document": 40392
         },
@@ -737,8 +744,8 @@
           "code": 1589679,
           "math": 476148,
           "structured": 422555,
-          "vqa": 52852,
-          "caption": 17501,
+          "vqa": 25394,
+          "caption": 44959,
           "chart_table": 42202,
           "ocr_document": 13262
         },
@@ -756,8 +763,8 @@
         "manifest_sha256": "548993928f0d3c5e292380a3f0c91930ca538a83340d658d7087c3c76301de0b"
       },
       {
-        "path": "../pretraining-mf1-natural-p0-v2",
-        "manifest_sha256": "b2820540e8448695b3b3868681c94d71b27110a5baf5153f6c9c5fe406f13810"
+        "path": "../pretraining-mf1-natural-p0-v3",
+        "manifest_sha256": "92d6daf75b63047636370bd58efefb6bb48d9c35213638f7d74bda5c7a1ae860"
       },
       {
         "path": "../pretraining-mf1-doc-chart-p0-v2",
@@ -796,8 +803,8 @@
           "ocr_document": 6992,
           "math": 86731,
           "code": 123573,
-          "vqa": 5097,
-          "caption": 1730
+          "vqa": 2207,
+          "caption": 4620
         },
         "indices_sha256": "df7cd47686ca90d05c887e295e36323931b4064df1b74df81ed87d958e28ed39",
         "overshoot_bound_ce": 1023
@@ -814,8 +821,8 @@
           "ocr_document": 35677,
           "math": 448413,
           "code": 659572,
-          "vqa": 22615,
-          "caption": 7298
+          "vqa": 11127,
+          "caption": 18786
         },
         "indices_sha256": "bd5befe78d7d68e07b8512afa85de4391be2a9e820a1a3dd4df681fcfd7adfcf",
         "overshoot_bound_ce": 1023
@@ -824,8 +831,11 @@
       "window_descriptors_sha256": "2ed7718a4bfdeaa06c678ec5f8bace7d25cb5fdfd41775055b3947eaa12c7dc4",
       "units": "complete native answers or text context windows with unique CE positions"
     },
-    "previous": "data/pretraining-mf1-p0-components-v3",
-    "validation_change": "added the document/chart held-out component; fixed selection regenerated for this new composition before training"
+    "previous": {
+      "output": "data/pretraining-mf1-p0-components-v4",
+      "manifest_sha256": "cecd883d4deb95b1cb7bfa542c3d796d360f2fabe59488e20a5d2438f52192f0"
+    },
+    "validation_change": "same fixed held-out indices, windows and CE; corrected task labels and per-domain CE denominators"
   },
   "composition_and_performance_validation": {
     "source_commit": "a2bad9c82aeba27adbe47955d3387ab87ebaf132",
@@ -948,10 +958,11 @@
           }
         },
         "current_filtered_encoding": {
-          "output": "data/pretraining-minikimik3-natural-p0-v2",
-          "manifest_sha256": "ac8d79fea75866be4589c5fcc49deba463e419c292528c3371a38b1ddda5c942",
+          "output": "data/pretraining-minikimik3-natural-p0-v3",
+          "manifest_sha256": "ea3d8ff172e24ee552a908bfb5f19305b4afce5f9636bd3a0ed9c7d2a5209653",
           "state": "mechanical_checks_passed_pending_quality_admission"
-        }
+        },
+        "historical_task_counts_superseded_by": "source_task_classification"
       },
       "miniqwen4": {
         "state": "mechanical_checks_passed_pending_quality_admission",
@@ -1020,10 +1031,11 @@
           }
         },
         "current_filtered_encoding": {
-          "output": "data/pretraining-miniqwen4-natural-p0-v2",
-          "manifest_sha256": "b37ee2a70096d79fab486cfbf447a31d329b41dfbb8dcdf158d2b6adf16bec6c",
+          "output": "data/pretraining-miniqwen4-natural-p0-v3",
+          "manifest_sha256": "b0d987acfd3738acb8bf8bca1bb5396b05f8801c029b4a13f0609d6cf5c143f0",
           "state": "mechanical_checks_passed_pending_quality_admission"
-        }
+        },
+        "historical_task_counts_superseded_by": "source_task_classification"
       }
     },
     "limitations": [
@@ -1040,8 +1052,8 @@
     "source": "HuggingFaceM4/FineVision/allava_laion",
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
     "output": "data/pretraining-media-natural-extension-v1",
-    "state": "extracting_next_natural_image_slice",
-    "observed_unix": 1789080198.4383318,
+    "state": "building",
+    "observed_unix": 1789082028.354385,
     "process_identity_verified": true,
     "source_commit": "c96973035a22c983b8ec6c705ca7f29908d43d57",
     "source_archive_sha256": "6132b492456fe6aa0657ddb694e01a596420675b885b58b50e6b7b74c336255a",
@@ -1051,7 +1063,7 @@
     "source_row_offset": 23790,
     "prior_pixels_excluded": 23260,
     "target_additional_images": 36740,
-    "observed_additional_images": 10750,
+    "observed_additional_images": 15250,
     "max_examined_new_rows": 146960,
     "storage": {
       "new_slice_max_gib": 40,
@@ -1059,7 +1071,7 @@
       "existing_data_allocated_bytes": 18725085184,
       "existing_encoder_reservation_gib": 1,
       "remote_combined_data_cap_gib": 60,
-      "observed_free_gib": 1035.3094062805176,
+      "observed_free_gib": 1023.5522193908691,
       "required_free_reserve_gib": 80,
       "local_raw_copy_bytes": 0,
       "latest_free_gib": 1026.8850784301758
@@ -1077,8 +1089,9 @@
       "candidate supply is not human quality or phase exposure admission",
       "first-slice native encoders are still active; no new token encodings or formal CE claimed"
     ],
-    "observed_additional_qa_records": 20077,
-    "observed_media_bytes": 8272492213
+    "observed_additional_qa_records": 28581,
+    "observed_media_bytes": 11820289788,
+    "requires_task_classification_correction": true
   },
   "cross_pool_grouping": {
     "observed_unix": 1789078841.042465,
@@ -1574,45 +1587,563 @@
       "reserve_bytes": 85899345920
     },
     "validation": {
-      "full_cpu_passed": 483,
-      "full_cpu_skipped": 1,
-      "cuda_deselected": 54,
-      "full_cpu_seconds": 153.03,
-      "full_cpu_scope": "shared loader integration; final cache read-buffer/page bounds covered by subsequent targeted run",
-      "final_targeted_passed": 29,
-      "final_targeted_seconds": 12.84,
-      "mypy_source_files": 183,
-      "ruff": "passed"
+      "policy": {
+        "periodic_ce_tokens": 1000000,
+        "phase_end_ce_tokens": 5000000,
+        "early_interval_ce": 10000000,
+        "early_until_ce": 100000000,
+        "later_interval_ce": 50000000
+      },
+      "seed": 42,
+      "selection": "fixed_without_replacement",
+      "periodic": {
+        "requested_ce_tokens": 1000000,
+        "actual_ce_tokens": 1000373,
+        "examples": 2058,
+        "domain_ce": {
+          "zh_general": 394700,
+          "structured": 68234,
+          "en_general": 287302,
+          "chart_table": 26014,
+          "ocr_document": 6992,
+          "math": 86731,
+          "code": 123573,
+          "vqa": 2207,
+          "caption": 4620
+        },
+        "indices_sha256": "df7cd47686ca90d05c887e295e36323931b4064df1b74df81ed87d958e28ed39",
+        "overshoot_bound_ce": 1023
+      },
+      "phase_end": {
+        "requested_ce_tokens": 5000000,
+        "actual_ce_tokens": 5000244,
+        "examples": 10305,
+        "domain_ce": {
+          "zh_general": 1972561,
+          "structured": 353899,
+          "en_general": 1369105,
+          "chart_table": 131104,
+          "ocr_document": 35677,
+          "math": 448413,
+          "code": 659572,
+          "vqa": 11127,
+          "caption": 18786
+        },
+        "indices_sha256": "bd5befe78d7d68e07b8512afa85de4391be2a9e820a1a3dd4df681fcfd7adfcf",
+        "overshoot_bound_ce": 1023
+      },
+      "context_length": 1024,
+      "window_descriptors_sha256": "2ed7718a4bfdeaa06c678ec5f8bace7d25cb5fdfd41775055b3947eaa12c7dc4",
+      "units": "complete native answers or text context windows with unique CE positions"
     },
     "p0_visual_supply": {
       "caption": {
-        "phase_ce_target": 14000000,
-        "available_ce": 1911515,
-        "ce_gap_without_replay": 12088485
+        "target_ce": 14000000,
+        "available_ce": 4752753,
+        "gap_without_replay": 9247247
       },
       "ocr_document": {
-        "phase_ce_target": 14000000,
+        "target_ce": 14000000,
         "available_ce": 1471510,
-        "ce_gap_without_replay": 12528490
+        "gap_without_replay": 12528490
       },
       "vqa": {
-        "phase_ce_target": 8000000,
-        "available_ce": 5542036,
-        "ce_gap_without_replay": 2457964
+        "target_ce": 8000000,
+        "available_ce": 2700798,
+        "gap_without_replay": 5299202
       },
       "chart_table": {
-        "phase_ce_target": 4000000,
+        "target_ce": 4000000,
         "available_ce": 5416136,
-        "ce_gap_without_replay": 0
+        "gap_without_replay": 0
       }
     },
     "minimum_free_gib": 80,
-    "local_free_gib": 141.18728256225586,
+    "local_free_gib": 140.51992416381836,
     "observed_unix": 1789080290.0750713,
     "remaining": [
       "source quality review and tokenizer freeze",
       "external visual benchmark identity exclusion",
       "complete per-domain CE/exposure supply and production qualification"
-    ]
+    ],
+    "p0_visual_supply_source_manifest_sha256": "f18024bbe645d02e5b0458f9bb0a36165f51466cad74794418d86c74e20ca268"
+  },
+  "source_task_classification": {
+    "status": "canonical_and_all_three_encodings_migrated",
+    "source_commit": "ee45a28",
+    "encoding_source_commit": "1625d13",
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "policy": {
+      "name": "allava-caption-templates-v1",
+      "source": "HuggingFaceM4/FineVision/allava_laion",
+      "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
+      "upstream_revision": "896b77f0ac48c95031cf31ce1b95ccaa380e68bf",
+      "upstream_file_sha256": "7a3201aa1e5e60003c8ab30a09c311ce2dddc1bdc2c7e5cb9216f618691709a7",
+      "classifier_sha256": "f1d1a080afc334e7ff476cdbdcd9baafc9a2e8d26d7f82847b63ab8ae7d066d1"
+    },
+    "upstream": {
+      "repository": "FreedomIntelligence/ALLaVA",
+      "revision": "896b77f0ac48c95031cf31ce1b95ccaa380e68bf",
+      "url": "https://raw.githubusercontent.com/FreedomIntelligence/ALLaVA/896b77f0ac48c95031cf31ce1b95ccaa380e68bf/prompts/instructions_for_captions.txt",
+      "bytes": 886,
+      "sha256": "7a3201aa1e5e60003c8ab30a09c311ce2dddc1bdc2c7e5cb9216f618691709a7"
+    },
+    "canonical_manifest_sha256": "0e8a593ba3989ff7d3621db4aa90b3814e944c82e5811e89c616b1572d7832fd",
+    "canonical_audit_sha256": "2250f6adfa578916a43e2fae1381d66ade0c1668f67c512e5117f41ce7863b75",
+    "database_sha256": "5ef12d8e99041440f6e716dacfc1439e65dd7914087a8fff558144063dd7d27e",
+    "encoded": {
+      "mf1": {
+        "output": "data/pretraining-mf1-natural-p0-v3",
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "manifest_sha256": "92d6daf75b63047636370bd58efefb6bb48d9c35213638f7d74bda5c7a1ae860",
+        "source_audit_sha256": "226c7856a75486807f67c37a63a4787594f4b10b63639440a3dbe5269c05866d",
+        "encoding_audit_sha256": "7665119a3117bf92a40dd0280c480582dc7bad0ccc200bb47bbd0abc643b3652",
+        "output_bytes": 84112432,
+        "splits": {
+          "train": {
+            "parts": [
+              {
+                "counts": {
+                  "records": 42924,
+                  "input_tokens": 10449645,
+                  "ce_tokens": 7453551,
+                  "media_exposures": 42924,
+                  "vision_tokens": 1875108
+                },
+                "files": {
+                  "tokens.bin": {
+                    "name": "train-00000.tokens.bin",
+                    "bytes": 20899290,
+                    "sha256": "3d16595b02fe017b13857aea0edbb9d2cd8a60ad0f8d41ca3376d45aaabbd611"
+                  },
+                  "mask.bin": {
+                    "name": "train-00000.mask.bin",
+                    "bytes": 1324994,
+                    "sha256": "2c09714055a1c3d9a8c58d6b2337a3d58de1ef1b9d4f9acfc352eb407fc95086"
+                  },
+                  "index.bin": {
+                    "name": "train-00000.index.bin",
+                    "bytes": 1459416,
+                    "sha256": "5e5cca23dcc10de5313039ec036957b3bdddf9aa310766d546f0dd2da8c69dd5"
+                  },
+                  "metadata.jsonl": {
+                    "name": "train-00000.metadata.jsonl",
+                    "bytes": 56790956,
+                    "sha256": "f07f31375d8a526e676b593028026d4f4ca74d6dde772f342c75dbb738a38097"
+                  }
+                }
+              }
+            ],
+            "counts": {
+              "records": 42924,
+              "input_tokens": 10449645,
+              "ce_tokens": 7453551,
+              "media_exposures": 42924,
+              "vision_tokens": 1875108
+            },
+            "domain_ce": {
+              "vqa": 2700798,
+              "caption": 4752753
+            }
+          },
+          "val": {
+            "parts": [
+              {
+                "counts": {
+                  "records": 205,
+                  "input_tokens": 49527,
+                  "ce_tokens": 35159,
+                  "media_exposures": 205,
+                  "vision_tokens": 8898
+                },
+                "files": {
+                  "tokens.bin": {
+                    "name": "val-00000.tokens.bin",
+                    "bytes": 99054,
+                    "sha256": "f51743917bbab0d0eb522e33a066124aa18ebc90ef061d82d8f833e7387ab203"
+                  },
+                  "mask.bin": {
+                    "name": "val-00000.mask.bin",
+                    "bytes": 6279,
+                    "sha256": "e828000387e8743e21672a30fadb0f97315a96515bc3107132942a1513653197"
+                  },
+                  "index.bin": {
+                    "name": "val-00000.index.bin",
+                    "bytes": 6970,
+                    "sha256": "ed7a7984e1b4fe23612bee3942ae816f222a014c1b34348504d9d537c4987ad4"
+                  },
+                  "metadata.jsonl": {
+                    "name": "val-00000.metadata.jsonl",
+                    "bytes": 271268,
+                    "sha256": "4f1497ba21fed3c0ea61620e15981b4e760ca424c4e2e1ab814be5b85886e327"
+                  }
+                }
+              }
+            ],
+            "counts": {
+              "records": 205,
+              "input_tokens": 49527,
+              "ce_tokens": 35159,
+              "media_exposures": 205,
+              "vision_tokens": 8898
+            },
+            "domain_ce": {
+              "caption": 22871,
+              "vqa": 12288
+            }
+          },
+          "test": {
+            "parts": [
+              {
+                "counts": {
+                  "records": 400,
+                  "input_tokens": 98629,
+                  "ce_tokens": 70353,
+                  "media_exposures": 400,
+                  "vision_tokens": 17582
+                },
+                "files": {
+                  "tokens.bin": {
+                    "name": "test-00000.tokens.bin",
+                    "bytes": 197258,
+                    "sha256": "a0f5f2903b9db53c81a0fcff41d2773a35f1a9ee3e62ff8c0d6b6dbee213d628"
+                  },
+                  "mask.bin": {
+                    "name": "test-00000.mask.bin",
+                    "bytes": 12500,
+                    "sha256": "ca9e0a1245d518737f1d918e90652759c261addca77b719a39e1f427cc65f8c5"
+                  },
+                  "index.bin": {
+                    "name": "test-00000.index.bin",
+                    "bytes": 13600,
+                    "sha256": "ed6b0c15400fa766369de5c36df36fb13312375cd9c940fb49e537a2140e750a"
+                  },
+                  "metadata.jsonl": {
+                    "name": "test-00000.metadata.jsonl",
+                    "bytes": 529201,
+                    "sha256": "992c6603dc83692906c2f53b3fbe3f4debc0c5f66e54e770113c82535c28c20e"
+                  }
+                }
+              }
+            ],
+            "counts": {
+              "records": 400,
+              "input_tokens": 98629,
+              "ce_tokens": 70353,
+              "media_exposures": 400,
+              "vision_tokens": 17582
+            },
+            "domain_ce": {
+              "vqa": 25394,
+              "caption": 44959
+            }
+          }
+        },
+        "domain_ce_adjustments": {
+          "train": {
+            "vqa": -2841238,
+            "caption": 2841238
+          },
+          "val": {
+            "caption": 13289,
+            "vqa": -13289
+          },
+          "test": {
+            "vqa": -27458,
+            "caption": 27458
+          }
+        },
+        "sealed_holdout_contents_and_membership_unchanged": true,
+        "sealed_holdout_payloads_unchanged": false
+      },
+      "minikimik3": {
+        "output": "data/pretraining-minikimik3-natural-p0-v3",
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "manifest_sha256": "ea3d8ff172e24ee552a908bfb5f19305b4afce5f9636bd3a0ed9c7d2a5209653",
+        "source_audit_sha256": "c2103f34b1e74c3474c55782e9757f55e672b868f1c6ec4656cc033966f05734",
+        "encoding_audit_sha256": "d470dc4c982c6339ea252a38ebd9e5296341f8d35ebbca00f1676864644d3f9a",
+        "output_bytes": 286527062,
+        "splits": {
+          "pretrain.train": {
+            "counts": {
+              "records": 42924,
+              "input_tokens": 11115319,
+              "ce_tokens": 8060931
+            },
+            "domain_ce": {
+              "vqa": 3255412,
+              "caption": 4805519
+            },
+            "rejected": {}
+          },
+          "pretrain.val": {
+            "counts": {
+              "records": 205,
+              "input_tokens": 52884,
+              "ce_tokens": 38275
+            },
+            "domain_ce": {
+              "caption": 23221,
+              "vqa": 15054
+            },
+            "rejected": {}
+          },
+          "pretrain.test": {
+            "counts": {
+              "records": 400,
+              "input_tokens": 104671,
+              "ce_tokens": 76161
+            },
+            "domain_ce": {
+              "vqa": 30716,
+              "caption": 45445
+            },
+            "rejected": {}
+          },
+          "sft.train": {
+            "counts": {
+              "records": 0,
+              "input_tokens": 0,
+              "ce_tokens": 0
+            },
+            "domain_ce": {},
+            "rejected": {}
+          },
+          "sft.val": {
+            "counts": {
+              "records": 0,
+              "input_tokens": 0,
+              "ce_tokens": 0
+            },
+            "domain_ce": {},
+            "rejected": {}
+          },
+          "sft.test": {
+            "counts": {
+              "records": 0,
+              "input_tokens": 0,
+              "ce_tokens": 0
+            },
+            "domain_ce": {},
+            "rejected": {}
+          }
+        },
+        "domain_ce_adjustments": {
+          "pretrain.train": {
+            "vqa": -2850619,
+            "caption": 2850619
+          },
+          "pretrain.val": {
+            "caption": 13456,
+            "vqa": -13456
+          },
+          "pretrain.test": {
+            "vqa": -27571,
+            "caption": 27571
+          },
+          "sft.train": {},
+          "sft.val": {},
+          "sft.test": {}
+        },
+        "sealed_holdout_contents_and_membership_unchanged": true,
+        "sealed_holdout_payloads_unchanged": false
+      },
+      "miniqwen4": {
+        "output": "data/pretraining-miniqwen4-natural-p0-v3",
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "manifest_sha256": "b0d987acfd3738acb8bf8bca1bb5396b05f8801c029b4a13f0609d6cf5c143f0",
+        "source_audit_sha256": "6fc624394c32e9a324393e2d73cf83edd2f02a5a7069d2e48e3fdc4b257f4361",
+        "encoding_audit_sha256": "f4071345e8130ecc73fa6de7679a6cc4ccf58c262b7633ee28d78a467a8d6569",
+        "output_bytes": 276284332,
+        "splits": {
+          "pretrain.train": {
+            "counts": {
+              "records": 42924,
+              "input_tokens": 10064969,
+              "ce_tokens": 8060931
+            },
+            "domain_ce": {
+              "vqa": 3255412,
+              "caption": 4805519
+            },
+            "rejected": {}
+          },
+          "pretrain.val": {
+            "counts": {
+              "records": 205,
+              "input_tokens": 47788,
+              "ce_tokens": 38275
+            },
+            "domain_ce": {
+              "caption": 23221,
+              "vqa": 15054
+            },
+            "rejected": {}
+          },
+          "pretrain.test": {
+            "counts": {
+              "records": 400,
+              "input_tokens": 94943,
+              "ce_tokens": 76161
+            },
+            "domain_ce": {
+              "vqa": 30716,
+              "caption": 45445
+            },
+            "rejected": {}
+          },
+          "sft.train": {
+            "counts": {
+              "records": 0,
+              "input_tokens": 0,
+              "ce_tokens": 0
+            },
+            "domain_ce": {},
+            "rejected": {}
+          },
+          "sft.val": {
+            "counts": {
+              "records": 0,
+              "input_tokens": 0,
+              "ce_tokens": 0
+            },
+            "domain_ce": {},
+            "rejected": {}
+          },
+          "sft.test": {
+            "counts": {
+              "records": 0,
+              "input_tokens": 0,
+              "ce_tokens": 0
+            },
+            "domain_ce": {},
+            "rejected": {}
+          }
+        },
+        "domain_ce_adjustments": {
+          "pretrain.train": {
+            "vqa": -2850619,
+            "caption": 2850619
+          },
+          "pretrain.val": {
+            "caption": 13456,
+            "vqa": -13456
+          },
+          "pretrain.test": {
+            "vqa": -27571,
+            "caption": 27571
+          },
+          "sft.train": {},
+          "sft.val": {},
+          "sft.test": {}
+        },
+        "sealed_holdout_contents_and_membership_unchanged": true,
+        "sealed_holdout_payloads_unchanged": false
+      }
+    },
+    "raw_media_copied": false,
+    "shared_text_copied": false,
+    "model_forward_executed": false,
+    "review_status": "awaiting_manual_review",
+    "review_samples": {
+      "HuggingFaceM4/FineVision/allava_laion:vqa": 100,
+      "HuggingFaceM4/FineVision/allava_laion:caption": 100
+    },
+    "current_composition": "data/pretraining-mf1-p0-components-v5",
+    "p0_visual_supply": {
+      "caption": {
+        "target_ce": 14000000,
+        "available_ce": 4752753,
+        "gap_without_replay": 9247247
+      },
+      "ocr_document": {
+        "target_ce": 14000000,
+        "available_ce": 1471510,
+        "gap_without_replay": 12528490
+      },
+      "vqa": {
+        "target_ce": 8000000,
+        "available_ce": 2700798,
+        "gap_without_replay": 5299202
+      },
+      "chart_table": {
+        "target_ce": 4000000,
+        "available_ce": 5416136,
+        "gap_without_replay": 0
+      }
+    },
+    "task_changes": {
+      "train": {
+        "vqa->caption": 13183,
+        "caption->vqa": 636
+      },
+      "test": {
+        "vqa->caption": 123,
+        "caption->vqa": 4
+      },
+      "val": {
+        "vqa->caption": 63,
+        "caption->vqa": 2
+      }
+    },
+    "effective_domain_records": {
+      "train": {
+        "vqa": 21505,
+        "caption": 21419
+      },
+      "test": {
+        "vqa": 201,
+        "caption": 199
+      },
+      "val": {
+        "caption": 103,
+        "vqa": 102
+      }
+    },
+    "split_answer_reference_tokens": {
+      "train": {
+        "vqa": 2480611,
+        "caption": 4367459
+      },
+      "test": {
+        "vqa": 23306,
+        "caption": 41290
+      },
+      "val": {
+        "caption": 21101,
+        "vqa": 11301
+      }
+    },
+    "all_content_except_task_sha256": "533b92a35ef01191b9117f49af326b22be2b381304c3bddc94346366abc406da",
+    "sample_stage_split_group_sha256": "54d6d7b29384b40bed056d9c754ab93eba9ebfcf77d69ce1f02e5b160568f684",
+    "checks": {
+      "targeted_passed": 68,
+      "targeted_seconds": 12.15,
+      "full_cpu_passed": 488,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "full_cpu_seconds": 150.96,
+      "cpu_log_sha256": "00dbad37194c5e90cf2e26832bdcea1f423b875850343e06ea101e6a3b70b999",
+      "last_producer_dependency_binding_tests_passed": 22,
+      "mypy_source_files": 184,
+      "ruff": "passed"
+    },
+    "remaining": [
+      "source quality review and tokenizer freeze",
+      "external visual benchmark identity exclusion",
+      "natural extension must use the same corrected task policy after completion",
+      "additional caption/VQA and full OCR supply; production qualification"
+    ],
+    "finevision_available_source_rows": {
+      "url": "https://huggingface.co/datasets/HuggingFaceM4/FineVision/raw/3c380a731a3429c1d04693d6ec16d7e683def84c/README.md",
+      "readme_sha256": "0e288972f08bd3f72676af43fdb46462a95916621aa8c9c9faf37097e97726c2",
+      "train_examples": {
+        "CoSyn_400k_chart": 116814,
+        "CoSyn_400k_document": 71282,
+        "allava_laion": 468664
+      }
+    },
+    "document_supply_note": "CoSyn document subset has 71,282 source training images before our filtering, and its short document QA is not full-page OCR transcription. Do not budget 200K CoSyn document images or infer full OCR coverage from the combined ocr_document label."
   }
 }

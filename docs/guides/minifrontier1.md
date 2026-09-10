@@ -63,20 +63,25 @@ from pathlib import Path
 from minifrontier.data.minifrontier1_components import assemble_components
 from minifrontier.models.minifrontier1 import MiniFrontier1Config
 
-config = MiniFrontier1Config(**json.loads(
-    Path("configs/minifrontier1/model_228m_native.json").read_text()
-))
+config = MiniFrontier1Config(
+    **json.loads(Path("configs/minifrontier1/model_228m_native.json").read_text())
+)
 components = ["data/mf1-text", "data/mf1-natural", "data/mf1-documents"]
-assemble_components(components, "data/mf1-combined", config, media_access={
-    components[2]: {
-        "base_url": "http://127.0.0.1:18390/",
-        "uri_prefix": "images/",
-        "cache_dir": "../media-cache-documents",
-        "max_bytes": 6 * 1024**3,
-        "max_file_bytes": 64 * 1024**2,
-        "reserve_bytes": 80 * 1024**3,
-    }
-})
+assemble_components(
+    components,
+    "data/mf1-combined",
+    config,
+    media_access={
+        components[2]: {
+            "base_url": "http://127.0.0.1:18390/",
+            "uri_prefix": "images/",
+            "cache_dir": "../media-cache-documents",
+            "max_bytes": 6 * 1024**3,
+            "max_file_bytes": 64 * 1024**2,
+            "reserve_bytes": 80 * 1024**3,
+        }
+    },
+)
 ```
 
 缓存按内容 SHA256 共用文件，每次返回经过校验的原始字节，再执行原媒体变换。容量包括索引、临时写入与图片，最多保留 32,768 个文件；仅驱逐本缓存持有的训练文件。验证／测试读取会持久标记保留，正式训练前应预取固定验证媒体。保留图片填满缓存、来源校验失败或剩余空间不足时停止新增写入。原库由数据主机保留，缓存命中时可离线读取；缺失文件需要原服务与隧道可用。
