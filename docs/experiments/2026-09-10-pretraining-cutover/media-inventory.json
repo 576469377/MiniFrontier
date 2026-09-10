@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789065811.2759564,
+  "observed_unix": 1789067974.6150563,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -113,7 +113,7 @@
     "source_commit": "713eb786a71276729fa710102747d94545b9890e",
     "source_archive_sha256": "3993720ca7ea6d68b77c0e75a28c626ad0153d200bf2ab822528f36f77e5b934",
     "output": "data/pretraining-mf1-natural-p0-v1",
-    "state": "running",
+    "state": "mechanical_checks_passed_pending_quality_admission",
     "formal_admission": false,
     "max_gib": 1,
     "max_features": 49,
@@ -121,7 +121,160 @@
     "api": "minifrontier.data.minifrontier1_encoding.encode_canonical_images",
     "model_config": "configs/minifrontier1/model_228m_native.json",
     "tokenizer": "data/pretraining-tokenizers-v1/mf1-32768.json",
-    "record": "outputs/strategy-pretraining-media-v2/mf1-p0-encoding/run.json"
+    "record": "outputs/strategy-pretraining-media-v2/mf1-p0-encoding/run.json",
+    "encoding_audit": {
+      "kind": "canonical_image_encoding_audit",
+      "status": "mechanical_checks_passed_pending_quality_admission",
+      "formal_admission": false,
+      "started_unix": 1789067797.869673,
+      "encoded_manifest_sha256": "d645b22f08042e7bd0ecd6d1f2638391e16bddf64a28c949c8df70328c03944f",
+      "corpus_manifest_sha256": "0453474d00e57b8a59b7dffe619591618ee965bc446fa2477b6e4e5ae03010fd",
+      "tokenizer_sha256": "07ca259a4ff33db77c7576f8461dfbda367072361d7156c66879325f6b6be0d2",
+      "config_sha256": "2988cee90942ae29cf8dda748e83116a5b0b404dcad0bdd2e48c238433c1b30d",
+      "processor_sha256": "f8286b2d436cebcbe9eedee4347dee8273463beb3e8b9650c2ad4e92bad75672",
+      "splits": {
+        "train": {
+          "counts": {
+            "records": 42937,
+            "input_tokens": 10452684,
+            "ce_tokens": 7455654,
+            "media_exposures": 42937,
+            "vision_tokens": 1875721
+          },
+          "domain_ce": {
+            "vqa": 5543841,
+            "caption": 1911813
+          },
+          "complete_record_length_buckets": {
+            "vqa": {
+              "512": {
+                "records": 34009,
+                "input_tokens": 7953398,
+                "ce_tokens": 5517140,
+                "media_exposures": 34009,
+                "vision_tokens": 1485072
+              },
+              "1024": {
+                "records": 54,
+                "input_tokens": 30035,
+                "ce_tokens": 26701,
+                "media_exposures": 54,
+                "vision_tokens": 2427
+              }
+            },
+            "caption": {
+              "512": {
+                "records": 8841,
+                "input_tokens": 2451171,
+                "ce_tokens": 1895751,
+                "media_exposures": 8841,
+                "vision_tokens": 386784
+              },
+              "1024": {
+                "records": 33,
+                "input_tokens": 18080,
+                "ce_tokens": 16062,
+                "media_exposures": 33,
+                "vision_tokens": 1438
+              }
+            }
+          }
+        },
+        "val": {
+          "counts": {
+            "records": 205,
+            "input_tokens": 49527,
+            "ce_tokens": 35159,
+            "media_exposures": 205,
+            "vision_tokens": 8898
+          },
+          "domain_ce": {
+            "caption": 9582,
+            "vqa": 25577
+          },
+          "complete_record_length_buckets": {
+            "caption": {
+              "512": {
+                "records": 41,
+                "input_tokens": 11651,
+                "ce_tokens": 9070,
+                "media_exposures": 41,
+                "vision_tokens": 1793
+              },
+              "1024": {
+                "records": 1,
+                "input_tokens": 567,
+                "ce_tokens": 512,
+                "media_exposures": 1,
+                "vision_tokens": 40
+              }
+            },
+            "vqa": {
+              "512": {
+                "records": 163,
+                "input_tokens": 37309,
+                "ce_tokens": 25577,
+                "media_exposures": 163,
+                "vision_tokens": 7065
+              }
+            }
+          }
+        },
+        "test": {
+          "counts": {
+            "records": 400,
+            "input_tokens": 98629,
+            "ce_tokens": 70353,
+            "media_exposures": 400,
+            "vision_tokens": 17582
+          },
+          "domain_ce": {
+            "vqa": 52852,
+            "caption": 17501
+          },
+          "complete_record_length_buckets": {
+            "vqa": {
+              "512": {
+                "records": 319,
+                "input_tokens": 75624,
+                "ce_tokens": 52402,
+                "media_exposures": 319,
+                "vision_tokens": 14063
+              },
+              "1024": {
+                "records": 1,
+                "input_tokens": 517,
+                "ce_tokens": 450,
+                "media_exposures": 1,
+                "vision_tokens": 48
+              }
+            },
+            "caption": {
+              "512": {
+                "records": 79,
+                "input_tokens": 21954,
+                "ce_tokens": 17031,
+                "media_exposures": 79,
+                "vision_tokens": 3426
+              },
+              "1024": {
+                "records": 1,
+                "input_tokens": 534,
+                "ce_tokens": 470,
+                "media_exposures": 1,
+                "vision_tokens": 45
+              }
+            }
+          }
+        }
+      },
+      "scope": "all records and raw image hashes; QA identity, complete answer CE, protocol, span geometry and counts; not source quality or model capability",
+      "raw_media_files": 23260,
+      "updated_unix": 1789067840.5828824
+    },
+    "encoded_manifest_sha256": "d645b22f08042e7bd0ecd6d1f2638391e16bddf64a28c949c8df70328c03944f",
+    "actual_encoded_bytes": 84127653,
+    "completed_unix": 1789067223.291081
   },
   "canonical_components_validation": {
     "source_commit": "713eb786a71276729fa710102747d94545b9890e",
@@ -137,6 +290,115 @@
       "ruff_check": "passed",
       "ruff_format_check": "318 files already formatted",
       "mypy": "178 source files; --ignore-missing-imports"
+    }
+  },
+  "mf1_partial_p0_composition": {
+    "output": "data/pretraining-mf1-p0-components-v1",
+    "state": "partial_p0_composition_pending_ocr_chart_and_admission",
+    "formal_admission": false,
+    "source_commit": "a2bad9c82aeba27adbe47955d3387ab87ebaf132",
+    "manifest_sha256": "8d1f8905d37d2fd19e6ec2115a2793ecadb4d2363111b217d3a6cb1db00549f2",
+    "output_bytes": 2488427,
+    "splits": {
+      "train": {
+        "counts": {
+          "records": 443417,
+          "input_tokens": 590326069,
+          "ce_tokens": 586928559,
+          "text_documents": 400480,
+          "media_exposures": 42937,
+          "vision_tokens": 1875721
+        },
+        "domain_ce": {
+          "en_general": 158946208,
+          "zh_general": 236903477,
+          "math": 49736526,
+          "structured": 41917996,
+          "code": 91968698,
+          "vqa": 5543841,
+          "caption": 1911813
+        },
+        "unique_media": 22938
+      },
+      "val": {
+        "counts": {
+          "records": 2267,
+          "input_tokens": 3097336,
+          "ce_tokens": 3080906,
+          "text_documents": 2062,
+          "media_exposures": 205,
+          "vision_tokens": 8898
+        },
+        "domain_ce": {
+          "en_general": 812275,
+          "zh_general": 1249161,
+          "structured": 200793,
+          "math": 307487,
+          "code": 476031,
+          "caption": 9582,
+          "vqa": 25577
+        },
+        "unique_media": 111
+      },
+      "test": {
+        "counts": {
+          "records": 4792,
+          "input_tokens": 6689031,
+          "ce_tokens": 6656363,
+          "text_documents": 4392,
+          "media_exposures": 400,
+          "vision_tokens": 17582
+        },
+        "domain_ce": {
+          "en_general": 1676165,
+          "zh_general": 2421463,
+          "code": 1589679,
+          "math": 476148,
+          "structured": 422555,
+          "vqa": 52852,
+          "caption": 17501
+        },
+        "unique_media": 211
+      }
+    },
+    "identity_checks": {
+      "duplicate_samples": 0,
+      "cross_split_connected_groups": 0,
+      "cross_split_media_identities": 0
+    },
+    "components": [
+      {
+        "path": "data/pretraining-mf1-text-v1",
+        "manifest_sha256": "d500db1dc7e2946788611d67961dee62eee68e8e0f49f72f0818c2d8357f1555"
+      },
+      {
+        "path": "data/pretraining-mf1-natural-p0-v1",
+        "manifest_sha256": "d645b22f08042e7bd0ecd6d1f2638391e16bddf64a28c949c8df70328c03944f"
+      }
+    ],
+    "shard_files_copied": 0,
+    "missing_p0_domains": [
+      "ocr_document",
+      "chart_table"
+    ]
+  },
+  "composition_and_performance_validation": {
+    "source_commit": "a2bad9c82aeba27adbe47955d3387ab87ebaf132",
+    "full_cpu": {
+      "passed": 437,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "elapsed_seconds": 144.61,
+      "log_sha256": "c65b8456f4125f8ea6b69706eff69771c3d4c5eef451114c81dd24ee3a6b3dcc"
+    },
+    "static": {
+      "ruff": "passed",
+      "formatted_files": 319,
+      "mypy_files": 179
+    },
+    "subsequent_image_audit": {
+      "source_commit": "fe58029",
+      "text_media_targeted_tests": 27
     }
   }
 }

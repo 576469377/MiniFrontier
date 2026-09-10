@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "text_candidate_inventory_snapshot",
-  "observed_unix": 1789065811.2768347,
+  "observed_unix": 1789067226.9465756,
   "formal_admission": false,
   "run_id": "strategy-pretraining-data-v3",
   "source_commit": "578b26d32454521cf851f7c137dce00c0f54dc4b",
@@ -838,7 +838,7 @@
       "source_commit": "7d7530ac314988689175f7c9bce858901a0f4dd1",
       "source_archive_sha256": "fd4776d895e92dec7c55e4b88baa99744bd2404f4da321dce2ec13038433dde9",
       "output": "data/pretraining-text-64k-v2",
-      "state": "running",
+      "state": "mechanical_checks_passed_pending_quality_admission",
       "started_unix": 1789065419.6761363,
       "max_gib": 11,
       "formal_admission": false,
@@ -853,7 +853,94 @@
         "tokenizer_path": "data/pretraining-tokenizers-v1/source-models-65536.json",
         "corpus_root": "data/pretraining-text-partition-v1"
       },
-      "run_record": "outputs/strategy-pretraining-data-v3/source-text-encoding-v2/run.json"
+      "run_record": "outputs/strategy-pretraining-data-v3/source-text-encoding-v2/run.json",
+      "observed_unix": 1789067226.9465733,
+      "encoded_manifest_sha256": "bc92340eebc5fc14352c7b0f27a3654677618cfdb83fd5e7b9908acc93eee6be",
+      "actual_encoded_bytes": 7384394323,
+      "integrity_audit": {
+        "schema_version": 1,
+        "kind": "canonical_text_encoding_audit",
+        "status": "mechanical_checks_passed_pending_quality_admission",
+        "started_unix": 1789066658.539362,
+        "formal_admission": false,
+        "encoded_manifest_sha256": "bc92340eebc5fc14352c7b0f27a3654677618cfdb83fd5e7b9908acc93eee6be",
+        "corpus_manifest_sha256": "ea296436ac3ca1df794aace11092e37ac98d815e95130a7909e2989a81574277",
+        "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be",
+        "processor_sha256": "f519d9748f0282377c2b80f9b481a84027982f824e9a3dac5c9be33ded348891",
+        "splits": {
+          "train": {
+            "counts": {
+              "records": 400480,
+              "input_tokens": 542525345,
+              "ce_tokens": 542124865
+            },
+            "domain_ce": {
+              "en_edu": 149478388,
+              "zh_edu": 217069455,
+              "verified_math_science": 47328552,
+              "dialogue": 39729397,
+              "code": 88519073
+            },
+            "document_length_buckets": {
+              "1024": 136787,
+              "2048": 106128,
+              "512": 97613,
+              "4096": 41496,
+              "8192": 12984,
+              "over_8192": 5472
+            }
+          },
+          "val": {
+            "counts": {
+              "records": 2062,
+              "input_tokens": 2853164,
+              "ce_tokens": 2851102
+            },
+            "domain_ce": {
+              "en_edu": 763814,
+              "zh_edu": 1145439,
+              "dialogue": 190288,
+              "verified_math_science": 292657,
+              "code": 458904
+            },
+            "document_length_buckets": {
+              "512": 517,
+              "8192": 74,
+              "4096": 236,
+              "1024": 664,
+              "2048": 539,
+              "over_8192": 32
+            }
+          },
+          "test": {
+            "counts": {
+              "records": 4392,
+              "input_tokens": 6186411,
+              "ce_tokens": 6182019
+            },
+            "domain_ce": {
+              "en_edu": 1577761,
+              "zh_edu": 2219025,
+              "code": 1530366,
+              "verified_math_science": 454471,
+              "dialogue": 400396
+            },
+            "document_length_buckets": {
+              "512": 1023,
+              "1024": 1464,
+              "8192": 154,
+              "2048": 1201,
+              "4096": 481,
+              "over_8192": 69
+            }
+          }
+        },
+        "errors": {},
+        "error_samples": [],
+        "scope": "all documents, file hashes, partition membership, labels, boundaries and decoded text; not source quality review",
+        "updated_unix": 1789066875.3867795
+      },
+      "completed_unix": 1789066875.4094522
     }
   },
   "canonical_components_validation": {
@@ -870,6 +957,25 @@
       "ruff_check": "passed",
       "ruff_format_check": "318 files already formatted",
       "mypy": "178 source files; --ignore-missing-imports"
+    }
+  },
+  "composition_and_performance_validation": {
+    "source_commit": "a2bad9c82aeba27adbe47955d3387ab87ebaf132",
+    "full_cpu": {
+      "passed": 437,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "elapsed_seconds": 144.61,
+      "log_sha256": "c65b8456f4125f8ea6b69706eff69771c3d4c5eef451114c81dd24ee3a6b3dcc"
+    },
+    "static": {
+      "ruff": "passed",
+      "formatted_files": 319,
+      "mypy_files": 179
+    },
+    "subsequent_image_audit": {
+      "source_commit": "fe58029",
+      "text_media_targeted_tests": 27
     }
   }
 }
