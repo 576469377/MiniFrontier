@@ -428,6 +428,7 @@ def _encode_compact_items(
     media_root,
     max_gib,
     shard_tokens,
+    domain_order=None,
 ):
     output = Path(output).resolve()
     if output.exists() or max_gib <= 0 or shard_tokens < 1:
@@ -436,7 +437,9 @@ def _encode_compact_items(
     output.mkdir(parents=True)
     shutil.copyfile(tokenizer_path, output / "tokenizer.json")
     dtype = np.dtype("<u2" if config.vocab_size <= 65536 else "<u4")
-    domains: list[str] = []
+    domains: list[str] = list(domain_order or [])
+    if len(domains) != len(set(domains)) or len(domains) >= 65536:
+        raise ValueError("compact domain order must contain distinct domain names")
     splits = {}
     used = (output / "tokenizer.json").stat().st_size
     for split, items in datasets:

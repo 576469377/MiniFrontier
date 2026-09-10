@@ -3,6 +3,7 @@
 import json
 import random
 from dataclasses import asdict
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -11,6 +12,7 @@ from PIL import Image
 from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder, train_tokenizer
 from minifrontier.data.encoding_audit import audit_image_encoding
+from minifrontier.data.encoding_filters import filter_media_encoding
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS, encode_record, safe_text
 from minifrontier.data.minifrontier1_components import ComponentDataset, assemble_components
 from minifrontier.data.minifrontier1_encoding import (
@@ -21,6 +23,7 @@ from minifrontier.data.minifrontier1_encoding import (
     evaluation_items,
     open_dataset,
 )
+from minifrontier.data.partitions import create_media_exclusion_view
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
 from minifrontier.training.minifrontier1 import Sampler, train
 from minifrontier.training.minifrontier1_curriculum import collate_records
@@ -150,6 +153,90 @@ def test_canonical_media_rejects_changed_pixels_and_unfinished_inventory(corpus,
     with pytest.raises(ValueError, match="hash mismatch"):
         encode_canonical_images(root, tokenizer, tmp_path / "changed", config, max_features=49)
     assert not (tmp_path / "changed/manifest.json").exists()
+
+
+def test_compact_exclusion_preserves_tokens_spans_holdout_bytes_and_actual_loader(
+    corpus, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "minifrontier.storage.shutil.disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3)
+    )
+    root, tokenizer, config, rows = corpus
+    parent = tmp_path / "parent"
+    manifest = encode_canonical_images(root, tokenizer, parent, config, max_features=49)
+    audit_image_encoding(root, parent, parent / "encoding-audit.json", asdict(config))
+    (parent / "source-audit.json").write_text(
+        json.dumps(
+            dict(
+                status="mechanical_checks_passed_pending_quality_admission",
+                producer_finished=True,
+                manifest_sha256=sha256(parent / "manifest.json"),
+                integrity_report="encoding-audit.json",
+                integrity_report_sha256=sha256(parent / "encoding-audit.json"),
+            )
+        )
+    )
+    (root / "review-samples.jsonl").write_text("")
+    rejected = next(row for row in rows if row[0] == "train")
+    grouping = tmp_path / "grouping.json"
+    grouping.write_text(
+        json.dumps(
+            dict(
+                kind="cross_corpus_media_group_audit",
+                inputs={
+                    "fixture": dict(
+                        corpus_manifest_sha256=sha256(root / "corpus-manifest.json"),
+                        database_sha256=sha256(root / "corpus.sqlite"),
+                    )
+                },
+                split_conflicts=[
+                    dict(
+                        required_split="test",
+                        members=[
+                            dict(inventory="fixture", split="train", group=rejected[2], records=1)
+                        ],
+                    )
+                ],
+            )
+        )
+    )
+    view = tmp_path / "view"
+    create_media_exclusion_view(root, grouping, "fixture", view)
+    output = tmp_path / "filtered"
+    with monkeypatch.context() as patch:
+
+        def no_pixels(*args, **kwargs):
+            raise AssertionError("repacking must not decode image pixels")
+
+        patch.setattr("minifrontier.data.minifrontier1_encoding.prepare_media", no_pixels)
+        filtered = filter_media_encoding(view, parent, output, config=asdict(config))
+    assert not filtered["formal_admission"]
+    audit_image_encoding(view, output, tmp_path / "independent-filter-audit.json", asdict(config))
+    for split in ("train", "val", "test"):
+        old, new = CompactDataset(parent, split, config), CompactDataset(output, split, config)
+        expected = [
+            old[i] for i in range(len(old)) if old[i]["sample_id"] != rejected[1]["sample_id"]
+        ]
+        assert len(new) == len(expected)
+        for item, original in zip(new, expected, strict=True):
+            assert item["sample_id"] == original["sample_id"]
+            for key in ("input_ids", "labels"):
+                torch.testing.assert_close(item[key], original[key], atol=0, rtol=0)
+            for media, before in zip(item["media"], original["media"], strict=True):
+                torch.testing.assert_close(media["patches"], before["patches"], atol=0, rtol=0)
+        if split != "train":
+            assert filtered["splits"][split] == manifest["splits"][split]
+    with pytest.raises(ValueError, match="byte cap"):
+        filter_media_encoding(
+            view, parent, tmp_path / "tiny-cap", config=asdict(config), max_gib=1e-9
+        )
+    assert not (tmp_path / "tiny-cap").exists()
+    # A completed audit cannot justify mutated parent token bytes.
+    token_path = parent / manifest["splits"]["train"]["parts"][0]["files"]["tokens.bin"]["name"]
+    token_path.write_bytes(b"x" + token_path.read_bytes()[1:])
+    with pytest.raises(ValueError, match="hash/size differs"):
+        filter_media_encoding(view, parent, tmp_path / "corrupt", config=asdict(config))
+    assert not (tmp_path / "corrupt/manifest.json").exists()
 
 
 def test_canonical_media_never_shortens_answers_to_fit_context(corpus, tmp_path):

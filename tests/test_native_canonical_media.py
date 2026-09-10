@@ -16,9 +16,10 @@ from tokenizers import Tokenizer
 
 from minifrontier.data import StageDataset, sha256
 from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokenizer
+from minifrontier.data.encoding_filters import filter_media_encoding
 from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.data.native import audit_native_encoding, encode_native
-from minifrontier.data.partitions import create_partition_view
+from minifrontier.data.partitions import create_media_exclusion_view, create_partition_view
 from minifrontier.models.minikimik3 import MiniKimiK3ForCausalLM
 from minifrontier.models.minikimik3.vision import KimiVisionConfig
 from minifrontier.models.miniqwen4 import MiniQwen4ForCausalLM
@@ -51,6 +52,7 @@ def corpus(tmp_path, monkeypatch):
                 visual_question=question,
                 visual_answer=answer,
                 reference_tokens=30,
+                answer_reference_tokens=20,
                 media=[
                     dict(kind="image", path=path.name, sha256=sha256(path), **decoded_hashes(image))
                 ],
@@ -288,3 +290,106 @@ def test_native_full_audit_rejects_rehashed_partial_text_supervision(inputs, tmp
         audit_native_encoding(root, output, output / "encoding-audit.json")
     report = json.loads((output / "encoding-audit.json").read_text())
     assert report["status"] == "failed" and not report["formal_admission"]
+
+
+@pytest.mark.parametrize("family", ["minikimik3", "miniqwen4"])
+@pytest.mark.parametrize("overflow", [False, True])
+def test_native_exclusions_preserve_kept_bytes_shared_text_and_overflow_accounting(
+    inputs, tmp_path, family, overflow, monkeypatch
+):
+    monkeypatch.setattr(shutil, "disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3))
+    root, tokenizer, rows, shared = inputs
+    parent = tmp_path / "parent"
+    manifest = encode_native(
+        root,
+        tokenizer,
+        parent,
+        family,
+        text_encoding=shared,
+        max_features=4,
+        min_pixels=1024 if family == "miniqwen4" else None,
+        max_length=2 if overflow else 1024,
+    )
+    audit_native_encoding(root, parent, parent / "encoding-audit.json")
+    (parent / "source-audit.json").write_text(
+        json.dumps(
+            dict(
+                status="mechanical_checks_passed_pending_quality_admission",
+                producer_finished=True,
+                manifest_sha256=sha256(parent / "manifest.json"),
+                integrity_report="encoding-audit.json",
+                integrity_report_sha256=sha256(parent / "encoding-audit.json"),
+            )
+        )
+    )
+    (root / "source-audit.json").write_text(
+        json.dumps(dict(status="candidate_inventory_below_target", formal_admission=False))
+    )
+    (root / "review-samples.jsonl").write_text("")
+    rejected = next(row for row in rows if row[0] == "train")
+    grouping = tmp_path / "grouping.json"
+    grouping.write_text(
+        json.dumps(
+            dict(
+                kind="cross_corpus_media_group_audit",
+                inputs={
+                    "fixture": dict(
+                        corpus_manifest_sha256=sha256(root / "corpus-manifest.json"),
+                        database_sha256=sha256(root / "corpus.sqlite"),
+                    )
+                },
+                split_conflicts=[
+                    dict(
+                        required_split="val",
+                        members=[
+                            dict(inventory="fixture", split="train", group=rejected[2], records=1)
+                        ],
+                    )
+                ],
+            )
+        )
+    )
+    view = tmp_path / "view"
+    create_media_exclusion_view(root, grouping, "fixture", view)
+    output = tmp_path / "filtered"
+    filtered = filter_media_encoding(view, parent, output)
+    audit_native_encoding(view, output, tmp_path / "independent-filter-audit.json")
+    assert (
+        not filtered["formal_admission"]
+        and filtered["text_source"]["manifest_sha256"] == manifest["text_source"]["manifest_sha256"]
+    )
+    for split in ("train", "val", "test"):
+        original = manifest["stages"]["pretrain"][split]["media"]
+        current = filtered["stages"]["pretrain"][split]["media"]
+        expected = [
+            line
+            for line in (parent / original["file"]).read_bytes().splitlines(keepends=True)
+            if json.loads(line)["record"]["sample_id"] != rejected[1]["sample_id"]
+        ]
+        assert (output / current["file"]).read_bytes() == b"".join(expected)
+        if split != "train":
+            assert current == original
+        # The actual training reader includes the unchanged shared text component.
+        dataset = StageDataset(output, "pretrain", split, 1024)
+        before = StageDataset(parent, "pretrain", split, 1024)
+        assert len(dataset) == len(before) - int(split == "train" and not overflow)
+        for item in dataset:
+            assert item.input_ids.shape == item.labels.shape
+    assert not list(output.glob("*.tokens.bin"))
+    if overflow:
+        counts = filtered["stages"]["pretrain"]["train"]["media"]["rejected"]
+        assert counts["complete_media_answer_exceeds_bucket"] == 1
+    else:
+        other = next(row for row in rows if row[0] == "train" and row[2] != rejected[2])
+        evidence = json.loads(grouping.read_text())
+        evidence["inputs"]["fixture"]["corpus_manifest_sha256"] = sha256(
+            view / "corpus-manifest.json"
+        )
+        evidence["split_conflicts"][0]["members"][0]["group"] = other[2]
+        grouping.write_text(json.dumps(evidence))
+        next_view = tmp_path / "next-view"
+        create_media_exclusion_view(view, grouping, "fixture", next_view)
+        twice = tmp_path / "filtered-again"
+        final = filter_media_encoding(next_view, output, twice)
+        assert final["stages"]["pretrain"]["train"]["media"]["examples"] == 0
+        audit_native_encoding(next_view, twice, tmp_path / "second-independent-audit.json")
