@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789070181.0615609,
+  "observed_unix": 1789078841.042465,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -307,7 +307,7 @@
     "mf1_p0_preparation": {
       "source_commit": "d3ac05c3c8fc6375f15ba205655b080ae690d7dd",
       "driver_sha256": "7eca7b216fd26c14b760d10c843506a61f2f588aa67e9644fa5edb8664cf5ed6",
-      "state": "encoding_mf1_p0",
+      "state": "mechanical_checks_passed_pending_quality_admission",
       "formal_admission": false,
       "canonical_data": "data/pretraining-media-doc-chart-v2",
       "effective_partition": "data/pretraining-doc-chart-partition-v1",
@@ -323,11 +323,11 @@
       "attempt": 2,
       "previous_failure": "Legacy source audit omitted per-split answer totals; driver now computes these from immutable records and checks original per-source totals before reservation.",
       "remaining": [
-        "P0 encoding and full encoded-media integrity audit",
-        "cross-pool identity exclusion, source quality and per-domain exposure admission"
+        "source quality and visual benchmark exclusion",
+        "phase domain/exposure inventory and production admission"
       ],
-      "process_identity_verified": true,
-      "observed_unix": 1789075486.8326197,
+      "process_identity_verified": false,
+      "observed_unix": 1789078841.042465,
       "partition_manifest_sha256": "78a92272c0560c310de50b5e6ed75d9155b8e1a3a2550fd87a80cfd43ff5d5ab",
       "new_reserved_groups": 843,
       "validation_groups": 1000,
@@ -470,6 +470,15 @@
           "full OCR transcription, Chinese OCR, multiimage and video coverage",
           "per-model tokenizer, complete media/answer length and phase exposure audit"
         ]
+      },
+      "producer_terminal": true,
+      "completed_unix": 1789077276.0462391,
+      "encoded_manifest_sha256": "56c165b94c81a5456a2a949675be41a915dc9b58f157030a0912f15da4f77f88",
+      "actual_encoded_bytes": 260480012,
+      "current_filtered_encoding": {
+        "output": "remote-239:data/pretraining-mf1-doc-chart-p0-v2",
+        "manifest_sha256": "3cd0de81a95cab21480ab868ea8a77fb5a61c20108b1d3f4ef9ca3aca26385b8",
+        "state": "mechanical_checks_passed_pending_quality_admission"
       }
     }
   },
@@ -638,7 +647,12 @@
     },
     "encoded_manifest_sha256": "d645b22f08042e7bd0ecd6d1f2638391e16bddf64a28c949c8df70328c03944f",
     "actual_encoded_bytes": 84127653,
-    "completed_unix": 1789067223.291081
+    "completed_unix": 1789067223.291081,
+    "current_filtered_encoding": {
+      "output": "data/pretraining-mf1-natural-p0-v2",
+      "manifest_sha256": "b2820540e8448695b3b3868681c94d71b27110a5baf5153f6c9c5fe406f13810",
+      "state": "mechanical_checks_passed_pending_quality_admission"
+    }
   },
   "canonical_components_validation": {
     "source_commit": "713eb786a71276729fa710102747d94545b9890e",
@@ -657,48 +671,47 @@
     }
   },
   "mf1_partial_p0_composition": {
-    "output": "data/pretraining-mf1-p0-components-v1",
+    "output": "data/pretraining-mf1-p0-components-v3",
     "state": "partial_p0_composition_pending_ocr_chart_and_admission",
     "formal_admission": false,
-    "source_commit": "a2bad9c82aeba27adbe47955d3387ab87ebaf132",
-    "manifest_sha256": "8d1f8905d37d2fd19e6ec2115a2793ecadb4d2363111b217d3a6cb1db00549f2",
-    "output_bytes": 2488427,
+    "source_commit": "130a53fb4ba24406a6cbce519d56285463eac0b1",
+    "manifest_sha256": "bd24f1ba4e3f02ba28079a32d1447662ef3cc2f11053fdbc65913f9561a332a0",
     "splits": {
       "train": {
         "counts": {
-          "records": 443417,
-          "input_tokens": 590326069,
-          "ce_tokens": 586928559,
-          "text_documents": 400480,
-          "media_exposures": 42937,
-          "vision_tokens": 1875721
+          "records": 441731,
+          "input_tokens": 587950316,
+          "ce_tokens": 584555415,
+          "text_documents": 398807,
+          "media_exposures": 42924,
+          "vision_tokens": 1875108
         },
         "domain_ce": {
-          "en_general": 158946208,
-          "zh_general": 236903477,
-          "math": 49736526,
-          "structured": 41917996,
-          "code": 91968698,
-          "vqa": 5543841,
-          "caption": 1911813
+          "en_general": 158229730,
+          "zh_general": 235908846,
+          "math": 49533456,
+          "structured": 41730917,
+          "code": 91698915,
+          "vqa": 5542036,
+          "caption": 1911515
         },
-        "unique_media": 22938
+        "unique_media": 22930
       },
       "val": {
         "counts": {
-          "records": 2267,
-          "input_tokens": 3097336,
-          "ce_tokens": 3080906,
-          "text_documents": 2062,
+          "records": 3940,
+          "input_tokens": 5470050,
+          "ce_tokens": 5451947,
+          "text_documents": 3735,
           "media_exposures": 205,
           "vision_tokens": 8898
         },
         "domain_ce": {
-          "en_general": 812275,
-          "zh_general": 1249161,
-          "structured": 200793,
-          "math": 307487,
-          "code": 476031,
+          "en_general": 1528753,
+          "zh_general": 2243792,
+          "structured": 387872,
+          "math": 510557,
+          "code": 745814,
           "caption": 9582,
           "vqa": 25577
         },
@@ -725,26 +738,74 @@
         "unique_media": 211
       }
     },
+    "missing_p0_domains": [
+      "ocr_document",
+      "chart_table"
+    ],
+    "output_bytes": 2490073,
+    "components": [
+      {
+        "path": "../pretraining-mf1-text-v2",
+        "manifest_sha256": "548993928f0d3c5e292380a3f0c91930ca538a83340d658d7087c3c76301de0b"
+      },
+      {
+        "path": "../pretraining-mf1-natural-p0-v2",
+        "manifest_sha256": "b2820540e8448695b3b3868681c94d71b27110a5baf5153f6c9c5fe406f13810"
+      }
+    ],
     "identity_checks": {
       "duplicate_samples": 0,
       "cross_split_connected_groups": 0,
       "cross_split_media_identities": 0
     },
-    "components": [
-      {
-        "path": "data/pretraining-mf1-text-v1",
-        "manifest_sha256": "d500db1dc7e2946788611d67961dee62eee68e8e0f49f72f0818c2d8357f1555"
-      },
-      {
-        "path": "data/pretraining-mf1-natural-p0-v1",
-        "manifest_sha256": "d645b22f08042e7bd0ecd6d1f2638391e16bddf64a28c949c8df70328c03944f"
-      }
-    ],
     "shard_files_copied": 0,
-    "missing_p0_domains": [
-      "ocr_document",
-      "chart_table"
-    ]
+    "fixed_validation_unchanged": true,
+    "validation": {
+      "policy": {
+        "periodic_ce_tokens": 1000000,
+        "phase_end_ce_tokens": 5000000,
+        "early_interval_ce": 10000000,
+        "early_until_ce": 100000000,
+        "later_interval_ce": 50000000
+      },
+      "seed": 42,
+      "selection": "fixed_without_replacement",
+      "periodic": {
+        "requested_ce_tokens": 1000000,
+        "actual_ce_tokens": 1000974,
+        "examples": 1353,
+        "domain_ce": {
+          "zh_general": 422666,
+          "code": 123804,
+          "vqa": 5255,
+          "structured": 59270,
+          "en_general": 298389,
+          "math": 90350,
+          "caption": 1240
+        },
+        "indices_sha256": "c835f6c699cc0fc9f2390b7540dda8fd51c337eacc95ebaa327e73f5c14927cc",
+        "overshoot_bound_ce": 1023
+      },
+      "phase_end": {
+        "requested_ce_tokens": 5000000,
+        "actual_ce_tokens": 5000766,
+        "examples": 6783,
+        "domain_ce": {
+          "zh_general": 2043122,
+          "code": 684177,
+          "vqa": 22685,
+          "structured": 364470,
+          "en_general": 1405646,
+          "math": 471778,
+          "caption": 8888
+        },
+        "indices_sha256": "18f5afc08e03ed448696407512854a7119e9f6cfdd113aca74232018d6adfc5b",
+        "overshoot_bound_ce": 1023
+      },
+      "context_length": 1024,
+      "window_descriptors_sha256": "c01307082a87c7ebea1d00306180db5528f27e9d3b1209be2a35f74394c9a1a3",
+      "units": "complete native answers or text context windows with unique CE positions"
+    }
   },
   "composition_and_performance_validation": {
     "source_commit": "a2bad9c82aeba27adbe47955d3387ab87ebaf132",
@@ -779,7 +840,7 @@
   },
   "source_native_natural_encoding": {
     "source_commit": "20d484d092f26eacda26026452af216266b0816d",
-    "observed_unix": 1789074908.8036337,
+    "observed_unix": 1789078841.042465,
     "formal_admission": false,
     "main_budget_eligible": false,
     "shared_text": "data/pretraining-text-64k-v3",
@@ -801,39 +862,166 @@
     },
     "models": {
       "minikimik3": {
-        "state": "auditing_all_native_media_records",
-        "process_identity_verified": true,
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "process_identity_verified": false,
         "output": "data/pretraining-minikimik3-natural-p0-v1",
         "max_features": 64,
         "min_pixels": null,
         "source_archive_sha256": "f3dc05dab12ca3a649615b9fdb71477c2e87e6d69a761d6447795fe99ef0a03f",
         "driver_sha256": "4509ab4203c9a20c7a44f0decde836b9c89ff02443f3415a870a1c79db5a7ace",
-        "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be"
+        "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be",
+        "producer_terminal": true,
+        "completed_unix": 1789078238.7112174,
+        "encoded_manifest_sha256": "f1c13316f54971cad1618a865f12782d3570a3a4c282642b30efa27467387455",
+        "actual_encoded_bytes": 286553638,
+        "full_encoding_audit_counts": {
+          "pretrain.train": {
+            "counts": {
+              "source_media_records": 42937,
+              "records": 42937,
+              "input_tokens": 11118548,
+              "ce_tokens": 8063225,
+              "image_occurrences": 42937,
+              "video_examples": 0,
+              "frames": 0,
+              "image_features": 2660300,
+              "complete_media_answer_exceeds_bucket": 0
+            },
+            "domain_ce": {
+              "vqa": 6107992,
+              "caption": 1955233
+            }
+          },
+          "pretrain.val": {
+            "counts": {
+              "source_media_records": 205,
+              "records": 205,
+              "input_tokens": 52884,
+              "ce_tokens": 38275,
+              "image_occurrences": 205,
+              "video_examples": 0,
+              "frames": 0,
+              "image_features": 12691,
+              "complete_media_answer_exceeds_bucket": 0
+            },
+            "domain_ce": {
+              "caption": 9765,
+              "vqa": 28510
+            }
+          },
+          "pretrain.test": {
+            "counts": {
+              "source_media_records": 400,
+              "records": 400,
+              "input_tokens": 104671,
+              "ce_tokens": 76161,
+              "image_occurrences": 400,
+              "video_examples": 0,
+              "frames": 0,
+              "image_features": 24804,
+              "complete_media_answer_exceeds_bucket": 0
+            },
+            "domain_ce": {
+              "vqa": 58287,
+              "caption": 17874
+            }
+          }
+        },
+        "current_filtered_encoding": {
+          "output": "data/pretraining-minikimik3-natural-p0-v2",
+          "manifest_sha256": "ac8d79fea75866be4589c5fcc49deba463e419c292528c3371a38b1ddda5c942",
+          "state": "mechanical_checks_passed_pending_quality_admission"
+        }
       },
       "miniqwen4": {
-        "state": "auditing_all_native_media_records",
-        "process_identity_verified": true,
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "process_identity_verified": false,
         "output": "data/pretraining-miniqwen4-natural-p0-v1",
         "max_features": 49,
         "min_pixels": 50176,
         "source_archive_sha256": "f3dc05dab12ca3a649615b9fdb71477c2e87e6d69a761d6447795fe99ef0a03f",
         "driver_sha256": "4509ab4203c9a20c7a44f0decde836b9c89ff02443f3415a870a1c79db5a7ace",
-        "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be"
+        "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be",
+        "producer_terminal": true,
+        "completed_unix": 1789078265.0225682,
+        "encoded_manifest_sha256": "be1bbd2c4cadad33ee7a282661fc39d1fd9d0e185b5cf804705ac6261bb678c6",
+        "actual_encoded_bytes": 276308171,
+        "full_encoding_audit_counts": {
+          "pretrain.train": {
+            "counts": {
+              "source_media_records": 42937,
+              "records": 42937,
+              "input_tokens": 10067915,
+              "ce_tokens": 8063225,
+              "image_occurrences": 42937,
+              "video_examples": 0,
+              "frames": 0,
+              "image_features": 1875879,
+              "complete_media_answer_exceeds_bucket": 0
+            },
+            "domain_ce": {
+              "vqa": 6107992,
+              "caption": 1955233
+            }
+          },
+          "pretrain.val": {
+            "counts": {
+              "source_media_records": 205,
+              "records": 205,
+              "input_tokens": 47788,
+              "ce_tokens": 38275,
+              "image_occurrences": 205,
+              "video_examples": 0,
+              "frames": 0,
+              "image_features": 8898,
+              "complete_media_answer_exceeds_bucket": 0
+            },
+            "domain_ce": {
+              "caption": 9765,
+              "vqa": 28510
+            }
+          },
+          "pretrain.test": {
+            "counts": {
+              "source_media_records": 400,
+              "records": 400,
+              "input_tokens": 94943,
+              "ce_tokens": 76161,
+              "image_occurrences": 400,
+              "video_examples": 0,
+              "frames": 0,
+              "image_features": 17582,
+              "complete_media_answer_exceeds_bucket": 0
+            },
+            "domain_ce": {
+              "vqa": 58287,
+              "caption": 17874
+            }
+          }
+        },
+        "current_filtered_encoding": {
+          "output": "data/pretraining-miniqwen4-natural-p0-v2",
+          "manifest_sha256": "b37ee2a70096d79fab486cfbf447a31d329b41dfbb8dcdf158d2b6adf16bec6c",
+          "state": "mechanical_checks_passed_pending_quality_admission"
+        }
       }
     },
     "limitations": [
       "natural-image component only; phase exposure and domain quotas are unmet",
       "manual quality review and visual benchmark exclusion remain pending",
-      "complete per-record encoding audits are still running; tokenizer and data not formally admitted"
+      "full native parent audits and encoded exclusions passed; tokenizer and data are still pending quality admission"
     ],
-    "requires_train_group_exclusion_before_admission": true
+    "requires_train_group_exclusion_before_admission": false,
+    "cross_pool_exclusions_applied": true,
+    "effective_input_records": 43529,
+    "effective_unique_images": 23252
   },
   "remote_natural_extension": {
     "source": "HuggingFaceM4/FineVision/allava_laion",
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
     "output": "data/pretraining-media-natural-extension-v1",
     "state": "extracting_next_natural_image_slice",
-    "observed_unix": 1789076944.693316,
+    "observed_unix": 1789078768.6635213,
     "process_identity_verified": true,
     "source_commit": "c96973035a22c983b8ec6c705ca7f29908d43d57",
     "source_archive_sha256": "6132b492456fe6aa0657ddb694e01a596420675b885b58b50e6b7b74c336255a",
@@ -843,7 +1031,7 @@
     "source_row_offset": 23790,
     "prior_pixels_excluded": 23260,
     "target_additional_images": 36740,
-    "observed_additional_images": 2500,
+    "observed_additional_images": 7250,
     "max_examined_new_rows": 146960,
     "storage": {
       "new_slice_max_gib": 40,
@@ -853,7 +1041,8 @@
       "remote_combined_data_cap_gib": 60,
       "observed_free_gib": 1035.3094062805176,
       "required_free_reserve_gib": 80,
-      "local_raw_copy_bytes": 0
+      "local_raw_copy_bytes": 0,
+      "latest_free_gib": 1029.3613319396973
     },
     "reference_tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
     "formal_admission": false,
@@ -868,11 +1057,11 @@
       "candidate supply is not human quality or phase exposure admission",
       "first-slice native encoders are still active; no new token encodings or formal CE claimed"
     ],
-    "observed_additional_qa_records": 4680,
-    "observed_media_bytes": 2051717474
+    "observed_additional_qa_records": 13557,
+    "observed_media_bytes": 5729565052
   },
   "cross_pool_grouping": {
-    "observed_unix": 1789077048.458557,
+    "observed_unix": 1789078841.042465,
     "identity_source_commit": "2cb2ca6af5930df841f6bff3623f41647ae673a2",
     "partition_source_commit": "63ec03461361cefbdfa5a61fff3deb5eaa94b267",
     "grouping_rules": {
@@ -955,8 +1144,8 @@
     "original_databases_unchanged": true,
     "old_holdout_membership_unchanged": true,
     "review_samples_replaced": 0,
-    "encoded_consumers_migrated": false,
-    "consumer_migration_sha256": "e291bfe09cd808882efedb036b4adf8079765616b0a6b6f5b8fc88717b614b10",
+    "encoded_consumers_migrated": true,
+    "consumer_migration_sha256": "9b993c083f3bdb7e624f81e7ec9729a1efad7b8b6429bc1fd0cf9e0e49e9b0d1",
     "checks": {
       "cpu_passed": 470,
       "cpu_skipped": 1,
@@ -968,9 +1157,361 @@
     "main_budget_eligible": false,
     "limitations": [
       "pHash links are conservative grouping evidence, not confirmed semantic duplicate identities",
-      "all original media encodings must consume the new exclusions before formal admission",
       "growing natural-image extension and external benchmark identity exclusion still need audit",
       "manual quality review and production qualification remain pending"
-    ]
+    ],
+    "encoded_migration": {
+      "mf1_natural": {
+        "previous": "data/pretraining-mf1-natural-p0-v1",
+        "output": "data/pretraining-mf1-natural-p0-v2",
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "source_commit": "130a53fb4ba24406a6cbce519d56285463eac0b1",
+        "source_archive_sha256": "f3c72bf6a33e9937d13efe54ff30e45ac24962f94d0766b683ee14a5d0180403",
+        "driver_sha256": "56ca3ccf597e216771612a147d6455849926b7de45474c7194d8e6957b42fbd9",
+        "arguments_sha256": "9cc6c4b18b190e4d9537e6cd9cd8a23d15b692d1b0352a1835dacae6e922cc0f",
+        "manifest_sha256": "b2820540e8448695b3b3868681c94d71b27110a5baf5153f6c9c5fe406f13810",
+        "source_audit_sha256": "057f716d98546da66d3887a58a1a7468f31a885cb8f0cce61344406d1dc6e326",
+        "actual_encoded_bytes": 84110527,
+        "elapsed_seconds": 19.385,
+        "completed_unix": 1789078374.8363357,
+        "formal_admission": false,
+        "main_budget_eligible": false,
+        "integrity_report_sha256": "3bbf80cfc8f6bd60c57890463b2de270649d30c3b2879257daa7cdd8b15359da",
+        "removed": {
+          "train": {
+            "counts": {
+              "records": 13,
+              "input_tokens": 3039,
+              "ce_tokens": 2103,
+              "media_exposures": 13,
+              "vision_tokens": 613
+            },
+            "domain_ce": {
+              "vqa": 1805,
+              "caption": 298
+            }
+          }
+        },
+        "sealed_holdout_payloads_unchanged": true,
+        "retained_encoded_pixels_redecoded": false,
+        "splits": {
+          "train": {
+            "counts": {
+              "records": 42924,
+              "input_tokens": 10449645,
+              "ce_tokens": 7453551,
+              "media_exposures": 42924,
+              "vision_tokens": 1875108
+            },
+            "domain_ce": {
+              "vqa": 5542036,
+              "caption": 1911515
+            }
+          },
+          "val": {
+            "counts": {
+              "records": 205,
+              "input_tokens": 49527,
+              "ce_tokens": 35159,
+              "media_exposures": 205,
+              "vision_tokens": 8898
+            },
+            "domain_ce": {
+              "caption": 9582,
+              "vqa": 25577
+            }
+          },
+          "test": {
+            "counts": {
+              "records": 400,
+              "input_tokens": 98629,
+              "ce_tokens": 70353,
+              "media_exposures": 400,
+              "vision_tokens": 17582
+            },
+            "domain_ce": {
+              "vqa": 52852,
+              "caption": 17501
+            }
+          }
+        }
+      },
+      "minikimik3_natural": {
+        "previous": "data/pretraining-minikimik3-natural-p0-v1",
+        "output": "data/pretraining-minikimik3-natural-p0-v2",
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "source_commit": "130a53fb4ba24406a6cbce519d56285463eac0b1",
+        "source_archive_sha256": "f3c72bf6a33e9937d13efe54ff30e45ac24962f94d0766b683ee14a5d0180403",
+        "driver_sha256": "56ca3ccf597e216771612a147d6455849926b7de45474c7194d8e6957b42fbd9",
+        "arguments_sha256": "04415b0640b4641277ca9ba0e8ebf22ba15e06ccde49c758c7ec8fa2a47f611a",
+        "manifest_sha256": "ac8d79fea75866be4589c5fcc49deba463e419c292528c3371a38b1ddda5c942",
+        "source_audit_sha256": "94f8bde9f7a8a78d36a55fffc10915466f62e72bc8421fdedd0d1e24d6e9a61b",
+        "actual_encoded_bytes": 286473869,
+        "elapsed_seconds": 25.237,
+        "completed_unix": 1789078380.7051966,
+        "formal_admission": false,
+        "main_budget_eligible": false,
+        "integrity_report_sha256": "f776d38a2fdfee83a07ba0c33a83989af4d242807b6bf7cf56866c4aeef012ea",
+        "removed": {
+          "pretrain.train": {
+            "counts": {
+              "examples": 13,
+              "supervised_tokens": 2294,
+              "input_tokens": 3229,
+              "image_occurrences": 13,
+              "video_examples": 0,
+              "frames": 0,
+              "image_features": 824
+            },
+            "domain_ce": {
+              "vqa": 1961,
+              "caption": 333
+            },
+            "excluded_overflow": 0
+          }
+        },
+        "sealed_holdout_payloads_unchanged": true,
+        "retained_encoded_pixels_redecoded": false,
+        "splits": {
+          "pretrain.train": {
+            "counts": {
+              "records": 42924,
+              "input_tokens": 11115319,
+              "ce_tokens": 8060931
+            },
+            "domain_ce": {
+              "vqa": 6106031,
+              "caption": 1954900
+            }
+          },
+          "pretrain.val": {
+            "counts": {
+              "records": 205,
+              "input_tokens": 52884,
+              "ce_tokens": 38275
+            },
+            "domain_ce": {
+              "caption": 9765,
+              "vqa": 28510
+            }
+          },
+          "pretrain.test": {
+            "counts": {
+              "records": 400,
+              "input_tokens": 104671,
+              "ce_tokens": 76161
+            },
+            "domain_ce": {
+              "vqa": 58287,
+              "caption": 17874
+            }
+          }
+        }
+      },
+      "miniqwen4_natural": {
+        "previous": "data/pretraining-miniqwen4-natural-p0-v1",
+        "output": "data/pretraining-miniqwen4-natural-p0-v2",
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "source_commit": "130a53fb4ba24406a6cbce519d56285463eac0b1",
+        "source_archive_sha256": "f3c72bf6a33e9937d13efe54ff30e45ac24962f94d0766b683ee14a5d0180403",
+        "driver_sha256": "56ca3ccf597e216771612a147d6455849926b7de45474c7194d8e6957b42fbd9",
+        "arguments_sha256": "c4efbad2b31db03dfc07c9628c16770a34ee8f838adc785254a97d3a87da6c67",
+        "manifest_sha256": "b37ee2a70096d79fab486cfbf447a31d329b41dfbb8dcdf158d2b6adf16bec6c",
+        "source_audit_sha256": "d1d0803db462db1809b129dca931bcd7b95caa7859532c70aae149a111104054",
+        "actual_encoded_bytes": 276231141,
+        "elapsed_seconds": 7.131,
+        "completed_unix": 1789078439.1317198,
+        "formal_admission": false,
+        "main_budget_eligible": false,
+        "integrity_report_sha256": "9d9310fb3d27d21f9a9a87ad3ee53b6277eb0f7d4a1d734286ae3b7d9aba42f6",
+        "removed": {
+          "pretrain.train": {
+            "counts": {
+              "examples": 13,
+              "supervised_tokens": 2294,
+              "input_tokens": 2946,
+              "image_occurrences": 13,
+              "video_examples": 0,
+              "frames": 0,
+              "image_features": 613
+            },
+            "domain_ce": {
+              "vqa": 1961,
+              "caption": 333
+            },
+            "excluded_overflow": 0
+          }
+        },
+        "sealed_holdout_payloads_unchanged": true,
+        "retained_encoded_pixels_redecoded": false,
+        "splits": {
+          "pretrain.train": {
+            "counts": {
+              "records": 42924,
+              "input_tokens": 10064969,
+              "ce_tokens": 8060931
+            },
+            "domain_ce": {
+              "vqa": 6106031,
+              "caption": 1954900
+            }
+          },
+          "pretrain.val": {
+            "counts": {
+              "records": 205,
+              "input_tokens": 47788,
+              "ce_tokens": 38275
+            },
+            "domain_ce": {
+              "caption": 9765,
+              "vqa": 28510
+            }
+          },
+          "pretrain.test": {
+            "counts": {
+              "records": 400,
+              "input_tokens": 94943,
+              "ce_tokens": 76161
+            },
+            "domain_ce": {
+              "vqa": 58287,
+              "caption": 17874
+            }
+          }
+        }
+      },
+      "mf1_components": {
+        "previous": "data/pretraining-mf1-p0-components-v2",
+        "output": "data/pretraining-mf1-p0-components-v3",
+        "state": "partial_p0_composition_pending_ocr_chart_and_admission",
+        "source_commit": "130a53fb4ba24406a6cbce519d56285463eac0b1",
+        "source_archive_sha256": "f3c72bf6a33e9937d13efe54ff30e45ac24962f94d0766b683ee14a5d0180403",
+        "driver_sha256": "024e47c15c86dd3a2fc010927dbf2f9734f347b853f31d5613fea6d5882c1622",
+        "arguments_sha256": "1540f2280f62393d458298c78b484e3a4e0c4ca20a981bc7a5ca65aa39afa49d",
+        "manifest_sha256": "bd24f1ba4e3f02ba28079a32d1447662ef3cc2f11053fdbc65913f9561a332a0",
+        "source_audit_sha256": "d01226e4a5d3e6f76e7e6ebf764cc60ed3e4ed1bebc20ed5aa31c75c3a1d32cb",
+        "actual_encoded_bytes": 2490073,
+        "elapsed_seconds": 3.313,
+        "completed_unix": 1789078515.2697852,
+        "formal_admission": false,
+        "main_budget_eligible": false,
+        "fixed_validation_unchanged": true,
+        "missing_p0_domains": [
+          "ocr_document",
+          "chart_table"
+        ]
+      },
+      "mf1_documents_charts": {
+        "previous": "remote-239:data/pretraining-mf1-doc-chart-p0-v1",
+        "output": "remote-239:data/pretraining-mf1-doc-chart-p0-v2",
+        "state": "mechanical_checks_passed_pending_quality_admission",
+        "source_commit": "75745ef682780505130c493b08f131a90e2bd236",
+        "source_archive_sha256": "e9aa0d2212cca82ef4be50f776bb61eb4cca40d7307e7fd897f009b4386c9130",
+        "driver_sha256": "56ca3ccf597e216771612a147d6455849926b7de45474c7194d8e6957b42fbd9",
+        "arguments_sha256": "2bcd4597a384d33cab479401bc00ee5acd5406496046ca92d897087906906dd9",
+        "manifest_sha256": "3cd0de81a95cab21480ab868ea8a77fb5a61c20108b1d3f4ef9ca3aca26385b8",
+        "source_audit_sha256": "0f5544af8e07af6c7aaaf45ea948f4a8156edb13f17d5828b1611fc7183cd2c2",
+        "actual_encoded_bytes": 260477142,
+        "elapsed_seconds": 79.206,
+        "completed_unix": 1789078718.62667,
+        "formal_admission": false,
+        "main_budget_eligible": false,
+        "integrity_report_sha256": "31e779aeed05a2a3c633ec19a63b2f223d0f1c76e1ee872f78f9f647d3bc9a83",
+        "removed": {
+          "train": {
+            "counts": {
+              "records": 4,
+              "input_tokens": 411,
+              "ce_tokens": 158,
+              "media_exposures": 4,
+              "vision_tokens": 160
+            },
+            "domain_ce": {
+              "chart_table": 133,
+              "ocr_document": 25
+            }
+          }
+        },
+        "sealed_holdout_payloads_unchanged": true,
+        "retained_encoded_pixels_redecoded": false,
+        "splits": {
+          "train": {
+            "counts": {
+              "records": 153636,
+              "input_tokens": 16523369,
+              "ce_tokens": 6887646,
+              "media_exposures": 153636,
+              "vision_tokens": 6437875
+            },
+            "domain_ce": {
+              "chart_table": 5416136,
+              "ocr_document": 1471510
+            }
+          },
+          "val": {
+            "counts": {
+              "records": 4278,
+              "input_tokens": 458760,
+              "ce_tokens": 190666,
+              "media_exposures": 4278,
+              "vision_tokens": 179008
+            },
+            "domain_ce": {
+              "chart_table": 150274,
+              "ocr_document": 40392
+            }
+          },
+          "test": {
+            "counts": {
+              "records": 1277,
+              "input_tokens": 135638,
+              "ce_tokens": 55464,
+              "media_exposures": 1277,
+              "vision_tokens": 53768
+            },
+            "domain_ce": {
+              "chart_table": 42202,
+              "ocr_document": 13262
+            }
+          }
+        }
+      }
+    },
+    "encoded_migration_validation": {
+      "source_commit": "75745ef682780505130c493b08f131a90e2bd236",
+      "targeted_tests": {
+        "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 .venv/bin/pytest -q tests/test_mf1_canonical_media.py tests/test_native_canonical_media.py --disable-warnings",
+        "passed": 35,
+        "seconds": 9.9
+      },
+      "static": {
+        "ruff": "passed",
+        "mypy_command": ".venv/bin/mypy minifrontier scripts --ignore-missing-imports",
+        "mypy_source_files": 182,
+        "mypy": "passed"
+      },
+      "actual_storage": {
+        "local_free_gib": 141.74882125854492,
+        "remote_free_gib": 1029.3613319396973,
+        "new_encoded_bytes": 909782752,
+        "raw_media_copy_bytes": 0,
+        "text_payload_copy_bytes": 0
+      },
+      "remote_filter_failure": {
+        "attempt": 1,
+        "source_commit": "130a53fb4ba24406a6cbce519d56285463eac0b1",
+        "error": "KeyError: 'integrity_report'",
+        "output_written": false,
+        "resolution": "accept the existing encoding_audit_sha256 field with the same file-hash and report-status validation; old artifacts unchanged",
+        "attempt_2": "passed"
+      },
+      "formal_ce_tokens": {
+        "minikimik3": 0,
+        "miniqwen4": 0,
+        "minideepseekv4": 0,
+        "minifrontier1": 0
+      },
+      "observed_unix": 1789078841.042465
+    }
   }
 }
