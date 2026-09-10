@@ -1,0 +1,74 @@
+import copy, json, time, torch
+from pathlib import Path
+from minifrontier.models.minifrontier1 import MiniFrontier1Config
+from minifrontier.models.minifrontier1.lookup import NgramLookup
+from minifrontier.data import sha256
+
+r = Path.cwd()
+torch.set_num_threads(2)
+torch.manual_seed(42)
+c = MiniFrontier1Config(
+    **json.loads((r / "configs/minifrontier1/model_228m_native.json").read_text())
+)
+a = NgramLookup(c).cuda()
+b = copy.deepcopy(a)
+torch.backends.cuda.matmul.allow_tf32 = False
+rows = []
+for dtype in [torch.float32, torch.bfloat16]:
+    h = torch.randn(2, 128, c.hidden_size, device="cuda", requires_grad=True)
+    h2 = h.detach().clone().requires_grad_()
+    ids = torch.randint(24, c.vocab_size, (2, 128), device="cuda")
+    ids[:, 0] = 1
+    ids[:, 31] = 18
+    seg = torch.zeros_like(ids)
+    seg[:, 64:] = 1
+    seg[1, -7:] = -1
+    mod = torch.zeros_like(ids)
+    mod[:, 17:22] = 1
+    a.zero_grad()
+    b.zero_grad()
+    with torch.autocast("cuda", dtype=torch.bfloat16, enabled=dtype == torch.bfloat16):
+        actual, state = a(h, ids, seg, mod)
+        expected, refstate = b.forward_reference(h2, ids, seg, mod)
+    actual.square().mean().backward()
+    expected.square().mean().backward()
+    delta = (actual - expected).abs()
+    grad = max(
+        float((p.grad - q.grad).abs().max())
+        for p, q in zip(a.parameters(), b.parameters())
+        if p.grad is not None
+    )
+    rows.append(
+        dict(
+            dtype=str(dtype),
+            output_max_abs=float(delta.max().detach()),
+            gradient_max_abs=grad,
+            input_gradient_max_abs=float((h.grad - h2.grad).abs().max()),
+            states_match=all(
+                x["ids"] == y["ids"]
+                and x["segment"] == y["segment"]
+                and torch.allclose(
+                    x["conv"],
+                    y["conv"],
+                    atol=1e-2 if dtype == torch.bfloat16 else 2e-6,
+                    rtol=1e-2 if dtype == torch.bfloat16 else 2e-5,
+                )
+                for x, y in zip(state, refstate)
+            ),
+        )
+    )
+    if dtype == torch.float32:
+        assert torch.allclose(actual, expected, atol=2e-6, rtol=2e-5) and grad < 2e-6
+    assert rows[-1]["states_match"]
+out = r / "outputs/mf1-performance-v1/lookup-correctness.json"
+out.write_text(
+    json.dumps(
+        dict(
+            state="passed",
+            lookup_sha256=sha256(r / "minifrontier/models/minifrontier1/lookup.py"),
+            rows=rows,
+        ),
+        indent=2,
+    )
+)
+print(out.read_text())

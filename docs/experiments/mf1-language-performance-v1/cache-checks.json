@@ -1,0 +1,126 @@
+[
+  {
+    "case": "auto-no-tf32",
+    "source": {
+      "commit": "f2e96ca22fa5122d6520d932a1e70e2eee00fef6",
+      "dirty": false,
+      "implementation_sha256": "d94922941ef998f23dd2d1abc0dad7bc4aa6f6ac1f8159379b479667550657ad"
+    },
+    "checkpoint_sha256": "fc30b7d418f6d3c6e19eeba146f582cf1d5c628361d2460a3d2084a1126bd62e",
+    "runner_sha256": "72d336feebc78db98d585fc47b69639db8d10bcfd00efb1b5f8634e064e3ed20",
+    "tf32": false,
+    "cache_checks": [
+      {
+        "precision": "fp32",
+        "input_ids": [
+          1,
+          4,
+          20417,
+          2458,
+          3166,
+          1153,
+          556,
+          5593,
+          879,
+          1114,
+          20010,
+          6467,
+          1043,
+          410
+        ],
+        "split": 7,
+        "max_abs": 0.006961345672607422,
+        "mean_abs": 0.00026344016077928245,
+        "greedy_token_agreement": 1.0,
+        "fp32_close": false
+      },
+      {
+        "precision": "bf16",
+        "input_ids": [
+          1,
+          4,
+          20417,
+          2458,
+          3166,
+          1153,
+          556,
+          5593,
+          879,
+          1114,
+          20010,
+          6467,
+          1043,
+          410
+        ],
+        "split": 7,
+        "max_abs": 0.609375,
+        "mean_abs": 0.010067510418593884,
+        "greedy_token_agreement": 1.0,
+        "fp32_close": null
+      }
+    ],
+    "original_report_sha256": "6fcb731c6c882192e083970ceb006e6c7176fa81c14d4aed17496f34ba65c627"
+  },
+  {
+    "case": "reference",
+    "source": {
+      "commit": "f2e96ca22fa5122d6520d932a1e70e2eee00fef6",
+      "dirty": false,
+      "implementation_sha256": "d94922941ef998f23dd2d1abc0dad7bc4aa6f6ac1f8159379b479667550657ad"
+    },
+    "checkpoint_sha256": "fc30b7d418f6d3c6e19eeba146f582cf1d5c628361d2460a3d2084a1126bd62e",
+    "runner_sha256": "72d336feebc78db98d585fc47b69639db8d10bcfd00efb1b5f8634e064e3ed20",
+    "tf32": false,
+    "cache_checks": [
+      {
+        "precision": "fp32",
+        "input_ids": [
+          1,
+          4,
+          20417,
+          2458,
+          3166,
+          1153,
+          556,
+          5593,
+          879,
+          1114,
+          20010,
+          6467,
+          1043,
+          410
+        ],
+        "split": 7,
+        "max_abs": 2.86102294921875e-06,
+        "mean_abs": 2.41714218418565e-07,
+        "greedy_token_agreement": 1.0,
+        "fp32_close": true
+      },
+      {
+        "precision": "bf16",
+        "input_ids": [
+          1,
+          4,
+          20417,
+          2458,
+          3166,
+          1153,
+          556,
+          5593,
+          879,
+          1114,
+          20010,
+          6467,
+          1043,
+          410
+        ],
+        "split": 7,
+        "max_abs": 0.0625,
+        "mean_abs": 0.0033012039493769407,
+        "greedy_token_agreement": 1.0,
+        "fp32_close": null
+      }
+    ],
+    "original_report_sha256": "1c1bc043c7ddb55819e32214638391776d5a885ded018b50f2ef9279aa097e29"
+  }
+]

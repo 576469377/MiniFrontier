@@ -1,0 +1,116 @@
+{
+  "as_of_utc": "2026-09-10T05:41:51.306685+00:00",
+  "checkpoint_sha256": "fc30b7d418f6d3c6e19eeba146f582cf1d5c628361d2460a3d2084a1126bd62e",
+  "dataset_manifest_sha256": "460c78731e3842c7dc2cbeec651e57ba234a0c93fec6af29a2e41154fece2db1",
+  "evaluator_sha256": "b75a16b97b6a7a3c2f6236c607c0b1e10aa216e8686f89301610c6683f46a93d",
+  "metadata": {
+    "model_name": "minifrontier1",
+    "stage": "pretrain",
+    "step": 477,
+    "phase": "dense_pretrain",
+    "chat_template": "mf1-control-v1"
+  },
+  "summary": {
+    "vision": {
+      "answer_distribution": {
+        "green": 7,
+        "red": 4,
+        "blue": 5
+      },
+      "correct": {
+        "correct": 16,
+        "total": 16,
+        "target_color_nll": 0.0017956161336769583,
+        "per_class_accuracy": {
+          "green": 1.0,
+          "red": 1.0,
+          "blue": 1.0
+        },
+        "balanced_accuracy": 1.0
+      },
+      "wrong_media": {
+        "correct": 0,
+        "total": 16,
+        "target_color_nll": 11.375631511211395,
+        "per_class_accuracy": {
+          "green": 0.0,
+          "red": 0.0,
+          "blue": 0.0
+        },
+        "balanced_accuracy": 0.0,
+        "matches_donor_answer": 16
+      },
+      "black_media": {
+        "correct": 4,
+        "total": 16,
+        "target_color_nll": 7.638212237216067,
+        "per_class_accuracy": {
+          "green": 0.0,
+          "red": 1.0,
+          "blue": 0.0
+        },
+        "balanced_accuracy": 0.3333333333333333
+      }
+    },
+    "video": {
+      "answer_distribution": {
+        "blue": 8,
+        "red": 5,
+        "green": 3
+      },
+      "correct": {
+        "correct": 16,
+        "total": 16,
+        "target_color_nll": 0.002194215074268868,
+        "per_class_accuracy": {
+          "red": 1.0,
+          "green": 1.0,
+          "blue": 1.0
+        },
+        "balanced_accuracy": 1.0
+      },
+      "wrong_media": {
+        "correct": 0,
+        "total": 16,
+        "target_color_nll": 13.448857307434082,
+        "per_class_accuracy": {
+          "red": 0.0,
+          "green": 0.0,
+          "blue": 0.0
+        },
+        "balanced_accuracy": 0.0,
+        "matches_donor_answer": 16
+      },
+      "black_media": {
+        "correct": 5,
+        "total": 16,
+        "target_color_nll": 7.75179763592314,
+        "per_class_accuracy": {
+          "red": 1.0,
+          "green": 0.0,
+          "blue": 0.0
+        },
+        "balanced_accuracy": 0.3333333333333333
+      }
+    }
+  },
+  "generation_spot_checks": [
+    {
+      "prompt": "请用一句话介绍你自己。",
+      "text": ",在对与的的,在对与的,在对的,在对的,在的的,在与的,在与的,在与的,在与的,",
+      "raw": ",在对与的的,在对与的,在对的,在对的,在的的,在与的,在与的,在与的,在与的,",
+      "new_tokens": 40,
+      "reached_eos": false
+    },
+    {
+      "prompt": "7+5=",
+      "text": "-2) and the same of the same of the same of the same of the same of the same of the same of the same of the same of the same of the same of the same of",
+      "raw": "-2) and the same of the same of the same of the same of the same of the same of the same of the same of the same of the same of the same of the same of",
+      "new_tokens": 40,
+      "reached_eos": false
+    }
+  ],
+  "scope": "All 16 held-out generated images and 16 four-frame clips; first generated color-token accuracy, no target answer in input. Not general visual/language capability.",
+  "elapsed_seconds": 48.43160840123892,
+  "peak_reserved_gib": 0.91796875
+}

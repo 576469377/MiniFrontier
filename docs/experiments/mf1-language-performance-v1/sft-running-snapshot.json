@@ -1,0 +1,164 @@
+{
+  "as_of_utc": "2026-09-10T07:08:37.590550+00:00",
+  "scope": "running snapshot, not a completed result",
+  "runs": {
+    "adamw-lr2e-5": {
+      "state": "running",
+      "run": {
+        "format": "mf1-run-v1",
+        "model_name": "minifrontier1",
+        "kind": "acceptance",
+        "mf1_phase": "sft",
+        "strategy_sha256": "e0840c97bc5c23823e723af79b27ddb69c6067e74af1fa06fd294b0cc4791ef7",
+        "model_config_sha256": "2988cee90942ae29cf8dda748e83116a5b0b404dcad0bdd2e48c238433c1b30d",
+        "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+        "processor_sha256": "a153f29008f8afe6fa97af8b69ce6cc12f71e0fc6a04f32c4d89e3c0d42a476a",
+        "template_sha256": "8586a7024d1d130060f63a1e1e4b38373e0566a0b21bf1f7bdc68b2b0776066b",
+        "dataset_manifest_sha256": "42e8471df251d74101227a95af123bfe201b867cf61a643922598c1f0e4efb56",
+        "actual_init_checkpoint_sha256": "fc30b7d418f6d3c6e19eeba146f582cf1d5c628361d2460a3d2084a1126bd62e",
+        "source": {
+          "commit": "d77c51c4ba074ba2d325f0b52e2ecceca392972e",
+          "dirty": false,
+          "implementation_sha256": "2a04cbc1961c4e6518dc9a6b9abe526b772219ab10896abc95bc127073851b1b"
+        },
+        "seed": 42,
+        "steps": 10000,
+        "token_budget": 30000,
+        "unit": "ce_tokens",
+        "input_batch_tokens": 512,
+        "optimizer_kind": "adamw",
+        "optimizer_groups_sha256": "9f68baef916c614fa8bd8f86943cb59f61ba175340a46a66249a77a9b583e7a9",
+        "mixture": {
+          "language": 0.9,
+          "vision": 0.075,
+          "video": 0.025
+        },
+        "chat_template": "mf1-control-v1",
+        "diagnostic_attention": "dense_pretrain"
+      },
+      "recovery_checkpoint": {
+        "sha256": "15163275d92de663750fd8179ebad0e6759957c37dd10e1fb3311601efaff29b",
+        "state": "paused",
+        "step": 2,
+        "ledger": {
+          "input_tokens": 1051,
+          "ce_tokens": 356,
+          "generated_tokens": 0,
+          "vision_tokens": 135,
+          "mtp_target_tokens": 250,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 12,
+          "main_ce_tokens": 0,
+          "phase_tokens": 356,
+          "optimizer_updates": 2
+        },
+        "resumable": true,
+        "capability_qualified": false
+      },
+      "checkpoint_reloaded": true,
+      "latest_update": {
+        "step": 6,
+        "train_lm_loss": 5.822852483788849,
+        "grad_norm": 4.782077312469482,
+        "step_seconds": 42.03818392753601,
+        "ce_per_second": 4.234245711157036,
+        "input_per_second": 12.512433955441578,
+        "input_tokens": 3133,
+        "ce_tokens": 1026,
+        "generated_tokens": 0,
+        "vision_tokens": 396,
+        "mtp_target_tokens": 710,
+        "index_query_tokens": 0,
+        "replay_ce_tokens": 0,
+        "media_exposures": 35,
+        "main_ce_tokens": 0,
+        "phase_tokens": 1026,
+        "optimizer_updates": 6,
+        "peak_allocated_gib": 4.032186985015869,
+        "peak_reserved_gib": 4.310546875
+      },
+      "memory_ceiling_gib": 6.0,
+      "physical_reserve_gib": 5.0
+    },
+    "adamw-lr1e-4": {
+      "state": "running",
+      "run": {
+        "format": "mf1-run-v1",
+        "model_name": "minifrontier1",
+        "kind": "acceptance",
+        "mf1_phase": "sft",
+        "strategy_sha256": "e0840c97bc5c23823e723af79b27ddb69c6067e74af1fa06fd294b0cc4791ef7",
+        "model_config_sha256": "2988cee90942ae29cf8dda748e83116a5b0b404dcad0bdd2e48c238433c1b30d",
+        "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+        "processor_sha256": "a153f29008f8afe6fa97af8b69ce6cc12f71e0fc6a04f32c4d89e3c0d42a476a",
+        "template_sha256": "8586a7024d1d130060f63a1e1e4b38373e0566a0b21bf1f7bdc68b2b0776066b",
+        "dataset_manifest_sha256": "42e8471df251d74101227a95af123bfe201b867cf61a643922598c1f0e4efb56",
+        "actual_init_checkpoint_sha256": "fc30b7d418f6d3c6e19eeba146f582cf1d5c628361d2460a3d2084a1126bd62e",
+        "source": {
+          "commit": "d77c51c4ba074ba2d325f0b52e2ecceca392972e",
+          "dirty": false,
+          "implementation_sha256": "2a04cbc1961c4e6518dc9a6b9abe526b772219ab10896abc95bc127073851b1b"
+        },
+        "seed": 42,
+        "steps": 10000,
+        "token_budget": 30000,
+        "unit": "ce_tokens",
+        "input_batch_tokens": 512,
+        "optimizer_kind": "adamw",
+        "optimizer_groups_sha256": "bbf6925754aa8a945adc911b215cc511b2e7ce1145447cc32cb1966d861bfce2",
+        "mixture": {
+          "language": 0.9,
+          "vision": 0.075,
+          "video": 0.025
+        },
+        "chat_template": "mf1-control-v1",
+        "diagnostic_attention": "dense_pretrain"
+      },
+      "recovery_checkpoint": {
+        "sha256": "b10b964c94cbb7c06e9d15ee63fa16ebbd6da626ded5fbba2db21f031586cdaf",
+        "state": "paused",
+        "step": 2,
+        "ledger": {
+          "input_tokens": 1051,
+          "ce_tokens": 356,
+          "generated_tokens": 0,
+          "vision_tokens": 135,
+          "mtp_target_tokens": 250,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 12,
+          "main_ce_tokens": 0,
+          "phase_tokens": 356,
+          "optimizer_updates": 2
+        },
+        "resumable": true,
+        "capability_qualified": false
+      },
+      "checkpoint_reloaded": true,
+      "latest_update": {
+        "step": 6,
+        "train_lm_loss": 4.980906836326519,
+        "grad_norm": 4.455956935882568,
+        "step_seconds": 41.024169877171516,
+        "ce_per_second": 4.338905589873998,
+        "input_per_second": 12.82170977681867,
+        "input_tokens": 3133,
+        "ce_tokens": 1026,
+        "generated_tokens": 0,
+        "vision_tokens": 396,
+        "mtp_target_tokens": 710,
+        "index_query_tokens": 0,
+        "replay_ce_tokens": 0,
+        "media_exposures": 35,
+        "main_ce_tokens": 0,
+        "phase_tokens": 1026,
+        "optimizer_updates": 6,
+        "peak_allocated_gib": 4.037595748901367,
+        "peak_reserved_gib": 4.3203125
+      },
+      "memory_ceiling_gib": 5.5,
+      "physical_reserve_gib": 2.0
+    }
+  }
+}

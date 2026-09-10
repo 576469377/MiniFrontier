@@ -1,0 +1,192 @@
+{
+  "as_of_utc": "2026-09-10T07:02:43.598128+00:00",
+  "runs": {
+    "adamw-lr1.5e-4": {
+      "status": {
+        "stage": "pretrain",
+        "mf1_phase": "pilot",
+        "state": "budget_complete_unqualified",
+        "step": 477,
+        "ledger": {
+          "input_tokens": 568167,
+          "ce_tokens": 500853,
+          "generated_tokens": 0,
+          "vision_tokens": 37512,
+          "mtp_target_tokens": 493037,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 3334,
+          "main_ce_tokens": 0,
+          "phase_tokens": 500853,
+          "optimizer_updates": 477
+        },
+        "unique_media": 256
+      },
+      "checkpoint": {
+        "sha256": "fc30b7d418f6d3c6e19eeba146f582cf1d5c628361d2460a3d2084a1126bd62e",
+        "state": "budget_complete_unqualified",
+        "step": 477,
+        "ledger": {
+          "input_tokens": 568167,
+          "ce_tokens": 500853,
+          "generated_tokens": 0,
+          "vision_tokens": 37512,
+          "mtp_target_tokens": 493037,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 3334,
+          "main_ce_tokens": 0,
+          "phase_tokens": 500853,
+          "optimizer_updates": 477
+        },
+        "resumable": true,
+        "capability_qualified": false
+      },
+      "run": {
+        "format": "mf1-run-v1",
+        "model_name": "minifrontier1",
+        "kind": "acceptance",
+        "mf1_phase": "pilot",
+        "strategy_sha256": "e0840c97bc5c23823e723af79b27ddb69c6067e74af1fa06fd294b0cc4791ef7",
+        "model_config_sha256": "2988cee90942ae29cf8dda748e83116a5b0b404dcad0bdd2e48c238433c1b30d",
+        "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+        "processor_sha256": "a153f29008f8afe6fa97af8b69ce6cc12f71e0fc6a04f32c4d89e3c0d42a476a",
+        "template_sha256": "8586a7024d1d130060f63a1e1e4b38373e0566a0b21bf1f7bdc68b2b0776066b",
+        "dataset_manifest_sha256": "460c78731e3842c7dc2cbeec651e57ba234a0c93fec6af29a2e41154fece2db1",
+        "actual_init_checkpoint_sha256": null,
+        "source": {
+          "commit": "f2e96ca22fa5122d6520d932a1e70e2eee00fef6",
+          "dirty": false,
+          "implementation_sha256": "d94922941ef998f23dd2d1abc0dad7bc4aa6f6ac1f8159379b479667550657ad"
+        },
+        "seed": 42,
+        "steps": 10000,
+        "token_budget": 500000,
+        "unit": "ce_tokens",
+        "input_batch_tokens": 1024,
+        "optimizer_kind": "adamw",
+        "optimizer_groups_sha256": "093eb849aeb912fc2f2b59850be10bdbf84815b70d12d9dd9871129c2e5521ac",
+        "mixture": {
+          "zh_general": 0.45,
+          "en_general": 0.35,
+          "math": 0.18,
+          "vision": 0.015,
+          "video": 0.005
+        },
+        "chat_template": "mf1-control-v1"
+      },
+      "last_validation": {
+        "event": "validation",
+        "step": 475,
+        "nll": 6.364613761263233,
+        "ce_tokens": 2299,
+        "per_domain": {
+          "en_general": 7.049533746575796,
+          "zh_general": 8.341190408902118,
+          "math": 2.7114065177738667,
+          "vision": 0.0008456640935037285,
+          "video": 0.00029250177612993866
+        },
+        "black_media_nll": {
+          "vision": 2.9075989723205566,
+          "video": 4.048358917236328
+        },
+        "capability_qualified": false
+      }
+    },
+    "adamw-lr3e-4": {
+      "status": {
+        "stage": "pretrain",
+        "mf1_phase": "pilot",
+        "state": "budget_complete_unqualified",
+        "step": 477,
+        "ledger": {
+          "input_tokens": 568167,
+          "ce_tokens": 500853,
+          "generated_tokens": 0,
+          "vision_tokens": 37512,
+          "mtp_target_tokens": 493037,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 3334,
+          "main_ce_tokens": 0,
+          "phase_tokens": 500853,
+          "optimizer_updates": 477
+        },
+        "unique_media": 256
+      },
+      "checkpoint": {
+        "sha256": "a507d693af569208cc3bfe8d49bf390d432ef3c0e2f3aeeeb1523b42b0a3079a",
+        "state": "budget_complete_unqualified",
+        "step": 477,
+        "ledger": {
+          "input_tokens": 568167,
+          "ce_tokens": 500853,
+          "generated_tokens": 0,
+          "vision_tokens": 37512,
+          "mtp_target_tokens": 493037,
+          "index_query_tokens": 0,
+          "replay_ce_tokens": 0,
+          "media_exposures": 3334,
+          "main_ce_tokens": 0,
+          "phase_tokens": 500853,
+          "optimizer_updates": 477
+        },
+        "resumable": true,
+        "capability_qualified": false
+      },
+      "run": {
+        "format": "mf1-run-v1",
+        "model_name": "minifrontier1",
+        "kind": "acceptance",
+        "mf1_phase": "pilot",
+        "strategy_sha256": "e0840c97bc5c23823e723af79b27ddb69c6067e74af1fa06fd294b0cc4791ef7",
+        "model_config_sha256": "2988cee90942ae29cf8dda748e83116a5b0b404dcad0bdd2e48c238433c1b30d",
+        "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+        "processor_sha256": "a153f29008f8afe6fa97af8b69ce6cc12f71e0fc6a04f32c4d89e3c0d42a476a",
+        "template_sha256": "8586a7024d1d130060f63a1e1e4b38373e0566a0b21bf1f7bdc68b2b0776066b",
+        "dataset_manifest_sha256": "460c78731e3842c7dc2cbeec651e57ba234a0c93fec6af29a2e41154fece2db1",
+        "actual_init_checkpoint_sha256": null,
+        "source": {
+          "commit": "f2e96ca22fa5122d6520d932a1e70e2eee00fef6",
+          "dirty": false,
+          "implementation_sha256": "d94922941ef998f23dd2d1abc0dad7bc4aa6f6ac1f8159379b479667550657ad"
+        },
+        "seed": 42,
+        "steps": 10000,
+        "token_budget": 500000,
+        "unit": "ce_tokens",
+        "input_batch_tokens": 1024,
+        "optimizer_kind": "adamw",
+        "optimizer_groups_sha256": "000e0dc2007c7aa4019c74b8c10b08105f628d362ef49b3e2e3ebae70ce3e4c8",
+        "mixture": {
+          "zh_general": 0.45,
+          "en_general": 0.35,
+          "math": 0.18,
+          "vision": 0.015,
+          "video": 0.005
+        },
+        "chat_template": "mf1-control-v1"
+      },
+      "last_validation": {
+        "event": "validation",
+        "step": 475,
+        "nll": 6.374588403645358,
+        "ce_tokens": 2299,
+        "per_domain": {
+          "en_general": 7.098710783460694,
+          "zh_general": 8.344578793529065,
+          "math": 2.6362992683425546,
+          "vision": 0.0005501201958395541,
+          "video": 0.0028799211140722036
+        },
+        "black_media_nll": {
+          "vision": 4.7947468757629395,
+          "video": 0.0018077933927997947
+        },
+        "capability_qualified": false
+      }
+    }
+  },
+  "validation_scope": "Original 12-record prefix; not a full validation score"
+}

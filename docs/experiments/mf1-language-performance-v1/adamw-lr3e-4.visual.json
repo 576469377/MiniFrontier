@@ -1,0 +1,116 @@
+{
+  "as_of_utc": "2026-09-10T05:41:52.042969+00:00",
+  "checkpoint_sha256": "a507d693af569208cc3bfe8d49bf390d432ef3c0e2f3aeeeb1523b42b0a3079a",
+  "dataset_manifest_sha256": "460c78731e3842c7dc2cbeec651e57ba234a0c93fec6af29a2e41154fece2db1",
+  "evaluator_sha256": "b75a16b97b6a7a3c2f6236c607c0b1e10aa216e8686f89301610c6683f46a93d",
+  "metadata": {
+    "model_name": "minifrontier1",
+    "stage": "pretrain",
+    "step": 477,
+    "phase": "dense_pretrain",
+    "chat_template": "mf1-control-v1"
+  },
+  "summary": {
+    "vision": {
+      "answer_distribution": {
+        "green": 7,
+        "red": 4,
+        "blue": 5
+      },
+      "correct": {
+        "correct": 16,
+        "total": 16,
+        "target_color_nll": 0.00611340458272025,
+        "per_class_accuracy": {
+          "blue": 1.0,
+          "green": 1.0,
+          "red": 1.0
+        },
+        "balanced_accuracy": 1.0
+      },
+      "wrong_media": {
+        "correct": 0,
+        "total": 16,
+        "target_color_nll": 13.650647938251495,
+        "per_class_accuracy": {
+          "blue": 0.0,
+          "green": 0.0,
+          "red": 0.0
+        },
+        "balanced_accuracy": 0.0,
+        "matches_donor_answer": 16
+      },
+      "black_media": {
+        "correct": 5,
+        "total": 16,
+        "target_color_nll": 8.004235235333908,
+        "per_class_accuracy": {
+          "blue": 1.0,
+          "green": 0.0,
+          "red": 0.0
+        },
+        "balanced_accuracy": 0.3333333333333333
+      }
+    },
+    "video": {
+      "answer_distribution": {
+        "blue": 8,
+        "red": 5,
+        "green": 3
+      },
+      "correct": {
+        "correct": 14,
+        "total": 16,
+        "target_color_nll": 0.379921987070702,
+        "per_class_accuracy": {
+          "blue": 1.0,
+          "green": 1.0,
+          "red": 0.6
+        },
+        "balanced_accuracy": 0.8666666666666667
+      },
+      "wrong_media": {
+        "correct": 0,
+        "total": 16,
+        "target_color_nll": 9.74325180053711,
+        "per_class_accuracy": {
+          "blue": 0.0,
+          "green": 0.0,
+          "red": 0.0
+        },
+        "balanced_accuracy": 0.0,
+        "matches_donor_answer": 8
+      },
+      "black_media": {
+        "correct": 8,
+        "total": 16,
+        "target_color_nll": 5.2821722032967955,
+        "per_class_accuracy": {
+          "blue": 1.0,
+          "green": 0.0,
+          "red": 0.0
+        },
+        "balanced_accuracy": 0.3333333333333333
+      }
+    }
+  },
+  "generation_spot_checks": [
+    {
+      "prompt": "请用一句话介绍你自己。",
+      "text": ",在在对,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其",
+      "raw": ",在在对,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其",
+      "new_tokens": 40,
+      "reached_eos": false
+    },
+    {
+      "prompt": "7+5=",
+      "text": ",如,在对对,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其",
+      "raw": ",如,在对对,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其,其",
+      "new_tokens": 40,
+      "reached_eos": false
+    }
+  ],
+  "scope": "All 16 held-out generated images and 16 four-frame clips; first generated color-token accuracy, no target answer in input. Not general visual/language capability.",
+  "elapsed_seconds": 49.36018061079085,
+  "peak_reserved_gib": 0.91796875
+}

@@ -6,6 +6,8 @@
 
 MiniFrontier1.0 新增独立的[融合实现与 CPU 学习档案](experiments/mf1-reference-v2/README.md)，包含完整 228M 前后向、小配置学习曲线、媒体对照和已知局限；不与原三模型的配方筛选合并。
 
+2026-09-10：[MF1 语言诊断与性能对照](experiments/mf1-language-performance-v1/README.md)补齐两组 500K CE 的完成曲线、全部 32 个留出媒体的对照检查、缓存数值检查及 microbatch 基线；两组 30K CE SFT 和优化版性能测量正在运行。
+
 2026-09-09 另启动 [MF1 完整 228M GPU 机制实验](experiments/mf1-gpu-mechanism-v1/README.md)：已完成共享 3090 的短程资源探测，两组各 500K CE 的 AdamW 学习率对照开始执行。使用独立 32K 候选词表及教育文本、生成数学和媒体，尚未进入正式主预训练。
 
 [2026-09-09 实验快照](experiments/2026-09-09-preview/)含 9 次已启动试验的 JSON、CSV、完整配置/命令/seed/源码与数据 hash、token 账本、性能采样及六组待启动单卡计划。[离线示例实测](experiments/preview-quickstart/)另存 CPU/3090 的六份报告。

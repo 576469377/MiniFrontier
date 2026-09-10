@@ -1,0 +1,12 @@
+{
+  "train_correct_min": 29,
+  "train_total": 32,
+  "train_eos_min": 30,
+  "visual_correct_min": 28,
+  "visual_total": 32,
+  "token_budget": 100000,
+  "scope": "conditional expanded generated instruction diagnosis, never formal training",
+  "source_commit": "d77c51c4ba074ba2d325f0b52e2ecceca392972e",
+  "data_manifest_sha256": "5ce5f1ddcfbe1d5540768da71c2c1cb3b02631f0f443ebc83c3d0ed9641c630e",
+  "state": "waiting_for_control_generation_results"
+}

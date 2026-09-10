@@ -1,0 +1,20 @@
+{
+  "state": "passed",
+  "lookup_sha256": "083a440c647a8e3f5b5e5900e8d5babf498f6f943fa6ca3cd793a4ef9b2a11c5",
+  "rows": [
+    {
+      "dtype": "torch.float32",
+      "output_max_abs": 1.862645149230957e-09,
+      "gradient_max_abs": 2.9103830456733704e-11,
+      "input_gradient_max_abs": 1.9081958235744878e-17,
+      "states_match": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "output_max_abs": 4.9853697419166565e-06,
+      "gradient_max_abs": 1.3096723705530167e-10,
+      "input_gradient_max_abs": 1.1368683772161603e-13,
+      "states_match": true
+    }
+  ]
+}

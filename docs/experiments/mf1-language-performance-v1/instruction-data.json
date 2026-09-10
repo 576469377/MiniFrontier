@@ -1,0 +1,48 @@
+{
+  "format": "mf1-native-records-v1",
+  "kind": "mf1-language-diagnostic-v1",
+  "recipe": "instructions",
+  "seed": 42,
+  "formal_admission": false,
+  "main_budget_eligible": false,
+  "media_root": "${MECHANISM_DATA}",
+  "tokenizer_sha256": "bb945c7cb8b57a26b01f2dfb36ab6cb3a53da76fc533b102774313b7964a43fb",
+  "vocab_size": 32768,
+  "source_manifest_sha256": "460c78731e3842c7dc2cbeec651e57ba234a0c93fec6af29a2e41154fece2db1",
+  "preparation_script_sha256": "304db954cd031b9e4e5a54957488ec4d9754fef973bd5d127f6934ace3cb26b2",
+  "counts": {
+    "train": {
+      "records": 886,
+      "domains": {
+        "language": 846,
+        "vision": 32,
+        "video": 8
+      },
+      "ce_tokens": 3216,
+      "input_tokens": 16195,
+      "max_input_tokens": 33
+    },
+    "val": {
+      "records": 138,
+      "domains": {
+        "language": 106,
+        "video": 16,
+        "vision": 16
+      },
+      "ce_tokens": 494,
+      "input_tokens": 2669,
+      "max_input_tokens": 30
+    }
+  },
+  "files": {
+    "train": "80206e838489a428fbad7197a4730bed5c80ac489a67f917cec4cdcb0e682dcc",
+    "val": "d47fc2e1f9ea1542c04f555a64b8c9f032eb26e9b592e979c3e4259a619ea3a2"
+  },
+  "limitations": [
+    "Controlled learning diagnosis, not general conversation training",
+    "Training QA memorization and held-out task generalization must be reported separately",
+    "Visual replay uses generated color tasks only",
+    "Existing tokenizer copied byte-for-byte; sealed test not read"
+  ],
+  "original_manifest_sha256": "5ce5f1ddcfbe1d5540768da71c2c1cb3b02631f0f443ebc83c3d0ed9641c630e"
+}

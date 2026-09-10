@@ -1,0 +1,303 @@
+{
+  "state": "complete",
+  "source": {
+    "commit": "f2e96ca22fa5122d6520d932a1e70e2eee00fef6",
+    "dirty": false,
+    "implementation_sha256": "d94922941ef998f23dd2d1abc0dad7bc4aa6f6ac1f8159379b479667550657ad"
+  },
+  "runner_sha256": "972566f6b1c8ab9fcc4ab1231477b7765896e238cda7919529eeba010214a55e",
+  "config": {
+    "model_version": "1.0-reference-v1",
+    "vocab_size": 32768,
+    "hidden_size": 512,
+    "num_hidden_layers": 16,
+    "attention_schedule": [
+      "kda",
+      "kda",
+      "kda",
+      "csa4",
+      "kda",
+      "kda",
+      "kda",
+      "qsa_mla",
+      "kda",
+      "kda",
+      "kda",
+      "csa4",
+      "kda",
+      "kda",
+      "kda",
+      "qsa_mla"
+    ],
+    "hc_count": 4,
+    "hc_lowrank": 64,
+    "num_attention_heads": 8,
+    "kda_head_dim": 64,
+    "conv_size": 4,
+    "kda_backend": "auto",
+    "q_lora_rank": 128,
+    "kv_lora_rank": 128,
+    "qk_nope_head_dim": 64,
+    "qk_rope_head_dim": 32,
+    "v_head_dim": 64,
+    "mrope_sections": [
+      4,
+      6,
+      6
+    ],
+    "rope_theta": 10000.0,
+    "csa_head_dim": 64,
+    "csa_rope_dim": 16,
+    "index_heads": 4,
+    "index_dim": 32,
+    "index_rope_dim": 16,
+    "block_size": 4,
+    "top_blocks": 64,
+    "window_size": 128,
+    "protected_media_tokens": 1024,
+    "protect_media": true,
+    "query_chunk_size": 64,
+    "index_query_count": 64,
+    "indexer_loss_coef": 0.01,
+    "num_experts": 32,
+    "num_experts_per_token": 4,
+    "routed_expert_hidden_size": 256,
+    "moe_intermediate_size": 256,
+    "shared_intermediate_size": 768,
+    "activation": "situ",
+    "routed_scale": 1.0,
+    "lookup_layer": 2,
+    "lookup_enabled": true,
+    "lookup_rows": 32768,
+    "lookup_dim": 64,
+    "lookup_seed": 1729,
+    "mtp_enabled": true,
+    "mtp_loss_coef": 0.1,
+    "max_position_embeddings": 8192,
+    "rms_norm_eps": 1e-05,
+    "initializer_range": 0.02,
+    "gradient_checkpointing": true,
+    "pad_token_id": 0,
+    "eos_token_id": 2,
+    "image_token_id": 7,
+    "control_token_count": 24,
+    "forbidden_action_ids": [
+      0,
+      1,
+      7
+    ],
+    "vision_config": {
+      "depth": 12,
+      "hidden_size": 384,
+      "num_heads": 6,
+      "intermediate_size": 1536,
+      "patch_size": 16,
+      "temporal_patch_size": 2,
+      "spatial_merge_size": 2,
+      "output_size": 512,
+      "gradient_checkpointing": true
+    }
+  },
+  "torch": "2.13.0+cu130",
+  "cuda": "13.0",
+  "controls": {
+    "config": "configs/minifrontier1/model_228m_native.json",
+    "output": "${EXPERIMENT_OUTPUT}",
+    "length": 512,
+    "input_tokens": 4096,
+    "batches": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "warmup": 1,
+    "updates": 2,
+    "media_features": 0,
+    "profile": false
+  },
+  "scope": "synthetic equal-input-budget screen; only a >=20 warmup / >=100 unprofiled-update run meets the measurement duration requirement",
+  "cases": [
+    {
+      "length": 512,
+      "microbatch": 1,
+      "accumulation": 8,
+      "media_features": 0,
+      "rows": [
+        {
+          "step": 1,
+          "warmup": true,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 75.56037592887878,
+          "grad_norm": 1.6666691303253174,
+          "peak_allocated_gib": 3.790196418762207,
+          "peak_reserved_gib": 3.89453125,
+          "free_gib": 19.3236083984375
+        },
+        {
+          "step": 2,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 72.28800764493644,
+          "grad_norm": 2.880615472793579,
+          "peak_allocated_gib": 3.996617317199707,
+          "peak_reserved_gib": 4.345703125,
+          "free_gib": 18.8724365234375
+        },
+        {
+          "step": 3,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 72.41095505096018,
+          "grad_norm": 5.014357566833496,
+          "peak_allocated_gib": 3.994544506072998,
+          "peak_reserved_gib": 4.34765625,
+          "free_gib": 18.8704833984375
+        }
+      ],
+      "ce_per_second": 56.50351493661299
+    },
+    {
+      "length": 512,
+      "microbatch": 2,
+      "accumulation": 4,
+      "media_features": 0,
+      "rows": [
+        {
+          "step": 1,
+          "warmup": true,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 65.97580765746534,
+          "grad_norm": 1.6674938201904297,
+          "peak_allocated_gib": 3.797581672668457,
+          "peak_reserved_gib": 4.021484375,
+          "free_gib": 19.1966552734375
+        },
+        {
+          "step": 2,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 66.084667455405,
+          "grad_norm": 2.948453903198242,
+          "peak_allocated_gib": 4.450882911682129,
+          "peak_reserved_gib": 4.75390625,
+          "free_gib": 18.4642333984375
+        },
+        {
+          "step": 3,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 66.90508524514735,
+          "grad_norm": 4.9987382888793945,
+          "peak_allocated_gib": 4.446491718292236,
+          "peak_reserved_gib": 4.75390625,
+          "free_gib": 18.4642333984375
+        }
+      ],
+      "ce_per_second": 61.47842096082071
+    },
+    {
+      "length": 512,
+      "microbatch": 4,
+      "accumulation": 2,
+      "media_features": 0,
+      "rows": [
+        {
+          "step": 1,
+          "warmup": true,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 63.218142779543996,
+          "grad_norm": 1.6677041053771973,
+          "peak_allocated_gib": 3.8140859603881836,
+          "peak_reserved_gib": 4.390625,
+          "free_gib": 18.8275146484375
+        },
+        {
+          "step": 2,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 63.86873778887093,
+          "grad_norm": 2.902019739151001,
+          "peak_allocated_gib": 5.353109359741211,
+          "peak_reserved_gib": 5.603515625,
+          "free_gib": 17.6146240234375
+        },
+        {
+          "step": 3,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 64.18841403909028,
+          "grad_norm": 5.1327290534973145,
+          "peak_allocated_gib": 5.354337692260742,
+          "peak_reserved_gib": 5.603515625,
+          "free_gib": 17.6146240234375
+        }
+      ],
+      "ce_per_second": 63.84649262685518
+    },
+    {
+      "length": 512,
+      "microbatch": 8,
+      "accumulation": 1,
+      "media_features": 0,
+      "rows": [
+        {
+          "step": 1,
+          "warmup": true,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 61.73488609306514,
+          "grad_norm": 1.669373631477356,
+          "peak_allocated_gib": 4.845216751098633,
+          "peak_reserved_gib": 5.49609375,
+          "free_gib": 17.7200927734375
+        },
+        {
+          "step": 2,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 63.80926702916622,
+          "grad_norm": 2.90828275680542,
+          "peak_allocated_gib": 6.384912967681885,
+          "peak_reserved_gib": 6.650390625,
+          "free_gib": 16.5657958984375
+        },
+        {
+          "step": 3,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 64.10550847090781,
+          "grad_norm": 4.898117542266846,
+          "peak_allocated_gib": 6.387332916259766,
+          "peak_reserved_gib": 6.650390625,
+          "free_gib": 16.5657958984375
+        }
+      ],
+      "ce_per_second": 63.91755735829962
+    }
+  ],
+  "original_report_sha256": "86f42175c642ada878c1f48aa977e854ca7dfc6db3facac07645bfe9566aa88b"
+}

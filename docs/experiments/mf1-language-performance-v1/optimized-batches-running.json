@@ -1,0 +1,213 @@
+{
+  "state": "running",
+  "source": {
+    "commit": "d77c51c4ba074ba2d325f0b52e2ecceca392972e",
+    "dirty": false,
+    "implementation_sha256": "2a04cbc1961c4e6518dc9a6b9abe526b772219ab10896abc95bc127073851b1b"
+  },
+  "runner_sha256": "0e5d57153f5583e852f2660de9c46279e835aea208b37bb24268ba127a74a02e",
+  "config": {
+    "model_version": "1.0-reference-v1",
+    "vocab_size": 32768,
+    "hidden_size": 512,
+    "num_hidden_layers": 16,
+    "attention_schedule": [
+      "kda",
+      "kda",
+      "kda",
+      "csa4",
+      "kda",
+      "kda",
+      "kda",
+      "qsa_mla",
+      "kda",
+      "kda",
+      "kda",
+      "csa4",
+      "kda",
+      "kda",
+      "kda",
+      "qsa_mla"
+    ],
+    "hc_count": 4,
+    "hc_lowrank": 64,
+    "num_attention_heads": 8,
+    "kda_head_dim": 64,
+    "conv_size": 4,
+    "kda_backend": "auto",
+    "q_lora_rank": 128,
+    "kv_lora_rank": 128,
+    "qk_nope_head_dim": 64,
+    "qk_rope_head_dim": 32,
+    "v_head_dim": 64,
+    "mrope_sections": [
+      4,
+      6,
+      6
+    ],
+    "rope_theta": 10000.0,
+    "csa_head_dim": 64,
+    "csa_rope_dim": 16,
+    "index_heads": 4,
+    "index_dim": 32,
+    "index_rope_dim": 16,
+    "block_size": 4,
+    "top_blocks": 64,
+    "window_size": 128,
+    "protected_media_tokens": 1024,
+    "protect_media": true,
+    "query_chunk_size": 64,
+    "index_query_count": 64,
+    "indexer_loss_coef": 0.01,
+    "num_experts": 32,
+    "num_experts_per_token": 4,
+    "routed_expert_hidden_size": 256,
+    "moe_intermediate_size": 256,
+    "shared_intermediate_size": 768,
+    "activation": "situ",
+    "routed_scale": 1.0,
+    "lookup_layer": 2,
+    "lookup_enabled": true,
+    "lookup_rows": 32768,
+    "lookup_dim": 64,
+    "lookup_seed": 1729,
+    "mtp_enabled": true,
+    "mtp_loss_coef": 0.1,
+    "max_position_embeddings": 8192,
+    "rms_norm_eps": 1e-05,
+    "initializer_range": 0.02,
+    "gradient_checkpointing": true,
+    "pad_token_id": 0,
+    "eos_token_id": 2,
+    "image_token_id": 7,
+    "control_token_count": 24,
+    "forbidden_action_ids": [
+      0,
+      1,
+      7
+    ],
+    "vision_config": {
+      "depth": 12,
+      "hidden_size": 384,
+      "num_heads": 6,
+      "intermediate_size": 1536,
+      "patch_size": 16,
+      "temporal_patch_size": 2,
+      "spatial_merge_size": 2,
+      "output_size": 512,
+      "gradient_checkpointing": true
+    }
+  },
+  "torch": "2.13.0+cu130",
+  "cuda": "13.0",
+  "controls": {
+    "config": "configs/minifrontier1/model_228m_native.json",
+    "output": "${EXPERIMENT_OUTPUT}",
+    "length": 512,
+    "input_tokens": 4096,
+    "batches": [
+      1,
+      4,
+      8
+    ],
+    "warmup": 1,
+    "updates": 2,
+    "media_features": 0,
+    "profile": false
+  },
+  "scope": "synthetic equal-input-budget screen; only a >=20 warmup / >=100 unprofiled-update run meets the measurement duration requirement",
+  "cases": [
+    {
+      "length": 512,
+      "microbatch": 1,
+      "accumulation": 8,
+      "media_features": 0,
+      "rows": [
+        {
+          "step": 1,
+          "warmup": true,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 71.13296395167708,
+          "grad_norm": 1.6670159101486206,
+          "peak_allocated_gib": 3.788731575012207,
+          "peak_reserved_gib": 3.892578125,
+          "free_gib": 19.3255615234375
+        },
+        {
+          "step": 2,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 68.28663584776223,
+          "grad_norm": 2.8888394832611084,
+          "peak_allocated_gib": 3.996886730194092,
+          "peak_reserved_gib": 4.34375,
+          "free_gib": 18.8743896484375
+        },
+        {
+          "step": 3,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 68.18543400242925,
+          "grad_norm": 5.0351409912109375,
+          "peak_allocated_gib": 3.996030807495117,
+          "peak_reserved_gib": 4.34375,
+          "free_gib": 18.8743896484375
+        }
+      ],
+      "ce_per_second": 59.90969440835024
+    },
+    {
+      "length": 512,
+      "microbatch": 4,
+      "accumulation": 2,
+      "media_features": 0,
+      "rows": [
+        {
+          "step": 1,
+          "warmup": true,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 59.256952211260796,
+          "grad_norm": 1.6677055358886719,
+          "peak_allocated_gib": 3.812530040740967,
+          "peak_reserved_gib": 4.404296875,
+          "free_gib": 18.8138427734375
+        },
+        {
+          "step": 2,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 59.84789583273232,
+          "grad_norm": 2.8944931030273438,
+          "peak_allocated_gib": 5.350156784057617,
+          "peak_reserved_gib": 5.58203125,
+          "free_gib": 17.6361083984375
+        },
+        {
+          "step": 3,
+          "warmup": false,
+          "profiled": false,
+          "input_tokens": 4096,
+          "ce_tokens": 4088,
+          "seconds": 59.9308832641691,
+          "grad_norm": 5.178194046020508,
+          "peak_allocated_gib": 5.350851058959961,
+          "peak_reserved_gib": 5.58203125,
+          "free_gib": 17.6361083984375
+        }
+      ],
+      "ce_per_second": 68.25916962624565
+    }
+  ],
+  "original_report_sha256": "7fd1f528930cc70400459b90ba333899236f767eb20ec62a28f29c2e198d226d",
+  "as_of_utc": "2026-09-10T07:08:37.590550+00:00"
+}
