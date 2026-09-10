@@ -63,12 +63,28 @@ def main(argv: Sequence[str] | None = None) -> None:
         p.add_argument("--family", choices=["minikimik3", "miniqwen4", "minideepseekv4"])
         p.add_argument("--media-root")
         p.add_argument("--max-features", type=int, default=256)
+        p.add_argument(
+            "--text-encoding", help="reuse a verified standalone text encoding with native media"
+        )
+        p.add_argument("--max-gib", type=float, help="hard cap for newly written encoded files")
+        p.add_argument(
+            "--min-pixels", type=int, help="explicit Qwen/DeepSeek native resize lower bound"
+        )
         p.add_argument("--model-vocab-size", type=int, default=65536)
         values = vars(p.parse_args(argv[1:]))
         if values["family"]:
             result = encode_native(**values)
         else:
-            for key in ("family", "media_root", "max_features", "model_vocab_size"):
+            if values["text_encoding"] is not None or values["min_pixels"] is not None:
+                p.error("--text-encoding and --min-pixels require --family")
+            for key in (
+                "family",
+                "media_root",
+                "max_features",
+                "model_vocab_size",
+                "text_encoding",
+                "min_pixels",
+            ):
                 values.pop(key)
             result = encode_corpus(**values)
         print(json.dumps(result, indent=2))

@@ -28,6 +28,15 @@ def process_frames(frames, *, patch_size=16, max_features=256, min_pixels=65536,
         min_pixels=min_pixels,
         max_pixels=max_features * (patch_size * 2) ** 2,
     )
+    # The upstream minimum-area ceil can overshoot a tight mini maximum.
+    # Apply its downward branch to the proposed grid before resizing pixels.
+    max_pixels = max_features * (patch_size * 2) ** 2
+    if h * w > max_pixels:
+        h, w = smart_resize(
+            h, w, factor=patch_size * 2, min_pixels=min_pixels, max_pixels=max_pixels
+        )
+    if h * w > max_pixels:
+        raise ValueError("image aspect ratio cannot fit the requested Qwen feature budget")
     values = torch.stack(
         [torch.from_numpy(np.array(im.convert("RGB"))).permute(2, 0, 1) for im in frames]
     )
@@ -48,7 +57,7 @@ def process_frames(frames, *, patch_size=16, max_features=256, min_pixels=65536,
         timestamps=list(timestamps or []),
         original_frames=original_frames,
         padded_frames=values.shape[0] - original_frames,
-        processor="qwen4-4177486-mini-budget-v1",
+        processor="qwen4-4177486-mini-budget-v2",
     )
 
 

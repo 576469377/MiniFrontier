@@ -7,7 +7,7 @@ from typing import Any
 import torch
 from PIL import Image
 
-from minifrontier.data import chat_tokens
+from minifrontier.data import chat_tokens, sha256
 from minifrontier.data.media_hash import decoded_hashes
 
 
@@ -58,6 +58,44 @@ class TrainingBatch:
         )
 
 
+def pretraining_tokens(record, tokenizer):
+    """Keep raw text literal; only schema-declared media become structural image IDs."""
+    resources = record.get("media", [])
+    if "visual_question" in record or "visual_answer" in record:
+        if not resources or any(
+            not isinstance(record.get(key), str) or not record[key].strip()
+            for key in ("visual_question", "visual_answer")
+        ):
+            raise ValueError(
+                "canonical visual pretraining requires complete question/answer and media"
+            )
+        # Same PT text objective as the canonical serialized document, including
+        # the question. This does not apply the assistant-only SFT objective.
+        chunks = [""] * len(resources) + [
+            "\nUser: " + record["visual_question"] + "\nAssistant: " + record["visual_answer"]
+        ]
+    elif resources:
+        chunks = record["text"].split("<|image|>")
+        if len(chunks) == 1:
+            chunks = [""] * len(resources) + chunks
+        if len(chunks) != len(resources) + 1:
+            raise ValueError("placeholder/resource count mismatch")
+    else:
+        chunks = [record["text"]]
+    previous = tokenizer.encode_special_tokens
+    tokenizer.encode_special_tokens = True
+    try:
+        ids = [1]
+        for index, chunk in enumerate(chunks):
+            if index:
+                ids.append(7)
+            ids.extend(tokenizer.encode(chunk, add_special_tokens=False).ids)
+        ids.append(2)
+        return ids, [-100, *ids[1:]]
+    finally:
+        tokenizer.encode_special_tokens = previous
+
+
 def prepare_record(
     record,
     tokenizer,
@@ -67,17 +105,14 @@ def prepare_record(
     max_features=256,
     generation_prompt=False,
     model_vocab_size=None,
+    min_pixels=None,
 ):
     if tokenizer.token_to_id("<|image|>") != 7:
         raise ValueError(
             "native media requires the frozen strategy tokenizer special-token mapping"
         )
     if record.get("stage") == "pretrain":
-        text = record["text"]
-        if record.get("media") and "<|image|>" not in text:
-            text = "<|image|>" * len(record["media"]) + text
-        ids = [1, *tokenizer.encode(text).ids, 2]
-        labels = [-100, *ids[1:]]
+        ids, labels = pretraining_tokens(record, tokenizer)
     else:
         ids, labels = chat_tokens(
             record["turns"],
@@ -102,8 +137,11 @@ def prepare_record(
         if any(path is None for path in frame_paths):
             raise ValueError("media requires locally decoded image or frame paths")
         images = []
-        for path in frame_paths:
+        raw_hashes = resource.get("frame_sha256", [resource.get("sha256")] * len(frame_paths))
+        for path, expected_hash in zip(frame_paths, raw_hashes, strict=True):
             resolved = Path(root or ".") / path
+            if expected_hash and sha256(resolved) != expected_hash:
+                raise ValueError("raw media hash differs from immutable corpus record")
             with Image.open(resolved) as image:
                 images.append(image.copy())
         digest = decoded_hashes(images[0])
@@ -128,7 +166,7 @@ def prepare_record(
                 images[0],
                 start=len(output),
                 max_features=max_features,
-                min_pixels=resource.get("min_pixels", 3136),
+                min_pixels=resource.get("min_pixels", 3136) if min_pixels is None else min_pixels,
             )
             if model_vocab_size is None:
                 raise ValueError("DeepSeek sentinel layout requires the model vocabulary size")
@@ -168,7 +206,7 @@ def prepare_record(
             sample = qwen_frames(
                 images,
                 max_features=max_features,
-                min_pixels=resource.get("min_pixels", 65536),
+                min_pixels=resource.get("min_pixels", 65536) if min_pixels is None else min_pixels,
                 timestamps=resource.get("timestamps") if video else None,
             )
             output.append(9)
