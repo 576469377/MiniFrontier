@@ -1,6 +1,7 @@
 """Single-device token-normalized MF1 training, exact resume and continuous P0-P3 state."""
 
 import contextlib
+import copy
 import json
 import math
 import random
@@ -15,7 +16,7 @@ import torch
 
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import digest, write_json
-from minifrontier.data.minifrontier1_encoding import open_dataset
+from minifrontier.data.minifrontier1_encoding import evaluation_items, open_dataset
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
 from minifrontier.models.minifrontier1.mtp import mtp_targets
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, token_metadata
@@ -48,6 +49,12 @@ class Sampler:
 
     def __init__(self, dataset, seed, weights=None, *, length_filter=False):
         self.seed, self.rng = seed, random.Random(seed)
+        self.windowable = {
+            i
+            for i in range(len(dataset))
+            if hasattr(dataset, "windowable_at") and dataset.windowable_at(i)
+        }
+        self.document_offsets: dict[str, tuple[int, int]] = {}
         self.lengths = (
             {
                 i: dataset.length_at(i)
@@ -88,7 +95,7 @@ class Sampler:
     def next(self, max_length=None):
         domain = min(self.buckets, key=lambda k: self.ce[k] / self.weights[k])
         if max_length is not None and not any(
-            self.lengths[i] <= max_length for i in self.buckets[domain]
+            i in self.windowable or self.lengths[i] <= max_length for i in self.buckets[domain]
         ):
             raise ValueError(
                 f"no {domain} samples fit the selected {max_length}-token curriculum bucket"
@@ -102,10 +109,28 @@ class Sampler:
                 self.epochs[domain] += 1
             index = self.orders[domain][self.offsets[domain]]
             self.offsets[domain] += 1
-            if max_length is None or self.lengths[index] <= max_length:
+            if max_length is None or index in self.windowable or self.lengths[index] <= max_length:
                 break
         self.examples[domain] += 1
         return index, domain
+
+    def next_item(self, dataset, max_length=None):
+        domain = min(self.buckets, key=lambda k: self.ce[k] / self.weights[k])
+        if domain in self.document_offsets:
+            index, start = self.document_offsets[domain]
+        else:
+            index, domain = self.next(max_length)
+            start = 0
+        if index not in self.windowable:
+            return dataset[index], domain
+        capacity = max_length or dataset.config.max_position_embeddings
+        item = dataset.window_at(index, start, capacity)
+        next_start = start + item["input_ids"].shape[1] - 1
+        if next_start < dataset.length_at(index) - 1:
+            self.document_offsets[domain] = (index, next_start)
+        else:
+            self.document_offsets.pop(domain, None)
+        return item, domain
 
     def state_dict(self):
         return dict(
@@ -118,6 +143,7 @@ class Sampler:
             examples=self.examples,
             epochs=self.epochs,
             rng=self.rng.getstate(),
+            document_offsets=copy.deepcopy(self.document_offsets),
         )
 
     def load_state_dict(self, state):
@@ -125,6 +151,16 @@ class Sampler:
             raise ValueError("sampler data buckets/seed/mixture changed")
         for key in ("orders", "offsets", "ce", "examples", "epochs"):
             setattr(self, key, state[key])
+        self.document_offsets = copy.deepcopy(state.get("document_offsets", {}))
+        for domain, (index, start) in self.document_offsets.items():
+            if (
+                domain not in self.buckets
+                or index not in self.buckets[domain]
+                or index not in self.windowable
+                or start < 1
+                or (self.lengths and start >= self.lengths[index] - 1)
+            ):
+                raise ValueError("sampler document cursor differs from its text inventory")
         self.rng.setstate(state["rng"])
 
 
@@ -158,7 +194,7 @@ def _forward(model, item, *, labels=True, return_hidden=False):
 
 
 @torch.no_grad()
-def evaluate(model, dataset, device, *, limit=0):
+def evaluate(model, dataset, device, *, limit=0, max_length=None):
     was_training = model.training
     model.eval()
     losses: dict[str, float] = defaultdict(float)
@@ -167,8 +203,8 @@ def evaluate(model, dataset, device, *, limit=0):
     wrong_counts: Counter[str] = Counter()
     try:
         with torch.random.fork_rng(devices=[device.index or 0] if device.type == "cuda" else []):
-            for i in range(min(len(dataset), limit or len(dataset))):
-                item = move(dataset[i], device)
+            for item in evaluation_items(dataset, limit=limit, max_length=max_length):
+                item = move(item, device)
                 count = int(item["labels"][:, 1:].ne(-100).sum())
                 with torch.autocast(
                     device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"
@@ -200,6 +236,7 @@ def evaluate(model, dataset, device, *, limit=0):
         capability_qualified=False,
         examples=min(len(dataset), limit or len(dataset)),
         selection="full_validation" if not limit or limit >= len(dataset) else "explicit_prefix",
+        context_length=max_length,
     )
 
 
@@ -366,6 +403,15 @@ def train(
         Sampler(dataset, seed, weights, length_filter=run_kind == "strategy"),
         QuantileBalance(model),
     )
+    evaluation_length = (
+        max(
+            length
+            for length in PHASES[phase].get("lengths", {c.max_position_embeddings: 1})
+            if length <= c.max_position_embeddings
+        )
+        if run_kind == "strategy"
+        else c.max_position_embeddings
+    )
     ledger = dict(
         input_tokens=0,
         ce_tokens=0,
@@ -521,8 +567,7 @@ def train(
             packed: list[dict[str, Any]] = []
             packed_length = 0
             while inputs < input_batch_tokens:
-                index, domain = sampler.next(capacity)
-                item = dataset[index]
+                item, domain = sampler.next_item(dataset, capacity)
                 item["bucket"] = domain
                 if capacity is not None and item["input_ids"].shape[1] > capacity:
                     raise ValueError(
@@ -680,7 +725,13 @@ def train(
                 with (output / "router_metrics.jsonl").open("a") as handle:
                     handle.write(json.dumps(dict(step=step, routers=router_metrics)) + "\n")
             if step % eval_every == 0:
-                record(dict(event="validation", step=step, **evaluate(model, validation, device)))
+                record(
+                    dict(
+                        event="validation",
+                        step=step,
+                        **evaluate(model, validation, device, max_length=evaluation_length),
+                    )
+                )
             pause = stop_after_updates is not None and step >= stop_after_updates
             if step % save_every == 0 or pause:
                 save("paused" if pause else "running")
@@ -693,7 +744,7 @@ def train(
             and (steps is None or step < steps)
         )
         save("paused" if paused else "budget_complete_unqualified")
-        evaluation = evaluate(model, validation, device)
+        evaluation = evaluate(model, validation, device, max_length=evaluation_length)
         write_json(
             output / "evaluation.json",
             dict(

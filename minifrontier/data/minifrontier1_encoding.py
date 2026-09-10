@@ -1,5 +1,6 @@
 """Disk-bounded native token/label/position shards and per-record CE accounting."""
 
+import contextlib
 import json
 import shutil
 from bisect import bisect_right
@@ -15,11 +16,14 @@ from tokenizers import Tokenizer
 
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import (
+    SPECIAL_TOKENS,
     RecordDataset,
     digest,
     prepare_media,
+    safe_text,
     write_json,
 )
+from minifrontier.data.partitions import open_corpus
 from minifrontier.models.minifrontier1.processing import PROCESSOR_VERSION, token_metadata
 from minifrontier.storage import require_space
 
@@ -166,28 +170,142 @@ def _close_part(parts, handles, paths, counts):
 
 def encode_compact_dataset(data, output, config, *, max_gib=16, shard_tokens=64_000_000):
     """Encode immutable bounded shards, retaining only sparse media descriptors."""
-    data, output = Path(data).resolve(), Path(output).resolve()
+    data = Path(data).resolve()
+    source_manifest = json.loads((data / "manifest.json").read_text())
+
+    def datasets():
+        for split in ("train", "val", "test"):
+            dataset = RecordDataset(data, split, config)
+            yield split, ((dataset.record(i), dataset[i]) for i in range(len(dataset)))
+
+    return _encode_compact_items(
+        datasets(),
+        output,
+        config,
+        data / "tokenizer.json",
+        source_manifest,
+        source_manifest_sha256=sha256(data / "manifest.json"),
+        media_root=(data / source_manifest.get("media_root", ".")).resolve(),
+        max_gib=max_gib,
+        shard_tokens=shard_tokens,
+    )
+
+
+def encode_canonical_text(
+    corpus, tokenizer_path, output, config, *, max_gib=3, shard_tokens=64_000_000
+):
+    """Store each complete canonical document once, without a JSONL/raw-text copy.
+
+    Text windows are chosen at consumption time; no EOS is inserted inside a
+    document and source groups retain their effective train/val/test partition.
+    This text component remains unadmitted until the full phase data is assembled.
+    """
+    corpus, tokenizer_path = Path(corpus).resolve(), Path(tokenizer_path).resolve()
+    audit = json.loads((corpus / "source-audit.json").read_text())
+    if (
+        not audit.get("formal_admission")
+        and audit.get("status") != "candidate_slice_complete_pending_admission"
+    ):
+        raise ValueError("canonical text construction must finish before encoding")
+    if (corpus / "corpus.sqlite").exists():
+        manifest = json.loads((corpus / "corpus-manifest.json").read_text())
+        if sha256(corpus / "corpus.sqlite") != manifest["database_sha256"]:
+            raise ValueError("canonical database checksum differs")
+    tokenizer = Tokenizer.from_file(str(tokenizer_path))
+    if tokenizer.get_vocab_size() > config.vocab_size or any(
+        tokenizer.token_to_id(s) != i for i, s in enumerate(SPECIAL_TOKENS)
+    ):
+        raise ValueError(
+            "canonical MF1 encoding needs its control mapping and a fitting vocabulary"
+        )
+    domain_map = dict(
+        zh_edu="zh_general",
+        en_edu="en_general",
+        code="code",
+        verified_math_science="math",
+        dialogue="structured",
+    )
+    source_manifest = dict(
+        kind="canonical_text_component",
+        formal_admission=False,
+        source_corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
+        source_audit_sha256=sha256(corpus / "source-audit.json"),
+        boundary_protocol="BOS + control-escaped text + EOS; one-token context overlap between windows",
+        raw_text_copied=False,
+    )
+
+    def records(db, split):
+        for payload, group in db.execute(
+            "SELECT payload,group_root FROM samples WHERE split=? ORDER BY id", (split,)
+        ):
+            row = json.loads(payload)
+            if row["stage"] != "pretrain" or row.get("media") or row.get("turns"):
+                raise ValueError("canonical text component only accepts pure pretraining documents")
+            ids = torch.tensor([[1, *safe_text(tokenizer, row["text"]), 2]])
+            labels = ids.clone()
+            labels[:, 0] = -100
+            origin = {
+                k: row[k] for k in ("source", "revision", "item_id", "license", "content_hash")
+            }
+            yield (
+                dict(origin=origin),
+                dict(
+                    input_ids=ids,
+                    labels=labels,
+                    sample_id=row["sample_id"],
+                    split_group=group,
+                    domain=domain_map[row["task"]],
+                    media=[],
+                    media_exposures=0,
+                    text_document=True,
+                ),
+            )
+
+    with contextlib.closing(open_corpus(corpus)) as db:
+        return _encode_compact_items(
+            ((split, records(db, split)) for split in ("train", "val", "test")),
+            output,
+            config,
+            tokenizer_path,
+            source_manifest,
+            source_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
+            media_root=corpus,
+            max_gib=max_gib,
+            shard_tokens=shard_tokens,
+        )
+
+
+def _encode_compact_items(
+    datasets,
+    output,
+    config,
+    tokenizer_path,
+    source_manifest,
+    *,
+    source_manifest_sha256,
+    media_root,
+    max_gib,
+    shard_tokens,
+):
+    output = Path(output).resolve()
     if output.exists() or max_gib <= 0 or shard_tokens < 1:
         raise ValueError("choose a new output and positive shard/storage budgets")
     require_space(output, min(int(max_gib * 1024**3), 16 * 1024**2))
     output.mkdir(parents=True)
-    shutil.copyfile(data / "tokenizer.json", output / "tokenizer.json")
+    shutil.copyfile(tokenizer_path, output / "tokenizer.json")
     dtype = np.dtype("<u2" if config.vocab_size <= 65536 else "<u4")
     domains: list[str] = []
     splits = {}
     used = (output / "tokenizer.json").stat().st_size
-    source_manifest = json.loads((data / "manifest.json").read_text())
-    for split in ("train", "val", "test"):
-        dataset = RecordDataset(data, split, config)
+    for split, items in datasets:
         parts: list[dict[str, Any]] = []
         handles: dict[str, BinaryIO] = {}
         paths: dict[str, Path] = {}
         counts: Counter[str] = Counter()
+        domain_ce: Counter[str] = Counter()
 
         try:
-            for i in range(len(dataset)):
-                record = dataset.record(i)
-                item = dataset[i]
+            for record, item in items:
                 ids, labels = item["input_ids"][0].numpy(), item["labels"][0].numpy()
                 if ids.min() < 0 or ids.max() >= config.vocab_size:
                     raise ValueError(
@@ -195,7 +313,11 @@ def encode_compact_dataset(data, output, config, *, max_gib=16, shard_tokens=64_
                     )
                 if not np.all((labels == -100) | (labels == ids)):
                     raise ValueError("compact format needs labels equal to IDs or -100")
-                if handles and counts["input_tokens"] + len(ids) > shard_tokens:
+                text_document = bool(item.get("text_document"))
+                if handles and (
+                    counts["input_tokens"] + len(ids) > shard_tokens
+                    or text_document != bool(counts["text_documents"])
+                ):
                     _close_part(parts, handles, paths, counts)
                 if not handles:
                     counts = Counter()
@@ -216,6 +338,8 @@ def encode_compact_dataset(data, output, config, *, max_gib=16, shard_tokens=64_
                     media=spans,
                     resources=record.get("media", []),
                 )
+                if "origin" in record:
+                    entry["origin"] = record["origin"]
                 raw = (json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
                 mask = np.packbits(labels != -100, bitorder="little")
                 index = np.array(
@@ -249,17 +373,22 @@ def encode_compact_dataset(data, output, config, *, max_gib=16, shard_tokens=64_
                     media_exposures=item["media_exposures"],
                     vision_tokens=sum(s["feature_count"] for s in spans),
                 )
+                if text_document:
+                    counts["text_documents"] += 1
+                domain_ce[domain] += int((labels[1:] != -100).sum())
             _close_part(parts, handles, paths, counts)
         finally:
             for handle in handles.values():
                 handle.close()
         splits[split] = dict(
-            parts=parts, counts=dict(sum((Counter(p["counts"]) for p in parts), Counter()))
+            parts=parts,
+            counts=dict(sum((Counter(p["counts"]) for p in parts), Counter())),
+            domain_ce=dict(domain_ce),
         )
     manifest = dict(
         source_manifest,
         format=FORMAT,
-        source_manifest_sha256=sha256(data / "manifest.json"),
+        source_manifest_sha256=source_manifest_sha256,
         config_sha256=digest(asdict(config)),
         processor_version=PROCESSOR_VERSION,
         tokenizer_sha256=sha256(output / "tokenizer.json"),
@@ -268,7 +397,7 @@ def encode_compact_dataset(data, output, config, *, max_gib=16, shard_tokens=64_
         splits=splits,
         shard_tokens=shard_tokens,
         bytes=used,
-        media_root=str((data / source_manifest.get("media_root", ".")).resolve()),
+        media_root=str(media_root),
         formal_admission=False,
     )
     # Original record file paths are provenance, not dependencies of this loader.
@@ -353,19 +482,45 @@ class CompactDataset:
     def domain_at(self, index):
         return self.manifest["domains"][int(self._entry(index)[1]["domain"])]
 
+    def windowable_at(self, index):
+        counts = self.parts[self._entry(index)[0]]["counts"]
+        return counts.get("text_documents", 0) == counts["records"]
+
+    def window_at(self, index, start, capacity):
+        if not self.windowable_at(index):
+            raise ValueError("only canonical continuation documents may be windowed")
+        if not 2 <= capacity <= self.config.max_position_embeddings:
+            raise ValueError("text window capacity is outside the model context")
+        if not 0 <= start < self.length_at(index) - 1:
+            raise ValueError("text window starts outside its document's CE positions")
+        item = self._read_item(index, start=start, capacity=capacity)
+        if item["media"]:
+            raise ValueError("a text window cannot contain media spans")
+        item["labels"][:, 0] = -100
+        item["source_sample_id"] = item["sample_id"]
+        item["sample_id"] += f"@{start}:{start + item['input_ids'].shape[1]}"
+        item["document_offset"] = start
+        return item
+
     def __getitem__(self, index):
+        return self._read_item(index)
+
+    def _read_item(self, index, *, start=0, capacity=None):
         part, entry = self._entry(index)
         arrays = self._open_part(part)
-        length, offset = int(entry["length"]), int(entry["offset"])
+        length = int(entry["length"]) - start
+        if capacity is not None:
+            length = min(length, capacity)
+        offset = int(entry["offset"]) + start
         ids = torch.from_numpy(arrays["tokens.bin"][offset : offset + length].astype(np.int64))[
             None
         ]
-        mask_offset = int(entry["mask_offset"])
+        mask_offset, bit_offset = int(entry["mask_offset"]) + start // 8, start % 8
         mask = np.unpackbits(
-            arrays["mask.bin"][mask_offset : mask_offset + (length + 7) // 8],
+            arrays["mask.bin"][mask_offset : mask_offset + (bit_offset + length + 7) // 8],
             bitorder="little",
-            count=length,
-        ).astype(bool)
+            count=bit_offset + length,
+        )[bit_offset:].astype(bool)
         labels = ids.clone().masked_fill(~torch.from_numpy(mask)[None], -100)
         metadata_offset = int(entry["metadata_offset"])
         metadata = json.loads(
@@ -416,3 +571,19 @@ def open_dataset(root, split, config):
     return (CompactDataset if manifest.get("format") == FORMAT else RecordDataset)(
         root, split, config
     )
+
+
+def evaluation_items(dataset, *, limit=0, max_length=None):
+    """Evaluate each document's CE positions once at a declared context length."""
+    for index in range(min(len(dataset), limit or len(dataset))):
+        if hasattr(dataset, "windowable_at") and dataset.windowable_at(index):
+            capacity = max_length or dataset.config.max_position_embeddings
+            if capacity < 2:
+                raise ValueError("document evaluation needs at least two token positions")
+            for start in range(0, dataset.length_at(index) - 1, capacity - 1):
+                yield dataset.window_at(index, start, capacity)
+        else:
+            item = dataset[index]
+            if max_length is not None and item["input_ids"].shape[1] > max_length:
+                raise ValueError("complete validation record exceeds the declared context")
+            yield item

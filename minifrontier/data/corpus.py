@@ -461,11 +461,20 @@ def compare_tokenizers(corpus_root, output, *, byte_budget=64 * 1024**2):
     return result
 
 
-def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):
+def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_gib=None):
     """Encode text records once; media records require the native processor path."""
     root, output = Path(corpus_root), Path(output)
     if output.exists():
         raise FileExistsError("encoded corpus is immutable; select a new path")
+    if max_gib is not None and max_gib <= 0:
+        raise ValueError("encoding disk budget must be positive")
+    max_bytes = int(max_gib * GIB) if max_gib is not None else None
+    # Include tokenizer, index headers and final manifests in a conservative bound.
+    accounted_bytes = Path(tokenizer_path).stat().st_size + 1024**2
+    if max_bytes is not None:
+        if accounted_bytes > max_bytes:
+            raise ValueError("encoding disk budget cannot hold tokenizer and metadata")
+        require_space(output, max_bytes, reserve_bytes=80 * GIB)
     output.mkdir(parents=True)
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
     (output / "tokenizer.json").write_bytes(Path(tokenizer_path).read_bytes())
@@ -520,10 +529,14 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):
                             continue
                         identity_tokens += ce
                     incoming = len(ids) * 8 + len(payload.encode()) + 512
+                    if max_bytes is not None and accounted_bytes + incoming > max_bytes:
+                        db.close()
+                        raise ValueError("encoding disk budget reached; output remains unadmitted")
                     with reserve_write(token_path, incoming):
                         np.asarray(ids, dtype=np.int32).tofile(tokens)
                         np.asarray(targets, dtype=np.int32).tofile(labels)
                         metadata.write(payload + "\n")
+                    accounted_bytes += incoming
                     index.append((token_count, len(ids)))
                     if stage == "sft":
                         template_counts[record_template(row)] += 1
@@ -549,6 +562,8 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):
                 chat_template_counts=dict(template_counts),
             )
     db.close()
+    if max_bytes is not None:
+        manifest["storage_bound"] = dict(max_bytes=max_bytes, accounted_bytes=accounted_bytes)
     update_manifest(manifest)
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2))
     return manifest

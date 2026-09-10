@@ -187,3 +187,13 @@ def test_tokenizer_consumer_can_move_between_worker_threads(corpus, tmp_path, mo
     monkeypatch.setattr(corpus_module, "Tokenizer", MigratingConsumer)
     report = train_tokenizer(view, tmp_path / "tokenizer.json", 350)
     assert report["training_bytes"] > 0
+
+
+def test_encoding_rejects_insufficient_bound_before_copying_tokenizer(corpus, tmp_path):
+    root, _ = corpus
+    tokenizer = tmp_path / "tokenizer.json"
+    train_tokenizer(root, tokenizer, 350)
+    output = tmp_path / "encoded"
+    with pytest.raises(ValueError, match="disk budget"):
+        encode_corpus(root, tokenizer, output, max_gib=1e-6)
+    assert not output.exists()
