@@ -343,4 +343,7 @@ def test_formal_recipe_requires_actual_bindings_and_matching_profile(corpus, tmp
         strategy_gate.validate_arguments(args)
     measured["pretraining_program"] = binding
     profile.write_text(json.dumps(dict(recipe=measured)))
+    with pytest.raises(ValueError, match="CE-budget validation"):
+        strategy_gate.validate_arguments(args)
+    args.pretraining_eval = True
     strategy_gate.validate_arguments(args)

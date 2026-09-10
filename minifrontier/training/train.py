@@ -74,6 +74,11 @@ def parser():
     p.add_argument("--save-every", type=int, default=100)
     p.add_argument("--eval-every", type=int, default=100)
     p.add_argument(
+        "--pretraining-eval",
+        action="store_true",
+        help="fixed 1M/5M CE validation with the base pretraining main-CE cadence",
+    )
+    p.add_argument(
         "--eval-batches",
         type=int,
         default=64,
@@ -204,6 +209,10 @@ def main(argv=None):
         )
     ):
         raise ValueError("step counts and capacities must be positive")
+    if args.pretraining_eval and (
+        not args.ce_tokens or args.stage not in {"pretrain", "sparse_cpt"}
+    ):
+        raise ValueError("pretraining-eval requires a main CE pretraining phase")
     if args.eval_batches < 0:
         raise ValueError("eval-batches must be nonnegative (0 means the whole validation split)")
     if args.stage in {"grpo", "mopd", "opd"}:
@@ -495,6 +504,9 @@ def run(args, rank, world, device):
             max_new_tokens=args.rollout_tokens,
         )
         validation_rollout.teachers = rollout.teachers
+    from .validation import CEValidation, validation_due
+
+    ce_validation = CEValidation(val, seed=args.seed) if args.pretraining_eval else None
     run_spec = dict(
         model_name=args.model,
         config=asdict(model.config),
@@ -555,6 +567,8 @@ def run(args, rank, world, device):
     from minifrontier.provenance import source_identity
 
     run_spec["source"] = source_identity()
+    if ce_validation:
+        run_spec["validation"] = ce_validation.binding
     if program:
         run_spec["pretraining_program"] = program.binding
     if args.run_kind == "strategy":
@@ -785,10 +799,12 @@ def run(args, rank, world, device):
         else float("inf")
     )
 
-    def evaluate(step):
+    def evaluate(step, *, final=False):
         nonlocal best_nll
+        started = time.monotonic()
         model.eval()
-        values = torch.zeros(6, device=device, dtype=torch.float64)
+        domains = sorted(set(ce_validation.domains)) if ce_validation else []
+        values = torch.zeros(6 + 2 * len(domains), device=device, dtype=torch.float64)
         random_state = rng_state(device)
         if validation_rollout:
             from minifrontier.training.teachers import state_hash
@@ -796,14 +812,25 @@ def run(args, rank, world, device):
 
             validation_policy_hash = state_hash(model.state_dict())
         with torch.no_grad(), autocast():
-            for i in validation_indices(
-                len(val),
-                limit=args.eval_batches * world,
-                seed=args.seed,
-                rank=rank,
-                world_size=world,
-            ):
-                validation_batch = batch(val, [i], device)
+            batches = (
+                ce_validation.batches(
+                    final=final, batch_size=args.batch_size, rank=rank, world_size=world
+                )
+                if ce_validation
+                else (
+                    (None, [i])
+                    for i in validation_indices(
+                        len(val),
+                        limit=args.eval_batches * world,
+                        seed=args.seed,
+                        rank=rank,
+                        world_size=world,
+                    )
+                )
+            )
+            for domain, indices in batches:
+                i = indices[0]
+                validation_batch = batch(val, indices, device)
                 x, y = validation_batch
                 if validation_rollout:
                     prepared = validation_rollout.prepare(x, y)
@@ -826,7 +853,16 @@ def run(args, rank, world, device):
                     if args.stage == "dpo"
                     else int((y[:, 1:] != -100).sum())
                 )
-                values += torch.stack(
+                if ce_validation:
+                    expected = sum(ce_validation.counts[i] for i in indices)
+                    if count != expected:
+                        raise ValueError("validation labels disagree with frozen CE accounting")
+                    if not torch.isfinite(loss) or not torch.isfinite(lm):
+                        raise FloatingPointError("nonfinite pretraining validation loss")
+                    slot = 6 + 2 * domains.index(domain)
+                    values[slot] += lm.float() * count
+                    values[slot + 1] += count
+                values[:6] += torch.stack(
                     [
                         loss.float() * count,
                         lm.float() * count,
@@ -834,7 +870,7 @@ def run(args, rank, world, device):
                         loss.new_tensor(
                             validation_rollout.last_reward if validation_rollout else 0.0
                         ),
-                        loss.new_tensor(1),
+                        loss.new_tensor(len(indices)),
                         _reward if args.stage == "dpo" else loss.new_tensor(0),
                     ]
                 )
@@ -860,12 +896,36 @@ def run(args, rank, world, device):
             examples=int(values[4].item()),
             sampling="uniform_without_replacement",
         )
+        if ce_validation:
+            scope = "phase_end" if final else "periodic"
+            selection = ce_validation.binding[scope]
+            if int(values[2]) != selection["actual_ce_tokens"]:
+                raise ValueError("actual global validation CE differs from the fixed selection")
+            metrics.update(
+                evaluation_scope=scope,
+                requested_ce_tokens=selection["requested_ce_tokens"],
+                selection_sha256=selection["indices_sha256"],
+                seconds=time.monotonic() - started,
+                per_domain={
+                    d: dict(
+                        lm_loss=(values[6 + 2 * i] / values[7 + 2 * i].clamp_min(1)).item(),
+                        ce_tokens=int(values[7 + 2 * i]),
+                    )
+                    for i, d in enumerate(domains)
+                    if values[7 + 2 * i] > 0
+                },
+            )
+        if ce_validation:
+            for domain, result in metrics["per_domain"].items():
+                metrics[f"lm_loss_{domain}"] = result["lm_loss"]
+                metrics[f"ce_tokens_{domain}"] = result["ce_tokens"]
         if args.stage == "dpo":
             metrics["preference_accuracy"] = (values[5] / values[4]).item()
         record(metrics)
         if (
             rank == 0
             and step > 0
+            and (not ce_validation or not final)
             and args.stage in {"pretrain", "sparse_cpt", "sft"}
             and values[2] > 0
             and metrics["lm_loss"] < best_nll
@@ -1004,13 +1064,14 @@ def run(args, rank, world, device):
             world_size=world,
         )
     )
-    evaluate(first_step)
+    evaluate(first_step, final=finished(first_step))
     model.train()
     step = first_step
     empty_windows = 0
     empty_rl_windows = 0
     while step < args.steps and not finished(step):
         next_step = step + 1
+        previous_main_ce = program.main_ce(ledger) if program else ledger.ce_tokens
         started = time.monotonic()
         optimizer.zero_grad(set_to_none=True)
         metrics = torch.zeros(3, device=device)
@@ -1446,8 +1507,17 @@ def run(args, rank, world, device):
                     else 0,
                 )
             )
-        if step % args.eval_every == 0 or finished(step):
-            evaluate(step)
+        validation_ready = (
+            validation_due(
+                previous_main_ce,
+                program.main_ce(ledger) if program else ledger.ce_tokens,
+                ce_validation.policy,
+            )
+            if ce_validation
+            else step % args.eval_every == 0
+        )
+        if validation_ready or finished(step):
+            evaluate(step, final=finished(step))
         if (
             args.stop_after_updates is not None
             and step >= args.stop_after_updates

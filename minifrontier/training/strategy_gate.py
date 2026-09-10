@@ -70,8 +70,12 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
                 errors.append(f"data admission missing {key}")
         if audit.get("minimum_source_holdout_fraction", 0) < 0.005:
             errors.append("some source has less than 0.5% group holdout")
-        if audit.get("periodic_validation_ce_tokens", 0) < 5_000_000:
-            errors.append("periodic pretraining validation is smaller than 5M CE tokens")
+        base_pretraining = phase["budget_scope"] == "main"
+        minimum_periodic = 1_000_000 if base_pretraining else 5_000_000
+        if audit.get("periodic_validation_ce_tokens", 0) < minimum_periodic:
+            errors.append(f"periodic validation is smaller than {minimum_periodic} CE tokens")
+        if base_pretraining and audit.get("phase_end_validation_ce_tokens", 0) < 5_000_000:
+            errors.append("phase-end pretraining validation is smaller than 5M CE tokens")
         if (
             phase["budget_scope"]
             in {
@@ -142,6 +146,10 @@ def validate_arguments(args):
         report["errors"].append("requested actual token budget is outside strategy bounds")
     if args.sequence_length not in phase["sequence_lengths"]:
         report["errors"].append("context bucket is not part of this phase")
+    if phase["budget_scope"] == "main" and not args.pretraining_eval:
+        report["errors"].append(
+            "base pretraining requires fixed CE-budget validation and main-CE cadence"
+        )
     objective = phase["objective"]
     if objective == "ce_tokens" and (
         args.stage not in {"pretrain", "sparse_cpt"} or args.ce_tokens is None

@@ -1311,7 +1311,22 @@
         "benchmark"
       ],
       "registration": "publish a TensorBoard log-directory link only after checking the formal run identity; retain original event files",
-      "empty_until_formal_training": true
+      "empty_until_formal_training": true,
+      "validation": {
+        "source_models": {
+          "flag": "--pretraining-eval",
+          "periodic_ce_tokens": 1000000,
+          "phase_end_ce_tokens": 5000000,
+          "first_100m_interval_ce": 10000000,
+          "later_interval_ce": 50000000,
+          "axis": "cumulative main CE across phases",
+          "selection": "fixed without replacement; complete context windows; same-domain microbatches",
+          "resume": "bind policy and selected index hashes",
+          "phase_end_inventory_required_before_start": true
+        },
+        "mf1": "pending alignment of native evaluator; this source-model flag does not configure MF1",
+        "capability_status": "unassessed"
+      }
     }
   }
 }
