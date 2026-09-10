@@ -25,7 +25,7 @@ from minifrontier.data.minifrontier1 import (
     validate_record,
     write_json,
 )
-from minifrontier.data.partitions import open_corpus
+from minifrontier.data.partitions import corpus_storage_root, open_corpus
 from minifrontier.models.minifrontier1.processing import PROCESSOR_VERSION, token_metadata
 from minifrontier.storage import require_space
 
@@ -356,8 +356,6 @@ def encode_canonical_images(
     } and not audit.get("formal_admission"):
         raise ValueError("canonical media construction must finish before encoding")
     manifest = json.loads((corpus / "corpus-manifest.json").read_text())
-    if sha256(corpus / "corpus.sqlite") != manifest["database_sha256"]:
-        raise ValueError("canonical media database checksum differs")
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
     if tokenizer.get_vocab_size() > config.vocab_size or any(
         tokenizer.token_to_id(s) != i for i, s in enumerate(SPECIAL_TOKENS)
@@ -386,8 +384,8 @@ def encode_canonical_images(
             record = canonical_image_record(
                 json.loads(payload), group, max_features=max_features, document_tiles=document_tiles
             )
-            validate_record(record, corpus)
-            item = encode_record(record, tokenizer, config, corpus)
+            validate_record(record, media_root)
+            item = encode_record(record, tokenizer, config, media_root)
             length = item["input_ids"].shape[1]
             bucket = str(
                 next((n for n in (512, 1024, 2048, 4096, 8192) if length <= n), "over_8192")
@@ -403,6 +401,9 @@ def encode_canonical_images(
             yield record, item
 
     with contextlib.closing(open_corpus(corpus)) as db:
+        media_root = corpus_storage_root(db)
+        if sha256(media_root / "corpus.sqlite") != manifest["database_sha256"]:
+            raise ValueError("canonical media database checksum differs")
         return _encode_compact_items(
             ((split, records(db, split)) for split in ("train", "val", "test")),
             output,
@@ -410,7 +411,7 @@ def encode_canonical_images(
             tokenizer_path,
             source_manifest,
             source_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
-            media_root=corpus,
+            media_root=media_root,
             max_gib=max_gib,
             shard_tokens=shard_tokens,
         )

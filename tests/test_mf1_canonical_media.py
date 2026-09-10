@@ -47,6 +47,8 @@ def corpus(tmp_path, monkeypatch):
                 lang="en",
                 stage="pretrain",
                 text=f"Image {i} question and unique complete answer for {task}.",
+                reference_tokens=30,
+                answer_reference_tokens=10,
                 visual_question=f"Describe image {i}. Is <|image|> printed?",
                 visual_answer=f"Complete answer {i}, including literal <|eos|>.",
                 media=[
@@ -419,3 +421,53 @@ def test_acceptance_actual_token_limit_is_checked_before_any_optimizer_update(
     assert status["step"] == 0 and status["ledger"]["ce_tokens"] == 0
     assert status["state"] == "acceptance_token_limit"
     assert not (output / "checkpoint.pt").exists()
+
+
+def test_visual_partition_reaches_encoding_and_audit_without_copying_pixels(
+    corpus, tmp_path, monkeypatch
+):
+    import shutil
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(shutil, "disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3))
+    from minifrontier.data.partitions import create_partition_view
+
+    root, tokenizer, config, rows = corpus
+    (root / "source-audit.json").write_text(
+        json.dumps(
+            dict(
+                kind="visual_candidate_inventory",
+                status="candidate_slice_complete_pending_admission",
+                formal_admission=False,
+                split_independent_images={"train": 2, "val": 1, "test": 1},
+            )
+        )
+    )
+    (root / "integrity-and-split-audit.json").write_text(json.dumps(dict(cross_split_groups=0)))
+    selected = next(group for split, _, group in rows if split == "train")
+    proposal = tmp_path / "reservation.json"
+    proposal.write_text(
+        json.dumps(
+            dict(
+                corpus_manifest_sha256=sha256(root / "corpus-manifest.json"),
+                integrity_audit_sha256=sha256(root / "integrity-and-split-audit.json"),
+                minimum_validation_group_fraction=0.005,
+                groups={selected: "val"},
+            )
+        )
+    )
+    view, output = tmp_path / "view", tmp_path / "encoded-view"
+    create_partition_view(root, proposal, view)
+    assert not (view / "corpus.sqlite").exists() and not list(view.glob("*.png"))
+    partition_audit = json.loads((view / "source-audit.json").read_text())
+    assert partition_audit["split_independent_images"] == {"train": 1, "val": 2, "test": 1}
+    assert partition_audit["split_independent_groups"] == {"train": 1, "val": 2, "test": 1}
+    encode_canonical_images(view, tokenizer, output, config, max_features=49)
+    report = audit_image_encoding(view, output, tmp_path / "view-audit.json", asdict(config))
+    assert report["status"] == "mechanical_checks_passed_pending_quality_admission"
+    assert report["splits"]["train"]["counts"]["records"] == 1
+    assert report["splits"]["val"]["counts"]["records"] == 2
+    assert selected not in {
+        CompactDataset(output, "train", config)[i]["split_group"] for i in range(1)
+    }
+    assert selected in {CompactDataset(output, "val", config)[i]["split_group"] for i in range(2)}

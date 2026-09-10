@@ -74,6 +74,13 @@ def open_corpus(root):
         raise
 
 
+def corpus_storage_root(db):
+    """Locate immutable payload/media storage after opening the effective partition."""
+    return Path(
+        next(path for _, name, path in db.execute("PRAGMA database_list") if name == "main")
+    ).parent
+
+
 def create_partition_view(corpus_root, reservation, output):
     """Apply a checked reservation without copying or rewriting the source database."""
     from minifrontier.data.minifrontier1 import write_json
@@ -106,6 +113,7 @@ def create_partition_view(corpus_root, reservation, output):
     statistics: dict[str, dict[str, Any]] = {}
     totals: dict[str, int] = {}
     tokens: dict[str, dict[str, int]] = {}
+    media_statistics = {}
     with contextlib.closing(open_corpus(source)) as db:
         _reserve(db, proposal["groups"])
         for name, split, records, groups, count in db.execute(
@@ -123,6 +131,27 @@ def create_partition_view(corpus_root, reservation, output):
             if heldout < math.ceil(total * fraction):
                 raise ValueError("some source still falls short of its validation group minimum")
             splits["validation_group_fraction"] = heldout / total
+        if audit.get("kind") == "visual_candidate_inventory":
+            images: dict[str, set[str]] = {}
+            for split, payload in db.execute("SELECT split,payload FROM samples"):
+                images.setdefault(split, set()).update(
+                    m["rgb_sha256"] for m in json.loads(payload)["media"]
+                )
+            answers: dict[str, dict[str, int]] = {}
+            for split, task, count in db.execute(
+                "SELECT split,task,SUM(json_extract(payload,'$.answer_reference_tokens')) "
+                "FROM samples GROUP BY split,task"
+            ):
+                answers.setdefault(split, {})[task] = count
+            media_statistics = dict(
+                split_independent_images={k: len(v) for k, v in images.items()},
+                split_independent_groups=dict(
+                    db.execute(
+                        "SELECT split,COUNT(DISTINCT group_root) FROM samples GROUP BY split"
+                    )
+                ),
+                split_answer_reference_tokens=answers,
+            )
         if (source / "review-samples.jsonl").exists():
             with (source / "review-samples.jsonl").open() as review:
                 for line in review:
@@ -172,6 +201,7 @@ def create_partition_view(corpus_root, reservation, output):
         formal_admission=False,
         updated_unix=time.time(),
     )
+    audit.update(media_statistics)
     write_json(root / "source-audit.json", audit)
     return result
 

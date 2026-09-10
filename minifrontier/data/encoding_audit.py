@@ -15,7 +15,7 @@ from minifrontier.data import sha256
 from minifrontier.data.corpus import STRATEGY_SPECIAL_TOKENS
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS, digest, write_json
 from minifrontier.data.minifrontier1_encoding import FORMAT, INDEX
-from minifrontier.data.partitions import open_corpus
+from minifrontier.data.partitions import corpus_storage_root, open_corpus
 from minifrontier.models.minifrontier1 import MiniFrontier1Config
 
 DOMAINS = dict(
@@ -169,8 +169,6 @@ def audit_image_encoding(corpus, encoded, output, config):
     ):
         raise ValueError("image audit needs a bound standard-image component and model config")
     canonical = json.loads((corpus / "corpus-manifest.json").read_text())
-    if sha256(corpus / "corpus.sqlite") != canonical["database_sha256"]:
-        raise ValueError("canonical media database checksum differs")
     tokenizer = Tokenizer.from_file(
         str(_checked(root, "tokenizer.json", manifest["tokenizer_sha256"]))
     )
@@ -194,6 +192,9 @@ def audit_image_encoding(corpus, encoded, output, config):
     checked_media = set()
     try:
         with contextlib.closing(open_corpus(corpus)) as db:
+            media_root = corpus_storage_root(db)
+            if sha256(media_root / "corpus.sqlite") != canonical["database_sha256"]:
+                raise ValueError("canonical media database checksum differs")
             remaining = dict(db.execute("SELECT id,split FROM samples"))
             for split in ("train", "val", "test"):
                 counts: Counter[str] = Counter()
@@ -243,10 +244,10 @@ def audit_image_encoding(corpus, encoded, output, config):
                         raise ValueError(
                             "encoded image resource differs from its canonical original"
                         )
-                    path = (corpus / resource["uri"]).resolve()
+                    path = (media_root / resource["uri"]).resolve()
                     key = (str(path), resource["sha256"])
                     if key not in checked_media:
-                        _checked(corpus, resource["uri"], resource["sha256"])
+                        _checked(media_root, resource["uri"], resource["sha256"])
                         checked_media.add(key)
                     features = span["feature_count"]
                     grid = np.asarray(span["grid_thw"])
