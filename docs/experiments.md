@@ -23,6 +23,10 @@ MiniFrontier1.0 新增独立的[融合实现与 CPU 学习档案](experiments/mf
 
 ## 实验文件
 
+### 三个来源模型
+
+下表适用于 `minifrontier train` 的文本／多模态配方试验。MF1 使用自己的阶段状态和产物格式，见下一节。
+
 | 文件 | 内容 | 记录粒度或限制 |
 |---|---|---|
 | `run.json` | 模型配置、优化器、学习率、seed、batch、精度、预算、源码 commit/内容 hash、数据和 tokenizer hash | 对应一次实际运行 |
@@ -34,6 +38,21 @@ MiniFrontier1.0 新增独立的[融合实现与 CPU 学习档案](experiments/mf
 | `checkpoint.pt` | 模型、优化器、数据游标、随机状态等恢复信息 | 相同配方下恢复；跨卡数切换不自动视为精确续训 |
 | `tensorboard/`、运行日志 | 曲线和执行诊断 | 与 JSONL 并存；单卡新队列有各自的日志目录 |
 | 数据 manifest 与来源审计 | 上游版本、采样读取位置、seed、清洗拒绝数、分组切分、tokenizer 和编码校验 | 来源/质量与正式准入仍存在待完成项 |
+
+### MiniFrontier1.0
+
+| 文件 | 内容与读取方式 |
+|---|---|
+| `run.json`、`resolved_config.json`、`optimizer_groups.json` | 实际阶段、配置、源码／数据绑定、优化器分组和预算 |
+| `metrics.jsonl`、`router_metrics.jsonl` | 训练／验证事件及路由统计；字段和记录频率以对应训练器、运行命令为准 |
+| `checkpoint.pt`、`checkpoint_manifest.json`、`status.json` | 滚动恢复点、权重校验值、保存时步数与 `ledger`；`budget_complete_unqualified` 仅表示该次预算结束 |
+| 显式导出的 `model.pt` | 由 `mf1 export` 产生；MF1 训练结束不会自动生成来源模型格式的 `best-model.pt` 或 `model.pt` |
+| quickstart 的 `report.json` | 各阶段执行结果、最终检查点位置和未完成正式训练的标记 |
+| 独立性能实验的 `report.json` | `benchmark_mf1.py` 的输入形状、实际测量与预热次数；不能套用来源模型固定的 50/200 窗口 |
+
+四模型的训练完成状态、验证 NLL 和公开能力验收互相独立。比较日志前，先确认模型、训练器、字段含义和采集时刻一致。
+
+### 本地目录与历史证据
 
 维护环境使用以下本地目录；克隆仓库不会获得其中的运行产物：
 
@@ -95,7 +114,7 @@ uv run --with matplotlib==3.10.7 python scripts/plot_experiments.py \
 
 Kimi/DeepSeek 的第一组 Muon 已完成 20M CE，对应 AdamW 在该快照时仍运行。Qwen 首轮 Q0 训练内只答对 14/16，续诊断重置优化器并降低 LR 后到 16/16，留出仍为 0/9；因此记录为可学习性通过、泛化未通过。该续诊断的命令和额外 500,450 CE 单独保存，不合并为新一次从零训练。旧 educational-v1 的语言失败继续保留复盘。
 
-配方尚未选定：先在等数据、seed、有效输入 batch 与 CE 预算下比较 Muon/AdamW，再开展已排队的单卡 LR 对照；MTP 权重、32K/64K 词表和补种子仍待完成。没有证据支持直接跳到正式主训练。
+以上曲线和运行状态对应 2026-09-09 快照。后续优化器、LR 和 MTP 结果见[2026-09-10 配方快照](experiments/2026-09-10-recipe-snapshot/README.md)。本轮已依据现有证据选择[首版工作参数](experiments/2026-09-10-pretraining-cutover/working-recipes.md)，继续完成正式数据、tokenizer 与资源绑定；按[预训练主计划](pretraining-plan.md)执行，不再自动派发联合网格或补种子。工作参数选择不等于正式训练已经通过准入。
 
 档案里的 `${WORKSPACE}` 需要绑定到自己的目录，训练应使用记录的 source commit；命令中的冻结源码目录需要 checkout 对应版本。数据源 revision、采样位置、清洗/切分计数和配方审计随快照提供，原始训练行、图像与权重不随档案发布。既有大试验尚未完成外部逐字节重建验收，hash 是核对依据，不能保证重新下载/训练 tokenizer 必然产生同一文件。无网络、可直接运行的复现范围由最小示例提供。
 

@@ -1,0 +1,14 @@
+family_id,purpose,planned_disposition,automatic_scientific_followups
+source-integration,来源模型 CPU/3090 最小示例及独立 wheel 安装链路,regression_only,false
+legacy-language,历史 educational-v1 训练与阶段执行复盘,archived_no_new_runs,false
+source-learnability,小样本可学习性、算术和原生视觉链路,closed_regression_only,false
+source-recipe-v2,优化器、学习率与 MTP 候选的 20M CE 筛选,archive_evidence_production_recipe_pending_freeze,false
+source-seed-stopped,旧 microbatch 2 补种子试验,remain_stopped,false
+source-batch16,冻结旧实现下 microbatch 16 的吞吐与收敛观察,finish_existing_only,false
+batch-screens,显存边界、固定形状测速和最多 1M CE 的真实数据确认,closed_no_repeat,false
+speed-selected-long,旧吞吐选择器自动派发的 20M CE 候选,remain_stopped_no_dispatch,false
+mf1-learning,融合结构前后向、500K 机制学习、30K 语言协议控制,closed_regression_only,false
+mf1-instructions,从 30K 控制检查点继续 100K CE 指令诊断,deferred_until_base_complete,false
+mf1-performance,reference/缓存优化、长度、媒体与 microbatch 性能,bounded_execution_work,false
+mf1-integration,离线示例、安装、后训练和草稿接口检查,regression_only_no_posttraining_jobs,false
+bounded-batch-verification,修正全局 batch 语义后的相同样本窗口与真实数据性能验证,matrix_complete_one_production_qualification,false

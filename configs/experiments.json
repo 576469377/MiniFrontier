@@ -23,7 +23,9 @@
       "decision": "integration_only",
       "limitations": [
         "小配置和生成 fixture 数据仅用于外部用户安装/执行验收，不作为架构优劣或模型能力证据"
-      ]
+      ],
+      "cutover_disposition": "regression_only",
+      "automatic_scientific_followups": false
     },
     {
       "id": "legacy-language",
@@ -37,7 +39,9 @@
       "limitations": [
         "训练结束不代表语言能力通过",
         "旧语料、tokenizer 和配置不能并入新策略预算"
-      ]
+      ],
+      "cutover_disposition": "archived_no_new_runs",
+      "automatic_scientific_followups": false
     },
     {
       "id": "source-learnability",
@@ -49,7 +53,9 @@
       "limitations": [
         "训练题记忆不证明留出泛化",
         "重置优化器的扩展诊断是独立分支"
-      ]
+      ],
+      "cutover_disposition": "closed_regression_only",
+      "automatic_scientific_followups": false
     },
     {
       "id": "source-recipe-v2",
@@ -65,7 +71,9 @@
         "单种子和单因素结果不能直接合并为最优配方",
         "共卡与独占吞吐不可直接比较",
         "主动停止的 Qwen MTP 0.2 未完成预算"
-      ]
+      ],
+      "cutover_disposition": "archive_evidence_production_recipe_pending_freeze",
+      "automatic_scientific_followups": false
     },
     {
       "id": "source-seed-stopped",
@@ -77,7 +85,9 @@
       "limitations": [
         "因执行效率重新规划而停止；原日志和已有权重保留",
         "不能把未保存的进度写为可恢复进度"
-      ]
+      ],
+      "cutover_disposition": "remain_stopped",
+      "automatic_scientific_followups": false
     },
     {
       "id": "source-batch16",
@@ -89,7 +99,9 @@
       "limitations": [
         "实际全局 input batch 随完整 microbatch 越界；不是固定全局 batch 的纯性能对照",
         "旧 WSD 候选仅供同版本研究"
-      ]
+      ],
+      "cutover_disposition": "finish_existing_only",
+      "automatic_scientific_followups": false
     },
     {
       "id": "batch-screens",
@@ -107,7 +119,9 @@
         "1M CE / 32 例验证只能筛异常，不能冻结训练配方",
         "主机确认不能替代同机受控对照",
         "MF1 benchmark 的 microbatch 不能自动用于 MF1 trainer"
-      ]
+      ],
+      "cutover_disposition": "closed_no_repeat",
+      "automatic_scientific_followups": false
     },
     {
       "id": "speed-selected-long",
@@ -120,7 +134,9 @@
         "取消只按最快吞吐选择长期训练配方的规则",
         "Kimi 128 实际约 48K input/update，不是 16K",
         "已有 Kimi/DeepSeek 运行只保留为固定大 batch 观察，待派发 Qwen 不继续自动启动"
-      ]
+      ],
+      "cutover_disposition": "remain_stopped_no_dispatch",
+      "automatic_scientific_followups": false
     },
     {
       "id": "mf1-learning",
@@ -136,7 +152,9 @@
         "不能证明融合优于简单基线",
         "生成数据和训练内 32/32 不代表开放域对话能力",
         "视觉匹配、置黑、错配以及留出结果分别解释"
-      ]
+      ],
+      "cutover_disposition": "closed_regression_only",
+      "automatic_scientific_followups": false
     },
     {
       "id": "mf1-instructions",
@@ -148,7 +166,9 @@
       "limitations": [
         "约 2 CE/s；先修执行性能，再以新计划恢复研究",
         "初始检查点来自不同 LR 控制分支，因此不是同初始化的独立 LR 消融"
-      ]
+      ],
+      "cutover_disposition": "deferred_until_base_complete",
+      "automatic_scientific_followups": false
     },
     {
       "id": "mf1-performance",
@@ -163,7 +183,9 @@
         "512 短序列吞吐不能外推 8K native 多模态",
         "MB 8/16 仍约 68 CE/s，批量大小未解决 reference 调度瓶颈",
         "性能通过不等于正确性或能力通过"
-      ]
+      ],
+      "cutover_disposition": "bounded_execution_work",
+      "automatic_scientific_followups": false
     },
     {
       "id": "mf1-integration",
@@ -180,7 +202,9 @@
       "limitations": [
         "fixture 运行不能证明正式 RL、教师资格或草稿加速",
         "台账条数包含阶段和安装用例，不等于独立科学试验数"
-      ]
+      ],
+      "cutover_disposition": "regression_only_no_posttraining_jobs",
+      "automatic_scientific_followups": false
     },
     {
       "id": "bounded-batch-verification",
@@ -192,7 +216,24 @@
       "limitations": [
         "新源码与旧源码结果不能混合归因",
         "短测不选择长期配方"
-      ]
+      ],
+      "cutover_disposition": "matrix_complete_one_production_qualification",
+      "automatic_scientific_followups": false
+    },
+    {
+      "id": "pretraining-data",
+      "outputs": [
+        "strategy-pretraining-data-*",
+        "strategy-pretraining-media-*"
+      ],
+      "purpose": "正式共享语料候选构造、划分与准入记录",
+      "decision": "data_construction_only",
+      "limitations": [
+        "候选参考 token 与正式训练 CE 分开计数",
+        "完成提取不代表通过来源、质量、tokenizer 或媒体准入"
+      ],
+      "cutover_disposition": "production_required",
+      "automatic_scientific_followups": false
     }
   ],
   "next_experiments": [
@@ -203,7 +244,7 @@
         "miniqwen4",
         "minideepseekv4"
       ],
-      "status": "short_matrix_complete_full_phase_qualification_pending",
+      "status": "matrix_complete_only_final_production_qualification",
       "question": "固定实际全局 batch 时，增大 microbatch ceiling 能提高多少端到端吞吐？",
       "variable": "microbatch ceiling",
       "input_batch_policy": "sample-bounded",
@@ -256,7 +297,7 @@
       "dispatched_plan": "docs/experiments/2026-09-10-batch-frontier/execution-matrix-plan.json",
       "matrix_evidence": "docs/experiments/2026-09-10-batch-frontier/execution-matrix-results.json",
       "remaining": [
-        "full 50+200 phase profiles"
+        "one capped final true-data phase qualification per model; no matrix repeat"
       ]
     },
     {
@@ -264,7 +305,7 @@
       "models": [
         "minikimik3"
       ],
-      "status": "blocked_on_execution_control",
+      "status": "requires_production_recipe_decision_before_base_no_auto_dispatch",
       "question": "128 的吞吐优势能否在充分调 LR 后保留等 token 质量？",
       "variable": "global input batch and independently tuned peak LR",
       "global_input_targets": [
@@ -294,14 +335,17 @@
       "local_choices": [
         "all batch sizes, LR grid and token budgets",
         "no claimed official K3 batch ramp"
-      ]
+      ],
+      "pre_cutover_status": "blocked_on_execution_control",
+      "automatic_dispatch": false,
+      "execution_policy": "candidate inventory only; no automatic full grid; freeze one model-specific recipe before fresh formal initialization"
     },
     {
       "id": "qwen-fixed-batch",
       "models": [
         "miniqwen4"
       ],
-      "status": "blocked_on_execution_control",
+      "status": "requires_production_recipe_decision_before_base_no_auto_dispatch",
       "question": "固定全局 batch 和 Muon LR 的合适组合？",
       "variable": "constant global input batch and peak LR",
       "global_input_targets": [
@@ -326,14 +370,17 @@
       "local_choices": [
         "WSD, batch sizes and LR grid are local pilot settings",
         "do not add batch warmup by default; do not copy 25.2M global batch to a 513M model"
-      ]
+      ],
+      "pre_cutover_status": "blocked_on_execution_control",
+      "automatic_dispatch": false,
+      "execution_policy": "candidate inventory only; no automatic full grid; freeze one model-specific recipe before fresh formal initialization"
     },
     {
       "id": "deepseek-batch-ramp",
       "models": [
         "minideepseekv4"
       ],
-      "status": "blocked_on_execution_control",
+      "status": "requires_production_recipe_decision_before_base_no_auto_dispatch",
       "question": "小模型是否受益于早期小全局 batch？",
       "variable": "global input schedule, followed by independent LR tuning",
       "batch_schedules": [
@@ -360,14 +407,17 @@
       "local_choices": [
         "8K/16K/32K and 0.4M/2M milestones are hypotheses from the local mini plan; official initial batch and milestones are undisclosed",
         "current DeepSeek trainer uses --lr for BOTH Muon and AdamW; --muon-lr is ignored for this route; any independent rates need explicit implementation and comparison"
-      ]
+      ],
+      "pre_cutover_status": "blocked_on_execution_control",
+      "automatic_dispatch": false,
+      "execution_policy": "candidate inventory only; no automatic full grid; freeze one model-specific recipe before fresh formal initialization"
     },
     {
       "id": "mf1-execution",
       "models": [
         "minifrontier1"
       ],
-      "status": "required_before_larger_learning_runs",
+      "status": "bounded_engineering_required",
       "question": "融合 reference 的逐 query 调度、专家执行和样本打包能否等价加速？",
       "variable": "execution implementation only",
       "acceptance": [
@@ -385,14 +435,16 @@
       "local_choices": [
         "do not assume Kimi microbatch 128 applies to MF1 trainer",
         "implement native microbatch collation only after media and sample-boundary parity"
-      ]
+      ],
+      "review_timebox_hours": 48,
+      "gpu_validation_budget_hours": 16
     },
     {
       "id": "mf1-fusion-ablation",
       "models": [
         "minifrontier1"
       ],
-      "status": "blocked_on_execution_and_audited_pilot_data",
+      "status": "deferred_until_four_base_models_complete",
       "question": "融合是否值得增加参数与训练计算？",
       "first_controls": [
         "B0 parameter-matched dense MLA + dense FFN baseline",
@@ -438,7 +490,9 @@
         "all fusion choices and budgets remain project hypotheses",
         "B0/B1/B4/B5/B6/B8 require implementation or matched configurations before launch",
         "do not relax the existing 2M acceptance cap to bypass formal pilot admission"
-      ]
+      ],
+      "pre_cutover_status": "blocked_on_execution_and_audited_pilot_data",
+      "automatic_dispatch": false
     },
     {
       "id": "data-and-tokenizer",
@@ -448,7 +502,7 @@
         "minideepseekv4",
         "minifrontier1"
       ],
-      "status": "required_before_recipe_freeze",
+      "status": "required_now_production_data",
       "question": "候选语料能否支撑计划 token 预算，32K/64K 的质量和计算代价如何？",
       "acceptance": [
         "source/revision/license/rebuild audit",
@@ -463,7 +517,800 @@
         "deepseek-v4",
         "smollm3",
         "smolvlm"
-      ]
+      ],
+      "training_sweep_required": false,
+      "first_release_vocab_policy": {
+        "source_models": 65536,
+        "mf1": 32768
+      }
     }
-  ]
+  ],
+  "execution_program": {
+    "id": "four-model-base-pretraining-2026-09-10",
+    "status": "working_parameters_selected_data_construction_in_progress_not_launched",
+    "document": "docs/pretraining-plan.md",
+    "user_objectives": [
+      "record_and_close_experiments",
+      "construct_pretraining_data",
+      "complete_four_base_models_with_storage_control"
+    ],
+    "exploratory_gpu_jobs_allowed": false,
+    "automatic_scientific_followups": false,
+    "initial_qualification": {
+      "max_trials": 4,
+      "warmup_updates": 50,
+      "measured_updates": 200,
+      "fix_retries_per_failed_model": 1,
+      "mf1_existing_acceptance_cap_ce": 2000000,
+      "mf1_above_acceptance_cap_requires": "shared-production-code real-data performance-only entry; no admission bypass or split-run evasion",
+      "counts_toward_main": false,
+      "withdrawn_uniform_16k_assumption": {
+        "target_global_input_tokens": 16384,
+        "max_ce_per_trial": 5000000
+      },
+      "target_global_input_tokens": "use_each_frozen_formal_recipe",
+      "budget_status": "must_reconcile_50_plus_200_updates_with_frozen_batch_before_dispatch; 5M CE is not valid for every 64K recipe",
+      "launch_authorized_by_this_record": false
+    },
+    "mf1_engineering": {
+      "review_timebox_hours": 48,
+      "gpu_validation_budget_hours": 16,
+      "real_first_phase_ce_s_target": 1000,
+      "target_is_measured_requirement_not_current_result": true
+    },
+    "models": {
+      "minikimik3": {
+        "main_ce": 2000000000,
+        "config": "configs/strategies/minikimik3-v2.json",
+        "phase_plan": "configs/strategies/minikimik3-plan.json",
+        "optimizer": "kimi_muon",
+        "withdrawn_unqualified_freeze": {
+          "muon_lr": 0.005,
+          "adam_lr": 0.0003,
+          "initial_global_input": 16384,
+          "initial_microbatch_ceiling": 64,
+          "mtp_coef": 0.1
+        },
+        "recipe_status": "working_parameters_selected_pending_final_bindings",
+        "formal_init": null,
+        "formal_resume": null,
+        "existing_pilot_candidates": {
+          "global_input_targets": [
+            16384,
+            32768,
+            65536
+          ],
+          "schedule": "cosine",
+          "warmup_ce_tokens": 200000,
+          "budget_per_trial_ce": 20000000,
+          "muon_lr_candidates": [
+            0.003,
+            0.005,
+            0.01
+          ],
+          "adam_branch_lr": 0.0003
+        },
+        "pilot_schedule_not_formal_schedule": true,
+        "training_recipe": {
+          "version": 1,
+          "status": "selected_pending_data_and_resource_freeze",
+          "seed": 42,
+          "optimizer": "kimi_muon",
+          "global_input_tokens": 32768,
+          "initial_microbatch_candidate": 64,
+          "microbatch_status": "bind actual first-phase 1024-token/media configuration before one 50+200 qualification",
+          "weight_decay": 0.1,
+          "adam_eps": 1e-08,
+          "clip_grad": 1.0,
+          "router_bias_rate": 0.001,
+          "config": "configs/strategies/minikimik3-v2.json",
+          "config_sha256": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+          "phases": [
+            {
+              "id": "K1",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 200000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                512,
+                1024
+              ],
+              "peak_lr": {
+                "muon": 0.005,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 20000000,
+                "decay_start": 20000000,
+                "end": 2000000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 200000,
+              "video_examples": 0
+            },
+            {
+              "id": "K2",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 1200000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                1024,
+                2048
+              ],
+              "peak_lr": {
+                "muon": 0.005,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 20000000,
+                "decay_start": 20000000,
+                "end": 2000000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 1200000,
+              "video_examples": 20000
+            },
+            {
+              "id": "K3",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 400000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.005,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 20000000,
+                "decay_start": 20000000,
+                "end": 2000000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 500000,
+              "video_examples": 10000
+            },
+            {
+              "id": "K4",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 200000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                1024,
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.005,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 20000000,
+                "decay_start": 20000000,
+                "end": 2000000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 100000,
+              "video_examples": 0
+            }
+          ],
+          "bindings": {},
+          "decision_record": "docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md",
+          "first_qualification_input_upper_bound": 8447750
+        }
+      },
+      "miniqwen4": {
+        "main_ce": 3000000000,
+        "indexer_input_range": [
+          20000000,
+          60000000
+        ],
+        "config": "configs/strategies/miniqwen4-v2.json",
+        "phase_plan": "configs/strategies/miniqwen4-plan.json",
+        "optimizer": "qwen_muon",
+        "withdrawn_unqualified_freeze": {
+          "muon_lr": 0.01,
+          "adam_lr": 0.0003,
+          "initial_global_input": 16384,
+          "initial_microbatch_ceiling": 64,
+          "mtp_coef": 0.1
+        },
+        "recipe_status": "working_parameters_selected_pending_final_bindings",
+        "formal_init": null,
+        "formal_resume": null,
+        "existing_pilot_candidates": {
+          "global_input_targets": [
+            16384,
+            32768
+          ],
+          "schedule": "wsd",
+          "warmup_ce_tokens": 400000,
+          "budget_per_trial_ce": 20000000,
+          "muon_lr_candidates": [
+            0.003,
+            0.01
+          ]
+        },
+        "pilot_schedule_not_formal_schedule": true,
+        "training_recipe": {
+          "version": 1,
+          "status": "selected_pending_data_and_resource_freeze",
+          "seed": 42,
+          "optimizer": "qwen_muon",
+          "global_input_tokens": 16384,
+          "initial_microbatch_candidate": 32,
+          "microbatch_status": "bind actual first-phase 1024-token/media configuration before one 50+200 qualification",
+          "weight_decay": 0.1,
+          "adam_eps": 1e-08,
+          "clip_grad": 1.0,
+          "router_bias_rate": 0.001,
+          "config": "configs/strategies/miniqwen4-v2.json",
+          "config_sha256": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
+          "phases": [
+            {
+              "id": "Q1",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 300000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                512,
+                1024
+              ],
+              "peak_lr": {
+                "muon": 0.01,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 15000000,
+                "decay_start": 1500000000,
+                "end": 1500000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 300000,
+              "video_examples": 0
+            },
+            {
+              "id": "Q2",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 1200000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                1024,
+                2048
+              ],
+              "peak_lr": {
+                "muon": 0.01,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 15000000,
+                "decay_start": 1500000000,
+                "end": 1500000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 1200000,
+              "video_examples": 20000
+            },
+            {
+              "id": "Q3",
+              "stage": "dense_distill",
+              "unit": "input_tokens",
+              "budget": 20000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.01,
+                "adam": 0.0003,
+                "indexer": 0.0003,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "phase_input",
+                "start": 0,
+                "warmup_tokens": 400000,
+                "decay_start": 400000,
+                "end": 20000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            },
+            {
+              "id": "Q4",
+              "stage": "sparse_cpt",
+              "unit": "ce_tokens",
+              "budget": 1000000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.004,
+                "adam": 0.00012,
+                "indexer": 0.0001,
+                "vision": 4e-05,
+                "projector": 0.00012
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 1500000000,
+                "warmup_tokens": 5000000,
+                "decay_start": 2500000000,
+                "end": 3000000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 800000,
+              "video_examples": 20000
+            },
+            {
+              "id": "Q5",
+              "stage": "sparse_cpt",
+              "unit": "ce_tokens",
+              "budget": 500000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                1024,
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.004,
+                "adam": 0.00012,
+                "indexer": 0.0001,
+                "vision": 4e-05,
+                "projector": 0.00012
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 1500000000,
+                "warmup_tokens": 5000000,
+                "decay_start": 2500000000,
+                "end": 3000000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 200000,
+              "video_examples": 10000
+            }
+          ],
+          "bindings": {},
+          "decision_record": "docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md",
+          "first_qualification_input_upper_bound": 4351750
+        }
+      },
+      "minideepseekv4": {
+        "main_ce": 2500000000,
+        "indexer_input_range": [
+          10000000,
+          30000000
+        ],
+        "config": "configs/strategies/minideepseekv4-v2.json",
+        "phase_plan": "configs/strategies/minideepseekv4-plan.json",
+        "optimizer": "deepseek_muon",
+        "scope": "text base; Vision-Exp separately budgeted after four bases",
+        "withdrawn_unqualified_freeze": {
+          "effective_shared_lr": 0.0003,
+          "initial_global_input": 16384,
+          "initial_microbatch_ceiling": 32,
+          "mtp_coef": 0.3
+        },
+        "recipe_status": "working_parameters_selected_pending_final_bindings",
+        "formal_init": null,
+        "formal_resume": null,
+        "existing_pilot_candidates": {
+          "batch_schedules": [
+            "0:16384",
+            "0:32768",
+            "0:8192,400000:16384,2000000:32768"
+          ],
+          "schedule": "wsd",
+          "warmup_ce_tokens": 400000,
+          "budget_per_trial_ce": 20000000,
+          "shared_muon_adam_lr_candidates": [
+            0.0001,
+            0.0002,
+            0.0003
+          ]
+        },
+        "pilot_schedule_not_formal_schedule": true,
+        "training_recipe": {
+          "version": 1,
+          "status": "selected_pending_data_and_resource_freeze",
+          "seed": 42,
+          "optimizer": "deepseek_muon",
+          "global_input_tokens": 32768,
+          "initial_microbatch_candidate": 32,
+          "microbatch_status": "bind actual first-phase 1024-token/media configuration before one 50+200 qualification",
+          "weight_decay": 0.1,
+          "adam_eps": 1e-08,
+          "clip_grad": 1.0,
+          "router_bias_rate": 0.001,
+          "config": "configs/strategies/minideepseekv4-v2.json",
+          "config_sha256": "b660f89fcf82048d087ba26b143a76b9b27baa38cfe71cb09e0ec9f997633b35",
+          "phases": [
+            {
+              "id": "D1",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 250000000,
+              "mtp_loss_coef": 0.3,
+              "sequence_lengths": [
+                512,
+                1024
+              ],
+              "peak_lr": {
+                "muon": 0.0003,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 25000000,
+                "decay_start": 2000000000,
+                "end": 2500000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            },
+            {
+              "id": "D2",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 500000000,
+              "mtp_loss_coef": 0.3,
+              "sequence_lengths": [
+                1024,
+                2048
+              ],
+              "peak_lr": {
+                "muon": 0.0003,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 25000000,
+                "decay_start": 2000000000,
+                "end": 2500000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            },
+            {
+              "id": "D3",
+              "stage": "dense_distill",
+              "unit": "input_tokens",
+              "budget": 10000000,
+              "mtp_loss_coef": 0.3,
+              "sequence_lengths": [
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.0003,
+                "adam": 0.0003,
+                "indexer": 0.0003,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "phase_input",
+                "start": 0,
+                "warmup_tokens": 200000,
+                "decay_start": 200000,
+                "end": 10000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            },
+            {
+              "id": "D4",
+              "stage": "sparse_cpt",
+              "unit": "ce_tokens",
+              "budget": 1500000000,
+              "mtp_loss_coef": 0.3,
+              "sequence_lengths": [
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.0003,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 25000000,
+                "decay_start": 2000000000,
+                "end": 2500000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            },
+            {
+              "id": "D5",
+              "stage": "sparse_cpt",
+              "unit": "ce_tokens",
+              "budget": 250000000,
+              "mtp_loss_coef": 0.1,
+              "sequence_lengths": [
+                1024,
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.0003,
+                "adam": 0.0003,
+                "indexer": 0.0001,
+                "vision": 0.0001,
+                "projector": 0.0003
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 25000000,
+                "decay_start": 2000000000,
+                "end": 2500000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0,
+              "init_transition": "mtp-weight"
+            }
+          ],
+          "bindings": {},
+          "decision_record": "docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md",
+          "first_qualification_input_upper_bound": 8447750
+        }
+      },
+      "minifrontier1": {
+        "main_ce": 3000000000,
+        "indexer_input": 40000000,
+        "visual_ce": 630000000,
+        "config": "configs/minifrontier1/model_228m_native.json",
+        "optimizer": "adamw",
+        "withdrawn_unqualified_freeze": {
+          "lr": 0.00015,
+          "initial_global_input": 16384,
+          "initial_microbatch_ceiling": "determine_once_after_execution_fix",
+          "mtp_coef": 0.1
+        },
+        "recipe_status": "working_parameters_selected_pending_final_bindings",
+        "formal_init": null,
+        "formal_resume": null,
+        "documented_implementation_baseline": {
+          "global_input_tokens": 16384,
+          "optimizer": "adamw",
+          "backbone_peak_lr": 0.0003,
+          "vision_lr": 0.0001,
+          "scalar_lr": 0.0001,
+          "warmup_main_ce": 2000000,
+          "decay_start_main_ce": 2400000000,
+          "decay_end_main_ce": 3000000000,
+          "final_lr_factor": 0.1,
+          "microbatch": "measure_on_actual_formal_media_data"
+        },
+        "training_recipe": {
+          "version": 1,
+          "executor": "mf1_existing_continuous_path",
+          "status": "selected_pending_data_and_resource_freeze",
+          "seed": 42,
+          "optimizer": "adamw",
+          "global_input_tokens": 16384,
+          "initial_microbatch_candidate": 8,
+          "config": "configs/minifrontier1/model_228m_native.json",
+          "config_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8",
+          "peak_lr": {
+            "backbone": 0.0003,
+            "vision": 0.0001,
+            "scalar": 0.0001
+          },
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "clip_grad": 1.0,
+          "weight_decay": {
+            "matrix_and_vision": 0.1,
+            "embedding_head_lookup": 0.01,
+            "scalar": 0
+          },
+          "schedule": {
+            "axis": "main_ce",
+            "start": 0,
+            "warmup_tokens": 2000000,
+            "decay_start": 2400000000,
+            "end": 3000000000,
+            "final_factor": 0.1
+          },
+          "mtp_loss_coef": 0.1,
+          "phase_budgets": {
+            "p0": 200000000,
+            "p1": 800000000,
+            "indexer": 40000000,
+            "p2": 1400000000,
+            "p3": 600000000
+          },
+          "indexer_unit": "input_tokens",
+          "first_qualification_input_upper_bound": 4351750,
+          "bindings": {},
+          "decision_record": "docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md"
+        }
+      }
+    },
+    "data": {
+      "reference_text_pool_candidate_tokens": 5000000000,
+      "initial_deduplicated_text_slice_tokens": 500000000,
+      "mf1_unique_images_target": 1500000,
+      "mf1_image_exposures_target": 5000000,
+      "mf1_video_exposures_target": 120000,
+      "split_groups": {
+        "train": 0.985,
+        "val": 0.005,
+        "test": 0.01
+      },
+      "tokenizer_vocab_policy": {
+        "source_models": 65536,
+        "minifrontier1": 32768
+      },
+      "formal_admission": false,
+      "raw_media_shared": true
+    },
+    "storage": {
+      "observed_free_gib": 136.63,
+      "retirement_candidate_count": 20,
+      "retirement_candidate_gib": 51.58,
+      "candidates_executed": true,
+      "new_total_gib": 105,
+      "category_limits_gib": {
+        "canonical_text": 15,
+        "token_metadata_cache": 15,
+        "media_cache": 25,
+        "training_weights": 38,
+        "temporary_atomic": 10,
+        "logs": 2
+      },
+      "new_allocation_reserve_gib": 80,
+      "pause_ingestion_at_free_gib": 60,
+      "existing_hard_floor_gib": 50,
+      "require_live_dependency_and_retained_model_verification": true,
+      "retired_bytes": 55381305536,
+      "retirement_receipt": "docs/experiments/2026-09-10-pretraining-cutover/checkpoint-retirement.json"
+    },
+    "production_blockers": [
+      "training_loss_mask_causality_media_gradient_errors",
+      "unadmitted_or_insufficient_stage_data",
+      "resume_or_checkpoint_integrity_errors",
+      "unqualified_stage_resource_budget",
+      "MF1 execution_cost",
+      "model_specific_production_recipe_not_frozen",
+      "planned_phase_state_transfer_or_schedule_not_implemented"
+    ],
+    "deferred_after_base": [
+      "full_batch_lr_schedule_grids",
+      "new_repeat_seeds",
+      "full_MF1_architecture_ablations",
+      "SFT",
+      "RL",
+      "teachers_OPD",
+      "draft_QAT"
+    ],
+    "preserve_existing_artifact_bound_stage_gates": true,
+    "recipe_review_document": "docs/training-strategies/2026-09-10/06-recipe-initialization-review.md",
+    "initialization_policy": {
+      "formal_first_phases": [
+        "K1",
+        "Q1",
+        "D1",
+        "p0"
+      ],
+      "mode": "random_from_scratch",
+      "init": null,
+      "resume": null,
+      "allow_legacy_experiment_weights": false,
+      "allow_qualification_weights": false,
+      "main_ce_starts_at": 0,
+      "new_output_required": true
+    },
+    "resume_policy": {
+      "same_frozen_formal_run_only": true,
+      "require_full_run_spec_and_all_training_states": true,
+      "allow_recipe_mismatch_bypass": false,
+      "allow_extending_legacy_pilot_budget": false
+    },
+    "phase_transition_policy": {
+      "formal_parent_checkpoint_required": true,
+      "random_restart_each_phase": false,
+      "record_state_inheritance": [
+        "model",
+        "optimizer",
+        "router",
+        "main_ce",
+        "phase_ce",
+        "sampler",
+        "rng"
+      ],
+      "mf1": "use_existing_continuous_phase_path",
+      "source_models": "explicit --pretraining-program/--pretraining-phase: named optimizer moments, dormant trunk state across indexer, inherited router/RNG/main CE; compatible cursor only; ordinary init behavior unchanged"
+    },
+    "recipe_freeze_policy": {
+      "required_before_formal_step_zero": true,
+      "prior_candidates_remain_candidates": true,
+      "automatic_grid_dispatch": false,
+      "additional_validation_requires_registered_question_candidate_cap_token_gpu_hour_budget_and_stop_rule": true
+    },
+    "recipe_policy_document": "docs/pretraining-plan.md#models",
+    "recipe_review_is_historical": true,
+    "monitoring": {
+      "tensorboard_logdir": "outputs/tensorboard-pretraining-v1",
+      "training_output_root": "outputs/strategy-base-pretraining-v1",
+      "run_name": "<model>/<phase>",
+      "port": 6008,
+      "run_kind": "strategy",
+      "exclude": [
+        "acceptance",
+        "diagnostic",
+        "performance_qualification",
+        "benchmark"
+      ],
+      "registration": "publish a TensorBoard log-directory link only after checking the formal run identity; retain original event files",
+      "empty_until_formal_training": true
+    }
+  }
 }

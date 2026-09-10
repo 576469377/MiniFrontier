@@ -1,0 +1,774 @@
+{
+  "scope": "Existing fixed-budget optimizer/LR evidence; historical corpus and source, one seed; not formal data, qualification or main training",
+  "selected_working_parameters": "configs/experiments.json:execution_program.models.*.training_recipe",
+  "runs": [
+    {
+      "run_id": "strategy-single-gpu-v2/minikimik3/lower-lr",
+      "run_manifest_sha256": "f08d0c7414805873e0c44aa775eef8e58137a8923a840d575ccb901fc86da85d",
+      "metrics_sha256": "32357a1a2723446cd100bde03914ded8e1e3cc798ddd2cf36311edcff5dcf7c4",
+      "state": "complete",
+      "token_ledger": {
+        "ce_tokens": 20010912,
+        "input_tokens": 20134730,
+        "response_tokens": 0,
+        "optimizer_updates": 1199,
+        "skipped_windows": 0,
+        "image_occurrences": 1000,
+        "video_examples": 0,
+        "video_frames": 0,
+        "image_features": 62067
+      },
+      "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
+      "configuration": {
+        "optimizer": "kimi_muon",
+        "lr": 0.0003,
+        "effective_muon_lr": 0.005,
+        "muon_lr_argument_used": true,
+        "seed": 42,
+        "batch_size": 2,
+        "input_batch_tokens": 16384,
+        "sequence_length": 512,
+        "warmup_tokens": 400000,
+        "schedule": "wsd",
+        "ce_token_budget": 20000000,
+        "data_sha256": "c0884a102fd5f3dce0002c1e21a9c4acf2d5b241a56638976e4c3a04eb20e78d",
+        "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "effective_rate_scope": "derived from the recorded optimizer route; legacy CLI values preserved in original run manifest"
+      },
+      "initial_validation": {
+        "event": "validation",
+        "step": 0,
+        "loss": 12.312231734774102,
+        "lm_loss": 11.192768474663248,
+        "supervised_tokens": 291243,
+        "reward": 0.0,
+        "examples": 733,
+        "sampling": "uniform_without_replacement"
+      },
+      "final_validation": {
+        "event": "validation",
+        "step": 1199,
+        "loss": 5.606850035919329,
+        "lm_loss": 5.080175087209892,
+        "supervised_tokens": 291243,
+        "reward": 0.0,
+        "examples": 733,
+        "sampling": "uniform_without_replacement"
+      },
+      "validation_curve": [
+        {
+          "event": "validation",
+          "step": 0,
+          "loss": 12.312231734774102,
+          "lm_loss": 11.192768474663248,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 200,
+          "loss": 7.233333960001812,
+          "lm_loss": 6.573540479770464,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 400,
+          "loss": 6.672230198855817,
+          "lm_loss": 6.06167575354107,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 600,
+          "loss": 6.347958586219354,
+          "lm_loss": 5.764837864270513,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 800,
+          "loss": 6.064075133972933,
+          "lm_loss": 5.502942474625085,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1000,
+          "loss": 5.842543178052086,
+          "lm_loss": 5.29773161226219,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1199,
+          "loss": 5.606850035919329,
+          "lm_loss": 5.080175087209892,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        }
+      ],
+      "main_budget_eligible": false,
+      "initialization": "random initialization"
+    },
+    {
+      "run_id": "strategy-single-gpu-v2/minikimik3/reference",
+      "run_manifest_sha256": "4b44d930ae58ed6f2b80c9adb8f452796f5a5fd8565882e492aad8b6f00d2c72",
+      "metrics_sha256": "f8c61910056ac6cc7f70f362aa992c70d92ce5a29d249c64b03d7d7ab40fcd10",
+      "state": "complete",
+      "token_ledger": {
+        "ce_tokens": 20010912,
+        "input_tokens": 20134730,
+        "response_tokens": 0,
+        "optimizer_updates": 1199,
+        "skipped_windows": 0,
+        "image_occurrences": 1000,
+        "video_examples": 0,
+        "video_frames": 0,
+        "image_features": 62067
+      },
+      "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
+      "configuration": {
+        "optimizer": "kimi_muon",
+        "lr": 0.0003,
+        "effective_muon_lr": 0.01,
+        "muon_lr_argument_used": true,
+        "seed": 42,
+        "batch_size": 2,
+        "input_batch_tokens": 16384,
+        "sequence_length": 512,
+        "warmup_tokens": 400000,
+        "schedule": "wsd",
+        "ce_token_budget": 20000000,
+        "data_sha256": "c0884a102fd5f3dce0002c1e21a9c4acf2d5b241a56638976e4c3a04eb20e78d",
+        "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "effective_rate_scope": "derived from the recorded optimizer route; legacy CLI values preserved in original run manifest"
+      },
+      "initial_validation": {
+        "event": "validation",
+        "step": 0,
+        "loss": 12.312231734774102,
+        "lm_loss": 11.192768474663248,
+        "supervised_tokens": 291243,
+        "reward": 0.0,
+        "examples": 733,
+        "sampling": "uniform_without_replacement"
+      },
+      "final_validation": {
+        "event": "validation",
+        "step": 1199,
+        "loss": 5.787937272790725,
+        "lm_loss": 5.256071488071545,
+        "supervised_tokens": 291243,
+        "reward": 0.0,
+        "examples": 733,
+        "sampling": "uniform_without_replacement"
+      },
+      "validation_curve": [
+        {
+          "event": "validation",
+          "step": 0,
+          "loss": 12.312231734774102,
+          "lm_loss": 11.192768474663248,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 200,
+          "loss": 7.224216916389109,
+          "lm_loss": 6.564146562246624,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 400,
+          "loss": 6.7090852804704575,
+          "lm_loss": 6.0955268050420734,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 600,
+          "loss": 6.430088700397881,
+          "lm_loss": 5.842139239046688,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 800,
+          "loss": 6.196279628638256,
+          "lm_loss": 5.628880738011114,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1000,
+          "loss": 6.0223302569837145,
+          "lm_loss": 5.470993216052166,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1199,
+          "loss": 5.787937272790725,
+          "lm_loss": 5.256071488071545,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        }
+      ],
+      "main_budget_eligible": false,
+      "initialization": "random initialization"
+    },
+    {
+      "run_id": "strategy-single-gpu-v2/minideepseekv4/lower-lr",
+      "run_manifest_sha256": "60f3efaf79254573b9d2b3ed046f77680ab984ce056226e73416304fc54d07e5",
+      "metrics_sha256": "491d66f0573c07f511fc79ad09411979de6fc5c5fd8f10ec00f73b72c7360658",
+      "state": "complete",
+      "token_ledger": {
+        "ce_tokens": 20013084,
+        "input_tokens": 20066784,
+        "response_tokens": 0,
+        "optimizer_updates": 1195,
+        "skipped_windows": 0,
+        "image_occurrences": 0,
+        "video_examples": 0,
+        "video_frames": 0,
+        "image_features": 0
+      },
+      "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
+      "configuration": {
+        "optimizer": "deepseek_muon",
+        "lr": 0.0001,
+        "effective_muon_lr": 0.0001,
+        "muon_lr_argument_used": false,
+        "seed": 42,
+        "batch_size": 2,
+        "input_batch_tokens": 16384,
+        "sequence_length": 512,
+        "warmup_tokens": 400000,
+        "schedule": "wsd",
+        "ce_token_budget": 20000000,
+        "data_sha256": "4fd93e0b8d2e8bcebfcc8ffa71c592653d1ac91402fb3c856f6dc4ece6b33520",
+        "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "effective_rate_scope": "derived from the recorded optimizer route; legacy CLI values preserved in original run manifest"
+      },
+      "initial_validation": {
+        "event": "validation",
+        "step": 0,
+        "loss": 14.56557774227957,
+        "lm_loss": 11.205765385370269,
+        "supervised_tokens": 291035,
+        "reward": 0.0,
+        "examples": 732,
+        "sampling": "uniform_without_replacement"
+      },
+      "final_validation": {
+        "event": "validation",
+        "step": 1195,
+        "loss": 7.929191579860014,
+        "lm_loss": 6.0565902774399945,
+        "supervised_tokens": 291035,
+        "reward": 0.0,
+        "examples": 732,
+        "sampling": "uniform_without_replacement"
+      },
+      "validation_curve": [
+        {
+          "event": "validation",
+          "step": 0,
+          "loss": 14.56557774227957,
+          "lm_loss": 11.205765385370269,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 200,
+          "loss": 9.756182024625428,
+          "lm_loss": 7.417133441810163,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 400,
+          "loss": 8.94409213787333,
+          "lm_loss": 6.8219456063529,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 600,
+          "loss": 8.54241851136724,
+          "lm_loss": 6.524526544064291,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 800,
+          "loss": 8.266779289751549,
+          "lm_loss": 6.317478329547113,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1000,
+          "loss": 8.041995396506676,
+          "lm_loss": 6.145369946399367,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1195,
+          "loss": 7.929191579860014,
+          "lm_loss": 6.0565902774399945,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        }
+      ],
+      "main_budget_eligible": false,
+      "initialization": "random initialization"
+    },
+    {
+      "run_id": "strategy-single-gpu-v2/minideepseekv4/reference",
+      "run_manifest_sha256": "abaca1ca91998f6baf42bb3a4804b322f52090fbec2e8d2f0e7e2c25a4d56292",
+      "metrics_sha256": "e065a7847388731b633e1c3578945ecb8cab7538e7e816e014fb0d0ae7f9bbc8",
+      "state": "complete",
+      "token_ledger": {
+        "ce_tokens": 20013084,
+        "input_tokens": 20066784,
+        "response_tokens": 0,
+        "optimizer_updates": 1195,
+        "skipped_windows": 0,
+        "image_occurrences": 0,
+        "video_examples": 0,
+        "video_frames": 0,
+        "image_features": 0
+      },
+      "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
+      "configuration": {
+        "optimizer": "deepseek_muon",
+        "lr": 0.0003,
+        "effective_muon_lr": 0.0003,
+        "muon_lr_argument_used": false,
+        "seed": 42,
+        "batch_size": 2,
+        "input_batch_tokens": 16384,
+        "sequence_length": 512,
+        "warmup_tokens": 400000,
+        "schedule": "wsd",
+        "ce_token_budget": 20000000,
+        "data_sha256": "4fd93e0b8d2e8bcebfcc8ffa71c592653d1ac91402fb3c856f6dc4ece6b33520",
+        "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "effective_rate_scope": "derived from the recorded optimizer route; legacy CLI values preserved in original run manifest"
+      },
+      "initial_validation": {
+        "event": "validation",
+        "step": 0,
+        "loss": 14.56557774227957,
+        "lm_loss": 11.205765385370269,
+        "supervised_tokens": 291035,
+        "reward": 0.0,
+        "examples": 732,
+        "sampling": "uniform_without_replacement"
+      },
+      "final_validation": {
+        "event": "validation",
+        "step": 1195,
+        "loss": 6.978487126296024,
+        "lm_loss": 5.333452095412703,
+        "supervised_tokens": 291035,
+        "reward": 0.0,
+        "examples": 732,
+        "sampling": "uniform_without_replacement"
+      },
+      "validation_curve": [
+        {
+          "event": "validation",
+          "step": 0,
+          "loss": 14.56557774227957,
+          "lm_loss": 11.205765385370269,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 200,
+          "loss": 8.769107049147253,
+          "lm_loss": 6.710063207211561,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 400,
+          "loss": 8.116121967035406,
+          "lm_loss": 6.2190313629757785,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 600,
+          "loss": 7.713178978732761,
+          "lm_loss": 5.910154161399671,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 800,
+          "loss": 7.41368677683827,
+          "lm_loss": 5.676596759618898,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1000,
+          "loss": 7.17158037235526,
+          "lm_loss": 5.4883047224518595,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1195,
+          "loss": 6.978487126296024,
+          "lm_loss": 5.333452095412703,
+          "supervised_tokens": 291035,
+          "reward": 0.0,
+          "examples": 732,
+          "sampling": "uniform_without_replacement"
+        }
+      ],
+      "main_budget_eligible": false,
+      "initialization": "random initialization"
+    },
+    {
+      "run_id": "strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/muon-20m",
+      "run_manifest_sha256": "b0ef9d2efe5271178f280296441b5484227fd5a97c4b00fd90e58013eac5ca0e",
+      "metrics_sha256": "edbd9892a8cc0b81b326c7bfbfe1b49fde2569d1d0ad42e22704c228b0dfb510",
+      "state": "complete",
+      "token_ledger": {
+        "ce_tokens": 20012550,
+        "input_tokens": 20125470,
+        "response_tokens": 0,
+        "optimizer_updates": 1198,
+        "skipped_windows": 0,
+        "image_occurrences": 1000,
+        "video_examples": 0,
+        "video_frames": 0,
+        "image_features": 56754
+      },
+      "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
+      "configuration": {
+        "optimizer": "qwen_muon",
+        "lr": 0.0003,
+        "effective_muon_lr": 0.01,
+        "muon_lr_argument_used": true,
+        "seed": 42,
+        "batch_size": 1,
+        "input_batch_tokens": 16384,
+        "sequence_length": 512,
+        "warmup_tokens": 400000,
+        "schedule": "wsd",
+        "ce_token_budget": 20000000,
+        "data_sha256": "c66c42fd7bc99a1b46e61b47fe613228882820a6d3500a63b7ece3ab9063571d",
+        "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "effective_rate_scope": "derived from the recorded optimizer route; legacy CLI values preserved in original run manifest"
+      },
+      "initial_validation": {
+        "event": "validation",
+        "step": 0,
+        "loss": 12.2355614898743,
+        "lm_loss": 11.11579754286564,
+        "supervised_tokens": 291243,
+        "reward": 0.0,
+        "examples": 733,
+        "sampling": "uniform_without_replacement"
+      },
+      "final_validation": {
+        "event": "validation",
+        "step": 1198,
+        "loss": 5.5446670722658205,
+        "lm_loss": 5.017851688746724,
+        "supervised_tokens": 291243,
+        "reward": 0.0,
+        "examples": 733,
+        "sampling": "uniform_without_replacement"
+      },
+      "validation_curve": [
+        {
+          "event": "validation",
+          "step": 0,
+          "loss": 12.2355614898743,
+          "lm_loss": 11.11579754286564,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 200,
+          "loss": 7.333284099428905,
+          "lm_loss": 6.663889520784557,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 400,
+          "loss": 6.711506102959183,
+          "lm_loss": 6.092871541546627,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 600,
+          "loss": 6.290744073909731,
+          "lm_loss": 5.704259550008269,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 800,
+          "loss": 5.9937374027001225,
+          "lm_loss": 5.429917497090306,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1000,
+          "loss": 5.776789062312784,
+          "lm_loss": 5.230578570976059,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1198,
+          "loss": 5.5446670722658205,
+          "lm_loss": 5.017851688746724,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        }
+      ],
+      "main_budget_eligible": false,
+      "initialization": "random initialization"
+    },
+    {
+      "run_id": "strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/adamw-20m",
+      "run_manifest_sha256": "d19e8443ace96220499f66e56221d20cfbd3416612d5d902ce4bb70014d9ee28",
+      "metrics_sha256": "82ed71c41e2b4b8aa99a0bb39eb3a8887aa8b658be6bae926d1a5e7bd20abe3a",
+      "state": "complete",
+      "token_ledger": {
+        "ce_tokens": 20012550,
+        "input_tokens": 20125470,
+        "response_tokens": 0,
+        "optimizer_updates": 1198,
+        "skipped_windows": 0,
+        "image_occurrences": 1000,
+        "video_examples": 0,
+        "video_frames": 0,
+        "image_features": 56754
+      },
+      "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
+      "configuration": {
+        "optimizer": "adamw",
+        "lr": 0.0003,
+        "effective_muon_lr": null,
+        "muon_lr_argument_used": false,
+        "seed": 42,
+        "batch_size": 1,
+        "input_batch_tokens": 16384,
+        "sequence_length": 512,
+        "warmup_tokens": 400000,
+        "schedule": "wsd",
+        "ce_token_budget": 20000000,
+        "data_sha256": "c66c42fd7bc99a1b46e61b47fe613228882820a6d3500a63b7ece3ab9063571d",
+        "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+        "effective_rate_scope": "derived from the recorded optimizer route; legacy CLI values preserved in original run manifest"
+      },
+      "initial_validation": {
+        "event": "validation",
+        "step": 0,
+        "loss": 12.2355614898743,
+        "lm_loss": 11.11579754286564,
+        "supervised_tokens": 291243,
+        "reward": 0.0,
+        "examples": 733,
+        "sampling": "uniform_without_replacement"
+      },
+      "final_validation": {
+        "event": "validation",
+        "step": 1198,
+        "loss": 6.243642711885974,
+        "lm_loss": 5.655850225933699,
+        "supervised_tokens": 291243,
+        "reward": 0.0,
+        "examples": 733,
+        "sampling": "uniform_without_replacement"
+      },
+      "validation_curve": [
+        {
+          "event": "validation",
+          "step": 0,
+          "loss": 12.2355614898743,
+          "lm_loss": 11.11579754286564,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 200,
+          "loss": 8.353650991006257,
+          "lm_loss": 7.62203134003976,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 400,
+          "loss": 7.495196476809411,
+          "lm_loss": 6.814392439620603,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 600,
+          "loss": 7.0217762440164195,
+          "lm_loss": 6.375051603200263,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 800,
+          "loss": 6.715247388478617,
+          "lm_loss": 6.091764620081849,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1000,
+          "loss": 6.45121669080333,
+          "lm_loss": 5.848418437576233,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        },
+        {
+          "event": "validation",
+          "step": 1198,
+          "loss": 6.243642711885974,
+          "lm_loss": 5.655850225933699,
+          "supervised_tokens": 291243,
+          "reward": 0.0,
+          "examples": 733,
+          "sampling": "uniform_without_replacement"
+        }
+      ],
+      "main_budget_eligible": false,
+      "initialization": "random initialization"
+    }
+  ]
+}

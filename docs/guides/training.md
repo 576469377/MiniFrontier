@@ -6,9 +6,11 @@
 
 `configs/strategies/*-v2.json` 是当前研究容量配置，默认单卡；DeepSeek 接入视觉另用 `minideepseekv4-vision-v1.json`。根目录三个配置保留文本兼容用途，不应与当前图文/MTP 参数量混淆。
 
-公开语料通过 `prepare-public-data`、`prepare-tokenizers`、`encode-data` 构造；各命令的 `--help` 说明参数与输出路径。下载、词表训练与编码是三个独立步骤，分别记录来源版本、清洗、分组划分及校验值。已用数据和审核进展见[数据来源说明](data-sources.md)。
+准备公开语料前安装 `uv sync --locked --extra data`，再通过 `prepare-public-data`、`prepare-tokenizers`、`encode-data` 构造；各命令的 `--help` 说明参数与输出路径。下载、词表训练与编码是三个独立步骤，分别记录来源版本、清洗、分组划分及校验值。已用数据和审核进展见[数据来源说明](data-sources.md)。GPU KDA 还需 `--extra training`；使用 TensorBoard 时增加 `--extra monitoring`。
 
 工作盘默认保留 50 GiB，原子检查点的临时重叠空间也要计入。将数据、下载缓存与训练产物放在容量充足的工作盘。各模型先单卡测量；多卡 DDP 每张卡都保存完整模型与优化器，实际吞吐需要测量。
+
+本轮四模型 base 的数据、预算、配方与更严格的 80/60/50 GiB 存储规则统一见[预训练主计划](../pretraining-plan.md)。来源模型的连续阶段路径使用 `--pretraining-program`、`--pretraining-phase` 与 `--schedule program`；它保留主干优化状态、累计主 CE 和阶段谱系，仍需原正式策略的全部准入证据。普通 `--init` 不等于这条连续路径。工作参数和状态继承说明见[执行配方](../experiments/2026-09-10-pretraining-cutover/working-recipes.md)。
 
 ## 训练阶段与启动条件
 
@@ -20,7 +22,7 @@ DeepSeek：Text-v2 2.5B CE → 冻结文本接视觉 → Vision CPT 300M CE → 
 
 这描述目标依赖，不是完成清单。`--run-kind strategy` 必须提供 `--strategy-plan`、`--strategy-phase`、`--strategy-evidence`，通过固定源码、数据准入、配置、前驱和对应长度/模态/卡数的性能检查。正式流程目前要求 Git checkout；wheel 的显式 acceptance 路径适用于工程验证。
 
-小规模诊断和 20M-token 配方比较使用 `--run-kind acceptance`，单独记录预算。进入完整训练前还需比较学习率、MTP、词表及不同随机种子的结果。多组试验可以各用一张卡独立运行，具体并发数量根据可用资源安排。
+小规模诊断和 20M-token 配方比较使用 `--run-kind acceptance`，单独记录预算。本轮 base 已依据旧对照选择工作参数；后续按主计划完成正式数据、词表和一次生产准入，不自动恢复参数网格或多 seed 探索。各正式模型使用一张卡，按实际资源独立推进。
 
 ## 保存、恢复与评估
 
