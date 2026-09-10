@@ -855,5 +855,21 @@
       },
       "run_record": "outputs/strategy-pretraining-data-v3/source-text-encoding-v2/run.json"
     }
+  },
+  "canonical_components_validation": {
+    "source_commit": "713eb786a71276729fa710102747d94545b9890e",
+    "cpu": {
+      "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 .venv/bin/pytest -q -m 'not cuda'",
+      "passed": 422,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "elapsed_seconds": 138.31,
+      "log_sha256": "662e42cedbd9df680acd0c4773ca192ef25cf4cd74303d68a15bbe3ddbe02a83"
+    },
+    "static": {
+      "ruff_check": "passed",
+      "ruff_format_check": "318 files already formatted",
+      "mypy": "178 source files; --ignore-missing-imports"
+    }
   }
 }
