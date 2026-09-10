@@ -62,9 +62,12 @@ class MediaMixtureCursor:
         self.offset, self.ce_seen = 0, 0
         self.seen = {"image": 0, "video": 0}
 
-    def next(self):
+    def next(self, count=None):
+        count = self.batch_size if count is None else count
+        if not 1 <= count <= self.batch_size:
+            raise ValueError("sample count must fit the microbatch capacity")
         selected = []
-        for _ in range(self.batch_size * self.world_size):
+        for _ in range(count * self.world_size):
             progress = self.ce_seen / self.recipe["ce_token_budget"]
             behind = [
                 kind
@@ -83,8 +86,8 @@ class MediaMixtureCursor:
             self.seen["video"] += self.videos[index]
             self.offset += 1
             selected.append(index)
-        start = self.rank * self.batch_size
-        return selected[start : start + self.batch_size]
+        start = self.rank * count
+        return selected[start : start + count]
 
     def quotas_met(self):
         return all(self.seen[kind] >= goal for kind, goal in self.goals.items())

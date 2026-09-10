@@ -26,7 +26,15 @@ from scripts.run_single_gpu_queue import (
     write_json,
 )
 
-TERMINAL = {"complete", "failed", "needs_diagnosis", "blocked_by_control_run"}
+TERMINAL = {
+    "complete",
+    "failed",
+    "needs_diagnosis",
+    "blocked_by_control_run",
+    "stopped_by_user",
+    "stopped_for_review",
+    "blocked_by_result",
+}
 
 
 def compute_apps():
@@ -64,6 +72,17 @@ def eligible(gpu, apps, reserved, policy, job):
 
 
 def gate(job):
+    for path in job.get("result_gates", []):
+        result = read_json(path)
+        if result.get("state") in {
+            "failed",
+            "stopped_by_user",
+            "stopped_for_review",
+            "blocked_by_result",
+        }:
+            return "blocked_by_result", {"result": path, "state": result["state"]}
+        if result.get("state") != "complete":
+            return "waiting_results", {"result": path}
     if job.get("predecessor_receipt"):
         receipt = read_json(job["predecessor_receipt"])
         if receipt.get("state") != "complete" or not receipt.get("verified_exports"):
@@ -204,6 +223,11 @@ def execute(plan_path):
                 del running[job["id"]]
         for job, status in zip(plan["jobs"], state["jobs"], strict=True):
             if status["state"] in TERMINAL | {"running"}:
+                continue
+            if (output / "dispatch-pause.json").exists():
+                status.update(
+                    state="paused_for_review", gate_observed={"pause": "dispatch-pause.json"}
+                )
                 continue
             readiness, values = gate(job)
             status.update(state=readiness, gate_observed=values)

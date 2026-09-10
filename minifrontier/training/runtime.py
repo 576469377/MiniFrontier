@@ -38,10 +38,13 @@ class BatchCursor:
         self.offset = offset
         self.epoch, self.order = -1, torch.empty(0, dtype=torch.int64)
 
-    def next(self):
+    def next(self, count=None):
+        count = self.batch_size if count is None else count
+        if not 1 <= count <= self.batch_size:
+            raise ValueError("sample count must fit the microbatch capacity")
         result = []
-        for j in range(self.batch_size):
-            absolute = self.offset + self.rank * self.batch_size + j
+        for j in range(count):
+            absolute = self.offset + self.rank * count + j
             epoch, position = divmod(absolute, self.size)
             if epoch != self.epoch:
                 self.order = torch.randperm(
@@ -49,7 +52,7 @@ class BatchCursor:
                 )
                 self.epoch = epoch
             result.append(int(self.order[position]))
-        self.offset += self.batch_size * self.world_size
+        self.offset += count * self.world_size
         return result
 
 

@@ -170,6 +170,8 @@ def validate_arguments(args):
             "batch_size",
             "grad_accum",
             "input_batch_tokens",
+            "input_batch_policy",
+            "input_batch_schedule",
             "visual_warmup",
             "vision_lr",
             "projector_lr",

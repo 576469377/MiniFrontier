@@ -58,7 +58,19 @@ def test_generation_gate_requires_training_recall_eos_and_visual_retention(tmp_p
     assert queue.gate(job)[0] == "blocked_by_control_run"
 
 
-def test_queue_reserves_gpu_before_cuda_context_appears(tmp_path, monkeypatch):
+def test_result_dependency_does_not_treat_stopped_or_failed_screen_as_complete(tmp_path):
+    result = tmp_path / "status.json"
+    job = dict(result_gates=[str(result)])
+    assert queue.gate(job)[0] == "waiting_results"
+    for state in ["failed", "stopped_by_user"]:
+        result.write_text(json.dumps(dict(state=state)))
+        assert queue.gate(job)[0] == "blocked_by_result"
+    result.write_text('{"state":"complete"}')
+    assert queue.gate(job)[0] == "ready"
+
+
+@pytest.mark.parametrize("paused", [False, True])
+def test_queue_reserves_gpu_before_cuda_context_appears(tmp_path, monkeypatch, paused):
     (tmp_path / "outputs").mkdir()
     output = tmp_path / "outputs/queue"
     output.mkdir()
@@ -83,6 +95,9 @@ def test_queue_reserves_gpu_before_cuda_context_appears(tmp_path, monkeypatch):
     )
     path = output / "queue-plan.json"
     path.write_text(json.dumps(plan))
+    pause = output / "dispatch-pause.json"
+    if paused:
+        pause.write_text('{"reason":"review"}')
     clock = [0]
     starts = []
     monkeypatch.setattr(queue, "query_gpus", lambda: [gpu()])
@@ -90,7 +105,16 @@ def test_queue_reserves_gpu_before_cuda_context_appears(tmp_path, monkeypatch):
     monkeypatch.setattr(queue, "require_space", lambda *a: None)
     monkeypatch.setattr(queue, "source_check", lambda *a: None)
     monkeypatch.setattr(queue.signal, "signal", lambda *a: None)
-    monkeypatch.setattr(queue.time, "sleep", lambda *a: clock.__setitem__(0, clock[0] + 1))
+
+    def tick(*args):
+        if pause.exists():
+            status = json.loads((output / "queue.json").read_text())
+            assert all(j["state"] == "paused_for_review" for j in status["jobs"])
+            assert not starts
+            pause.unlink()
+        clock[0] += 1
+
+    monkeypatch.setattr(queue.time, "sleep", tick)
 
     class Worker:
         def __init__(self, *args, **kwargs):
@@ -111,7 +135,7 @@ def test_queue_reserves_gpu_before_cuda_context_appears(tmp_path, monkeypatch):
 
     monkeypatch.setattr(queue.subprocess, "Popen", Worker)
     assert queue.execute(path) == 0
-    assert [start for start, _ in starts] == [0, 1]
+    assert [start for start, _ in starts] == [int(paused), int(paused) + 1]
     assert all(options["env"]["CUDA_VISIBLE_DEVICES"] == "GPU-7" for _, options in starts)
     assert all(len(options["pass_fds"]) == 1 for _, options in starts)
     # A completed queue is restartable without launching duplicate workers.

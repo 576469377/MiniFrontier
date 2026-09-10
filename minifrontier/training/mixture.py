@@ -51,9 +51,12 @@ class TokenMixtureCursor:
         random.Random(int(digest[:16], 16)).shuffle(order)
         return order
 
-    def next(self):
+    def next(self, count=None):
+        count = self.batch_size if count is None else count
+        if not 1 <= count <= self.batch_size:
+            raise ValueError("sample count must fit the microbatch capacity")
         selected = []
-        for _ in range(self.batch_size * self.world_size):
+        for _ in range(count * self.world_size):
             domain = min(self.rows, key=lambda d: self.served[d] / self.proportions[d])
             cursor = self.cursors[domain]
             if cursor == len(self.orders[domain]):
@@ -67,8 +70,8 @@ class TokenMixtureCursor:
             self.served[domain] += self.counts[index]
             self.offset += 1
             selected.append(index)
-        start = self.rank * self.batch_size
-        return selected[start : start + self.batch_size]
+        start = self.rank * count
+        return selected[start : start + count]
 
     def state_dict(self):
         return dict(

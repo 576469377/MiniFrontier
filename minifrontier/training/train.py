@@ -20,6 +20,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 from minifrontier.data import StageDataset, sha256
 from minifrontier.models.factory import build_model, configure_posttraining
+from minifrontier.training.batching import input_target, microbatch_count, parse_schedule
 from minifrontier.training.budgets import TokenLedger, scaled_ce, window_counts
 from minifrontier.training.posttrain import dpo_loss
 from minifrontier.training.runtime import (
@@ -88,6 +89,16 @@ def parser():
         "--input-batch-tokens",
         type=int,
         help="accumulate until this many actual global non-padding inputs (PT/SFT/indexer)",
+    )
+    p.add_argument(
+        "--input-batch-policy",
+        choices=["sample-bounded", "whole-microbatch"],
+        default="sample-bounded",
+        help="bound target overshoot to one whole example per rank; legacy mode is explicit",
+    )
+    p.add_argument(
+        "--input-batch-schedule",
+        help="CE milestones and global input targets, e.g. 0:8192,400000:16384,2000000:32768",
     )
     p.add_argument("--profile-warmup", type=int, default=50)
     p.add_argument("--profile-updates", type=int, default=200)
@@ -206,6 +217,11 @@ def main(argv=None):
         not 1 <= args.input_batch_tokens <= 1048576 or args.stage in {"dpo", "grpo", "mopd", "opd"}
     ):
         raise ValueError("actual input batch budget must be 1-1048576, for PT/SFT/indexer only")
+    batch_schedule = parse_schedule(
+        args.input_batch_schedule, args.input_batch_tokens, args.ce_tokens
+    )
+    if batch_schedule and args.input_batch_policy != "sample-bounded":
+        raise ValueError("batch ramps require the sample-bounded input policy")
     if args.init_transition != "exact" and not (args.init or args.resume):
         raise ValueError("an initialization transition requires a preceding checkpoint")
     if args.visual_warmup and (
@@ -237,6 +253,9 @@ def main(argv=None):
 
 
 def run(args, rank, world, device):
+    batch_schedule = parse_schedule(
+        args.input_batch_schedule, args.input_batch_tokens, args.ce_tokens
+    )
     torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", 2)))
     torch.manual_seed(args.seed)
     random.seed(args.seed)
@@ -463,6 +482,8 @@ def run(args, rank, world, device):
         batch_size=args.batch_size,
         grad_accum=args.grad_accum,
         input_batch_tokens=args.input_batch_tokens,
+        input_batch_policy=args.input_batch_policy,
+        input_batch_schedule=args.input_batch_schedule,
         sequence_length=args.sequence_length,
         seed=args.seed,
         data_sha256=data_hash,
@@ -903,10 +924,18 @@ def run(args, rank, world, device):
         # Keep only token tensors (not activations) for this accumulation window.
         window = []
         accumulated_inputs = 0
+        target_inputs = input_target(args.input_batch_tokens, batch_schedule, ledger.ce_tokens)
         while True:
-            item = batch(train, cursor.next(), torch.device("cpu"))
+            count = args.batch_size
+            if target_inputs is not None and args.input_batch_policy == "sample-bounded":
+                count = microbatch_count(
+                    args.batch_size, target_inputs - accumulated_inputs, args.sequence_length, world
+                )
+            item = batch(train, cursor.next(count), torch.device("cpu"))
+            if target_inputs is not None and item.input_ids.shape[-1] > args.sequence_length:
+                raise ValueError("input row exceeds the declared sequence length used for batching")
             window.append(item)
-            if args.input_batch_tokens is None:
+            if target_inputs is None:
                 if len(window) >= args.grad_accum:
                     break
             else:
@@ -914,7 +943,7 @@ def run(args, rank, world, device):
                 if world > 1:
                     dist.all_reduce(actual)
                 accumulated_inputs += int(actual)
-                if accumulated_inputs >= args.input_batch_tokens:
+                if accumulated_inputs >= target_inputs:
                     break
                 if len(window) >= 1024:
                     raise ValueError(
@@ -1242,6 +1271,8 @@ def run(args, rank, world, device):
                     min_device_free_gib=-float(performance[5]),
                     ce_tokens=int(counts[0]) if counts is not None else 0,
                     input_tokens=int(counts[1]) if counts is not None else int(window_inputs),
+                    input_batch_target=target_inputs,
+                    microbatch_max_samples=max(item.input_ids.shape[0] for item in window),
                     response_tokens=int(window_responses) if rollout is not None else 0,
                     images=int(media_counts[0]),
                     frames=int(media_counts[2]),
@@ -1275,6 +1306,10 @@ def run(args, rank, world, device):
                     step_seconds=elapsed,
                     data_offset=cursor.offset,
                     micro_batches=len(window),
+                    input_batch_target=target_inputs,
+                    input_batch_actual=accumulated_inputs if target_inputs is not None else None,
+                    microbatch_samples=[item.input_ids.shape[0] for item in window],
+                    microbatch_max_samples=max(item.input_ids.shape[0] for item in window),
                     token_ledger=ledger.state_dict(),
                     peak_allocated_mib=torch.cuda.max_memory_allocated(device) / 2**20
                     if device.type == "cuda"

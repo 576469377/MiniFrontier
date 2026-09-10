@@ -111,6 +111,7 @@ def strategy_status(root):
         *root.glob("strategy-performance-gpu*/queue.json"),
         *root.glob("strategy-real-batch-gpu*/queue.json"),
         *root.glob("strategy-batch16-gpu*/queue.json"),
+        *root.glob("strategy-batch-*-gpu*/queue.json"),
         *root.glob("strategy-single-gpu*/queue.json"),
         *root.glob("strategy-shared-gpu*/queue.json"),
     ]

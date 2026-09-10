@@ -141,6 +141,40 @@ def test_actual_input_budget_controls_accumulation(corpus, tmp_path):
     assert state["token_ledger"]["optimizer_updates"] == 1
 
 
+def test_large_microbatch_ceiling_preserves_global_batch_and_ramp_resume(corpus, tmp_path):
+    name = "minideepseekv4"
+    config = config_for(name, tmp_path)
+    outputs = [tmp_path / part for part in ("small", "large", "resumed")]
+    for cap, output in zip((1, 128, 128), outputs, strict=True):
+        args = [
+            *arguments(name, config, corpus, output, steps=3),
+            "--batch-size",
+            str(cap),
+            "--ce-tokens",
+            "1500",
+            "--warmup-tokens",
+            "100",
+            "--input-batch-tokens",
+            "256",
+            "--input-batch-schedule",
+            "0:256,250:512,700:768",
+            "--log-every",
+            "1",
+        ]
+        if output == outputs[-1]:
+            train.main([*args, "--stop-after-updates", "1"])
+            train.main([*args, "--resume", str(output / "checkpoint.pt")])
+        else:
+            train.main(args)
+        events = [json.loads(line) for line in (output / "metrics.jsonl").read_text().splitlines()]
+        assert [e["input_batch_actual"] for e in events if e["event"] == "train"] == [256, 512, 768]
+    saved = [torch.load(p / "checkpoint.pt", weights_only=True) for p in outputs]
+    assert saved[0]["token_ledger"] == saved[1]["token_ledger"] == saved[2]["token_ledger"]
+    assert saved[0]["data_offset"] == saved[1]["data_offset"] == saved[2]["data_offset"]
+    for key, value in saved[1]["model"].items():
+        torch.testing.assert_close(value, saved[2]["model"][key], atol=0, rtol=0)
+
+
 @pytest.mark.parametrize("graceful_pause", [False, True])
 def test_training_resume_matches_uninterrupted_run(corpus, tmp_path, monkeypatch, graceful_pause):
     name = "minideepseekv4"

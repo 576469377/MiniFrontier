@@ -50,6 +50,7 @@ def test_repository_has_only_current_model_packages():
     assert not (ROOT / "configs/current").exists()
     assert set(p.name for p in (ROOT / "configs").iterdir()) == {
         "models.json",
+        "experiments.json",
         "strategies",
         "miniqwen4.json",
         "minikimik3.json",
