@@ -88,11 +88,11 @@
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
     "status": "building",
     "formal_admission": false,
-    "observed_unix": 1789065965.443749,
+    "observed_unix": 1789068095.4377563,
     "process_identity_verified": true,
     "source_commit": "642aced7a6b849e608259857421c566c9abfc687",
-    "independent_images": 31000,
-    "media_bytes": 9144439585,
+    "independent_images": 38750,
+    "media_bytes": 10825744029,
     "sources": {
       "CoSyn_400k_document": {
         "status": "candidate_target_reached",
@@ -102,12 +102,25 @@
       },
       "CoSyn_400k_chart": {
         "status": "reading",
-        "unique_images": 11000,
-        "accepted_records": 60049,
-        "answer_reference_tokens": 2736348
+        "unique_images": 18750,
+        "accepted_records": 102495,
+        "answer_reference_tokens": 4660368
       }
     },
-    "local_copy_performed": false
+    "local_copy_performed": false,
+    "storage_observation": {
+      "observed_unix": 1789068095.4378412,
+      "free_gib": 1037.0001182556152,
+      "metadata_files_bytes": 3557872667,
+      "database_bytes": 3527626752,
+      "media_bytes": 10825744029,
+      "configured_metadata_budget_gib": 3.0,
+      "configured_total_budget_gib": 60.0,
+      "metadata_budget_exceeded": true,
+      "within_total_budget": true
+    },
+    "storage_admission": false,
+    "storage_issue": "Perceptual-hash association indexes exceeded the configured metadata budget; total data remains below its 60 GiB limit. Physical accounting and index redundancy need correction before admission."
   },
   "mf1_natural_p0_encoding": {
     "source_commit": "713eb786a71276729fa710102747d94545b9890e",
