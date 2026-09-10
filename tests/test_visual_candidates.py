@@ -91,6 +91,68 @@ def test_visual_budget_rejects_invalid_partition_before_creating_files(tmp_path)
     assert not (tmp_path / "invalid").exists()
 
 
+def test_continuation_preserves_cursor_and_excludes_previous_pixels(tmp_path, monkeypatch):
+    monkeypatch.setattr(shutil, "disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3))
+    import httpx
+
+    calls, interrupted = [], []
+    items = [row(1), row(1), row(2), row(3)]
+
+    def rows(name, *, seed, audit, specification, skip_rows=0):
+        calls.append((seed, skip_rows))
+        for i in range(skip_rows, len(items)):
+            if skip_rows == 1 and i == 3 and not interrupted:
+                interrupted.append(True)
+                raise httpx.ReadTimeout("fixture transport interruption")
+            yield items[i], f"fixture:row{i}"
+
+    monkeypatch.setattr(visual_sources, "source_rows", rows)
+    tokenizer = tmp_path / "tokenizer.json"
+    Tokenizer(models.WordLevel({"[UNK]": 0}, unk_token="[UNK]")).save(str(tokenizer))
+    first, second = tmp_path / "first", tmp_path / "second"
+    a = visual_sources.build_visual_candidates(first, tokenizer, targets={"allava_laion": 1})
+    before = {p.name: sha256(p) for p in first.iterdir() if p.is_file()}
+    continuation = tmp_path / "continuation.json"
+    exported = visual_sources.export_visual_continuation(first, continuation)
+    assert exported["sources"]["allava_laion"]["row_offset"] == 1
+    assert len(exported["excluded_rgb_sha256"]) == a["unique_images"] == 1
+    with pytest.raises(httpx.ReadTimeout):
+        visual_sources.build_visual_candidates(
+            second, tokenizer, targets={"allava_laion": 2}, continuation=continuation
+        )
+    partial = json.loads((second / "source-audit.json").read_text())
+    assert partial["sources"]["allava_laion"]["read_rows"] == 2
+    altered = tmp_path / "altered.json"
+    modified = json.loads(continuation.read_text())
+    modified["excluded_rgb_sha256"] = []
+    altered.write_text(json.dumps(modified))
+    with pytest.raises(ValueError, match="unchanged"):
+        visual_sources.build_visual_candidates(
+            second, tokenizer, targets={"allava_laion": 2}, continuation=altered, resume=True
+        )
+    result = visual_sources.build_visual_candidates(
+        second, tokenizer, targets={"allava_laion": 2}, continuation=continuation, resume=True
+    )
+    assert calls == [(20260911, 0), (20260911, 1), (20260911, 3)]
+    assert result["unique_images"] == 2 and result["formal_admission"] is False
+    assert result["sources"]["allava_laion"]["rejected"]["previous_slice_image"] == 1
+    assert len(list((second / "images").rglob("*.image"))) == 2
+    third_cursor = visual_sources.export_visual_continuation(second, tmp_path / "third.json")
+    assert third_cursor["sources"]["allava_laion"]["row_offset"] == 4
+    assert len(third_cursor["excluded_rgb_sha256"]) == 3
+    assert {p.name: sha256(p) for p in first.iterdir() if p.is_file()} == before
+
+
+def test_quota_continuation_replays_uncommitted_boundary_without_changing_parent(quota_stopped):
+    root, run = quota_stopped
+    visual_sources.finalize_storage_limited_slice(root, run)
+    before = sha256(root / "corpus.sqlite")
+    exported = visual_sources.export_visual_continuation(root, root.parent / "continuation.json")
+    assert exported["sources"]["allava_laion"]["row_offset"] == 1
+    assert len(exported["excluded_rgb_sha256"]) == 1
+    assert sha256(root / "corpus.sqlite") == before
+
+
 def test_pinned_catalog_transport_retry_is_bounded_and_does_not_retry_schema_errors(monkeypatch):
     httpx = pytest.importorskip("httpx")
     from minifrontier.data import public_sources

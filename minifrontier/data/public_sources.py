@@ -102,7 +102,10 @@ def source_rows(name, *, seed, audit, specification=None, skip_rows=0):
     rng = random.Random(seed)
     rng.shuffle(files)
     audit["catalog_files"] = len(files)
-    audit["catalog_sha256"] = hashlib.sha256("\n".join(sorted(files)).encode()).hexdigest()
+    catalog_hash = hashlib.sha256("\n".join(sorted(files)).encode()).hexdigest()
+    if skip_rows and audit.get("catalog_sha256", catalog_hash) != catalog_hash:
+        raise ValueError("pinned source file catalog changed during continuation")
+    audit["catalog_sha256"] = catalog_hash
     audit["sampling"] = (
         "uniform file permutation, uniform row-group permutation, uniform rows within each group"
     )

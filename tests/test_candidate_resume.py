@@ -200,6 +200,15 @@ def test_parquet_resume_skips_completed_groups_without_materializing_them(monkey
         public_sources.source_rows("fixture", seed=13, audit=audit, specification=spec, skip_rows=4)
     )
     assert resumed == whole[4:] and len(reads) == 2
+    audit["catalog_sha256"] = "0" * 64
+    reads.clear()
+    with pytest.raises(ValueError, match="catalog changed"):
+        list(
+            public_sources.source_rows(
+                "fixture", seed=13, audit=audit, specification=spec, skip_rows=4
+            )
+        )
+    assert not reads
 
 
 def test_visual_resume_rejects_corrupt_retained_media_before_reading_source(

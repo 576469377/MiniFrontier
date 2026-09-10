@@ -445,6 +445,63 @@ def candidate_turns(subset, row):
     return selected, None if selected else "no_complete_grounded_turn"
 
 
+def export_visual_continuation(corpus, output):
+    """Freeze a closed slice's source cursor and excluded pixels for a new slice."""
+    corpus, output = Path(corpus).resolve(), Path(output).resolve()
+    audit = json.loads((corpus / "source-audit.json").read_text())
+    manifest = json.loads((corpus / "corpus-manifest.json").read_text())
+    if output.exists() or audit["status"] not in {
+        "candidate_inventory_below_target",
+        "candidate_slice_complete_pending_admission",
+    }:
+        raise ValueError("continuation requires a closed slice and a new output")
+    if manifest["database_sha256"] != sha256(corpus / "corpus.sqlite"):
+        raise ValueError("closed visual database changed")
+    if audit["source"] != REPO or audit["revision"] != REVISION:
+        raise ValueError("closed visual source differs from the pinned source")
+    excluded = set()
+    if parent := audit.get("continuation"):
+        previous = corpus / "continuation.json"
+        if sha256(previous) != parent["sha256"]:
+            raise ValueError("previous continuation changed")
+        excluded.update(json.loads(previous.read_text())["excluded_rgb_sha256"])
+    with contextlib.closing(
+        sqlite3.connect(f"file:{corpus / 'corpus.sqlite'}?mode=ro", uri=True)
+    ) as db:
+        for (payload,) in db.execute("SELECT payload FROM samples"):
+            excluded.update(m["rgb_sha256"] for m in json.loads(payload).get("media", []))
+    sources = {}
+    for number, (subset, entry) in enumerate(audit["sources"].items()):
+        # A byte-limited producer has counted, but not retained, its final row.
+        replay_boundary = int(entry["status"] == "storage_slice_closed_below_target")
+        sources[subset] = dict(
+            seed=entry.get("source_seed", audit["seed"] + number * 104729),
+            row_offset=max(
+                0, entry.get("source_start_row", 0) + entry["read_rows"] - replay_boundary
+            ),
+            reads=entry.get("reads", []),
+            catalog_sha256=entry.get("catalog_sha256"),
+        )
+    record = dict(
+        kind="visual_slice_continuation_v1",
+        source=REPO,
+        revision=REVISION,
+        seed=audit["seed"],
+        reference_tokenizer_sha256=audit["reference_tokenizer_sha256"],
+        corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
+        source_audit_sha256=sha256(corpus / "source-audit.json"),
+        database_sha256=manifest["database_sha256"],
+        sources=sources,
+        excluded_rgb_sha256=sorted(excluded),
+        formal_admission=False,
+        scope="exact previous pixel exclusion; cross-slice near-duplicate/group and benchmark audits still required",
+    )
+    content = json.dumps(record, ensure_ascii=False, indent=2) + "\n"
+    with reserve_write(output, len(content.encode()), reserve_bytes=80 * GIB):
+        output.write_text(content)
+    return record
+
+
 def build_visual_candidates(
     output,
     reference_tokenizer,
@@ -454,6 +511,7 @@ def build_visual_candidates(
     max_gib=20,
     metadata_gib=3,
     resume=False,
+    continuation=None,
 ):
     """Build the first shared media inventory; never auto-admit or claim held-out quality."""
     from tokenizers import Tokenizer
@@ -464,6 +522,39 @@ def build_visual_candidates(
         raise ValueError("choose a new output and separate positive metadata/media budgets")
     if not targets or any(k not in VISUAL_CANDIDATES or n < 1 for k, n in targets.items()):
         raise ValueError("unknown subset or nonpositive independent-image target")
+    continuation_record = json.loads(Path(continuation).read_text()) if continuation else None
+    continuation_identity = None
+    excluded = set()
+    if continuation_record is not None:
+        if (
+            continuation_record.get("kind") != "visual_slice_continuation_v1"
+            or continuation_record["source"] != REPO
+            or continuation_record["revision"] != REVISION
+            or continuation_record["seed"] != seed
+            or continuation_record["reference_tokenizer_sha256"] != sha256(reference_tokenizer)
+            or not set(targets).issubset(continuation_record["sources"])
+        ):
+            raise ValueError("continuation source/seed/tokenizer differs")
+        for subset in targets:
+            start = continuation_record["sources"][subset]
+            if (
+                type(start["row_offset"]) is not int
+                or start["row_offset"] < 0
+                or type(start["seed"]) is not int
+            ):
+                raise ValueError("invalid continuation source cursor")
+        excluded = set(continuation_record["excluded_rgb_sha256"])
+        if any(
+            len(value) != 64 or any(c not in "0123456789abcdef" for c in value)
+            for value in excluded
+        ):
+            raise ValueError("invalid continuation pixel hash")
+        continuation_identity = dict(
+            sha256=sha256(continuation),
+            excluded_images=len(excluded),
+            parent_corpus_manifest_sha256=continuation_record["corpus_manifest_sha256"],
+            sources={key: continuation_record["sources"][key] for key in targets},
+        )
     previous = json.loads((root / "source-audit.json").read_text()) if resume else None
     if previous and (
         previous["status"] != "interrupted_unadmitted"
@@ -475,6 +566,7 @@ def build_visual_candidates(
         or previous["max_gib"] != max_gib
         or previous["metadata_gib"] != metadata_gib
         or previous["reference_tokenizer_sha256"] != sha256(reference_tokenizer)
+        or previous.get("continuation") != continuation_identity
         or not previous.get("error", "").startswith(
             ("ReadTimeout", "RemoteProtocolError", "ConnectError", "ConnectionError")
         )
@@ -502,6 +594,7 @@ def build_visual_candidates(
         media_bytes=0,
         reference_tokenizer_sha256=sha256(reference_tokenizer),
         sources={},
+        continuation=continuation_identity,
         processor_files={
             str(Path(__file__).name): sha256(__file__),
             "corpus.py": sha256(Path(__file__).with_name("corpus.py")),
@@ -515,6 +608,11 @@ def build_visual_candidates(
             "per-model tokenizer, complete media/answer length and phase exposure audit",
         ],
     )
+    if continuation is not None:
+        # Retain the small immutable exclusion/cursor file, not its images or corpus.
+        content = Path(continuation).read_bytes()
+        with reserve_write(root / "continuation.json", len(content), reserve_bytes=80 * GIB):
+            (root / "continuation.json").write_bytes(content)
     write_json(
         root / "source_allowlist.json",
         dict(
@@ -568,6 +666,11 @@ def build_visual_candidates(
     try:
         progress()
         for number, (subset, target) in enumerate(targets.items()):
+            start = (
+                continuation_record["sources"][subset]
+                if continuation_record is not None
+                else dict(seed=seed + number * 104729, row_offset=0)
+            )
             source = dict(
                 repo=REPO,
                 revision=REVISION,
@@ -585,8 +688,14 @@ def build_visual_candidates(
                 rejected=Counter(),
                 domain_records=Counter(),
                 read_rows=0,
+                source_start_row=start["row_offset"],
+                source_seed=start["seed"],
                 max_source_rows=target * 4,
             )
+            if continuation_record is not None:
+                entry["reads"] = start.get("reads", [])
+                if start.get("catalog_sha256"):
+                    entry["catalog_sha256"] = start["catalog_sha256"]
             if previous and subset in audit["sources"]:
                 entry = audit["sources"][subset]
                 entry["rejected"] = Counter(entry["rejected"])
@@ -597,10 +706,14 @@ def build_visual_candidates(
             progress()
             for row, identity in source_rows(
                 subset,
-                seed=seed + number * 104729,
+                seed=start["seed"],
                 audit=entry,
                 specification=source,
-                **({"skip_rows": entry["read_rows"]} if resume else {}),
+                **(
+                    {"skip_rows": start["row_offset"] + (entry["read_rows"] if resume else 0)}
+                    if resume or continuation_record is not None
+                    else {}
+                ),
             ):
                 if entry["read_rows"] >= entry["max_source_rows"]:
                     entry["scan_limit_reached"] = True
@@ -628,6 +741,9 @@ def build_visual_candidates(
                     continue
                 if hashes["rgb_sha256"] in seen:
                     entry["rejected"]["duplicate_image"] += 1
+                    continue
+                if hashes["rgb_sha256"] in excluded:
+                    entry["rejected"]["previous_slice_image"] += 1
                     continue
                 if audit["media_bytes"] + len(binary) > (max_gib - metadata_gib) * GIB:
                     raise ValueError("media byte budget reached; inventory remains unadmitted")
@@ -882,9 +998,16 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=20260911)
     parser.add_argument("--max-gib", type=float, default=20)
     parser.add_argument("--metadata-gib", type=float, default=3)
+    parser.add_argument(
+        "--continuation", help="frozen source cursors and prior pixel exclusions for a new slice"
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "--compact-from", help="completed visual inventory; create a new compact version"
+    )
+    mode.add_argument(
+        "--export-continuation-from",
+        help="closed inventory; export a cursor/exclusion JSON without media copies",
     )
     mode.add_argument(
         "--resume", action="store_true", help="resume a transport-interrupted visual inventory"
@@ -898,6 +1021,20 @@ def main(argv=None):
         "--construction-run", help="original producer run.json; required to close a slice"
     )
     args = parser.parse_args(argv)
+    if args.export_continuation_from:
+        if args.continuation:
+            parser.error("export does not consume --continuation")
+        record = export_visual_continuation(args.export_continuation_from, args.output)
+        print(
+            json.dumps(
+                dict(
+                    output=args.output,
+                    excluded_images=len(record["excluded_rgb_sha256"]),
+                    sources=record["sources"],
+                )
+            )
+        )
+        return
     if args.compact_from:
         print(json.dumps(compact_visual_inventory(args.compact_from, args.output), indent=2))
         return
@@ -920,6 +1057,7 @@ def main(argv=None):
         max_gib=args.max_gib,
         metadata_gib=args.metadata_gib,
         resume=args.resume,
+        continuation=args.continuation,
     )
 
 
