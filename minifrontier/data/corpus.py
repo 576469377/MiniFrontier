@@ -401,8 +401,8 @@ def train_tokenizer(
 
     def corpus():
         nonlocal bytes_seen
-        # tokenizers may consume the iterator on its worker thread. Open and
-        # close the read-only connection on that same thread.
+        # Keep database ownership on the calling thread. Tokenizers can hand
+        # successive iterator batches to different Rayon workers.
         db = open_corpus(corpus_root)
         try:
             for (text,) in db.execute("SELECT text FROM samples WHERE split='train' ORDER BY id"):
@@ -415,8 +415,10 @@ def train_tokenizer(
         finally:
             db.close()
 
+    # Materialize only the explicit byte-budget sample, never the full corpus.
+    training_texts = list(corpus())
     tokenizer.train_from_iterator(
-        corpus(),
+        training_texts,
         trainers.BpeTrainer(
             vocab_size=vocab_size,
             min_frequency=2,

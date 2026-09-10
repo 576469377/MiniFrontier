@@ -5,11 +5,13 @@ import hashlib
 import json
 import shutil
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 
 import pytest
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer, models
 
+from minifrontier.data import corpus as corpus_module
 from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokenizer
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS as MF1_SPECIAL_TOKENS
@@ -153,3 +155,35 @@ def test_reader_rejects_changed_partition_or_original_database(corpus, tmp_path,
         stream.write(b"\n")
     with pytest.raises(ValueError, match=r"changed|differs"):
         open_corpus(view)
+
+
+def test_tokenizer_consumer_can_move_between_worker_threads(corpus, tmp_path, monkeypatch):
+    root, reservation = corpus
+    view = tmp_path / "view"
+    create_partition_view(root, reservation, view)
+    real = Tokenizer(models.BPE())
+
+    class MigratingConsumer:
+        def __init__(self, _model):
+            pass
+
+        def train_from_iterator(self, data, trainer):
+            iterator = iter(data)
+            end = object()
+            # Two persistent workers guarantee different OS thread identities.
+            # The first pulls the row; the second advances/closes the iterator.
+            with ThreadPoolExecutor(1) as first, ThreadPoolExecutor(1) as second:
+                rows = [first.submit(next, iterator, end).result()]
+                assert second.submit(next, iterator, end).result() is end
+            real.pre_tokenizer, real.decoder = self.pre_tokenizer, self.decoder
+            real.train_from_iterator(rows, trainer)
+
+        def get_vocab_size(self):
+            return real.get_vocab_size()
+
+        def save(self, path):
+            real.save(path)
+
+    monkeypatch.setattr(corpus_module, "Tokenizer", MigratingConsumer)
+    report = train_tokenizer(view, tmp_path / "tokenizer.json", 350)
+    assert report["training_bytes"] > 0
