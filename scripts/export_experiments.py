@@ -10,6 +10,7 @@ from minifrontier.data import sha256
 
 RUN_KEYS = (
     "model_name",
+    "kind",
     "config",
     "phase",
     "stage",
@@ -178,11 +179,14 @@ def export(workspace, output):
                     "grad_norm",
                     "step_seconds",
                     "tokens_per_second",
+                    "ce_tokens",
+                    "input_tokens",
                 ],
             )
             writer.writeheader()
             for row in metrics:
-                writer.writerow({key: row.get(key) for key in writer.fieldnames})
+                flat = {**row, **row.get("token_ledger", {})}
+                writer.writerow({key: flat.get(key) for key in writer.fieldnames})
         validation = next((e for e in reversed(metrics) if e["event"] == "validation"), {})
         entries.append(
             dict(
@@ -193,10 +197,21 @@ def export(workspace, output):
                 ce_per_second=profile.get("ce_tokens_per_second"),
             )
         )
+    # A retired queue can still say "waiting" after its workers were adopted elsewhere.
+    # Actual run artifacts take precedence over those historical controller states.
+    for location, job in queue_jobs.items():
+        actual = read(Path(location) / "status.json")
+        if actual.get("state"):
+            job["state"] = actual["state"]
     snapshot = dict(
         captured_at=datetime.now(UTC).isoformat(),
         runs=entries,
-        pending_jobs=list(queue_jobs.values()),
+        pending_jobs=[
+            job
+            for location, job in queue_jobs.items()
+            if not (Path(location) / "run.json").is_file()
+        ],
+        queue_jobs=list(queue_jobs.values()),
         portable_queue_plans=portable(queue_plans, workspace),
         scope="numeric records only; no training samples, media, checkpoints, hostname, device UUID or process IDs",
         recipe_selection="not frozen; complete optimizer, LR, MTP, tokenizer and seed comparisons first",

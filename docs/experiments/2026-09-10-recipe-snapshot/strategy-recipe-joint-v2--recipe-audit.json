@@ -1,0 +1,21 @@
+{
+  "text_corpus_sha256": "ce079a00d54c19b0cc9b235c52bbc44b446cb0c7877d35a2007de2ff089249ea",
+  "visual_corpus_sha256": "269c7ee97fa376ec0695339c19dc11fc845db0ca6b5bb1898ec0c10f32f479b7",
+  "main_budget_eligible": false,
+  "scope": "small joint optimizer recipe pilot; no visual generalization gate",
+  "corpus": {
+    "schema_version": 2,
+    "seed": 42,
+    "counts": {
+      "accepted": 52983
+    },
+    "splits": {
+      "train": 52382,
+      "val": 294,
+      "test": 307
+    },
+    "split_rule": "connected groups; sha256 buckets val 0.5%, sealed test 0.5%",
+    "dedup": "exact hash, first-question cap3, answer shingles0.8, simhash64+Jaccard0.85",
+    "database_sha256": "6131818a3b2df477b1d1f42a497e180dc3af5c7cfcda010f88c6dd67f1d69700"
+  }
+}

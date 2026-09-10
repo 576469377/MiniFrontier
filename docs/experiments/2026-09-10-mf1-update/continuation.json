@@ -1,0 +1,20 @@
+{
+  "updated_at": 1789026682.887391,
+  "policy": {
+    "train_correct_min": 29,
+    "train_total": 32,
+    "train_eos_min": 30,
+    "visual_correct_min": 28,
+    "visual_total": 32,
+    "token_budget": 100000,
+    "scope": "conditional expanded generated instruction diagnosis, never formal training"
+  },
+  "runs": {
+    "2e-5": {
+      "state": "waiting_control_result"
+    },
+    "1e-4": {
+      "state": "waiting_control_result"
+    }
+  }
+}

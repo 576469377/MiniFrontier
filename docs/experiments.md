@@ -4,6 +4,13 @@
 仓库保存配置、数值曲线、结果摘要和失败复盘，帮助读者理解实验选择。
 原始数据、完整日志与权重保存在本地，公开档案记录其版本和校验值。
 
+最新公开快照：2026-09-10 07:51 UTC。
+
+- [三个来源模型：配方结果、当前判断与完整曲线](experiments/2026-09-10-recipe-snapshot/README.md)。
+- [MF1：SFT 最新验证、已完成性能短筛与持续测量进度](experiments/2026-09-10-mf1-update/README.md)。
+
+本地 JSONL/TensorBoard 连续更新；公开仓库按时间生成快照。前一份快照保留原始时间边界。
+
 MiniFrontier1.0 新增独立的[融合实现与 CPU 学习档案](experiments/mf1-reference-v2/README.md)，包含完整 228M 前后向、小配置学习曲线、媒体对照和已知局限；不与原三模型的配方筛选合并。
 
 2026-09-10：[MF1 语言诊断与性能对照](experiments/mf1-language-performance-v1/README.md)补齐两组 500K CE 的完成曲线、全部 32 个留出媒体的对照检查、缓存数值检查及 microbatch 基线；两组 30K CE SFT 和优化版性能测量正在运行。

@@ -124,7 +124,7 @@ MiniFrontier1.0 的组合方案由本项目设计；MiniQwen4 的名称来自所
 |:---|:---|
 | ✅ 架构实现 | 四个模型均有可运行代码；MF1 完整 228M 配置完成 CPU 前后向及 CUDA 文本、图像、视频优化器更新检查。[实现记录](docs/audits/minifrontier1-implementation.md)、[GPU 探测](docs/experiments/mf1-gpu-mechanism-v1/README.md) |
 | ✅ 最小训练流程 | 微型示例跑通数据生成、训练、恢复、评估和生成。[使用指南](docs/guides/minifrontier1.md) |
-| 🧪 学习与配方实验 | 三个来源模型开展小规模配方比较；MF1 两组 500K CE 已完成，新增基础问答 SFT 与性能实验。[最新证据与限制](docs/experiments/mf1-language-performance-v1/README.md) |
+| 🧪 学习与配方实验 | 三个来源模型开展小规模配方比较；MF1 两组 500K CE 已完成，新增基础问答 SFT 与性能实验。[最新证据与限制](docs/experiments/2026-09-10-mf1-update/README.md) |
 | ⬜ 正式预训练 | 完成 MF1 数据准备、词表选择、3090 性能测试、架构对照后，推进 **30 亿 token** 主预训练。 |
 | ⬜ 后训练与权重发布 | 已有后训练与导出参考实现；正式 SFT、RL、教师蒸馏、草稿训练和能力验收仍待完成。 |
 

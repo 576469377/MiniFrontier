@@ -1,0 +1,44 @@
+{
+  "source": "HuggingFaceM4/FineVision",
+  "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
+  "subset": "allava_laion",
+  "license": "CC-BY-NC-4.0",
+  "upstream": "FreedomIntelligence/ALLaVA-4V@0fd42fce5c047d387a4bb5318d588eae9a9797f0",
+  "main_budget_eligible": false,
+  "reason": "small pilot; formal split/source review incomplete",
+  "seed": 137,
+  "unique_images": 96,
+  "media_bytes": 78030507,
+  "reads": [
+    {
+      "file": "allava_laion/train-00404-of-00734.parquet",
+      "group": 3,
+      "rows": 100
+    },
+    {
+      "file": "allava_laion/train-00404-of-00734.parquet",
+      "group": 6,
+      "rows": 38
+    },
+    {
+      "file": "allava_laion/train-00404-of-00734.parquet",
+      "group": 5,
+      "rows": 100
+    }
+  ],
+  "status": "complete",
+  "corpus": {
+    "schema_version": 2,
+    "seed": 137,
+    "counts": {
+      "accepted": 277,
+      "near_duplicates": 11
+    },
+    "splits": {
+      "train": 277
+    },
+    "split_rule": "connected groups; sha256 buckets val 0.5%, sealed test 0.5%",
+    "dedup": "exact hash, first-question cap3, answer shingles0.8, simhash64+Jaccard0.85",
+    "database_sha256": "ce94371bca7b8806cf74fa0497665cc5a7f2bbbfb22a045bad1e912fbd4c0347"
+  }
+}

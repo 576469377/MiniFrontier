@@ -1,0 +1,22 @@
+{
+  "public_corpus_sha256": "aeb72747ac9520db34fd6e371887444ecca8bf0718203f2acda286304f7bd970",
+  "generated_math_documents": 8192,
+  "main_budget_eligible": false,
+  "scope": "20M-token controlled recipe pilot; formal source/validation gates incomplete",
+  "math_scope": "synthetic arithmetic/algebra only, no science claim",
+  "corpus": {
+    "schema_version": 2,
+    "seed": 42,
+    "counts": {
+      "accepted": 52887
+    },
+    "splits": {
+      "train": 52287,
+      "val": 293,
+      "test": 307
+    },
+    "split_rule": "connected groups; sha256 buckets val 0.5%, sealed test 0.5%",
+    "dedup": "exact hash, first-question cap3, answer shingles0.8, simhash64+Jaccard0.85",
+    "database_sha256": "1760281b3f4c8832062bea26be124ea0eeef300ff3a0b022742be6869dd0faa8"
+  }
+}
