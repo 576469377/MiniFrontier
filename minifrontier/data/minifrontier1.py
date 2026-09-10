@@ -1,6 +1,7 @@
 """Versioned native records, safe control encoding and bounded local data preparation."""
 
 import hashlib
+import io
 import json
 import math
 import random
@@ -145,11 +146,16 @@ def validate_record(record, root, *, allow_sources=None):
     return record
 
 
-def prepare_media(resource, config, root, remaining):
+def prepare_media(resource, config, root, remaining, *, file_reader=None):
     """Apply the same deterministic pixel transform in record and binary loaders."""
     frames = []
-    for uri in resource.get("frames", [resource.get("uri")]):
-        with Image.open(Path(root) / uri) as image:
+    for uri, checksum in zip(
+        resource.get("frames", [resource.get("uri")]),
+        resource.get("frame_sha256", [resource.get("sha256")]),
+        strict=True,
+    ):
+        source = Path(root) / uri if file_reader is None else io.BytesIO(file_reader(uri, checksum))
+        with Image.open(source) as image:
             frames.append(image.convert("RGB"))
     samples = (
         process_document(frames[0], patch_size=config.vision_config.patch_size)

@@ -1,8 +1,13 @@
 """Canonical image QAs retain pixels, complete answers and held-out identities in MF1."""
 
+import functools
 import json
 import random
+import shutil
+import threading
 from dataclasses import asdict
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -13,6 +18,7 @@ from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder, train_tokenizer
 from minifrontier.data.encoding_audit import audit_image_encoding
 from minifrontier.data.encoding_filters import filter_media_encoding
+from minifrontier.data.media_cache import METADATA_BYTES
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS, encode_record, safe_text
 from minifrontier.data.minifrontier1_components import ComponentDataset, assemble_components
 from minifrontier.data.minifrontier1_encoding import (
@@ -363,6 +369,60 @@ def test_composition_reuses_shards_with_distinct_domain_indices_and_media_roots(
             )
             == manifest["splits"][split]["counts"]["ce_tokens"]
         )
+
+
+def test_cached_component_preserves_pixels_tokens_and_sampling_without_local_raw_files(
+    components, tmp_path
+):
+    roots, config = components
+    media, _text = roots
+    raw = Path(json.loads((media / "manifest.json").read_text())["media_root"])
+    original = {
+        split: [
+            CompactDataset(media, split, config)[i]
+            for i in range(len(CompactDataset(media, split, config)))
+        ]
+        for split in ("train", "val", "test")
+    }
+    served = tmp_path / "served"
+    shutil.copytree(raw, served)
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0), functools.partial(SimpleHTTPRequestHandler, directory=served)
+    )
+    worker = threading.Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    policy = dict(
+        base_url=f"http://127.0.0.1:{server.server_port}/",
+        uri_prefix="",
+        cache_dir="../media-cache",
+        max_bytes=METADATA_BYTES + 100_000,
+        max_file_bytes=10_000,
+        reserve_bytes=0,
+    )
+    output = tmp_path / "cached-composition"
+    try:
+        manifest = assemble_components(roots, output, config, media_access={media: policy})
+        assert manifest["components"][0]["media_access"] == policy
+        for path in raw.glob("*.png"):
+            path.rename(path.with_suffix(".saved"))
+        for split in ("train", "val", "test"):
+            dataset = ComponentDataset(output, split, config)
+            for index, expected in enumerate(original[split]):
+                actual = dataset[index]
+                assert actual["sample_id"] == expected["sample_id"]
+                assert dataset.length_at(index) == expected["input_ids"].shape[1]
+                for key in ["input_ids", "labels"]:
+                    torch.testing.assert_close(actual[key], expected[key], atol=0, rtol=0)
+                for span, before in zip(actual["media"], expected["media"], strict=True):
+                    torch.testing.assert_close(span["patches"], before["patches"], atol=0, rtol=0)
+                    assert span["source_sha256"] == before["source_sha256"]
+            cache = dataset.datasets[0].media_cache
+            assert cache.accounting()["actual_bytes"] <= policy["max_bytes"]
+        assert cache.accounting()["pinned_files"] == sum(len(original[s]) for s in ["val", "test"])
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join()
 
 
 def test_composition_training_resume_retains_window_and_domain_ledgers(components, tmp_path):

@@ -12,6 +12,7 @@ from pathlib import Path
 from tokenizers import Tokenizer
 
 from minifrontier.data import sha256
+from minifrontier.data.media_cache import validate_policy
 from minifrontier.data.minifrontier1 import digest, write_json
 from minifrontier.data.minifrontier1_encoding import FORMAT, CompactDataset
 from minifrontier.models.minifrontier1.processing import PROCESSOR_VERSION
@@ -20,7 +21,7 @@ from minifrontier.storage import require_space
 COMPONENT_FORMAT = "mf1-compact-components-v1"
 
 
-def assemble_components(components, output, config):
+def assemble_components(components, output, config, *, media_access=None):
     """Bind disjoint canonical components; retain their domains, order and media roots.
 
     Only a tokenizer copy and the composition manifest are written. This checks
@@ -29,6 +30,9 @@ def assemble_components(components, output, config):
     roots, output = [Path(p).resolve() for p in components], Path(output).resolve()
     if not roots or output.exists() or len(set(roots)) != len(roots):
         raise ValueError("choose distinct components and a new composition output")
+    access = {Path(k).resolve(): validate_policy(v) for k, v in (media_access or {}).items()}
+    if access.keys() - set(roots):
+        raise ValueError("media access names a component outside this composition")
     references, manifests = [], []
     tokenizer_hash = None
     for root in roots:
@@ -52,6 +56,10 @@ def assemble_components(components, output, config):
         references.append(
             dict(path=os.path.relpath(root, output), manifest_sha256=sha256(root / "manifest.json"))
         )
+        if root in access:
+            if manifest["kind"] != "canonical_image_component":
+                raise ValueError("remote media access is only for canonical image components")
+            references[-1]["media_access"] = access[root]
         manifests.append(manifest)
     samples: set[str] = set()
     groups: dict[str, str] = {}
@@ -141,7 +149,10 @@ class ComponentDataset:
             path = (self.root / reference["path"]).resolve()
             if sha256(path / "manifest.json") != reference["manifest_sha256"]:
                 raise ValueError("component manifest changed after composition")
-            dataset = CompactDataset(path, split, config)
+            policy = reference.get("media_access")
+            if policy is not None:
+                policy = dict(policy, cache_dir=str((self.root / policy["cache_dir"]).resolve()))
+            dataset = CompactDataset(path, split, config, media_access=policy)
             if dataset.manifest["tokenizer_sha256"] != self.manifest["tokenizer_sha256"]:
                 raise ValueError("component tokenizer differs from composition")
             self.datasets.append(dataset)

@@ -15,6 +15,7 @@ import torch
 from tokenizers import Tokenizer
 
 from minifrontier.data import sha256
+from minifrontier.data.media_cache import MediaCache
 from minifrontier.data.minifrontier1 import (
     SPECIAL_TOKENS,
     RecordDataset,
@@ -554,7 +555,7 @@ def _encode_compact_items(
 class CompactDataset:
     """Bound token and index mappings separately; validate immutable files once per identity."""
 
-    def __init__(self, root, split, config):
+    def __init__(self, root, split, config, *, media_access=None):
         self.root, self.config = Path(root).resolve(), config
         self.manifest = json.loads((self.root / "manifest.json").read_text())
         if (
@@ -567,6 +568,11 @@ class CompactDataset:
             raise ValueError("compact tokenizer checksum differs")
         self.tokenizer = Tokenizer.from_file(str(self.root / "tokenizer.json"))
         self.media_root = Path(self.manifest["media_root"]).resolve()
+        self.media_cache = (
+            MediaCache(media_access, pin=split != "train", base=self.root)
+            if media_access is not None
+            else None
+        )
         self.parts = self.manifest["splits"][split]["parts"]
         self.ends = np.cumsum([p["counts"]["records"] for p in self.parts]).tolist()
         self._verified_files: dict[tuple[int, str], tuple[int, ...]] = {}
@@ -696,17 +702,25 @@ class CompactDataset:
             identity = saved["media_id"]
             if identity not in loaded:
                 resource = resources[identity]
-                for uri, expected in zip(
-                    resource.get("frames", [resource.get("uri")]),
-                    resource.get("frame_sha256", [resource.get("sha256")]),
-                    strict=True,
-                ):
-                    path = (self.media_root / uri).resolve()
-                    if not path.is_relative_to(self.media_root) or sha256(path) != expected:
-                        raise ValueError("compact media source/hash differs")
-                loaded[identity] = iter(
-                    prepare_media(resource, self.config, self.media_root, remaining)
-                )
+                if self.media_cache is None:
+                    for uri, expected in zip(
+                        resource.get("frames", [resource.get("uri")]),
+                        resource.get("frame_sha256", [resource.get("sha256")]),
+                        strict=True,
+                    ):
+                        path = (self.media_root / uri).resolve()
+                        if not path.is_relative_to(self.media_root) or sha256(path) != expected:
+                            raise ValueError("compact media source/hash differs")
+                    samples = prepare_media(resource, self.config, self.media_root, remaining)
+                else:
+                    samples = prepare_media(
+                        resource,
+                        self.config,
+                        self.media_root,
+                        remaining,
+                        file_reader=self.media_cache.read,
+                    )
+                loaded[identity] = iter(samples)
             sample = next(loaded[identity])
             if any(_span_metadata(sample)[k] != saved[k] for k in _span_metadata(sample)):
                 raise ValueError("media transform differs from frozen compact span")
