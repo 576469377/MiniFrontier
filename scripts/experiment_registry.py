@@ -168,9 +168,10 @@ def collect(workspace):
                 if status == "building":
                     try:
                         command = Path(f"/proc/{int(run['pid'])}/cmdline").read_bytes()
+                        expected = [str(arg).encode() for arg in run.get("command", [])]
                         status = (
                             "running"
-                            if b"minifrontier.data.pretraining" in command
+                            if expected and command.split(b"\0")[:-1] == expected
                             else "unverified_process_identity"
                         )
                     except (OSError, KeyError, ValueError):
@@ -301,6 +302,7 @@ def collect(workspace):
             )
             if kind == "data_construction":
                 entry["data_progress"] = dict(
+                    data_kind=data_audit.get("kind", "text_candidate_inventory"),
                     formal_admission=data_audit.get("formal_admission", False),
                     accepted_records=sum(
                         s.get("accepted_records", 0) for s in data_audit.get("sources", {}).values()
@@ -311,6 +313,8 @@ def collect(workspace):
                     ),
                     split_reference_tokens=data_audit.get("split_reference_tokens"),
                     database_bytes=data_audit.get("database_bytes"),
+                    unique_images=data_audit.get("unique_images", 0),
+                    media_bytes=data_audit.get("media_bytes", 0),
                     error=data_audit.get("error"),
                 )
             families = [
@@ -413,7 +417,11 @@ def render(snapshot):
         snapshot["experiments"], key=lambda e: (e["state"] != "running", e["host"], e["output"])
     ):
         progress = (
-            f"候选参考 token {e['data_progress']['candidate_reference_tokens']}"
+            (
+                f"候选图像 {e['data_progress']['unique_images']}; QA {e['data_progress']['accepted_records']}"
+                if e["data_progress"]["data_kind"] == "visual_candidate_inventory"
+                else f"候选参考 token {e['data_progress']['candidate_reference_tokens']}"
+            )
             if e["kind"] == "data_construction"
             else f"{e['ce_tokens']} / {e['ce_token_budget'] or '—'}"
         )
