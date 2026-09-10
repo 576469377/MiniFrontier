@@ -252,6 +252,9 @@ def test_grouped_experts_keep_unused_gradients_none_and_match_optimizer_step():
     torch.manual_seed(52)
     c = MiniFrontier1Config.tiny()
     a, x = LatentMoE(c), torch.randn(9, c.routed_expert_hidden_size, requires_grad=True)
+    # Router allocates empty storage; the full model initializes it. This direct
+    # expert test must do the same before comparing even the unused parameters.
+    torch.nn.init.normal_(a.router.weight, std=c.initializer_range)
     b, y = copy.deepcopy(a), x.detach().clone().requires_grad_()
     ids = torch.tensor([[2, 0], [0, 2], [2, 0]] * 3)
     weights = torch.rand(9, 2)

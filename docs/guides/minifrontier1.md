@@ -2,6 +2,8 @@
 
 本页介绍 `minifrontier mf1` 的数据准备、训练、评估和推理命令。建议先运行下面的离线示例，再阅读自定义数据和分阶段训练部分。当前实现与训练进展见[模型说明](../models/minifrontier1.md)。
 
+以下命令在 Linux 的仓库根目录运行，需要 Python 3.11+ 和 uv；首次克隆见[首页](../../README.md#快速开始)。改用 CUDA 时，先安装 `uv sync --locked --extra dev --extra training --extra monitoring`，并确认所选设备可用。
+
 ## 离线最小示例
 
 ```bash
@@ -34,7 +36,7 @@ uv run minifrontier mf1 encode --data data/mf1-candidate-v1 \
 
 以上是准备真实候选数据时使用的接口，`data/candidate` 并非仓库自带数据。allowlist 是 JSON 数组，每项包含 `dataset/revision/license_record/status="admitted"`。未知来源进入隔离记录。准备器在 SQLite 中做精确去重、同媒体/规范化文本的传递分组，再按组切分；**感知/语义近重复、评测污染和逐来源 100/300 条人工抽查仍需额外审计**，不会自动把候选 manifest 标成正式合格。
 
-编码产物分别保存 token IDs、shift 前 labels、三轴 positions、segment/modality/media IDs、媒体 span/grid、CE 和 input 计数、源记录定位与 shard hash。token IDs 在 32K/64K 词表下用 uint16；labels 和 positions 为 int32。编码文件用于审计及后续 loader 优化；当前 reference trainer 直接读取已固定 JSONL 并做原生处理，未声称具备大型分片高吞吐加载器。
+参考编码产物保存 token IDs、shift 前 labels、三轴 positions、segment/modality/media IDs、媒体 span/grid、计数与来源信息。使用 `mf1 encode --compact` 可生成训练器直接消费的紧凑分片：32K/64K 词表使用 uint16 IDs 与监督位图，位置和样本边界按确定规则恢复，媒体描述保存在稀疏索引中。加载器使用有界 memmap，避免每次采样重新分词和校验整个分片；图片、视频仍在线解码并进入可训练视觉塔。旧 JSONL 路径继续兼容。跨格式输入、位置和输出对照已通过，正式多模态持续吞吐尚待验收，见[性能审计](../audits/minifrontier1-execution-performance.md)。
 
 文档图片可在对应 media 记录设置 `"representation": "document"`，从原图生成全局缩略图和最多四个裁剪，保存 source box；这些 view 合计消耗媒体 token 预算，但只记一次原图曝光。超过上下文/媒体预算时拒绝，不静默丢掉局部图。该路径尚未取得 OCR 任务能力结果。
 

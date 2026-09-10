@@ -90,11 +90,16 @@ def token_metadata(
         raise ValueError("packed segments must match expanded input positions")
     segments = segments.masked_fill(input_ids.eq(c.pad_token_id), -1)
     modality, media_ids = torch.zeros_like(input_ids), torch.full_like(input_ids, -1)
-    positions = torch.zeros((3, b, length), dtype=torch.long, device=input_ids.device)
     linear_positions = (
         torch.arange(offset, offset + length, device=input_ids.device).expand(b, -1).clone()
     )
-    for row in range(b):
+    positions = linear_positions.unsqueeze(0).expand(3, -1, -1).clone()
+    if position_base is not None:
+        bases = torch.as_tensor(position_base, dtype=torch.long, device=input_ids.device)
+        positions += (bases - offset)[None, :, None]
+    # Text-only batches need no per-row construction. Media spans still validate
+    # placeholders, boundaries and grids before replacing their three axes.
+    for row in range(b) if media else ():
         spans = sorted(
             (s for s in media or [] if s["batch_index"] == row), key=lambda s: s["start"]
         )
@@ -153,14 +158,17 @@ def token_metadata(
         positions[:, row, cursor:] = torch.arange(
             base, base + length - cursor, device=input_ids.device
         )
-        # Independent samples restart all three textual axes. Media offsets are translated with them.
-        for start in (segments[row, 1:] != segments[row, :-1]).nonzero().flatten().add(1).tolist():
-            if segments[row, start] >= 0:
-                end = start + 1
-                while end < length and segments[row, end] == segments[row, start]:
-                    end += 1
-                positions[:, row, start:end] -= positions[:, row, start : start + 1].clone()
-                linear_positions[row, start:end] -= linear_positions[row, start].clone()
+    # Find each contiguous run's start on-device. The former scalar scan read
+    # CUDA booleans once per token in every later packed sample. Repeated segment
+    # IDs are separate runs; padding and the first run retain their original axes.
+    starts = torch.zeros_like(segments)
+    starts[:, 1:] = (
+        segments[:, 1:].ne(segments[:, :-1]) * torch.arange(length, device=input_ids.device)[1:]
+    )
+    starts = starts.cummax(dim=1).values
+    reset = starts.gt(0) & segments.ge(0)
+    positions -= positions.gather(2, starts.unsqueeze(0).expand(3, -1, -1)) * reset
+    linear_positions -= linear_positions.gather(1, starts) * reset
     if not torch.equal(input_ids.eq(c.image_token_id), modality.ne(0)):
         raise ValueError("every visual placeholder needs exactly one media feature")
     if position_ids is not None:
