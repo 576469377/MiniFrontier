@@ -25,6 +25,8 @@ def latest_train(path):
                 continue
             if value.get("event") == "train":
                 return value
+            if "train_lm_loss" in value and "ce_tokens" in value:
+                return dict(value, token_ledger=value)
     return {}
 
 
@@ -104,18 +106,26 @@ def strategy_status(root):
 
     seen_outputs = set()
     queues = [
+        *root.glob("remote-*/outputs/strategy-*gpu*/queue.json"),
+        *root.glob("strategy-exclusive-gpu*/queue.json"),
         *root.glob("strategy-single-gpu*/queue.json"),
         *root.glob("strategy-shared-gpu*/queue.json"),
     ]
-    for queue_path in sorted(queues):
+    for queue_path in queues:
         queue = read_json(queue_path)
         plan = read_json(queue_path.parent / "queue-plan.json")
         specs = {job["id"]: job for job in plan.get("jobs", [])}
         for job in queue.get("jobs", []):
-            if job["output"] in seen_outputs:
-                continue
-            seen_outputs.add(job["output"])
             current = Path(job["output"])
+            remote = queue_path.parent.parent.parent.name.startswith("remote-")
+            logical_output = job["output"]
+            if remote:
+                relative = current.relative_to(plan["workspace"])
+                current = queue_path.parent.parent.parent / relative
+                logical_output = str(root.parent / relative)
+            if logical_output in seen_outputs:
+                continue
+            seen_outputs.add(logical_output)
             state = read_json(current / "status.json")
             train = latest_train(current / "metrics.jsonl")
             ledger = (
@@ -126,6 +136,10 @@ def strategy_status(root):
             profile = read_json(current / "performance.json")
             sharing = read_json(current / "co_residency.json")
             spec = specs.get(job["id"], {})
+            command = spec.get("command", [])
+            budget = spec.get("token_budget", 20_000_000)
+            if "--token-budget" in command:
+                budget = int(command[command.index("--token-budget") + 1])
             reference = (
                 read_json(Path(spec["reference_performance"]))
                 if spec.get("reference_performance")
@@ -136,14 +150,17 @@ def strategy_status(root):
                 reference.get("ce_tokens_per_second"),
             )
             row = dict(
-                kind="single_gpu_trial",
+                kind="performance_trial"
+                if spec.get("result_file") == "report.json"
+                else "single_gpu_trial",
                 trial=job["id"],
-                gpu_id=job["gpu_id"],
-                state=job["state"],
+                gpu_id=job.get("gpu_id"),
+                host=plan.get("host_label", "local"),
+                state="complete" if state.get("state") == "complete" else job["state"],
                 path=str(current),
                 step=ledger.get("optimizer_updates", 0),
                 ce_tokens=ledger.get("ce_tokens", 0),
-                ce_token_budget=20_000_000,
+                ce_token_budget=budget,
                 measured_ce_tokens_per_second=single,
                 capability_status="unassessed",
                 role=job.get("role", spec.get("role", "primary")),
