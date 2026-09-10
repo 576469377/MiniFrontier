@@ -776,5 +776,55 @@
     "mypy_source_files": 179,
     "visual_partition_targeted_tests": 38,
     "visual_partition_source_commit": "d3ac05c3c8fc6375f15ba205655b080ae690d7dd"
+  },
+  "source_native_natural_encoding": {
+    "source_commit": "20d484d092f26eacda26026452af216266b0816d",
+    "observed_unix": 1789074908.8036337,
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "shared_text": "data/pretraining-text-64k-v3",
+    "shared_raw_media": "data/pretraining-media-v2",
+    "text_payload_copy_bytes": 0,
+    "raw_media_copy_bytes": 0,
+    "input_records": 43542,
+    "unique_images": 23260,
+    "max_length": 1024,
+    "max_encoded_gib_per_model": 1,
+    "minimum_free_gib": 80,
+    "objective": "project source-model pretraining: all textual next-token targets including complete question and answer; media tokens masked",
+    "validation": {
+      "cpu_passed": 465,
+      "cpu_skipped": 1,
+      "cuda_deselected": 54,
+      "mypy_source_files": 180,
+      "production_gpu_executed": false
+    },
+    "models": {
+      "minikimik3": {
+        "state": "encoding_native_natural_images",
+        "process_identity_verified": true,
+        "output": "data/pretraining-minikimik3-natural-p0-v1",
+        "max_features": 64,
+        "min_pixels": null,
+        "source_archive_sha256": "f3dc05dab12ca3a649615b9fdb71477c2e87e6d69a761d6447795fe99ef0a03f",
+        "driver_sha256": "4509ab4203c9a20c7a44f0decde836b9c89ff02443f3415a870a1c79db5a7ace",
+        "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be"
+      },
+      "miniqwen4": {
+        "state": "encoding_native_natural_images",
+        "process_identity_verified": true,
+        "output": "data/pretraining-miniqwen4-natural-p0-v1",
+        "max_features": 49,
+        "min_pixels": 50176,
+        "source_archive_sha256": "f3dc05dab12ca3a649615b9fdb71477c2e87e6d69a761d6447795fe99ef0a03f",
+        "driver_sha256": "4509ab4203c9a20c7a44f0decde836b9c89ff02443f3415a870a1c79db5a7ace",
+        "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be"
+      }
+    },
+    "limitations": [
+      "natural-image component only; phase exposure and domain quotas are unmet",
+      "manual quality review and visual benchmark exclusion remain pending",
+      "complete per-record encoding audits are still running; tokenizer and data not formally admitted"
+    ]
   }
 }
