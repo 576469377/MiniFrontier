@@ -279,6 +279,13 @@
       "cuda_deselected": 54,
       "seconds": 137.16,
       "log_sha256": "6f4eb228c43286df938a09e2717620de29fe552abc64fab4cc59c2d0f0da0b44"
+    },
+    "mf1_canonical_full_cpu": {
+      "passed": 408,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "seconds": 141.25,
+      "log_sha256": "d0815898f0099f9fc546c30c90e7b362007822a117d10c9daebacaaf5ffcf125"
     }
   },
   "limitations": [
@@ -429,8 +436,8 @@
     "source_archive_sha256": "c485b4bf09d80090f5f4bdb737905222615dbf60133d9a3371ac1eb687258995"
   },
   "tokenizer_preparation": {
-    "state": "running",
-    "observed_unix": 1789061784.493372,
+    "state": "mappings_prepared_pending_quality_and_encoding_admission",
+    "observed_unix": 1789063099.159146,
     "attempt": 2,
     "source_commit": "80e64a5a324241e3811cba7d9ac8a08045e978e0",
     "source_archive_sha256": "ec2990f000405d42c67d1600f03f0f606212b29b26c8d5c3afd7056085ca5440",
@@ -456,6 +463,198 @@
       "log_sha256": "025c36477ce7a5458b4d426a1e6edc797e2909cb23703a93edf5de0a65ae77eb"
     },
     "fix": "Materialize only the bounded training sample on the database-owning thread before passing text to tokenizers.",
-    "targeted_tests_passed": 18
+    "targeted_tests_passed": 18,
+    "report_sha256": "1e8f77205a515e431a1a61f9c07a3812985c788c0509a3247c385846057b9fe7",
+    "mappings": {
+      "source-models": {
+        "requested_vocab": 65536,
+        "actual_vocab": 65536,
+        "training_bytes": 67107100,
+        "training_byte_sha256": "73e751f8d57e811b2d29e16ddb18a7fdeeaaf8c22ebe9a84d672ecb25dcea8a1",
+        "sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be",
+        "file": "source-models-65536.json",
+        "controls": [
+          "<|pad|>",
+          "<|bos|>",
+          "<|eos|>",
+          "<|system|>",
+          "<|user|>",
+          "<|assistant|>",
+          "<|tool|>",
+          "<|image|>",
+          "<|video|>",
+          "<|media_begin|>",
+          "<|media_end|>",
+          "<|media_content|>",
+          "<|effort_low|>",
+          "<|effort_high|>",
+          "<|effort_max|>",
+          "<think>",
+          "</think>",
+          "<|final|>",
+          "<|tool_call|>",
+          "<|tool_result|>",
+          "<|draft_noise|>"
+        ],
+        "training_seconds": 63.69235157966614,
+        "validation": {
+          "scope": "fixed 500 training review records; tokenizer mechanics only, not quality review",
+          "records": 500,
+          "round_trip_errors": 0,
+          "out_of_range_records": 0,
+          "literal_control_records": 0,
+          "source_counts": {
+            "HuggingFaceFW/fineweb-edu": {
+              "records": 100,
+              "characters": 476619,
+              "tokens": 104663
+            },
+            "opencsg/Fineweb-Edu-Chinese-V2.1": {
+              "records": 100,
+              "characters": 223318,
+              "tokens": 119937
+            },
+            "open-web-math/open-web-math": {
+              "records": 100,
+              "characters": 1072985,
+              "tokens": 283161
+            },
+            "HuggingFaceH4/ultrachat_200k": {
+              "records": 100,
+              "characters": 577680,
+              "tokens": 126033
+            },
+            "codeparrot/codeparrot-clean-train": {
+              "records": 100,
+              "characters": 1168740,
+              "tokens": 288470
+            }
+          }
+        }
+      },
+      "mf1": {
+        "requested_vocab": 32768,
+        "actual_vocab": 32768,
+        "training_bytes": 67107100,
+        "training_byte_sha256": "73e751f8d57e811b2d29e16ddb18a7fdeeaaf8c22ebe9a84d672ecb25dcea8a1",
+        "sha256": "07ca259a4ff33db77c7576f8461dfbda367072361d7156c66879325f6b6be0d2",
+        "file": "mf1-32768.json",
+        "controls": [
+          "<|pad|>",
+          "<|bos|>",
+          "<|eos|>",
+          "<|system|>",
+          "<|user|>",
+          "<|assistant|>",
+          "<|tool|>",
+          "<|image|>",
+          "<|video|>",
+          "<|media_begin|>",
+          "<|media_end|>",
+          "<|media_content|>",
+          "<|effort_low|>",
+          "<|effort_high|>",
+          "<|effort_max|>",
+          "<think>",
+          "</think>",
+          "<|final|>",
+          "<|tool_call|>",
+          "<|tool_result|>",
+          "<|video_begin|>",
+          "<|video_end|>",
+          "<|frame|>",
+          "<|time|>"
+        ],
+        "training_seconds": 58.067076206207275,
+        "validation": {
+          "scope": "fixed 500 training review records; tokenizer mechanics only, not quality review",
+          "records": 500,
+          "round_trip_errors": 0,
+          "out_of_range_records": 0,
+          "literal_control_records": 0,
+          "source_counts": {
+            "HuggingFaceFW/fineweb-edu": {
+              "records": 100,
+              "characters": 476619,
+              "tokens": 111475
+            },
+            "opencsg/Fineweb-Edu-Chinese-V2.1": {
+              "records": 100,
+              "characters": 223318,
+              "tokens": 131853
+            },
+            "open-web-math/open-web-math": {
+              "records": 100,
+              "characters": 1072985,
+              "tokens": 299363
+            },
+            "HuggingFaceH4/ultrachat_200k": {
+              "records": 100,
+              "characters": 577680,
+              "tokens": 133527
+            },
+            "codeparrot/codeparrot-clean-train": {
+              "records": 100,
+              "characters": 1168740,
+              "tokens": 300860
+            }
+          }
+        }
+      }
+    },
+    "training_byte_sha256": "73e751f8d57e811b2d29e16ddb18a7fdeeaaf8c22ebe9a84d672ecb25dcea8a1"
+  },
+  "text_encoding": {
+    "source": {
+      "phase": "text_component_encoding",
+      "source_commit": "44bbf67f69797bd7c41d5a68638c5a4062a91a50",
+      "source_archive_sha256": "cd465111eba819f3bdd55f91e238d53979859b4c5d3bbbb1aec51b398d4db48b",
+      "tokenizer_sha256": "0b801c453763bbd0567a7f9af98eece32db0725f5d4155e6e325a8bb70c030be",
+      "corpus_manifest_sha256": "ea296436ac3ca1df794aace11092e37ac98d815e95130a7909e2989a81574277",
+      "output": "data/pretraining-text-64k-v1",
+      "max_gib": 11,
+      "started_unix": 1789062846.0580022,
+      "state": "running",
+      "formal_admission": false,
+      "main_budget_eligible": false,
+      "observed_unix": 1789063022.234593,
+      "process_identity_verified": true,
+      "partial_file_bytes": 1030936731,
+      "final_manifest_present": false,
+      "api": "minifrontier.data.corpus.encode_corpus",
+      "arguments": {
+        "corpus": "data/pretraining-text-partition-v1",
+        "tokenizer": "data/pretraining-tokenizers-v1/source-models-65536.json",
+        "output": "data/pretraining-text-64k-v1",
+        "max_gib": 11,
+        "max_length": 8192
+      }
+    },
+    "mf1": {
+      "phase": "text_component_encoding",
+      "source_commit": "44bbf67f69797bd7c41d5a68638c5a4062a91a50",
+      "source_archive_sha256": "cd465111eba819f3bdd55f91e238d53979859b4c5d3bbbb1aec51b398d4db48b",
+      "tokenizer_sha256": "07ca259a4ff33db77c7576f8461dfbda367072361d7156c66879325f6b6be0d2",
+      "corpus_manifest_sha256": "ea296436ac3ca1df794aace11092e37ac98d815e95130a7909e2989a81574277",
+      "output": "data/pretraining-mf1-text-v1",
+      "max_gib": 3,
+      "started_unix": 1789062846.0772698,
+      "state": "running",
+      "formal_admission": false,
+      "main_budget_eligible": false,
+      "observed_unix": 1789063022.235234,
+      "process_identity_verified": true,
+      "partial_file_bytes": 202609250,
+      "final_manifest_present": false,
+      "api": "minifrontier.data.minifrontier1_encoding.encode_canonical_text",
+      "arguments": {
+        "corpus": "data/pretraining-text-partition-v1",
+        "tokenizer": "data/pretraining-tokenizers-v1/mf1-32768.json",
+        "output": "data/pretraining-mf1-text-v1",
+        "max_gib": 3,
+        "config": "configs/minifrontier1/model_228m_native.json",
+        "shard_tokens": 64000000
+      }
+    }
   }
 }
