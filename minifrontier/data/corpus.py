@@ -20,6 +20,7 @@ from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
 from minifrontier.chat_controls import record_template, semantic_content, update_manifest
 from minifrontier.data import SPECIAL_TOKENS, chat_tokens, fingerprint, normalized, sha256
+from minifrontier.data.media_hash import PHASH_BANDS
 from minifrontier.data.partitions import open_corpus
 from minifrontier.storage import GIB, require_space, reserve_write
 
@@ -239,9 +240,7 @@ class CorpusBuilder:
             if media.get("phash"):
                 image_code = int(media["phash"], 16)
                 # Seven disjoint bands guarantee a candidate for <=6 bit changes.
-                for band, (offset, width) in enumerate(
-                    ((0, 10), (10, 9), (19, 9), (28, 9), (37, 9), (46, 9), (55, 9))
-                ):
+                for band, (offset, width) in enumerate(PHASH_BANDS):
                     value = (image_code >> offset) & ((1 << width) - 1)
                     for old_hash, old_id in self.db.execute(
                         "SELECT phash,id FROM image_bands WHERE band=? AND value=?", (band, value)

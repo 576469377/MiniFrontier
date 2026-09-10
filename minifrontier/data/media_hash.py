@@ -5,6 +5,8 @@ import hashlib
 import numpy as np
 from PIL import Image
 
+PHASH_BANDS = ((0, 10), (10, 9), (19, 9), (28, 9), (37, 9), (46, 9), (55, 9))
+
 
 def decoded_hashes(image):
     rgb = image.convert("RGB")
