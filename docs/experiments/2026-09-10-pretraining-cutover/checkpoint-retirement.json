@@ -1,0 +1,213 @@
+{
+  "status": "retirement_complete",
+  "retired_bytes": 55381305536,
+  "retired_gib": 51.57786005735397,
+  "policy": "Only terminal legacy optimizer/RNG checkpoints were retired after exact tensor equivalence, retained model runtime loading, hash checks and a final live-process check. Model weights, tokenizers, best weights and experiment reports remain. These legacy runs no longer support exact optimizer resume.",
+  "entries": [
+    {
+      "checkpoint": "outputs/strategy-batch16-gpu-v1/minikimik3/seed-42/checkpoint.pt",
+      "retained_model": "outputs/strategy-batch16-gpu-v1/minikimik3/seed-42/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2048926985,
+      "checkpoint_sha256": "3404c6f8fe346ab041b0a7436637f6b9baf921723585fdb1fbc49fbe83a4cddb",
+      "retained_model_sha256": "6e575bc60367e599902c65903d7d5f6f674dc63c8adb41c3bb2a0583b8010891",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052408.5654116
+    },
+    {
+      "checkpoint": "outputs/strategy-batch16-gpu-v1/minideepseekv4/seed-42/checkpoint.pt",
+      "retained_model": "outputs/strategy-batch16-gpu-v1/minideepseekv4/seed-42/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2221706786,
+      "checkpoint_sha256": "d2065c16fd3de6307219e1cfa1a4e01ca4b123ecc5b39997dbb7448c824f5bbc",
+      "retained_model_sha256": "2e33754a02bca9ad705118b89aa192a91f1720cf2be17bd3fa398b482088a912",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052412.1413667
+    },
+    {
+      "checkpoint": "outputs/strategy-single-gpu-v2/minikimik3/lower-lr/checkpoint.pt",
+      "retained_model": "outputs/strategy-single-gpu-v2/minikimik3/lower-lr/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2048926985,
+      "checkpoint_sha256": "0f2bd566a5fdeac554284d932c19400e0e8da674fdf4e7d310b07ef99b9d3a2f",
+      "retained_model_sha256": "b03006b7de003faef0fb946061abf1b6fbdf0e93471700b383d3c4e29a6be4ec",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052414.6631033
+    },
+    {
+      "checkpoint": "outputs/strategy-single-gpu-v2/minikimik3/reference/checkpoint.pt",
+      "retained_model": "outputs/strategy-single-gpu-v2/minikimik3/reference/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2048926985,
+      "checkpoint_sha256": "ed4f1eccfa0bb085ed49f28b654830bcf382962ab729625689a09b909e9a2a1b",
+      "retained_model_sha256": "7a30d54fc4985438d867ee4ab1837ed02881469722633728c840a96e16bdf97a",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052417.1355662
+    },
+    {
+      "checkpoint": "outputs/strategy-single-gpu-v2/minideepseekv4/lower-lr/checkpoint.pt",
+      "retained_model": "outputs/strategy-single-gpu-v2/minideepseekv4/lower-lr/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2221706786,
+      "checkpoint_sha256": "76d81c07bcfbb507659b8d0deed2579ce9d2b0033d2730a6381c199f5f373a80",
+      "retained_model_sha256": "3c6724778da0b16b1760eda032bc7b8e09950f7c9be1a61ceaa6c79bf2c74705",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052419.7857494
+    },
+    {
+      "checkpoint": "outputs/strategy-single-gpu-v2/minideepseekv4/reference/checkpoint.pt",
+      "retained_model": "outputs/strategy-single-gpu-v2/minideepseekv4/reference/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2221706786,
+      "checkpoint_sha256": "801a728e0147f1684ccd31e2cbf9dad025cb4aa6b5a1a60a05a76c99b466dc60",
+      "retained_model_sha256": "26a42b5d6be25cb77d00d5777b02697d7c930f5d8f14405f69c688c184f2f440",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052422.5514443
+    },
+    {
+      "checkpoint": "outputs/strategy-recipe-pilots-v2/minikimik3/muon-20m/checkpoint.pt",
+      "retained_model": "outputs/strategy-recipe-pilots-v2/minikimik3/muon-20m/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2048936391,
+      "checkpoint_sha256": "3fc95baad8796e377f323ebb543cf27179b5c536cbbd4480d94599c884cd42ef",
+      "retained_model_sha256": "df9db50894f255bdc32cde77d645e6c7a448306d7216b086bbb9a608b3fa1c72",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052425.1468244
+    },
+    {
+      "checkpoint": "outputs/strategy-recipe-pilots-v2/minikimik3/adamw-20m/checkpoint.pt",
+      "retained_model": "outputs/strategy-recipe-pilots-v2/minikimik3/adamw-20m/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2462437365,
+      "checkpoint_sha256": "a5114139fe6854c4d50e5435fc938c95381e8bd38f06698fcc095da2e81163b5",
+      "retained_model_sha256": "fd5f383e2271c2591e2a6de3d6b608b709d9158921045c719cfbaa5676b1220f",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052428.1421807
+    },
+    {
+      "checkpoint": "outputs/strategy-recipe-pilots-v2/minideepseekv4/muon-20m/checkpoint.pt",
+      "retained_model": "outputs/strategy-recipe-pilots-v2/minideepseekv4/muon-20m/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2221716256,
+      "checkpoint_sha256": "81a8117e2d1b15742e6202295aa0d8010482a2181c215b46c43f8d05868e4687",
+      "retained_model_sha256": "2487ff48375f14924bbfe7a9b1deb27163298ac4797dd17e4c1424a0a3b2874c",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052430.9180176
+    },
+    {
+      "checkpoint": "outputs/strategy-recipe-pilots-v2/minideepseekv4/adamw-20m/checkpoint.pt",
+      "retained_model": "outputs/strategy-recipe-pilots-v2/minideepseekv4/adamw-20m/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2927289977,
+      "checkpoint_sha256": "8a4a4856b4e052c90fe866e8bf8d6e1e62b5924ffba4555a98275db412731b84",
+      "retained_model_sha256": "0b7ed7751c22f1eaf7bdeb8b1cb779b48ce757a9e24cf16c085df6529577ad6d",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052434.4026072
+    },
+    {
+      "checkpoint": "outputs/strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/muon-20m/checkpoint.pt",
+      "retained_model": "outputs/strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/muon-20m/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 4799702722,
+      "checkpoint_sha256": "133586ad06aa48356a5f7563d0c260c3df2ee4b1cf8880ef6cd1d7d70f96a5f3",
+      "retained_model_sha256": "55a70e221adba8d84211fa66a256c80b74434b340796e2714cc9f52dd4870089",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052440.5725956
+    },
+    {
+      "checkpoint": "outputs/strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/adamw-20m/checkpoint.pt",
+      "retained_model": "outputs/strategy-recipe-pilots-v2/miniqwen4-after-q0-extension/adamw-20m/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 6158275541,
+      "checkpoint_sha256": "5b44df8f529b2a6f4f18c579f3c1d65b574f36fe735f9d700c9134f238aaece6",
+      "retained_model_sha256": "22ab301a174b58225c88b2faf5ad58153c96575128a4cd548da808e1388a10bd",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052448.607297
+    },
+    {
+      "checkpoint": "outputs/strategy-shared-gpu-v2/miniqwen4/mtp-0/checkpoint.pt",
+      "retained_model": "outputs/strategy-shared-gpu-v2/miniqwen4/mtp-0/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 4431544017,
+      "checkpoint_sha256": "11fce1f5cbbad37b337358da2984bcbb69c85118a806755efe94c5eece9f737e",
+      "retained_model_sha256": "9115d76e1180752ebabd3df68afed840d12163d75fb66ba97e5447658f6d1c8d",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052454.7519135
+    },
+    {
+      "checkpoint": "outputs/strategy-shared-gpu-v2/minikimik3/mtp-0/checkpoint.pt",
+      "retained_model": "outputs/strategy-shared-gpu-v2/minikimik3/mtp-0/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2012938196,
+      "checkpoint_sha256": "d317423dcedd4e9910af4862722c130d0140052ea6347d40d449913371007ba5",
+      "retained_model_sha256": "b3a3730d1b89c954c028adae6319b03667fda74b7db2451e306553370a7c9de0",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052457.2422206
+    },
+    {
+      "checkpoint": "outputs/strategy-shared-gpu-v2/minikimik3/mtp-0.2/checkpoint.pt",
+      "retained_model": "outputs/strategy-shared-gpu-v2/minikimik3/mtp-0.2/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2048926985,
+      "checkpoint_sha256": "d827da40f8564d73b284cc59df8c4956a605d9ac687f1f00a071f36c5d4ab2fa",
+      "retained_model_sha256": "fcdfaea02effac9b80a6712234a902a9d9c6121dd180eeba14959e9c1ce0a0c1",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052459.8554215
+    },
+    {
+      "checkpoint": "outputs/strategy-shared-gpu-v2/minideepseekv4/mtp-0/checkpoint.pt",
+      "retained_model": "outputs/strategy-shared-gpu-v2/minideepseekv4/mtp-0/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2165606764,
+      "checkpoint_sha256": "efdb1f86fcfcf4f3bbda787096ba3e4aa935de94ce1d3af00f4ce33c8482e5d5",
+      "retained_model_sha256": "fc97546979a54efbd5cd006d5aee11d2c5d51d01a290ba8c5d8269b5fd5c10eb",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052462.6286223
+    },
+    {
+      "checkpoint": "outputs/strategy-shared-gpu-v2/minideepseekv4/mtp-0.1/checkpoint.pt",
+      "retained_model": "outputs/strategy-shared-gpu-v2/minideepseekv4/mtp-0.1/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2221706786,
+      "checkpoint_sha256": "3b9edff7b182d53ed24bb19c488986a4e19210bb36416c5fab94117f41002057",
+      "retained_model_sha256": "acee1b9622c18f320d9d9e1e69ff111fda73c368f952cb6804d10d822b3f9752",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052465.3886724
+    },
+    {
+      "checkpoint": "outputs/performance-real-batch-v2/miniqwen4-mb16/checkpoint.pt",
+      "retained_model": "outputs/performance-real-batch-v2/miniqwen4-mb16/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 4799692652,
+      "checkpoint_sha256": "1fe0706c7d4487caf6c75a3fd453291559271e0a180e06fb9e9db3a9dda29a4b",
+      "retained_model_sha256": "c4f948cc403f1f364f4690d95fa8a8d5a4c9be1d7beb77fb061221a3570b8802",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052471.1926513
+    },
+    {
+      "checkpoint": "outputs/performance-real-batch-v2/minideepseekv4-mb16/checkpoint.pt",
+      "retained_model": "outputs/performance-real-batch-v2/minideepseekv4-mb16/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2221705250,
+      "checkpoint_sha256": "7811fa1616b6093f330828a6c1707a5a5c2ee67e5a847547f92e0acaaa239936",
+      "retained_model_sha256": "ca0e4c67dd40384b454fccb4a61e364e8a179dcfaa745734e089468a32de24aa",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052473.96545
+    },
+    {
+      "checkpoint": "outputs/performance-real-batch-v2/minikimik3-mb16/checkpoint.pt",
+      "retained_model": "outputs/performance-real-batch-v2/minikimik3-mb16/model.pt",
+      "status": "retired_optimizer_checkpoint",
+      "bytes": 2048925321,
+      "checkpoint_sha256": "b84c435b7ab7e036d30576c127fb5989b25912813f80b779b21a4141818b9952",
+      "retained_model_sha256": "e5b6fe5b0622de9bd13b3b3b48eee941eb9cd67f5604b8539e8d2345f9827f8c",
+      "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+      "retired_unix": 1789052476.431089
+    },
+    {
+      "checkpoint": "outputs/strategy-batch16-gpu-v1/miniqwen4/seed-42/checkpoint.pt",
+      "retained_model": "outputs/strategy-batch16-gpu-v1/miniqwen4/seed-42/model.pt",
+      "status": "retained_not_eligible"
+    }
+  ]
+}
