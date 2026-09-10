@@ -5,14 +5,20 @@ from dataclasses import replace
 
 import pytest
 import torch
+from PIL import Image
 
-from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
+from minifrontier.models.minifrontier1 import (
+    MiniFrontier1Cache,
+    MiniFrontier1Config,
+    MiniFrontier1ForCausalLM,
+)
 from minifrontier.models.minifrontier1.csa import Compressor
 from minifrontier.models.minifrontier1.indexer import block_registry, mrope, rope, select_blocks
 from minifrontier.models.minifrontier1.kda import KDA
 from minifrontier.models.minifrontier1.moe import LatentMoE
-from minifrontier.models.minifrontier1.processing import token_metadata
+from minifrontier.models.minifrontier1.processing import process_frames, token_metadata
 from minifrontier.models.minifrontier1.qsa_mla import QSAMLA
+from minifrontier.multimodal import move
 from minifrontier.training.minifrontier1_curriculum import (
     collate_records,
     microbatches,
@@ -106,7 +112,8 @@ def scalar_qsa(module, x, metadata):
         outputs = []
         for i in range(len(z)):
             visible = torch.tensor(
-                [b.segment == int(seg[i]) and b.complete_at <= i and seg[i] >= 0 for b in blocks]
+                [b.segment == int(seg[i]) and b.complete_at <= i and seg[i] >= 0 for b in blocks],
+                device=z.device,
             )
             chosen = select_blocks(scores[i : i + 1], visible[None], c.top_blocks)[0]
             allowed = {t for j, b in enumerate(blocks) if chosen[j] for t in b.member_indices}
@@ -181,6 +188,30 @@ def test_grouped_experts_keep_unused_gradients_none_and_match_optimizer_step():
         torch.testing.assert_close(left, right, atol=2e-6, rtol=2e-5)
 
 
+def test_padding_cannot_activate_unused_experts_or_change_adamw_update():
+    torch.manual_seed(729)
+    a = LatentMoE(MiniFrontier1Config.tiny())
+    with torch.no_grad():
+        a.router.weight[:2].fill_(-1)
+        a.router.weight[2:].fill_(1)
+    b = copy.deepcopy(a)
+    x = torch.ones(1, 3, 32)
+    padded = torch.cat((x, torch.zeros(1, 2, 32)), dim=1)
+    expected = a(x)
+    actual = b(padded, valid_indices=torch.arange(3))
+    torch.testing.assert_close(actual[:, :3], expected)
+    assert not actual[:, 3:].count_nonzero()
+    expected.square().sum().backward()
+    actual.square().sum().backward()
+    assert_gradients(a, b)
+    for index in (0, 1):
+        assert all(p.grad is None for p in b.experts[index].parameters())
+    for model in (a, b):
+        torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.1).step()
+    for left, right in zip(a.parameters(), b.parameters(), strict=True):
+        torch.testing.assert_close(left, right, atol=2e-6, rtol=2e-5)
+
+
 def test_kda_batched_prefill_preserves_packed_resets_outputs_and_gradients():
     torch.manual_seed(61)
     a = KDA(MiniFrontier1Config.tiny())
@@ -217,6 +248,106 @@ def test_cuda_one_token_kda_retains_projection_gradients():
     for name in ("q_proj", "k_proj", "v_proj", "b_proj"):
         grad = getattr(model.core, name).weight.grad
         assert grad is not None and torch.isfinite(grad).all() and grad.abs().sum() > 0, name
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize("phase", ["dense_pretrain", "sparse_cpt"])
+def test_cuda_qsa_bfloat16_output_and_gradients_match_scalar_oracle(phase):
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA required")
+    torch.manual_seed(901)
+    c = replace(MiniFrontier1Config.tiny(), query_chunk_size=7, top_blocks=1)
+    a = QSAMLA(c).cuda()
+    a.training_phase, a.indexer_loss_enabled = phase, False
+    b = copy.deepcopy(a)
+    ids = torch.randint(24, 200, (2, 29), device="cuda")
+    ids[1, -3:] = 0
+    segments = torch.zeros_like(ids)
+    segments[0, 17:] = 1
+    meta = token_metadata(ids, c, segment_ids=segments)
+    meta["modality"][:, 4:7] = 1
+    meta["media_ids"][:, 4:7] = 0
+    x = torch.randn(2, 29, c.hidden_size, device="cuda", requires_grad=True)
+    y = x.detach().clone().requires_grad_()
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        actual, expected = a(x, meta)[0], scalar_qsa(b, y, meta)
+    torch.testing.assert_close(actual, expected, atol=3e-3, rtol=3e-2)
+    weights = torch.randn_like(actual)
+    (actual * weights).sum().backward()
+    (expected * weights).sum().backward()
+    left = torch.cat(
+        [x.grad.flatten(), *(p.grad.flatten() for p in a.parameters() if p.grad is not None)]
+    )
+    right = torch.cat(
+        [y.grad.flatten(), *(p.grad.flatten() for p in b.parameters() if p.grad is not None)]
+    )
+    relative_error = torch.linalg.vector_norm(left - right) / torch.linalg.vector_norm(right)
+    cosine = torch.nn.functional.cosine_similarity(left, right, dim=0)
+    assert relative_error < 0.03 and cosine > 0.999
+
+
+@pytest.mark.cuda
+def test_cuda_bfloat16_grouped_expert_gradients_match_loop():
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA required")
+    torch.manual_seed(952)
+    c = replace(MiniFrontier1Config.tiny(), num_experts=32, num_experts_per_token=4)
+    a = LatentMoE(c).cuda()
+    b = copy.deepcopy(a)
+    x = torch.randn(257, c.routed_expert_hidden_size, device="cuda", requires_grad=True)
+    y = x.detach().clone().requires_grad_()
+    ids = torch.rand(257, 32, device="cuda").argsort(-1)[:, :4]
+    weights = torch.rand(257, 4, device="cuda")
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        actual, expected = a.grouped(x, ids, weights), b.reference(y, ids, weights)
+    assert actual is not None
+    torch.testing.assert_close(actual, expected, atol=3e-3, rtol=3e-2)
+    actual.square().sum().backward()
+    expected.square().sum().backward()
+    left = torch.cat(
+        [x.grad.flatten(), *(p.grad.flatten() for p in a.parameters() if p.grad is not None)]
+    )
+    right = torch.cat(
+        [y.grad.flatten(), *(p.grad.flatten() for p in b.parameters() if p.grad is not None)]
+    )
+    assert torch.linalg.vector_norm(left - right) / torch.linalg.vector_norm(right) < 0.03
+    assert torch.nn.functional.cosine_similarity(left, right, dim=0) > 0.999
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize("phase", ["dense_pretrain", "sparse_cpt"])
+@pytest.mark.parametrize("video", [False, True])
+def test_cuda_native_media_cache_and_rollback_match_full_prefill(phase, video):
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA required")
+    torch.manual_seed(918)
+    c = replace(MiniFrontier1Config.tiny(), kda_head_dim=16, query_chunk_size=7)
+    model = MiniFrontier1ForCausalLM(c, phase).cuda().eval()
+    frames = [Image.new("RGB", (16, 16), color) for color in ("red", "blue", "green", "yellow")]
+    media = process_frames(
+        frames if video else frames[:1],
+        patch_size=4,
+        max_features=16,
+        timestamps=[0.0, 0.2, 1.4, 2.0] if video else None,
+    )
+    media.update(batch_index=0, start=3, resource_kind="video" if video else "image")
+    ids = torch.tensor(
+        [[30, 31, 9, *([7] * media["feature_count"]), 10, 32, 33, 34, 35, 36]], device="cuda"
+    )
+    spans = move([media], "cuda")
+    end = media["start"] + media["feature_count"]
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        full = model(ids, media=spans).logits
+        cache = MiniFrontier1Cache()
+        prefix = model(ids[:, :end], media=spans, cache=cache).logits
+        snapshot = cache.snapshot()
+        streamed = [prefix]
+        for t in range(end, ids.shape[1]):
+            streamed.append(model(ids[:, t : t + 1], cache=cache).logits)
+        torch.testing.assert_close(torch.cat(streamed, 1), full, atol=6e-3, rtol=3e-2)
+        cache.restore(snapshot)
+        replay = model(ids[:, end:], cache=cache).logits
+        torch.testing.assert_close(replay, full[:, end:], atol=6e-3, rtol=3e-2)
 
 
 def test_collation_preserves_packed_boundaries_ce_mtp_and_checkpoint_gradients():
@@ -262,3 +393,78 @@ def test_collation_preserves_packed_boundaries_ce_mtp_and_checkpoint_gradients()
     batches = list(microbatches(inputs, batch_size=8, max_padded_tokens=28, pad_token_id=0))
     assert all(b["input_ids"].numel() <= 28 for b in batches)
     assert sum(int(b["labels"][:, 1:].ne(-100).sum()) for b in batches) == ce
+
+
+@pytest.mark.parametrize("phase", ["dense_pretrain", "dense_distill", "sparse_cpt"])
+def test_native_media_collation_preserves_main_mtp_and_indexer_normalization(phase):
+    torch.manual_seed(165)
+    c = replace(MiniFrontier1Config.tiny(), index_query_count=3, query_chunk_size=5)
+    model = MiniFrontier1ForCausalLM(c, phase).train()
+    items = []
+    for count, video in [(4, False), (8, True)]:
+        image = Image.new("RGB", (16, 16), "red" if video else "blue")
+        media = process_frames(
+            [image] * (4 if video else 1),
+            max_features=count,
+            patch_size=4,
+            timestamps=[0.0, 1.0, 2.0, 3.0] if video else None,
+        )
+        n = media["feature_count"]
+        ids = torch.tensor([[30, 9, *([7] * n), 10, *list(range(31, 42 + count))]])
+        labels = ids.clone()
+        labels[:, : n + 3] = -100
+        media.update(batch_index=0, start=2, resource_kind="video" if video else "image")
+        items.append(dict(input_ids=ids, labels=labels, media=[media], media_hashes=[str(count)]))
+    # An extra packed sample tests that the second media directory resets correctly too.
+    packed_items = [
+        items[0],
+        pack_records([dict(items[1], sample_id="a"), dict(items[0], sample_id="b")], 128),
+    ]
+    before = [
+        model(
+            i["input_ids"],
+            labels=i["labels"],
+            media=i["media"],
+            segment_ids=i.get("segment_ids"),
+            return_logits=False,
+        )
+        for i in packed_items
+    ]
+    collated = collate_records(packed_items, 0)
+    after = model(
+        collated["input_ids"],
+        labels=collated["labels"],
+        media=collated["media"],
+        segment_ids=collated["segment_ids"],
+        return_logits=False,
+    )
+    counts = [int(i["labels"][:, 1:].ne(-100).sum()) for i in packed_items]
+    torch.testing.assert_close(
+        after.lm_loss,
+        sum(r.lm_loss * n for r, n in zip(before, counts, strict=True)) / sum(counts),
+        atol=2e-6,
+        rtol=2e-5,
+    )
+    if phase != "dense_distill":
+        assert after.mtp_tokens == sum(r.mtp_tokens for r in before)
+        torch.testing.assert_close(
+            after.mtp_loss,
+            sum(r.mtp_loss * r.mtp_tokens for r in before) / after.mtp_tokens,
+            atol=2e-6,
+            rtol=2e-5,
+        )
+    assert after.index_query_tokens == sum(r.index_query_tokens for r in before)
+    if after.index_query_tokens:
+        torch.testing.assert_close(
+            after.indexer_loss,
+            sum(r.indexer_loss * r.index_query_tokens for r in before) / after.index_query_tokens,
+            atol=2e-6,
+            rtol=2e-5,
+        )
+    after.loss.backward()
+    if phase == "dense_distill":
+        assert all(
+            p.grad is None for name, p in model.named_parameters() if ".indexer." not in name
+        )
+    else:
+        assert model.vision.patch_embed.proj.weight.grad.abs().sum() > 0

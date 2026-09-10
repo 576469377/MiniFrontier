@@ -13,6 +13,7 @@ from .indexer import (
     masked_probabilities,
     mrope,
     rope,
+    sampled_queries,
     select_blocks,
     visible_blocks,
 )
@@ -98,10 +99,10 @@ class QSAMLA(nn.Module):
             )
             chunks = []
             # Deterministic uniform query sampling, independent of global RNG/checkpoint replay.
-            sampled = set(
-                torch.linspace(0, max(0, len(z) - 1), min(c.index_query_count, len(z)))
-                .long()
-                .tolist()
+            sampled = (
+                sampled_queries(seg, c.index_query_count)
+                if self.indexer_loss_enabled and self.training_phase != "dense_pretrain"
+                else []
             )
             for start in range(0, len(z), c.query_chunk_size):
                 stop = min(start + c.query_chunk_size, len(z))

@@ -161,6 +161,15 @@ def masked_probabilities(logits, support):
     return masked.masked_fill(~valid, 0).softmax(-1) * valid
 
 
+def sampled_queries(segments, limit):
+    """Uniform real query positions; padding must not change an indexer's teacher sample."""
+    valid = [i for i, segment in enumerate(segments.tolist()) if segment >= 0]
+    if not valid:
+        return []
+    indices = torch.linspace(0, len(valid) - 1, min(limit, len(valid))).long().tolist()
+    return [valid[i] for i in indices]
+
+
 def index_kl(scores, target, visible):
     target = target.detach().float() * visible
     mass = target.sum(-1)

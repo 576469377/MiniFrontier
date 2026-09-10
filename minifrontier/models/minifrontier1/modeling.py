@@ -41,7 +41,8 @@ class MF1DecoderLayer(nn.Module):
             update, state, loss, count = self.attention(h, metadata, state)
         residual = self.attention_gr.inject(residual, update, weights)
         h, weights = self.moe_gr.read(residual)
-        return self.moe_gr.inject(residual, self.moe(h), weights), state, loss, count
+        update = self.moe(h, metadata.get("valid_token_indices"))
+        return self.moe_gr.inject(residual, update, weights), state, loss, count
 
 
 class MiniFrontier1ForCausalLM(nn.Module):
@@ -144,6 +145,10 @@ class MiniFrontier1ForCausalLM(nn.Module):
             position_ids=position_ids,
             offset=past,
             position_base=cache.position_base if cache is not None else None,
+        )
+        valid_indices = metadata["segment_ids"].flatten().ge(0).nonzero().flatten()
+        metadata["valid_token_indices"] = (
+            valid_indices if len(valid_indices) != input_ids.numel() else None
         )
         h = self.embed_tokens(input_ids) if inputs_embeds is None else inputs_embeds
         if h.shape != (*input_ids.shape, c.hidden_size):

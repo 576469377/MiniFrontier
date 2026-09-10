@@ -72,16 +72,32 @@ class LatentMoE(nn.Module):
         self.shared = Expert(h, c.shared_intermediate_size, c.activation)
         self.scale = c.routed_scale
 
-    def forward(self, x):
+    def forward(self, x, valid_indices=None):
         shape = x.shape
         flat = x.reshape(-1, shape[-1])
         selected, weights, _ = self.router(flat)
+        # Keep the full router output for masked balancing statistics, but never
+        # let padding activate an otherwise unused expert (AdamW treats a zero
+        # gradient differently from None).
+        if valid_indices is not None:
+            flat, selected, weights = (
+                flat[valid_indices],
+                selected[valid_indices],
+                weights[valid_indices],
+            )
+        if not len(flat):
+            return x * 0
         latent = self.down(flat)
         combined = self.grouped(latent, selected, weights) if x.is_cuda else None
         if combined is None:
             combined = self.reference(latent, selected, weights)
         routed = self.up(self.norm(combined).to(latent.dtype)) * self.scale
-        return (routed + self.shared(flat)).reshape(shape)
+        output = routed + self.shared(flat)
+        if valid_indices is not None:
+            output = output.new_zeros(x.numel() // shape[-1], shape[-1]).index_copy(
+                0, valid_indices, output
+            )
+        return output.reshape(shape)
 
     def reference(self, latent, selected, weights):
         combined = torch.zeros_like(latent, dtype=torch.float32)

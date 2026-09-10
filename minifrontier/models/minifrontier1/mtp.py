@@ -57,5 +57,5 @@ class MF1MTPBlock(nn.Module):
         update, _, _, _ = self.attention(h, metadata)
         r = self.attention_gr.inject(r, update, weights)
         h, weights = self.moe_gr.read(r)
-        r = self.moe_gr.inject(r, self.moe(h), weights)
+        r = self.moe_gr.inject(r, self.moe(h, metadata.get("valid_token_indices")), weights)
         return self.final_gr(r)
