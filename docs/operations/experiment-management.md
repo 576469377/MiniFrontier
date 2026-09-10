@@ -18,6 +18,21 @@ python -m scripts.export_experiments --workspace "$PWD" \
 
 ## 启动前记录什么
 
+正式预训练使用独立的 TensorBoard：本机端口 `6008`，日志视图为
+`outputs/tensorboard-pretraining-v1`。`6007` 保留策略探测实验，`6006` 保留更早的训练记录。
+服务状态和启动命令记录在 `outputs/services/tensorboard-pretraining-v1/service.json`。
+
+```bash
+# 仅在 6008 未运行时启动；远程访问可转发该端口
+uv run tensorboard --logdir outputs/tensorboard-pretraining-v1 \
+  --host 127.0.0.1 --port 6008 --reload_interval 5
+```
+
+正式运行写入 `outputs/strategy-base-pretraining-v1/<model>/<phase>/`。核对正式运行身份后，
+在日志视图中按 `<model>/<phase>` 建立对应事件目录的链接，保留原始事件文件。
+数据构造、测速和准入检查继续登记在实验台账；正式训练首次写入事件前，6008 的 run 列表为空。
+
+
 | 信息 | 保存位置和用途 |
 | --- | --- |
 | 目的、比较组、改变的变量 | `experiment.json` 或队列计划；解释该次运行要回答的问题 |
