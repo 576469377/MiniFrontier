@@ -119,15 +119,29 @@ def clean_record(name, row, identity):
     return record, None
 
 
-def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910, max_gib=12):
+def build_text_slice(
+    output, reference_tokenizer, *, targets=None, seed=20260910, max_gib=12, resume=False
+):
     root, reference = Path(output).resolve(), Path(reference_tokenizer).resolve()
     targets = DEFAULT_TARGETS if targets is None else targets
     if not targets or any(k not in TEXT_SOURCES or n <= 0 for k, n in targets.items()):
         raise ValueError(
             "choose positive budgets for reviewed candidate sources; unverified code stays quarantined"
         )
-    if root.exists():
+    previous = json.loads((root / "source-audit.json").read_text()) if resume else None
+    if root.exists() and not resume:
         raise FileExistsError("choose a new immutable candidate slice")
+    if previous and (
+        set(targets) != {"code_licensed"}
+        or previous["status"] != "interrupted_unadmitted"
+        or previous.get("formal_admission")
+        or previous["seed"] != seed
+        or previous["target_candidate_tokens"] != targets
+        or previous["reference_tokenizer_sha256"] != sha256(reference)
+        or previous["max_gib"] != max_gib
+        or previous["sources"]["code_licensed"]["specification"] != CODE_SOURCE
+    ):
+        raise ValueError("resume requires the same interrupted, unadmitted code inventory")
     require_space(root, int(max_gib * GIB), reserve_bytes=80 * GIB)
     builder = CorpusBuilder(root, seed=seed, max_gib=max_gib, val_buckets=50, test_buckets=100)
     tokenizer = Tokenizer.from_file(str(reference))
@@ -149,6 +163,7 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
                 Path(__file__).with_name("corpus.py"),
                 Path(__file__).with_name("public_sources.py"),
                 Path(__file__).with_name("code_sources.py"),
+                Path(__file__).with_name("remote.py"),
             )
         },
         sources={},
@@ -160,6 +175,43 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
             "image/OCR/chart/video sources and independent held-out media",
         ],
     )
+    if previous:
+        if not previous.get("error", "").startswith(
+            (
+                "ValueError: code shard exceeds bounded",
+                "ReadTimeout",
+                "ConnectionError",
+                "HTTPError",
+            )
+        ):
+            builder.db.close()
+            raise ValueError("only verified source-read interruptions can resume automatically")
+        rows = builder.db.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
+        if rows != previous["dedup_and_quality_counts"].get("accepted", 0) or rows != sum(
+            source["accepted_records"] for source in previous["sources"].values()
+        ):
+            builder.db.close()
+            raise ValueError("interrupted code audit and retained records disagree")
+        write_json(
+            root / f"source-audit-resume-{len(previous.get('resumes', [])) + 1}.json", previous
+        )
+        current_processors = audit["processor_files"]
+        audit = previous
+        audit.setdefault("resumes", []).append(
+            dict(
+                previous_error=audit.pop("error", None),
+                retained_records=rows,
+                previous_processor_files=audit["processor_files"],
+                database_sha256=sha256(root / "corpus.sqlite"),
+                resumed_unix=time.time(),
+            )
+        )
+        audit.update(status="building", processor_files=current_processors)
+        builder.counts = Counter(audit["dedup_and_quality_counts"])
+        estimate = builder.db.execute(
+            "SELECT COALESCE(SUM(4*length(CAST(payload AS BLOB))+1024),0) FROM samples"
+        ).fetchone()[0]
+        builder.approximate_bytes = max(builder.approximate_bytes, estimate + 16 * 1024**2)
     path = root / "source-audit.json"
 
     def progress():
@@ -192,10 +244,14 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
                 rejection_examples={},
                 status="reading",
             )
+            if previous:
+                entry = audit["sources"][name]
+                entry["rejected"] = Counter(entry["rejected"])
+                entry["status"] = "reading"
             audit["sources"][name] = entry
             progress()
             reader = (
-                code_rows(root=root, seed=seed, audit=entry)
+                code_rows(root=root, seed=seed, audit=entry, resume=resume)
                 if name == "code_licensed"
                 else source_rows(
                     name,
@@ -293,6 +349,9 @@ def main(argv=None):
     parser.add_argument("--targets", help="JSON object of accepted reference-token targets")
     parser.add_argument("--seed", type=int, default=20260910)
     parser.add_argument("--max-gib", type=float, default=12)
+    parser.add_argument(
+        "--resume", action="store_true", help="resume an interrupted code candidate inventory"
+    )
     args = parser.parse_args(argv)
     build_text_slice(
         args.output,
@@ -300,6 +359,7 @@ def main(argv=None):
         targets=json.loads(args.targets) if args.targets else None,
         seed=args.seed,
         max_gib=args.max_gib,
+        resume=args.resume,
     )
 
 

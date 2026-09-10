@@ -72,11 +72,15 @@ def retry_transport(call, *, audit, operation):
             time.sleep(attempt + 1)
 
 
-def source_rows(name, *, seed, audit, specification=None):
+def source_rows(name, *, seed, audit, specification=None, skip_rows=0):
     import pyarrow.parquet as pq
     from huggingface_hub import HfApi, HfFileSystem
 
     source = specification or SOURCES[name]
+    if skip_rows < 0:
+        raise ValueError("source resume offset must be nonnegative")
+    previous_reads = list(audit.get("reads", [])) if skip_rows else []
+    audit["resume_skip_rows"] = skip_rows
     audit["files"] = {}
     files = retry_transport(
         lambda: [
@@ -123,6 +127,8 @@ def source_rows(name, *, seed, audit, specification=None):
             audit["files"][filename] = {
                 key: info[key] for key in ("size", "blob_id", "lfs") if key in info
             }
+            if source.get("bounded_http_ranges"):
+                audit["files"][filename]["transport_failures"] = stream.transport_failures
             parquet = pq.ParquetFile(stream)
             groups = list(range(parquet.num_row_groups))
             rng.shuffle(groups)
@@ -131,13 +137,27 @@ def source_rows(name, *, seed, audit, specification=None):
                 # is refused, rather than silently materializing an entire corpus.
                 if parquet.metadata.row_group(group).total_byte_size > 512 * 1024**2:
                     raise ValueError("source row group exceeds 512 MiB memory bound")
-                table = parquet.read_row_group(group)
-                order = list(range(len(table)))
+                count = parquet.metadata.row_group(group).num_rows
+                order = list(range(count))
                 rng.shuffle(order)
-                audit["reads"].append(dict(file=filename, row_group=group, rows=len(table)))
+                descriptor = dict(file=filename, row_group=group, rows=count)
+                position = len(audit["reads"])
+                if position < len(previous_reads) and any(
+                    previous_reads[position].get(k) != v for k, v in descriptor.items()
+                ):
+                    raise ValueError("pinned source sampling order changed during resume")
+                if skip_rows >= count:
+                    skip_rows -= count
+                    audit["reads"].append(descriptor)
+                    continue
+                table = parquet.read_row_group(group)
+                audit["reads"].append(descriptor)
                 rows = table.to_pylist()
-                for index in order:
+                remaining, skip_rows = order[skip_rows:], 0
+                for index in remaining:
                     yield rows[index], f"{filename}:rg{group}:row{index}"
+    if skip_rows:
+        raise ValueError("resume offset exceeds the pinned source")
 
 
 def python_content(item):

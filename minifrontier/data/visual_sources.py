@@ -13,6 +13,7 @@ from typing import Any
 
 from PIL import Image
 
+from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder
 from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.data.minifrontier1 import write_json
@@ -102,24 +103,47 @@ def candidate_turns(subset, row):
 
 
 def build_visual_candidates(
-    output, reference_tokenizer, *, targets=None, seed=20260911, max_gib=20, metadata_gib=3
+    output,
+    reference_tokenizer,
+    *,
+    targets=None,
+    seed=20260911,
+    max_gib=20,
+    metadata_gib=3,
+    resume=False,
 ):
     """Build the first shared media inventory; never auto-admit or claim held-out quality."""
     from tokenizers import Tokenizer
 
     root = Path(output).resolve()
     targets = VISUAL_TARGETS if targets is None else targets
-    if root.exists() or not 0 < metadata_gib < max_gib:
+    if (root.exists() and not resume) or not 0 < metadata_gib < max_gib:
         raise ValueError("choose a new output and separate positive metadata/media budgets")
     if not targets or any(k not in VISUAL_CANDIDATES or n < 1 for k, n in targets.items()):
         raise ValueError("unknown subset or nonpositive independent-image target")
+    previous = json.loads((root / "source-audit.json").read_text()) if resume else None
+    if previous and (
+        previous["status"] != "interrupted_unadmitted"
+        or previous.get("formal_admission")
+        or previous["seed"] != seed
+        or previous["target_independent_images"] != targets
+        or previous["source"] != REPO
+        or previous["revision"] != REVISION
+        or previous["max_gib"] != max_gib
+        or previous["metadata_gib"] != metadata_gib
+        or previous["reference_tokenizer_sha256"] != sha256(reference_tokenizer)
+        or not previous.get("error", "").startswith(
+            ("ReadTimeout", "RemoteProtocolError", "ConnectError", "ConnectionError")
+        )
+    ):
+        raise ValueError(
+            "resume requires an unchanged unadmitted inventory interrupted by source transport"
+        )
     require_space(root, int(max_gib * GIB), reserve_bytes=80 * GIB)
     builder = CorpusBuilder(root, seed=seed, max_gib=metadata_gib, val_buckets=50, test_buckets=100)
     tokenizer = Tokenizer.from_file(str(reference_tokenizer))
     images = root / "images"
-    images.mkdir()
-    from minifrontier.data import sha256
-
+    images.mkdir(exist_ok=resume)
     audit: dict[str, Any] = dict(
         schema_version=1,
         kind="visual_candidate_inventory",
@@ -139,6 +163,7 @@ def build_visual_candidates(
             str(Path(__file__).name): sha256(__file__),
             "corpus.py": sha256(Path(__file__).with_name("corpus.py")),
             "public_sources.py": sha256(Path(__file__).with_name("public_sources.py")),
+            "remote.py": sha256(Path(__file__).with_name("remote.py")),
         },
         unresolved=[
             "upstream validation/benchmark image identity exclusion",
@@ -158,6 +183,48 @@ def build_visual_candidates(
         ),
     )
     seen: set[str] = set()
+    if previous:
+        rows = builder.db.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
+        if rows != previous["dedup_counts"].get("accepted", 0) or rows != sum(
+            source["accepted_records"] for source in previous["sources"].values()
+        ):
+            builder.db.close()
+            raise ValueError("interrupted media audit and retained records disagree")
+        media_files = {}
+        for (payload,) in builder.db.execute("SELECT payload FROM samples"):
+            for media in json.loads(payload)["media"]:
+                seen.add(media["rgb_sha256"])
+                media_files[media["path"]] = media["sha256"]
+        total = 0
+        for relative, expected in media_files.items():
+            path = (root / relative).resolve()
+            if not path.is_relative_to(images) or sha256(path) != expected:
+                builder.db.close()
+                raise ValueError("retained candidate media path/hash differs")
+            total += path.stat().st_size
+        if len(seen) != previous["unique_images"] or total != previous["media_bytes"]:
+            builder.db.close()
+            raise ValueError("interrupted media byte/image counters disagree")
+        write_json(
+            root / f"source-audit-resume-{len(previous.get('resumes', [])) + 1}.json", previous
+        )
+        processors = audit["processor_files"]
+        audit = previous
+        audit.setdefault("resumes", []).append(
+            dict(
+                previous_error=audit.pop("error", None),
+                retained_records=rows,
+                previous_processor_files=audit["processor_files"],
+                database_sha256=sha256(root / "corpus.sqlite"),
+                resumed_unix=time.time(),
+            )
+        )
+        audit.update(status="building", processor_files=processors)
+        builder.counts = Counter(audit["dedup_counts"])
+        estimate = builder.db.execute(
+            "SELECT COALESCE(SUM(4*length(CAST(payload AS BLOB))+1024),0) FROM samples"
+        ).fetchone()[0]
+        builder.approximate_bytes = max(builder.approximate_bytes, estimate + 16 * 1024**2)
 
     def progress():
         builder.db.commit()
@@ -192,10 +259,20 @@ def build_visual_candidates(
                 read_rows=0,
                 max_source_rows=target * 4,
             )
+            if previous and subset in audit["sources"]:
+                entry = audit["sources"][subset]
+                entry["rejected"] = Counter(entry["rejected"])
+                entry["domain_records"] = Counter(entry["domain_records"])
+                if entry["status"] == "candidate_target_reached":
+                    continue
             audit["sources"][subset] = entry
             progress()
             for row, identity in source_rows(
-                subset, seed=seed + number * 104729, audit=entry, specification=source
+                subset,
+                seed=seed + number * 104729,
+                audit=entry,
+                specification=source,
+                **({"skip_rows": entry["read_rows"]} if resume else {}),
             ):
                 if entry["read_rows"] >= entry["max_source_rows"]:
                     entry["scan_limit_reached"] = True
@@ -502,6 +579,9 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=20260911)
     parser.add_argument("--max-gib", type=float, default=20)
     parser.add_argument("--metadata-gib", type=float, default=3)
+    parser.add_argument(
+        "--resume", action="store_true", help="resume a transport-interrupted visual inventory"
+    )
     args = parser.parse_args(argv)
     build_visual_candidates(
         args.output,
@@ -510,6 +590,7 @@ def main(argv=None):
         seed=args.seed,
         max_gib=args.max_gib,
         metadata_gib=args.metadata_gib,
+        resume=args.resume,
     )
 
 

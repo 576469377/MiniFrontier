@@ -2,10 +2,12 @@
 
 import io
 import threading
+import time
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
+from urllib3.exceptions import HTTPError as Urllib3HTTPError
 from urllib3.util.retry import Retry
 
 
@@ -18,6 +20,7 @@ class RangeFile(io.RawIOBase):
         self.local = threading.local()
         self.lock = threading.Lock()
         self.cache = OrderedDict()
+        self.transport_failures = []
         super().__init__()
 
     def readable(self):
@@ -42,9 +45,6 @@ class RangeFile(io.RawIOBase):
             if index in self.cache:
                 self.cache.move_to_end(index)
                 return self.cache[index]
-            if self.transferred + end - start + 1 > self.budget:
-                raise ValueError("remote read network-byte budget reached")
-            self.transferred += end - start + 1
         if not hasattr(self.local, "session"):
             self.local.session = requests.Session()
             self.local.session.mount(
@@ -59,31 +59,48 @@ class RangeFile(io.RawIOBase):
                     )
                 ),
             )
-        with self.local.session.get(
-            self.url,
-            headers={"Range": f"bytes={start}-{end}", "Accept-Encoding": "identity"},
-            timeout=(60, 120),
-            stream=True,
-        ) as response:
-            response.raise_for_status()
-            if (
-                response.status_code != 206
-                or response.headers.get("Content-Range") != f"bytes {start}-{end}/{self.size}"
-            ):
-                raise ValueError("server did not honor the exact byte range")
-            # Never materialize an unbounded response if a server ignores Range.
-            value = response.raw.read(end - start + 2, decode_content=False)
-            if len(value) != end - start + 1:
-                raise ValueError(
-                    f"range {start}-{end}: expected {end - start + 1} bytes, got {len(value)}; "
-                    f"content-length={response.headers.get('Content-Length')}, "
-                    f"encoding={response.headers.get('Content-Encoding')}"
-                )
+        value = self._transfer(start, end)
         with self.lock:
             self.cache[index] = value
             while len(self.cache) > 4:
                 self.cache.popitem(last=False)
         return value
+
+    def _transfer(self, start, end):
+        for attempt in range(3):
+            with self.lock:
+                if self.transferred + end - start + 1 > self.budget:
+                    raise ValueError("remote read network-byte budget reached")
+                self.transferred += end - start + 1
+            try:
+                with self.local.session.get(
+                    self.url,
+                    headers={"Range": f"bytes={start}-{end}", "Accept-Encoding": "identity"},
+                    timeout=(60, 120),
+                    stream=True,
+                ) as response:
+                    response.raise_for_status()
+                    if (
+                        response.status_code != 206
+                        or response.headers.get("Content-Range")
+                        != f"bytes {start}-{end}/{self.size}"
+                    ):
+                        raise ValueError("server did not honor the exact byte range")
+                    value = response.raw.read(end - start + 2, decode_content=False)
+                    if len(value) != end - start + 1:
+                        raise ValueError(
+                            f"range {start}-{end}: expected {end - start + 1} bytes, got {len(value)}"
+                        )
+                    return value
+            except (requests.ConnectionError, requests.Timeout, Urllib3HTTPError) as error:
+                with self.lock:
+                    self.transport_failures.append(
+                        dict(start=start, end=end, attempt=attempt + 1, error=type(error).__name__)
+                    )
+                if attempt == 2:
+                    raise
+                time.sleep(attempt + 1)
+        raise AssertionError("unreachable range retry exit")
 
     def read(self, size=-1):
         size = self.size - self.position if size < 0 else min(size, self.size - self.position)

@@ -164,7 +164,7 @@ def licensed_record(row, identity):
     ), None
 
 
-def code_rows(*, root, seed, audit):
+def code_rows(*, root, seed, audit, resume=False):
     """Shuffle pinned shards; validate one bounded gzip before streaming its JSON lines."""
     import requests
     from huggingface_hub import HfApi
@@ -182,12 +182,13 @@ def code_rows(*, root, seed, audit):
     if not files:
         raise ValueError("pinned code source contains no gzip shards")
     random.Random(seed).shuffle(files)
-    audit.update(
-        sampling="seeded shard permutation; stream all selected shard rows in original order",
-        files={},
-        read_rows=0,
-        downloaded_bytes=0,
-    )
+    skip = audit.get("completed_read_rows", audit.get("read_rows", 0)) if resume else 0
+    visited = 0
+    if not resume:
+        audit.update(files={}, read_rows=0, downloaded_bytes=0)
+    audit["sampling"] = "seeded shard permutation; stream all selected shard rows in original order"
+    audit["completed_read_rows"] = skip
+    audit.setdefault("reader_rejections", {})
     cache = Path(root) / ".code-source.json.gz"
     try:
         with requests.Session() as session:
@@ -207,13 +208,13 @@ def code_rows(*, root, seed, audit):
                         response.raise_for_status()
                         for chunk in response.iter_content(1024**2):
                             size += len(chunk)
+                            audit["downloaded_bytes"] += len(chunk)
                             if size > file.size:
                                 raise ValueError("code download exceeds pinned shard size")
                             digest.update(chunk)
                             handle.write(chunk)
                     if size != file.size or digest.hexdigest() != file.lfs.sha256:
                         raise ValueError("code source shard hash/size mismatch")
-                audit["downloaded_bytes"] += size
                 audit["files"][file.rfilename] = dict(size=size, sha256=digest.hexdigest())
                 decompressed = 0
                 with gzip.open(cache, "rb") as stream:
@@ -222,13 +223,30 @@ def code_rows(*, root, seed, audit):
                         if not line:
                             break
                         decompressed += len(line)
-                        if len(line) > 2 * 1024**2 or decompressed > 2 * GIB:
-                            raise ValueError("code shard exceeds bounded JSON/decompression size")
+                        oversized = len(line) > 2 * 1024**2
+                        while oversized and not line.endswith(b"\n") and decompressed <= 2 * GIB:
+                            line = stream.readline(2 * 1024**2)
+                            decompressed += len(line)
+                            if not line:
+                                break
+                        if decompressed > 2 * GIB:
+                            audit["files"][file.rfilename]["decompression_limit_at_line"] = number
+                            break
+                        visited += 1
+                        if visited <= skip:
+                            continue
                         if audit["read_rows"] >= source["max_source_rows"]:
                             audit["read_limit"] = "source_row_budget"
                             return
                         audit["read_rows"] += 1
-                        yield json.loads(line), f"{file.rfilename}:line{number}"
+                        if oversized:
+                            audit["reader_rejections"]["oversized_json_record"] = (
+                                audit["reader_rejections"].get("oversized_json_record", 0) + 1
+                            )
+                        else:
+                            yield json.loads(line), f"{file.rfilename}:line{number}"
+                        # The generator resumes only after the caller handled this row.
+                        audit["completed_read_rows"] = audit["read_rows"]
                 cache.unlink()
     finally:
         cache.unlink(missing_ok=True)
