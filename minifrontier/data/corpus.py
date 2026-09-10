@@ -20,6 +20,7 @@ from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
 from minifrontier.chat_controls import record_template, semantic_content, update_manifest
 from minifrontier.data import SPECIAL_TOKENS, chat_tokens, fingerprint, normalized, sha256
+from minifrontier.data.partitions import open_corpus
 from minifrontier.storage import GIB, require_space, reserve_write
 
 STRATEGY_SPECIAL_TOKENS = [
@@ -387,7 +388,9 @@ class CorpusBuilder:
         return manifest
 
 
-def train_tokenizer(corpus_root, output, vocab_size, *, byte_budget=64 * 1024**2):
+def train_tokenizer(
+    corpus_root, output, vocab_size, *, byte_budget=64 * 1024**2, special_tokens=None
+):
     corpus_root, output = Path(corpus_root), Path(output)
     if output.exists():
         raise FileExistsError("tokenizer is immutable")
@@ -400,7 +403,7 @@ def train_tokenizer(corpus_root, output, vocab_size, *, byte_budget=64 * 1024**2
         nonlocal bytes_seen
         # tokenizers may consume the iterator on its worker thread. Open and
         # close the read-only connection on that same thread.
-        db = sqlite3.connect(f"file:{corpus_root / 'corpus.sqlite'}?mode=ro", uri=True)
+        db = open_corpus(corpus_root)
         try:
             for (text,) in db.execute("SELECT text FROM samples WHERE split='train' ORDER BY id"):
                 encoded = text.encode()
@@ -417,7 +420,7 @@ def train_tokenizer(corpus_root, output, vocab_size, *, byte_budget=64 * 1024**2
         trainers.BpeTrainer(
             vocab_size=vocab_size,
             min_frequency=2,
-            special_tokens=STRATEGY_SPECIAL_TOKENS,
+            special_tokens=STRATEGY_SPECIAL_TOKENS if special_tokens is None else special_tokens,
             initial_alphabet=pre_tokenizers.ByteLevel.alphabet(),
             show_progress=False,
         ),
@@ -464,7 +467,7 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096):
     output.mkdir(parents=True)
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
     (output / "tokenizer.json").write_bytes(Path(tokenizer_path).read_bytes())
-    db = sqlite3.connect(f"file:{root / 'corpus.sqlite'}?mode=ro", uri=True)
+    db = open_corpus(root)
     manifest = dict(
         schema_version=2,
         sequence_length=max_length,

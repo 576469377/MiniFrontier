@@ -1,7 +1,6 @@
 """Immutable native-media records alongside shared memory-mapped text documents."""
 
 import json
-import sqlite3
 from collections import Counter
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from tokenizers import Tokenizer
 from minifrontier.chat_controls import record_template, update_manifest
 from minifrontier.data import sha256
 from minifrontier.data.corpus import DocumentDataset, encode_corpus
+from minifrontier.data.partitions import open_corpus
 from minifrontier.multimodal import prepare_record
 from minifrontier.storage import reserve_write
 
@@ -30,7 +30,7 @@ def encode_native(
     manifest = encode_corpus(corpus_root, tokenizer_path, output, max_length=max_length)
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
     vocab = model_vocab_size or tokenizer.get_vocab_size()
-    db = sqlite3.connect(f"file:{corpus_root / 'corpus.sqlite'}?mode=ro", uri=True)
+    db = open_corpus(corpus_root)
     for stage in ("pretrain", "sft"):
         for split in ("train", "val", "test"):
             path = output / f"{stage}.{split}.media.jsonl"
