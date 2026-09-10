@@ -67,6 +67,36 @@ def test_supervisor_resumed_training_overrides_old_paused_checkpoint(tmp_path):
     assert entry["state"] == "running" and entry["ce_tokens"] == 20
 
 
+def test_remote_data_requires_fresh_remote_observation_and_keeps_candidate_counts(tmp_path):
+    run = tmp_path / "outputs/remote-test/outputs/strategy-pretraining-media-v1"
+    write(run / "run.json", dict(kind="data_construction", pid=12345, data_output="data/media"))
+    write(
+        run / "data-audit.json",
+        dict(
+            status="building",
+            unique_images=500,
+            media_bytes=123456,
+            formal_admission=False,
+            updated_unix=time.time(),
+            sources={"images": dict(accepted_records=750)},
+        ),
+    )
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["state"] == "unverified_remote_process"
+    assert entry["data_progress"]["unique_images"] == 500 and entry["ce_tokens"] == 0
+    assert not entry["main_budget_eligible"]
+    write(
+        run / "process-observation.json",
+        dict(pid=12345, argv_matches=True, observed_unix=time.time()),
+    )
+    assert collect(tmp_path)["experiments"][0]["state"] == "observed_running"
+    write(
+        run / "process-observation.json",
+        dict(pid=12345, argv_matches=True, observed_unix=time.time() - 121),
+    )
+    assert collect(tmp_path)["experiments"][0]["state"] == "unverified_remote_process"
+
+
 def test_review_reports_coverage_and_global_batch_overshoot(tmp_path):
     trial = tmp_path / "outputs/strategy-example-gpu-v1/trial"
     write(

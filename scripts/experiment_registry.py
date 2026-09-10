@@ -146,6 +146,8 @@ def collect(workspace):
                 data_root = (workspace / run.get("data_output", "")).resolve()
                 if data_root.is_relative_to(workspace / "data"):
                     data_audit = read_json(data_root / "source-audit.json")
+            elif run.get("kind") == "data_construction":
+                data_audit = read_json(target / "data-audit.json")
             ledger = train.get("token_ledger", {}) or state.get(
                 "token_ledger", state.get("ledger", {})
             )
@@ -165,7 +167,17 @@ def collect(workspace):
             )
             if data_audit:
                 status = data_audit.get("status", "unverified")
-                if status == "building":
+                if status == "building" and host != "local":
+                    observation = read_json(target / "process-observation.json")
+                    fresh = 0 <= time.time() - observation.get("observed_unix", 0) <= 120
+                    status = (
+                        "observed_running"
+                        if fresh
+                        and observation.get("pid") == run.get("pid")
+                        and observation.get("argv_matches") is True
+                        else "unverified_remote_process"
+                    )
+                elif status == "building":
                     try:
                         command = Path(f"/proc/{int(run['pid'])}/cmdline").read_bytes()
                         expected = [str(arg).encode() for arg in run.get("command", [])]
@@ -313,6 +325,7 @@ def collect(workspace):
                     ),
                     split_reference_tokens=data_audit.get("split_reference_tokens"),
                     database_bytes=data_audit.get("database_bytes"),
+                    audit_updated_unix=data_audit.get("updated_unix"),
                     unique_images=data_audit.get("unique_images", 0),
                     media_bytes=data_audit.get("media_bytes", 0),
                     error=data_audit.get("error"),

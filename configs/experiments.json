@@ -224,7 +224,8 @@
       "id": "pretraining-data",
       "outputs": [
         "strategy-pretraining-data-*",
-        "strategy-pretraining-media-*"
+        "strategy-pretraining-media-*",
+        "strategy-pretraining-code-*"
       ],
       "purpose": "正式共享语料候选构造、划分与准入记录",
       "decision": "data_construction_only",
