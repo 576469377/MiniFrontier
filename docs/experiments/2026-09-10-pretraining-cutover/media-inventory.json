@@ -327,7 +327,7 @@
         "cross-pool identity exclusion, source quality and per-domain exposure admission"
       ],
       "process_identity_verified": true,
-      "observed_unix": 1789070181.0619752,
+      "observed_unix": 1789075486.8326197,
       "partition_manifest_sha256": "78a92272c0560c310de50b5e6ed75d9155b8e1a3a2550fd87a80cfd43ff5d5ab",
       "new_reserved_groups": 843,
       "validation_groups": 1000,
@@ -825,6 +825,47 @@
       "natural-image component only; phase exposure and domain quotas are unmet",
       "manual quality review and visual benchmark exclusion remain pending",
       "complete per-record encoding audits are still running; tokenizer and data not formally admitted"
+    ]
+  },
+  "remote_natural_extension": {
+    "source": "HuggingFaceM4/FineVision/allava_laion",
+    "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
+    "output": "data/pretraining-media-natural-extension-v1",
+    "state": "extracting_next_natural_image_slice",
+    "observed_unix": 1789075486.83288,
+    "process_identity_verified": true,
+    "source_commit": "c96973035a22c983b8ec6c705ca7f29908d43d57",
+    "source_archive_sha256": "6132b492456fe6aa0657ddb694e01a596420675b885b58b50e6b7b74c336255a",
+    "driver_sha256": "ea65294847f7b1dbbd25bfd78c76a2667fb433daa3419358531eacf370b48391",
+    "continuation_sha256": "4f52392ef25fb90ce927407fda1197c02b8a33c1441fda1a4892ce3fb7a1999e",
+    "seed": 20260911,
+    "source_row_offset": 23790,
+    "prior_pixels_excluded": 23260,
+    "target_additional_images": 36740,
+    "observed_additional_images": 0,
+    "max_examined_new_rows": 146960,
+    "storage": {
+      "new_slice_max_gib": 40,
+      "metadata_gib": 4,
+      "existing_data_allocated_bytes": 18725085184,
+      "existing_encoder_reservation_gib": 1,
+      "remote_combined_data_cap_gib": 60,
+      "observed_free_gib": 1035.3094062805176,
+      "required_free_reserve_gib": 80,
+      "local_raw_copy_bytes": 0
+    },
+    "reference_tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "verification": {
+      "targeted_tests_passed": 27,
+      "mypy_source_files": 180,
+      "production_gpu_executed": false
+    },
+    "limitations": [
+      "cross-slice near-duplicate connected groups and benchmark exclusion are pending",
+      "candidate supply is not human quality or phase exposure admission",
+      "first-slice native encoders are still active; no new token encodings or formal CE claimed"
     ]
   }
 }
