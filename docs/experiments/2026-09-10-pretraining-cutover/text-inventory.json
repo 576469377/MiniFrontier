@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "text_candidate_inventory_snapshot",
-  "observed_unix": 1789072727.8953192,
+  "observed_unix": 1789073100.9910157,
   "formal_admission": false,
   "run_id": "strategy-pretraining-data-v3",
   "source_commit": "578b26d32454521cf851f7c137dce00c0f54dc4b",
@@ -712,6 +712,13 @@
         "error_samples": [],
         "scope": "all documents, file hashes, partition membership, labels, boundaries and decoded text; not source quality review",
         "updated_unix": 1789065105.465394
+      },
+      "artifact_state": "derived_payloads_retired_after_verified_replacement",
+      "superseded_by": "data/pretraining-mf1-text-v2",
+      "retirement_record": {
+        "path": "data/pretraining-mf1-text-v1/artifact-retirement.json",
+        "sha256": "314b3e5ac4b7937cc067ed2e3b5533ab32f0f2c4e5490df0a30f2dd57d2fa117",
+        "retired_bytes": 1462479890
       }
     },
     "source_attempt_1": {
@@ -940,7 +947,14 @@
         "scope": "all documents, file hashes, partition membership, labels, boundaries and decoded text; not source quality review",
         "updated_unix": 1789066875.3867795
       },
-      "completed_unix": 1789066875.4094522
+      "completed_unix": 1789066875.4094522,
+      "artifact_state": "derived_payloads_retired_after_verified_replacement",
+      "superseded_by": "data/pretraining-text-64k-v3",
+      "retirement_record": {
+        "path": "data/pretraining-text-64k-v2/artifact-retirement.json",
+        "sha256": "9f802cfcbb499a520c46fff9fcde89d54304b65e0115470bdbf6d5a08ae12047",
+        "retired_bytes": 7379171317
+      }
     }
   },
   "canonical_components_validation": {
@@ -1123,7 +1137,7 @@
         "driver_sha256": "6b2a63c43727a0876f96312e0af34283e7ecbd3b4ef647ffffae9220a2a89c2f",
         "max_gib": 7.1,
         "formal_admission": false,
-        "observed_unix": 1789072727.9115062,
+        "observed_unix": 1789073100.9911795,
         "process_identity_verified": false,
         "actual_bytes_at_observation": 7384394453,
         "allocated_bytes_at_observation": 7384453120,
@@ -1185,6 +1199,32 @@
           "media_processing_executed": false,
           "full_encoding_audit": "running independently; this selection check does not replace it",
           "source_commit": "d7d8b6918499db725ef6fb4bab25079eee18ffd7"
+        },
+        "producer_finished": true,
+        "completed_unix": 1789072715.3391936,
+        "counts": {
+          "train": {
+            "records": 398807,
+            "input_tokens": 540308851,
+            "ce_tokens": 539910044
+          },
+          "val": {
+            "records": 3735,
+            "input_tokens": 5069658,
+            "ce_tokens": 5065923
+          },
+          "test": {
+            "records": 4392,
+            "input_tokens": 6186411,
+            "ce_tokens": 6182019
+          }
+        },
+        "sealed_test_payloads_unchanged": true,
+        "full_encoding_audit": {
+          "status": "mechanical_checks_passed_pending_quality_admission",
+          "sha256": "2e26d1d654276566e41c275404ada60576bb947eca349c0d314181f8e638da58",
+          "errors": {},
+          "checked_records": 406934
         }
       },
       "mf1": {
@@ -1194,7 +1234,7 @@
         "driver_sha256": "6b2a63c43727a0876f96312e0af34283e7ecbd3b4ef647ffffae9220a2a89c2f",
         "max_gib": 1.5,
         "formal_admission": false,
-        "observed_unix": 1789072727.9299247,
+        "observed_unix": 1789073100.9920998,
         "process_identity_verified": false,
         "actual_bytes_at_observation": 1464982745,
         "allocated_bytes_at_observation": 1465118720,
@@ -1259,31 +1299,188 @@
           "media_processing_executed": false,
           "full_encoding_audit": "running independently; this selection check does not replace it",
           "source_commit": "d7d8b6918499db725ef6fb4bab25079eee18ffd7"
+        },
+        "producer_finished": true,
+        "completed_unix": 1789072714.5471683,
+        "counts": {
+          "train": {
+            "records": 398807,
+            "input_tokens": 577500671,
+            "ce_tokens": 577101864
+          },
+          "val": {
+            "records": 3735,
+            "input_tokens": 5420523,
+            "ce_tokens": 5416788
+          },
+          "test": {
+            "records": 4392,
+            "input_tokens": 6590402,
+            "ce_tokens": 6586010
+          }
+        },
+        "sealed_test_payloads_unchanged": true,
+        "full_encoding_audit": {
+          "status": "mechanical_checks_passed_pending_quality_admission",
+          "sha256": "cf749be1141293da4339f5c3ef15168e25b4873dc290f6ab71d6144abeb577be",
+          "errors": {},
+          "checked_records": 406934
         }
       }
     },
     "storage_transition": {
       "kind": "atomic_token_cache_repartition_transition",
-      "state": "replacement_encodings_written_full_audits_running",
+      "state": "replacements_audited_consumers_migrated_old_payloads_retired",
       "started_unix": 1789071263.7116923,
       "free_bytes_before": 153689075712,
       "temporary_replacement_cap_gib": 8.6,
       "temporary_category_cap_gib": 10,
       "steady_token_cache_cap_gib": 15,
-      "source_snapshot_bytes": 400764928,
+      "source_snapshot_bytes": 411561984,
       "source_cap_gib": 7.1,
       "mf1_cap_gib": 1.5,
       "raw_data_new_bytes": 0,
       "retention": "Original caches and the partial joint manifest remain until both replacements pass full audits and consumer references are moved. Retire superseded derived payloads after dependency checks; retain manifests and experiment evidence.",
       "formal_admission": false,
-      "observed_unix": 1789072645.9185011,
+      "observed_unix": 1789073100.993203,
       "replacement_allocated_bytes": {
         "source": 7384444928,
         "mf1": 1465110528
       },
-      "temporary_replacement_allocated_bytes": 8849555456,
-      "free_bytes_at_observation": 144839270400,
-      "retired_bytes": 0
+      "temporary_replacement_allocated_bytes": 0,
+      "free_bytes_at_observation": 153645559808,
+      "retired_bytes": 8841651207,
+      "free_bytes_before_retirement": 144803741696,
+      "free_bytes_after_retirement": 153645563904,
+      "retired_allocated_bytes": 8841842688,
+      "retirement_records": [
+        "data/pretraining-text-64k-v2/artifact-retirement.json",
+        "data/pretraining-mf1-text-v1/artifact-retirement.json"
+      ],
+      "active_components": "current-components.json"
+    },
+    "mf1_partial_p0_composition": {
+      "output": "data/pretraining-mf1-p0-components-v2",
+      "manifest_sha256": "073872c955560718450fc34afa2906514ac243bbb8b36636ef212b3d3c533694",
+      "source_audit_sha256": "a2b01ae17c1ca29afd05bfae31254fc66fb1e71f356cca8f522d97eebbb36647",
+      "state": "partial_p0_composition_pending_ocr_chart_and_admission",
+      "formal_admission": false,
+      "source_commit": "00a641e",
+      "splits": {
+        "train": {
+          "counts": {
+            "records": 441744,
+            "input_tokens": 587953355,
+            "ce_tokens": 584557518,
+            "text_documents": 398807,
+            "media_exposures": 42937,
+            "vision_tokens": 1875721
+          },
+          "domain_ce": {
+            "en_general": 158229730,
+            "zh_general": 235908846,
+            "math": 49533456,
+            "structured": 41730917,
+            "code": 91698915,
+            "vqa": 5543841,
+            "caption": 1911813
+          },
+          "unique_media": 22938
+        },
+        "val": {
+          "counts": {
+            "records": 3940,
+            "input_tokens": 5470050,
+            "ce_tokens": 5451947,
+            "text_documents": 3735,
+            "media_exposures": 205,
+            "vision_tokens": 8898
+          },
+          "domain_ce": {
+            "en_general": 1528753,
+            "zh_general": 2243792,
+            "structured": 387872,
+            "math": 510557,
+            "code": 745814,
+            "caption": 9582,
+            "vqa": 25577
+          },
+          "unique_media": 111
+        },
+        "test": {
+          "counts": {
+            "records": 4792,
+            "input_tokens": 6689031,
+            "ce_tokens": 6656363,
+            "text_documents": 4392,
+            "media_exposures": 400,
+            "vision_tokens": 17582
+          },
+          "domain_ce": {
+            "en_general": 1676165,
+            "zh_general": 2421463,
+            "code": 1589679,
+            "math": 476148,
+            "structured": 422555,
+            "vqa": 52852,
+            "caption": 17501
+          },
+          "unique_media": 211
+        }
+      },
+      "fixed_validation": {
+        "policy": {
+          "periodic_ce_tokens": 1000000,
+          "phase_end_ce_tokens": 5000000,
+          "early_interval_ce": 10000000,
+          "early_until_ce": 100000000,
+          "later_interval_ce": 50000000
+        },
+        "seed": 42,
+        "selection": "fixed_without_replacement",
+        "periodic": {
+          "requested_ce_tokens": 1000000,
+          "actual_ce_tokens": 1000974,
+          "examples": 1353,
+          "domain_ce": {
+            "zh_general": 422666,
+            "code": 123804,
+            "vqa": 5255,
+            "structured": 59270,
+            "en_general": 298389,
+            "math": 90350,
+            "caption": 1240
+          },
+          "indices_sha256": "c835f6c699cc0fc9f2390b7540dda8fd51c337eacc95ebaa327e73f5c14927cc",
+          "overshoot_bound_ce": 1023
+        },
+        "phase_end": {
+          "requested_ce_tokens": 5000000,
+          "actual_ce_tokens": 5000766,
+          "examples": 6783,
+          "domain_ce": {
+            "zh_general": 2043122,
+            "code": 684177,
+            "vqa": 22685,
+            "structured": 364470,
+            "en_general": 1405646,
+            "math": 471778,
+            "caption": 8888
+          },
+          "indices_sha256": "18f5afc08e03ed448696407512854a7119e9f6cfdd113aca74232018d6adfc5b",
+          "overshoot_bound_ce": 1023
+        },
+        "context_length": 1024,
+        "window_descriptors_sha256": "c01307082a87c7ebea1d00306180db5528f27e9d3b1209be2a35f74394c9a1a3",
+        "units": "complete native answers or text context windows with unique CE positions"
+      },
+      "missing_p0_domains": [
+        "ocr_document",
+        "chart_table"
+      ],
+      "new_metadata_bytes": 2489909,
+      "shard_files_copied": 0,
+      "raw_media_copied": false
     }
   },
   "source_pretraining_validation": {
