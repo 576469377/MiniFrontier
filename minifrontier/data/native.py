@@ -30,6 +30,40 @@ def processor_identity(family):
     }
 
 
+def _shared_text_partitions(root, expected_hash):
+    """Bind OCR source identities to the actual shared text partition, including after merges."""
+    root = Path(root).resolve()
+    if sha256(root / "manifest.json") != expected_hash:
+        raise ValueError("shared text manifest changed during derivative validation")
+    manifest = json.loads((root / "manifest.json").read_text())
+    result = {}
+    for stage, splits in manifest["stages"].items():
+        for split, node in splits.items():
+            path = (root / node["metadata_file"]).resolve()
+            if not path.is_relative_to(root) or sha256(path) != node["metadata_sha256"]:
+                raise ValueError("shared text identity metadata hash/path differs")
+            count = 0
+            with path.open() as stream:
+                for line in stream:
+                    identity = json.loads(line)["sample_id"]
+                    if identity in result:
+                        raise ValueError("duplicate shared text source identity")
+                    result[identity] = (stage, split)
+                    count += 1
+            if count != node["examples"]:
+                raise ValueError("shared text identity count differs")
+    return result
+
+
+def _check_text_origin(row, split, partitions):
+    origin = row["text_origin"]
+    if origin.get("split") != split or partitions.get(origin.get("sample_id")) != (
+        "pretrain",
+        split,
+    ):
+        raise ValueError("OCR source text identity is missing or crosses shared text splits")
+
+
 def encode_native(
     corpus_root,
     tokenizer_path,
@@ -94,6 +128,7 @@ def encode_native(
     accounted = sum(p.stat().st_size for p in output.iterdir() if p.is_file())
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
     vocab = model_vocab_size or tokenizer.get_vocab_size()
+    text_partitions = None
     with contextlib.closing(open_corpus(corpus_root)) as db:
         pixels = Path(media_root).resolve() if media_root is not None else corpus_storage_root(db)
         for stage in ("pretrain", "sft"):
@@ -113,6 +148,12 @@ def encode_native(
                         row = json.loads(payload)
                         if not row.get("media"):
                             continue
+                        if "text_origin" in row and text_encoding is not None:
+                            if text_partitions is None:
+                                text_partitions = _shared_text_partitions(
+                                    shared, manifest["text_source"]["manifest_sha256"]
+                                )
+                            _check_text_origin(row, split, text_partitions)
                         prepared = prepare_record(
                             row,
                             tokenizer,
@@ -250,6 +291,7 @@ def audit_native_encoding(corpus_root, encoded, output):
                 raise ValueError("shared native text mapping or splits differ")
             report["shared_text_manifest_sha256"] = reference["manifest_sha256"]
         groups: dict[str, str] = {}
+        text_partitions = None
         with contextlib.closing(open_corpus(corpus_root)) as db:
             for stage in ("pretrain", "sft"):
                 for split in ("train", "val", "test"):
@@ -286,6 +328,12 @@ def audit_native_encoding(corpus_root, encoded, output):
                             row = json.loads(payload)
                             if not row.get("media"):
                                 continue
+                            if "text_origin" in row and reference:
+                                if text_partitions is None:
+                                    text_partitions = _shared_text_partitions(
+                                        shared, reference["manifest_sha256"]
+                                    )
+                                _check_text_origin(row, split, text_partitions)
                             if groups.setdefault(group, split) != split:
                                 raise ValueError("canonical media group crosses native splits")
                             counts["source_media_records"] += 1

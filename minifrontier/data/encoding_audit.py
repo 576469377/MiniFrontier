@@ -215,6 +215,7 @@ def audit_image_encoding(corpus, encoded, output, config):
                         row["stage"] != "pretrain"
                         or domain != row["task"]
                         or group != expected_group
+                        or origin.get("text_origin") != row.get("text_origin")
                         or any(
                             origin[k] != row[k]
                             for k in ("source", "revision", "item_id", "license", "content_hash")

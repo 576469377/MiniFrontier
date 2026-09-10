@@ -62,6 +62,7 @@ def assemble_components(components, output, config, *, media_access=None):
             references[-1]["media_access"] = access[root]
         manifests.append(manifest)
     samples: set[str] = set()
+    sample_splits: dict[str, str] = {}
     groups: dict[str, str] = {}
     media: dict[str, str] = {}
     splits = {}
@@ -82,8 +83,24 @@ def assemble_components(components, output, config, *, media_access=None):
                         if identity in samples:
                             raise ValueError("duplicate sample in compact composition")
                         samples.add(identity)
+                        if sample_splits.setdefault(identity, split) != split:
+                            raise ValueError("source text identity crosses derivative splits")
                         if groups.setdefault(group, split) != split:
                             raise ValueError("connected group crosses composition splits")
+                        text_origin = record.get("origin", {}).get("text_origin")
+                        if text_origin is not None:
+                            if text_origin.get("split") != split or any(
+                                not isinstance(text_origin.get(key), str) or not text_origin[key]
+                                for key in ("sample_id", "group_root")
+                            ):
+                                raise ValueError(
+                                    "OCR derivative lacks its inherited text partition"
+                                )
+                            if (
+                                sample_splits.setdefault(text_origin["sample_id"], split) != split
+                                or groups.setdefault(text_origin["group_root"], split) != split
+                            ):
+                                raise ValueError("source text identity crosses derivative splits")
                         for resource in record["resources"]:
                             key = resource.get("rgb_sha256", resource.get("sha256"))
                             if not key:

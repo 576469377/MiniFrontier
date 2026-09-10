@@ -11,10 +11,12 @@ import pytest
 from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.data.corpus import CorpusBuilder, train_tokenizer
+from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokenizer
 from minifrontier.data.encoding_audit import audit_image_encoding
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS
-from minifrontier.data.minifrontier1_encoding import encode_canonical_images
+from minifrontier.data.minifrontier1_components import assemble_components
+from minifrontier.data.minifrontier1_encoding import encode_canonical_images, encode_canonical_text
+from minifrontier.data.native import audit_native_encoding, encode_native
 from minifrontier.data.ocr import Renderer, generate_ocr
 from minifrontier.data.partitions import open_corpus
 from minifrontier.models.minifrontier1 import MiniFrontier1Config
@@ -160,5 +162,53 @@ def test_source_partition_and_pixels_survive_generation_and_actual_mf1_encoding(
     assert proof["status"] == "mechanical_checks_passed_pending_quality_admission"
     for node in manifest["splits"].values():
         assert node["counts"]["vision_tokens"] == 49 * node["counts"]["records"]
+    text = tmp_path / "compact-text"
+    encode_canonical_text(root, token, text, config)
+    assemble_components([text, encoded], tmp_path / "joint", config)
+    shared = tmp_path / "source-text"
+    encode_corpus(root, token, shared, max_length=1024)
+    for family in ("minikimik3", "miniqwen4"):
+        native = tmp_path / family
+        encode_native(
+            out,
+            token,
+            native,
+            family,
+            text_encoding=shared,
+            max_features=49,
+            max_length=1024,
+            min_pixels=224 * 224 if family == "miniqwen4" else None,
+        )
+        assert (
+            audit_native_encoding(out, native, tmp_path / (family + "-audit.json"))["status"]
+            == proof["status"]
+        )
+    # A new text pool cannot promote OCR-source holdouts into text training.
+    wrong = tmp_path / "wrong-text"
+    shutil.copytree(shared, wrong)
+    wrong_manifest = json.loads((wrong / "manifest.json").read_text())
+    splits = wrong_manifest["stages"]["pretrain"]
+    splits["train"], splits["val"] = splits["val"], splits["train"]
+    (wrong / "manifest.json").write_text(json.dumps(wrong_manifest))
+    with pytest.raises(ValueError, match="crosses shared text"):
+        encode_native(
+            out,
+            token,
+            tmp_path / "leaking-native",
+            "minikimik3",
+            text_encoding=wrong,
+            max_length=1024,
+        )
+    with contextlib.closing(open_corpus(root)) as db:
+        parent_val = db.execute("SELECT id FROM samples WHERE split='val' LIMIT 1").fetchone()[0]
+    part = manifest["splits"]["train"]["parts"][0]["files"]["metadata.jsonl"]
+    metadata = encoded / part["name"]
+    rows = [json.loads(line) for line in metadata.read_text().splitlines()]
+    rows[0]["origin"]["text_origin"]["sample_id"] = parent_val
+    metadata.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    part.update(bytes=metadata.stat().st_size, sha256=sha256(metadata))
+    (encoded / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="source text identity crosses"):
+        assemble_components([text, encoded], tmp_path / "leaking-joint", config)
     with pytest.raises(ValueError, match="new OCR shard"):
         generate_ocr(root, fonts, token, out, id_stop="g")

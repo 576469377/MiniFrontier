@@ -312,7 +312,10 @@ def canonical_image_record(row, group, *, max_features, document_tiles=False):
         domain=row["task"],
         source=dict(dataset=row["source"], revision=row["revision"], record_id=row["item_id"]),
         provenance=dict(license_record=row["license"], transform="canonical-image-qa-to-mf1-v1"),
-        origin={k: row[k] for k in ("source", "revision", "item_id", "license", "content_hash")},
+        origin={
+            **{k: row[k] for k in ("source", "revision", "item_id", "license", "content_hash")},
+            **({"text_origin": row["text_origin"]} if "text_origin" in row else {}),
+        },
         supervision=dict(type="answer_ce"),
         media=[resource],
         messages=[

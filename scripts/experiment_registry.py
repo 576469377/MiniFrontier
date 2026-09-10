@@ -143,7 +143,9 @@ def collect(workspace):
             train = latest_train(target / "metrics.jsonl")
             data_audit = {}
             if run.get("kind") == "data_construction" and host == "local":
-                data_root = (workspace / run.get("data_output", "")).resolve()
+                data_root = (
+                    workspace / run.get("data_output", run.get("arguments", {}).get("output", ""))
+                ).resolve()
                 if data_root.is_relative_to(workspace / "data"):
                     data_audit = read_json(data_root / "source-audit.json")
             elif run.get("kind") == "data_construction":
@@ -318,9 +320,19 @@ def collect(workspace):
                 entry["data_progress"] = dict(
                     data_kind=data_audit.get("kind", "text_candidate_inventory"),
                     formal_admission=data_audit.get("formal_admission", False),
-                    accepted_records=sum(
-                        s.get("accepted_records", 0) for s in data_audit.get("sources", {}).values()
+                    accepted_records=data_audit.get("counts", {}).get(
+                        "accepted",
+                        sum(
+                            s.get("accepted_records", 0)
+                            for s in data_audit.get("sources", {}).values()
+                        ),
                     ),
+                    candidate_answer_reference_tokens=sum(
+                        s.get("answer_reference_tokens", 0)
+                        for s in data_audit.get("splits", {}).values()
+                    )
+                    if data_audit.get("kind") == "source_grounded_ocr_candidate"
+                    else None,
                     candidate_reference_tokens=sum(
                         s.get("accepted_reference_tokens", 0)
                         for s in data_audit.get("sources", {}).values()

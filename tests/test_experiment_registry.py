@@ -33,11 +33,20 @@ def test_stopped_trial_is_not_complete_and_preserves_last_observed_tokens(tmp_pa
     )
 
 
-def test_candidate_data_progress_is_not_training_ce_or_formal_admission(tmp_path):
+@pytest.mark.parametrize("bound_arguments", [False, True])
+def test_candidate_data_progress_is_not_training_ce_or_formal_admission(tmp_path, bound_arguments):
     run = tmp_path / "outputs/strategy-pretraining-data-v1"
     write(
         run / "run.json",
-        dict(kind="data_construction", data_output="data/candidate", pid=999999999),
+        dict(
+            kind="data_construction",
+            pid=999999999,
+            **(
+                dict(arguments=dict(output=str(tmp_path / "data/candidate")))
+                if bound_arguments
+                else dict(data_output="data/candidate")
+            ),
+        ),
     )
     write(
         tmp_path / "data/candidate/source-audit.json",
