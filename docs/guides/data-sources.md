@@ -4,6 +4,8 @@
 
 本轮正式预训练的数据构造见[主计划](../pretraining-plan.md#data)和[执行记录](../experiments/2026-09-10-pretraining-cutover/execution.md)。首批文本候选按参考 tokenizer 设中文 225M、英文 150M、数学 50M、对话 40M 目标，另需补足可核验来源的代码域；共享视觉候选正在构造。这些候选尚未完成正式准入。下文保留既往实验的数据说明，不能用诊断集代替本轮库存。
 
+补充代码候选已接入固定版本的 [CodeParrot train](https://huggingface.co/datasets/codeparrot/codeparrot-clean-train)，目标 100M 参考 token。筛选同时检查逐文件许可字段、文件开头的明确声明和 Python 3 语法，保留 repo/path、内容和许可头校验值；原仓库 commit 的缺项单列。源码不执行，也不使用普通文本的 NFKC/空白归一化。它与原许可未核验的 Python-Edu 行分别管理；来源筛选通过不等于正式数据准入，具体限制见执行记录。
+
 ## MiniFrontier1.0
 
 离线示例和已完成的小配置学习实验使用程序生成的数据：整数算术、纯色色块图片，以及带时间戳的色块视频帧。训练部分包含 32 条算术、32 条图片和 8 条视频记录，另设独立的验证、测试和演示分组。生成方法见 [data/minifrontier1.py](../../minifrontier/data/minifrontier1.py)，实际结果见[学习实验](../experiments/mf1-reference-v2/README.md)。

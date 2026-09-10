@@ -47,7 +47,7 @@
 |---|---|---|
 | 中文通用/教育 | 现有 opencsg/Fineweb-Edu-Chinese-V2.1 | 固定 revision、分片/分数条件，保留 source 字段；分层抽查，排除低质混入。[数据卡](https://huggingface.co/datasets/opencsg/Fineweb-Edu-Chinese-V2.1) |
 | 英文教育 | FineWeb-Edu；需要时使用其去重子集 | 固定文件/行组采样，跨来源去重；数据卡为 ODC-BY 并列明 Common Crawl 条款。[数据卡](https://huggingface.co/datasets/HuggingFaceFW/fineweb-edu) |
-| 代码 | Python-Edu/The Stack v2 中可以核验来源的内容 | 补齐 repo/blob/license 信息；不能因聚合数据卡的标签而忽略具体代码来源。[Python-Edu](https://huggingface.co/datasets/HuggingFaceTB/smollm-corpus)、[The Stack v2](https://huggingface.co/datasets/bigcode/the-stack-v2) |
+| 代码 | Python-Edu/The Stack v2 中可以核验来源的内容；补充 CodeParrot 的逐文件许可候选 | 补齐 repo/blob/license 信息；CodeParrot 只保留开头明确许可声明与 license 字段一致的文件，固定数据版本与内容 hash，原仓库 commit 缺项单列。不能因聚合数据卡的标签而忽略具体代码来源。[Python-Edu](https://huggingface.co/datasets/HuggingFaceTB/smollm-corpus)、[The Stack v2](https://huggingface.co/datasets/bigcode/the-stack-v2)、[CodeParrot train](https://huggingface.co/datasets/codeparrot/codeparrot-clean-train) |
 | 数学/科学 | OpenWebMath、带来源的解释性文本、项目可验证生成器 | 不让有限算术模板占满此域；留出生成规则/模板组合而不只是随机种子。[OpenWebMath](https://huggingface.co/datasets/open-web-math/open-web-math) |
 | 对话/结构化文本 | 现有已核验对话来源、JSON/表格/工具文档等 | 此处用于预训练混合；与后续 assistant-only SFT 集分开 |
 | 图像/文档/图表/VQA | FineVision/Cauldron 的逐项准入子集、合法来源的 caption、项目生成 OCR/图表 | 逐子集记录条款；一个总数据卡不能覆盖所有来源。[Cauldron 说明](https://huggingface.co/datasets/HuggingFaceM4/the_cauldron) |

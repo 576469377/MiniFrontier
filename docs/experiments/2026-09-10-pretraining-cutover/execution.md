@@ -59,3 +59,15 @@ MF1 的紧凑加载器进一步修复了跨分片随机采样时反复扫描大�
 视觉原始 PNG 的前 1,000 张已占约 0.78 GiB，原始格式下的全量候选目标超过当前热缓存预算；后续需落实有界媒体存储与消费，不能直接提高本地上限。代码元数据访问复查仍为 403。四模型正式训练均未启动，主 CE 为零。
 
 MF1 又修复了 packed 样本逐 token 读取 GPU segment 标量的问题，固定 packed 文本的完整更新短测提升 17.52%；数值、条件及限制记录在[同一性能审计](../../audits/minifrontier1-execution-performance.md)。正式预训练已配置独立 TensorBoard 日志视图，当前没有正式事件；旧实验与本次测速继续留在原记录中。
+
+## 文档/图表候选与代码补充
+
+自然图片继续在本机按既定上限构造；文档 OCR 与图表另在远端工作盘构造，各目标 20K 图片。远端任务的总上限为 60 GiB（元数据 3 GiB、原始媒体 57 GiB），保留 80 GiB 新写入余量；已实际分配并释放一个 60 GiB 的容量探测文件，核对目录写权限、分配字节数与回收后余量。这证明当时的分配能力，不将共享盘剩余空间视为永久配额保证。本地 25 GiB 热缓存预算保持，跨主机有界消费仍需完成。
+
+文档/图表任务使用冻结源码 `9d3667f`、seed=20260912 与既有固定 FineVision 版本，保存原始图片。首次启动因继承的本机代理端口不可用而在零图片时失败；核对进程已退出和直接 HTTPS 返回 200 后，保留空失败数据/日志，移除该任务的失效代理设置重新启动。第二次启动已实际写入文档图片，不把初始化日志当作下载完成。
+
+The Stack v2 访问仍待处理，旧 Python-Edu 行保持隔离。新增补充候选来自公开 [CodeParrot train](https://huggingface.co/datasets/codeparrot/codeparrot-clean-train)，固定 revision `3e6ab65f2864931e041f6a82db9b5a6ec2b71ab4`。[发布者说明](https://huggingface.co/datasets/codeparrot/codeparrot-clean/discussions/1)将具体许可放在逐文件字段；本项目进一步要求开头注释或模块 docstring 中存在匹配的 Apache-2.0、MIT、BSD-2/3-Clause 声明，拒绝冲突 SPDX、其他许可、vendor/generated 路径和不可解析的 Python 3。许可筛选是候选条件，不能自动授予正式数据或权重发布资格。
+
+候选保留 repo/path、原始内容 SHA256、计算得到的 Git blob SHA1、许可头 hash 和来源分片 hash。原仓库 commit 未由该来源提供，明确记录缺项，不把计算的 blob hash 说成已经向 GitHub 核验过的 blob。源码不执行，不做 NFKC 或空白折叠；代码近重复必须同时保持 AST 一致，防止字符串空格或缩进改变语义后仍被当作相同程序。首次目标为 100M 参考 token，最多扫描 500K 行、下载 3 GiB，内存逐行有界、一次只缓存一片 gzip。实际来源不足时明确报告低于目标，不补重复样本。正式抽查、benchmark 内容排除、词表和跨语料合并仍未通过。
+
+代码构造已从冻结提交 `072ab73241a3e59283be15cd0925d1a812181aa8` 启动，候选目录上限 4 GiB、单片临时下载不超过 300 MiB。该数据改动的全仓 CPU 回归为 383 passed / 1 skipped，54 项 CUDA 未运行；定向来源/语法/去重测试 12 项通过。远端数据的轻量审计已接入原实验台账，远端 PID 不在本机核验；新鲜的远端命令观察标为 `observed_running`，超过 120 秒则恢复未验证状态，候选计数不记入训练 CE。台账定向回归 10 项通过。
