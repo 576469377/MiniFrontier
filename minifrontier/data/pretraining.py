@@ -7,6 +7,7 @@ data. Token counts use an explicitly named reference tokenizer, not a byte guess
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import math
@@ -21,12 +22,16 @@ from urllib.parse import urldefrag
 from tokenizers import Tokenizer
 
 from minifrontier.data import normalized, sha256
+from minifrontier.data.code_sources import CODE_SOURCE, code_rows, licensed_record
 from minifrontier.data.corpus import CorpusBuilder
 from minifrontier.data.minifrontier1 import write_json
 from minifrontier.data.public_sources import SOURCES, normalized_source, source_rows
 from minifrontier.storage import GIB, require_space
 
-TEXT_SOURCES = {k: dict(SOURCES[k]) for k in ("zh_edu", "en_edu", "ultrachat")}
+TEXT_SOURCES: dict[str, dict[str, Any]] = {
+    k: dict(SOURCES[k]) for k in ("zh_edu", "en_edu", "ultrachat")
+}
+TEXT_SOURCES["code_licensed"] = CODE_SOURCE
 TEXT_SOURCES["openwebmath"] = dict(
     repo="open-web-math/open-web-math",
     revision="fde8ef8de2300f5e778f56261843dab89f230815",
@@ -42,6 +47,8 @@ DEFAULT_TARGETS = dict(
 
 def clean_record(name, row, identity):
     """Return an auditable normalized record, or a concrete rejection reason."""
+    if name == "code_licensed":
+        return licensed_record(row, identity)
     spec = TEXT_SOURCES[name]
     if name == "openwebmath":
         if not row.get("url") or not row.get("text"):
@@ -117,7 +124,7 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
     targets = DEFAULT_TARGETS if targets is None else targets
     if not targets or any(k not in TEXT_SOURCES or n <= 0 for k, n in targets.items()):
         raise ValueError(
-            "choose positive budgets for reviewed text sources; code stays quarantined"
+            "choose positive budgets for reviewed candidate sources; unverified code stays quarantined"
         )
     if root.exists():
         raise FileExistsError("choose a new immutable candidate slice")
@@ -141,6 +148,7 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
                 Path(__file__),
                 Path(__file__).with_name("corpus.py"),
                 Path(__file__).with_name("public_sources.py"),
+                Path(__file__).with_name("code_sources.py"),
             )
         },
         sources={},
@@ -169,7 +177,7 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
             formal_admission=False,
             sources={k: TEXT_SOURCES[k] for k in targets},
             quarantined={
-                "python_edu": "original repository/license mapping unresolved; no replacement"
+                "python_edu": "original repository/license mapping unresolved; old rows remain excluded"
             },
         ),
     )
@@ -186,47 +194,53 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
             )
             audit["sources"][name] = entry
             progress()
-            for row, identity in source_rows(
-                name,
-                seed=seed + source_index * 104729,
-                audit=entry,
-                specification=TEXT_SOURCES[name],
-            ):
-                record, reason = clean_record(name, row, identity)
-                if record is None:
-                    entry["rejected"][reason] += 1
-                    examples = entry["rejection_examples"].setdefault(reason, [])
-                    if len(examples) < 20:
-                        examples.append(
-                            dict(
-                                identity=identity,
-                                score=str(row.get("score")),
-                                subsource=row.get("source"),
+            reader = (
+                code_rows(root=root, seed=seed, audit=entry)
+                if name == "code_licensed"
+                else source_rows(
+                    name,
+                    seed=seed + source_index * 104729,
+                    audit=entry,
+                    specification=TEXT_SOURCES[name],
+                )
+            )
+            with contextlib.closing(reader):
+                for row, identity in reader:
+                    record, reason = clean_record(name, row, identity)
+                    if record is None:
+                        entry["rejected"][reason] += 1
+                        examples = entry["rejection_examples"].setdefault(reason, [])
+                        if len(examples) < 20:
+                            examples.append(
+                                dict(
+                                    identity=identity,
+                                    score=str(row.get("score")),
+                                    subsource=row.get("source"),
+                                )
                             )
+                        continue
+                    ids = tokenizer.encode(record["text"], add_special_tokens=False).ids
+                    record["reference_tokens"] = len(ids)
+                    if not builder.add(record):
+                        continue
+                    entry["accepted_records"] += 1
+                    entry["accepted_reference_tokens"] += len(ids)
+                    if entry["accepted_records"] % 1000 == 0:
+                        # Stop ingestion before the reserved checkpoint headroom is spent.
+                        require_space(root, 64 * 1024**2, reserve_bytes=80 * GIB)
+                        progress()
+                        print(
+                            json.dumps(
+                                dict(
+                                    source=name,
+                                    records=entry["accepted_records"],
+                                    tokens=entry["accepted_reference_tokens"],
+                                )
+                            ),
+                            flush=True,
                         )
-                    continue
-                ids = tokenizer.encode(record["text"], add_special_tokens=False).ids
-                record["reference_tokens"] = len(ids)
-                if not builder.add(record):
-                    continue
-                entry["accepted_records"] += 1
-                entry["accepted_reference_tokens"] += len(ids)
-                if entry["accepted_records"] % 1000 == 0:
-                    # Stop ingestion before the reserved checkpoint headroom is spent.
-                    require_space(root, 64 * 1024**2, reserve_bytes=80 * GIB)
-                    progress()
-                    print(
-                        json.dumps(
-                            dict(
-                                source=name,
-                                records=entry["accepted_records"],
-                                tokens=entry["accepted_reference_tokens"],
-                            )
-                        ),
-                        flush=True,
-                    )
-                if entry["accepted_reference_tokens"] >= target:
-                    break
+                    if entry["accepted_reference_tokens"] >= target:
+                        break
             entry["status"] = (
                 "candidate_target_reached"
                 if entry["accepted_reference_tokens"] >= target
@@ -253,7 +267,11 @@ def build_text_slice(output, reference_tokenizer, *, targets=None, seed=20260910
         audit["review"] = dict(
             status="awaiting_manual_review", samples=dict(selected), sha256=sha256(review)
         )
-        audit["status"] = "candidate_slice_complete_pending_admission"
+        audit["status"] = (
+            "candidate_slice_complete_pending_admission"
+            if all(s["status"] == "candidate_target_reached" for s in audit["sources"].values())
+            else "candidate_inventory_below_target"
+        )
         progress()
     except BaseException as error:
         audit.update(

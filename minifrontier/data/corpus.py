@@ -135,7 +135,12 @@ class CorpusBuilder:
             )
             text = "\n".join(t["role"] + ":" + semantic_content(t) for t in turns)
         else:
-            text, question = normalized(record.get("text", "")), ""
+            text = (
+                record.get("text", "")
+                if record.get("text_format") == "source_code"
+                else normalized(record.get("text", ""))
+            )
+            question = ""
             record = dict(record, text=text)
         if not 20 <= len(text) <= 2_000_000 or "\ufffd" in text:
             self.counts["invalid_text"] += 1
@@ -146,7 +151,11 @@ class CorpusBuilder:
             return False
         # Cross-source exact content duplicates share the same identity.
         media_context = "|".join(m["rgb_sha256"] for m in record.get("media", []))
-        identity = fingerprint(text + ("|media:" + media_context if media_context else ""))
+        identity = (
+            hashlib.sha256(b"source-code\0" + text.encode()).hexdigest()
+            if record.get("text_format") == "source_code"
+            else fingerprint(text + ("|media:" + media_context if media_context else ""))
+        )
         if self.db.execute("SELECT 1 FROM samples WHERE id=?", (identity,)).fetchone():
             self._link_origin(identity, record)
             self.counts["exact_duplicates"] += 1
@@ -179,9 +188,16 @@ class CorpusBuilder:
             other_code, other_text, other_payload = self.db.execute(
                 "SELECT simhash,text,payload FROM samples WHERE id=?", (candidate,)
             ).fetchone()
-            other_media = "|".join(
-                m["rgb_sha256"] for m in json.loads(other_payload).get("media", [])
-            )
+            other_record = json.loads(other_payload)
+            other_media = "|".join(m["rgb_sha256"] for m in other_record.get("media", []))
+            if (
+                record.get("text_format") == "source_code"
+                or other_record.get("text_format") == "source_code"
+            ) and (
+                not record.get("syntax_sha256")
+                or record["syntax_sha256"] != other_record.get("syntax_sha256")
+            ):
+                continue  # Whitespace/Unicode changes can change code semantics.
             if media_context != other_media:
                 continue
             if (code ^ int(other_code, 16)).bit_count() <= 3:
