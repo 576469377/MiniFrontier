@@ -157,7 +157,7 @@ def prepare(workspace, source, output):
         controller_sha256=sha256(__file__),
         main_budget_eligible=False,
         scope="single-GPU Muon reference and one lower learning rate per family; optimizer choice remains under evaluation",
-        allowed_gpu_ids=list(range(6)),
+        allowed_gpu_ids=list(range(8)),
         jobs=jobs,
     )
     write_json(output / "queue-plan.json", plan)
@@ -203,8 +203,9 @@ def execute(plan_path):
         raise ValueError("queue controller changed after preparation")
     workspace, source, output = (Path(plan[k]) for k in ("workspace", "source_root", "output"))
     ids = [job["gpu_id"] for job in plan["jobs"]]
-    if len(ids) != len(set(ids)) or len(ids) > 6 or not set(ids) <= set(range(6)):
-        raise ValueError("queue requires distinct GPUs from 0-5")
+    allowed = plan.get("allowed_gpu_ids", list(range(8)))
+    if len(ids) != len(set(ids)) or not set(ids) <= set(allowed):
+        raise ValueError("queue requires distinct GPUs from the authorized host pool")
     (workspace / "outputs/single-gpu-tmp").mkdir(exist_ok=True)
     lock_root = workspace / "outputs/gpu-locks"
     lock_root.mkdir(exist_ok=True)

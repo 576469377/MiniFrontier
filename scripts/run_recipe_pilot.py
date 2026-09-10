@@ -26,8 +26,7 @@ def main():
         "--gpus",
         type=int,
         nargs="+",
-        choices=range(6),
-        help="physical GPUs; default: one GPU per model",
+        help="exactly one physical GPU index; default: one GPU per model",
     )
     p.add_argument(
         "--batch-size",
@@ -40,8 +39,8 @@ def main():
         "--source-root", type=Path, help="frozen training checkout; also set PYTHONPATH to it"
     )
     args = p.parse_args()
-    if args.batch_size < 1 or (args.gpus and len(args.gpus) != len(set(args.gpus))):
-        p.error("batch-size must be positive and GPU IDs must be distinct")
+    if args.batch_size < 1 or (args.gpus and (len(args.gpus) != 1 or args.gpus[0] < 0)):
+        p.error("batch-size must be positive; each new trial requires exactly one GPU")
     workspace, output = args.workspace.resolve(), args.output.resolve()
     source_root = (args.source_root or Path(__file__).resolve().parents[1]).resolve()
     import minifrontier
@@ -204,10 +203,6 @@ def main():
             trial = output / ("muon-20m" if optimizer == "auto" else "adamw-20m")
             command = [
                 sys.executable,
-                "-m",
-                "torch.distributed.run",
-                "--standalone",
-                f"--nproc_per_node={len(selected)}",
                 "-m",
                 "minifrontier",
                 "train",

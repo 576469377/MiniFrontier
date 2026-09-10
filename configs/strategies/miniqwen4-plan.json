@@ -11,7 +11,7 @@
     2,
     3
   ],
-  "execution_override": "2026-09-09 user instruction: one GPU per run, up to six independent experiments on GPUs 0-5; active two-GPU trials finish unchanged",
+  "execution_override": "2026-09-10 user instruction: one GPU and one independent task per run; use host-specific exclusive pools, including remote idle GPUs; active two-GPU trials finish unchanged; never infer availability from low utilization alone",
   "training_dtype": "bf16",
   "optimizer_state_dtype": "fp32",
   "min_disk_free_gib": 50,

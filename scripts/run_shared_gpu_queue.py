@@ -1,4 +1,4 @@
-"""Adopt six LR trials and add six MTP ablations, at most two runs per GPU.
+"""Historical two-task-per-GPU experiment controller; new launches are disabled.
 
 Only GPUs 0-5 are authorized. Existing training processes are adopted unchanged;
 the previous exclusive queue controller must be stopped before this one starts.
@@ -417,6 +417,7 @@ def main():
     run = modes.add_parser("run")
     run.add_argument("--plan", type=Path, required=True)
     args = parser.parse_args()
+    parser.error("shared scheduling is retired; use scripts/run_exclusive_gpu_queue.py")
     if args.mode == "prepare":
         prepare(args.workspace, args.source_root, args.output, args.worker)
     else:
