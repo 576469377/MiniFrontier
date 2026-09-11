@@ -19,6 +19,7 @@ from minifrontier.data.native import encode_native
 from minifrontier.data.partitions import (
     HOLDOUT_FORMAT,
     create_partition_view,
+    create_quality_exclusion_view,
     create_text_exclusion_view,
     open_corpus,
 )
@@ -398,3 +399,69 @@ def test_encoding_rejects_insufficient_bound_before_copying_tokenizer(corpus, tm
     with pytest.raises(ValueError, match="disk budget"):
         encode_corpus(root, tokenizer, output, max_gib=1e-6)
     assert not output.exists()
+
+
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("fault", [None, "heldout", "count", "duplicate", "reason", "binding"])
+def test_quality_exclusion_removes_whole_group_and_preserves_holdouts(
+    corpus, tmp_path, nested, fault
+):
+    base, reservation = corpus
+    source = tmp_path / "reserved" if nested else base
+    if nested:
+        create_partition_view(base, reservation, source)
+    before_database = sha256(base / "corpus.sqlite")
+    with contextlib.closing(open_corpus(source)) as db:
+        before = list(db.execute("SELECT id,split,group_root,payload FROM samples ORDER BY id"))
+        split = "val" if fault == "heldout" else "train"
+        group, count = db.execute(
+            "SELECT group_root,COUNT(*) n FROM samples WHERE split=? "
+            "GROUP BY group_root ORDER BY n DESC LIMIT 1",
+            (split,),
+        ).fetchone()
+    defect = dict(group=group, records=count, reason="Observed source template did not render")
+    review = dict(
+        kind="source_quality_exclusion_review",
+        corpus_kind="text",
+        status="targeted_defects_confirmed",
+        review_method="model_assisted",
+        inputs=dict(
+            text=dict(
+                corpus_manifest_sha256=sha256(source / "corpus-manifest.json"),
+                source_audit_sha256=sha256(source / "source-audit.json"),
+                database_sha256=before_database,
+            )
+        ),
+        excluded_training_groups=[defect],
+    )
+    if fault == "count":
+        defect["records"] += 1
+    elif fault == "duplicate":
+        review["excluded_training_groups"].append(defect)
+    elif fault == "reason":
+        defect["reason"] = " "
+    elif fault == "binding":
+        review["inputs"]["text"]["source_audit_sha256"] = "0" * 64
+    evidence = tmp_path / "quality-review.json"
+    evidence.write_text(json.dumps(review))
+    output = tmp_path / "filtered"
+    if fault:
+        with pytest.raises(ValueError):
+            create_quality_exclusion_view(source, evidence, "text", output)
+        assert not output.exists()
+        assert sha256(base / "corpus.sqlite") == before_database
+        return
+    result = create_quality_exclusion_view(source, evidence, "text", output)
+    with contextlib.closing(open_corpus(output)) as db:
+        after = list(db.execute("SELECT id,split,group_root,payload FROM samples ORDER BY id"))
+    assert after == [row for row in before if row[2] != group]
+    assert [r for r in after if r[1] != "train"] == [r for r in before if r[1] != "train"]
+    assert result["newly_excluded_records"] == (1 if nested else 2)
+    assert result["quality_review_sha256"] == sha256(evidence)
+    assert "grouping_audit_sha256" not in result
+    audit = json.loads((output / "source-audit.json").read_text())
+    assert audit["operation"] == "exclude_source_quality_train_groups"
+    assert audit["holdout_membership_sha256"] == audit["prior_holdout_membership_sha256"]
+    assert not audit["formal_admission"] and not audit["main_budget_eligible"]
+    assert sha256(base / "corpus.sqlite") == before_database
+    assert not (output / "corpus.sqlite").exists()

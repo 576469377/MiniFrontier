@@ -363,6 +363,11 @@ def create_text_exclusion_view(
     )
 
 
+def create_quality_exclusion_view(corpus_root, quality_review, inventory, output):
+    """Remove reviewed defective training groups without changing any held-out record."""
+    return _create_group_exclusion_view(corpus_root, quality_review, inventory, output, "quality")
+
+
 def _create_group_exclusion_view(
     corpus_root, group_audit, inventory, output, kind, resolve_validation_conflicts=False
 ):
@@ -379,6 +384,17 @@ def _create_group_exclusion_view(
     manifest = json.loads((source / "corpus-manifest.json").read_text())
     audit = json.loads((source / "source-audit.json").read_text())
     binding = report["inputs"][inventory]
+    quality = kind == "quality"
+    evidence_key = "quality_review_sha256" if quality else "grouping_audit_sha256"
+    if quality:
+        kind = report.get("corpus_kind")
+        if (
+            kind not in {"text", "media"}
+            or report.get("status") != "targeted_defects_confirmed"
+            or report.get("review_method") not in {"human", "model_assisted"}
+            or binding.get("source_audit_sha256") != sha256(source / "source-audit.json")
+        ):
+            raise ValueError("quality exclusions require a bound, explicit defect review")
     complete_grouping = (
         report.get("full_shared_text_cross_split_audit_complete") is True
         and report.get("heldout_self_join_complete") is True
@@ -391,16 +407,33 @@ def _create_group_exclusion_view(
     ):
         raise ValueError("validation conflicts require an explicit, complete grouping audit")
     if (
-        report["kind"] != f"cross_corpus_{kind}_group_audit"
+        report["kind"]
+        != ("source_quality_exclusion_review" if quality else f"cross_corpus_{kind}_group_audit")
         or binding["corpus_manifest_sha256"] != sha256(source / "corpus-manifest.json")
         or binding["database_sha256"] != manifest["database_sha256"]
         or audit.get("formal_admission")
         or audit["status"]
         not in {"candidate_slice_complete_pending_admission", "candidate_inventory_below_target"}
     ):
-        raise ValueError("media grouping evidence and unadmitted source differ")
+        raise ValueError("exclusion evidence and unadmitted source differ")
     selected, promotions, test_anchors = {}, {}, {}
-    for component in report["split_conflicts"]:
+    if quality:
+        for defect in report["excluded_training_groups"]:
+            group = defect.get("group")
+            count = defect.get("records")
+            reason = defect.get("reason")
+            if (
+                not isinstance(group, str)
+                or not group
+                or group in selected
+                or type(count) is not int
+                or count <= 0
+                or not isinstance(reason, str)
+                or not reason.strip()
+            ):
+                raise ValueError("quality exclusions require distinct groups, counts and reasons")
+            selected[group] = count
+    for component in [] if quality else report["split_conflicts"]:
         if component["required_split"] not in {"val", "test"}:
             raise ValueError("exclusion has no held-out component")
         for member in component["members"]:
@@ -514,7 +547,12 @@ def _create_group_exclusion_view(
         dict(
             groups=overrides["groups"],
             excluded_groups=exclusions,
-            grouping_audit_sha256=sha256(report_path),
+            **{evidence_key: sha256(report_path)},
+            **(
+                {"grouping_audit_sha256": overrides["grouping_audit_sha256"]}
+                if quality and "grouping_audit_sha256" in overrides
+                else {}
+            ),
             **({"task_policy": overrides["task_policy"]} if "task_policy" in overrides else {}),
             **({"test_groups": test_groups} if test_groups else {}),
         ),
@@ -543,7 +581,11 @@ def _create_group_exclusion_view(
         source_splits=statistics,
         formal_admission=False,
         split_rule=manifest["split_rule"]
-        + f"; exclude entire train groups linked to held-out {kind} across corpora"
+        + (
+            "; exclude entire training groups with confirmed source-quality defects"
+            if quality
+            else f"; exclude entire train groups linked to held-out {kind} across corpora"
+        )
         + (
             "; audited whole validation groups move to test; all original holdouts remain held out"
             if promotions
@@ -551,7 +593,7 @@ def _create_group_exclusion_view(
         ),
         excluded_training_groups=len(exclusions),
         newly_excluded_records=sum(selected.values()),
-        grouping_audit_sha256=sha256(report_path),
+        **{evidence_key: sha256(report_path)},
         previous_effective_manifest_sha256=sha256(source / "corpus-manifest.json"),
         **(
             dict(
@@ -567,9 +609,13 @@ def _create_group_exclusion_view(
         root / "source-audit.json",
         dict(
             audit,
-            operation=f"resolve_{kind}_split_conflicts"
-            if promotions
-            else "exclude_cross_pool_train_groups",
+            operation="exclude_source_quality_train_groups"
+            if quality
+            else (
+                f"resolve_{kind}_split_conflicts"
+                if promotions
+                else "exclude_cross_pool_train_groups"
+            ),
             corpus=result,
             source_data_changed=False,
             formal_admission=False,
@@ -579,7 +625,7 @@ def _create_group_exclusion_view(
             split_independent_images={k: len(v) for k, v in images.items()},
             split_independent_groups=split_groups,
             split_answer_reference_tokens=answers,
-            grouping_audit_sha256=sha256(report_path),
+            **{evidence_key: sha256(report_path)},
             holdout_membership_sha256=expected_holdouts,
             prior_holdout_membership_sha256=prior_holdouts,
             validation_groups_promoted_to_test=promotions,
