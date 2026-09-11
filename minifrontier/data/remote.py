@@ -87,6 +87,11 @@ class RangeFile(io.RawIOBase):
                     ):
                         raise ValueError("server did not honor the exact byte range")
                     value = response.raw.read(end - start + 2, decode_content=False)
+                    if len(value) < end - start + 1:
+                        raise requests.ConnectionError(
+                            f"range body ended early: expected {end - start + 1} bytes, "
+                            f"got {len(value)}"
+                        )
                     if len(value) != end - start + 1:
                         raise ValueError(
                             f"range {start}-{end}: expected {end - start + 1} bytes, got {len(value)}"

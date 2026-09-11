@@ -7,6 +7,7 @@ import json
 import math
 import os
 import random
+import re
 import shutil
 import sqlite3
 import time
@@ -496,6 +497,18 @@ def export_visual_continuation(corpus, output):
     return record
 
 
+def _source_transport_interrupted(error):
+    if error.startswith(("ReadTimeout", "RemoteProtocolError", "ConnectError", "ConnectionError")):
+        return True
+    # Older RangeFile versions raised ValueError after validating the exact
+    # Content-Range but receiving a short body. Only that narrow case is resumable.
+    match = re.fullmatch(r"ValueError: range (\d+)-(\d+): expected (\d+) bytes, got (\d+)", error)
+    if match is None:
+        return False
+    start, end, expected, received = map(int, match.groups())
+    return end >= start and expected == end - start + 1 and received < expected
+
+
 def build_visual_candidates(
     output,
     reference_tokenizer,
@@ -561,9 +574,7 @@ def build_visual_candidates(
         or previous["metadata_gib"] != metadata_gib
         or previous["reference_tokenizer_sha256"] != sha256(reference_tokenizer)
         or previous.get("continuation") != continuation_identity
-        or not previous.get("error", "").startswith(
-            ("ReadTimeout", "RemoteProtocolError", "ConnectError", "ConnectionError")
-        )
+        or not _source_transport_interrupted(previous.get("error", ""))
     ):
         raise ValueError(
             "resume requires an unchanged unadmitted inventory interrupted by source transport"

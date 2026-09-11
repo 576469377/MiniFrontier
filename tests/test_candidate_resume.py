@@ -235,7 +235,8 @@ def test_visual_resume_rejects_corrupt_retained_media_before_reading_source(
     assert (output / "source-audit.json").read_bytes() == audit_before
 
 
-def test_stream_body_timeout_retries_the_whole_range_and_charges_each_attempt(monkeypatch):
+@pytest.mark.parametrize("failure", ["timeout", "short_body"])
+def test_stream_body_timeout_retries_the_whole_range_and_charges_each_attempt(monkeypatch, failure):
     from urllib3.exceptions import ReadTimeoutError
 
     monkeypatch.setattr("minifrontier.data.remote.time.sleep", lambda _: None)
@@ -263,6 +264,8 @@ def test_stream_body_timeout_retries_the_whole_range_and_charges_each_attempt(mo
         def read(self, *args, **kwargs):
             calls.append(1)
             if len(calls) == 1:
+                if failure == "short_body":
+                    return b"tes"
                 raise ReadTimeoutError(None, "/file", "mid-body")
             return b"test"
 
@@ -270,3 +273,97 @@ def test_stream_body_timeout_retries_the_whole_range_and_charges_each_attempt(mo
     with RangeFile("https://example.invalid/file", 4, network_budget=8, chunk_size=4) as remote:
         assert remote.read(4) == b"test"
         assert remote.transferred == 8 and len(remote.transport_failures) == 1
+
+
+@pytest.mark.parametrize(
+    "case,budget,calls,exception,message",
+    [
+        ("short", 12, 3, requests.ConnectionError, "ended early"),
+        ("short", 8, 2, ValueError, "network-byte budget"),
+        ("long", 12, 1, ValueError, "expected 4 bytes, got 5"),
+        ("wrong_range", 12, 1, ValueError, "exact byte range"),
+    ],
+)
+def test_range_retry_stays_bounded_and_protocol_mismatches_fail_closed(
+    monkeypatch, case, budget, calls, exception, message
+):
+    monkeypatch.setattr("minifrontier.data.remote.time.sleep", lambda _: None)
+    responses = []
+
+    class Response:
+        status_code = 206
+
+        def __init__(self):
+            self.headers = {
+                "Content-Range": "bytes 1-4/4" if case == "wrong_range" else "bytes 0-3/4"
+            }
+
+        def __enter__(self):
+            responses.append(self)
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def raise_for_status(self):
+            pass
+
+        @property
+        def raw(self):
+            return self
+
+        def read(self, *args, **kwargs):
+            return b"test!" if case == "long" else b"tes"
+
+    monkeypatch.setattr(requests.Session, "get", lambda *a, **k: Response())
+    with RangeFile(
+        "https://example.invalid/file", 4, network_budget=budget, chunk_size=4
+    ) as remote:
+        with pytest.raises(exception, match=message):
+            remote.read(4)
+        assert len(responses) == calls and remote.transferred == 4 * calls
+        assert not remote.cache
+
+
+@pytest.mark.parametrize(
+    "error,resumable",
+    [
+        ("ValueError: range 8-11: expected 4 bytes, got 3", True),
+        ("ValueError: range 8-11: expected 4 bytes, got 0", True),
+        ("ValueError: range 8-11: expected 4 bytes, got 5", False),
+        ("ValueError: range 8-11: expected 5 bytes, got 3", False),
+        ("ValueError: server did not honor the exact byte range", False),
+    ],
+)
+def test_legacy_short_range_resume_preserves_rows_and_rejects_protocol_errors(
+    reference, tmp_path, monkeypatch, error, resumable
+):
+    calls = []
+
+    def rows(*args, skip_rows=0, **kwargs):
+        calls.append(skip_rows)
+        if skip_rows == 0:
+            yield image_row(1), "file:rg0:row0"
+            raise requests.ConnectionError("source transport interrupted")
+        assert skip_rows == 1
+        yield image_row(2), "file:rg0:row1"
+
+    monkeypatch.setattr(visual_sources, "source_rows", rows)
+    output = tmp_path / "visual"
+    args = dict(targets={"allava_laion": 2})
+    with pytest.raises(requests.ConnectionError):
+        visual_sources.build_visual_candidates(output, reference, **args)
+    audit_path = output / "source-audit.json"
+    audit = json.loads(audit_path.read_text())
+    audit["error"] = error
+    audit_path.write_text(json.dumps(audit))
+    retained = {p: p.read_bytes() for p in (output / "images").rglob("*.image")}
+    if resumable:
+        result = visual_sources.build_visual_candidates(output, reference, resume=True, **args)
+        assert result["unique_images"] == 2 and calls == [0, 1]
+        assert all(p.read_bytes() == raw for p, raw in retained.items())
+        assert json.loads((output / "source-audit-resume-1.json").read_text())["error"] == error
+    else:
+        with pytest.raises(ValueError, match="source transport"):
+            visual_sources.build_visual_candidates(output, reference, resume=True, **args)
+        assert calls == [0]
