@@ -16,6 +16,7 @@ from minifrontier.storage import GIB, reserve_write
 FORMAT = "media-group-identities-v1"
 TEXT_FORMAT = "media-group-identities-v2"
 OCR_SOURCE = "MiniFrontier/source-grounded-ocr"
+RENDERED_TEXT_POLICY = "known complete OCR targets; casefolded normalized 5-character shingle Jaccard >=0.85; pHash does not join rendered text layouts"
 
 
 def _rendered_signature(row):
@@ -34,19 +35,24 @@ def _rendered_signature(row):
     )
 
 
-def _text_neighbors(signatures, *, max_comparisons):
+def _text_neighbors(signatures, *, max_comparisons, query_keys=None):
     """Exact >=0.85 Jaccard join of hashed 5-gram sets using shared prefix candidates.
 
     A common global token order and n-ceil(0.85*n)+1 prefixes preserve recall
     at this threshold, independently of the font, layout or image pHash.
     """
+    if query_keys is not None and not query_keys:
+        return
     frequency = Counter(token for values in signatures.values() for token in values)
     index: dict[Any, set[Any]] = defaultdict(set)
+    query_index: dict[Any, set[Any]] = defaultdict(set)
     comparisons = 0
     for key, values in signatures.items():
         ordered = sorted(values, key=lambda token: (frequency[token], token))
         prefix = ordered[: len(values) - (85 * len(values) + 99) // 100 + 1]
-        candidates = set().union(*(index[token] for token in prefix))
+        selected = query_keys is None or key in query_keys
+        candidate_index = index if selected else query_index
+        candidates = set().union(*(candidate_index[token] for token in prefix))
         for other in sorted(candidates):
             previous = signatures[other]
             if 100 * min(len(values), len(previous)) < 85 * max(len(values), len(previous)):
@@ -59,6 +65,8 @@ def _text_neighbors(signatures, *, max_comparisons):
                 yield key, other
         for token in prefix:
             index[token].add(key)
+            if query_keys is not None and selected:
+                query_index[token].add(key)
 
 
 def _write_new(path, record, max_bytes):
@@ -152,11 +160,15 @@ def audit_media_identities(
     max_bytes=64 * 1024**2,
     max_text_comparisons=5_000_000,
     progress=None,
+    previous_audit=None,
 ):
     """Group source/pixel identities, natural pHash and known printed OCR content.
 
     OCR-to-external pHash matches remain explicit unresolved candidates: a
     similar page layout alone cannot establish matching printed content.
+    A closed previous audit may supply unchanged components and decisions;
+    then only pairs involving an added inventory are compared. Altered or
+    filtered prior inventories require their own explicitly bound audit.
     """
     if len(inventories) < 2 or min(max_edges, max_text_comparisons) < 1 or Path(output).exists():
         raise ValueError("choose at least two inventories, a positive edge cap and a new output")
@@ -192,6 +204,51 @@ def audit_media_identities(
         if progress:
             progress(dict(state="loading_media_identities", loaded_inventories=len(data)))
     parents = {node: node for node in nodes}
+    previous = None
+    previous_names: set[str] = set()
+    inherited_links: Counter[str] = Counter()
+    inherited_cross_links: Counter[str] = Counter()
+    if previous_audit is not None:
+        previous_path = Path(previous_audit)
+        if previous_path.stat().st_size > max_bytes:
+            raise ValueError("previous media audit exceeds the byte bound")
+        previous = json.loads(previous_path.read_text())
+        previous_names = set(previous.get("inputs", {}))
+        if (
+            previous.get("kind") != "cross_corpus_media_group_audit"
+            or previous.get("status")
+            not in {
+                "mechanical_group_checks_passed",
+                "mechanical_group_checks_passed_with_model_assisted_review",
+            }
+            or previous.get("split_conflicts") != []
+            or previous.get("unresolved_rendered_visual_candidates") != []
+            or previous.get("phash_bands") != [list(v) for v in PHASH_BANDS]
+            or previous.get("phash_hamming_threshold") != 6
+            or previous.get("rendered_text_policy") != RENDERED_TEXT_POLICY
+            or not previous_names
+            or not previous_names < set(bindings)
+            or any(previous["inputs"][name] != bindings[name] for name in previous_names)
+            or previous.get("input_images")
+            != sum(data[name]["image_count"] for name in previous_names)
+            or previous.get("input_groups")
+            != sum(data[name]["group_count"] for name in previous_names)
+        ):
+            raise ValueError(
+                "previous media audit must be closed and bind unchanged prior inventories"
+            )
+        for field, counts in (
+            ("link_counts", inherited_links),
+            ("cross_inventory_link_counts", inherited_cross_links),
+        ):
+            values = previous[field]
+            if not isinstance(values, dict) or any(
+                type(v) is not int or v < 0 for v in values.values()
+            ):
+                raise ValueError("previous media audit has invalid edge counts")
+            counts.update(values)
+        if sum(inherited_links.values()) > max_edges:
+            raise ValueError("inherited media edges exceed the declared bound")
 
     def find(node):
         while parents[node] != node:
@@ -201,11 +258,30 @@ def audit_media_identities(
 
     edges = set()
 
+    if previous is not None:
+        seen_members = set()
+        for component in previous["linked_components"]:
+            members = [(m["inventory"], m["group"]) for m in component["members"]]
+            if len(members) < 2:
+                raise ValueError("previous media component must contain multiple groups")
+            for node, member in zip(members, component["members"], strict=True):
+                if (
+                    node[0] not in previous_names
+                    or node not in nodes
+                    or node in seen_members
+                    or member["split"] != nodes[node]["split"]
+                    or member["records"] != nodes[node]["records"]
+                    or member["split"] != component["required_split"]
+                ):
+                    raise ValueError("previous media component differs from its bound groups")
+                seen_members.add(node)
+                parents[node] = min(members)
+
     def connect(a, b, reason):
-        if a == b:
+        if a == b or (a[0] in previous_names and b[0] in previous_names):
             return
         edges.add((*sorted((a, b)), reason))
-        if len(edges) > max_edges:
+        if len(edges) + sum(inherited_links.values()) > max_edges:
             raise ValueError("media grouping exceeds the declared edge bound; no pass published")
         left, right = find(a), find(b)
         parents[max(left, right)] = min(left, right)
@@ -213,10 +289,15 @@ def audit_media_identities(
     origins: dict[str, tuple[str, str]] = {}
     pixels: dict[str, tuple[str, str]] = {}
     bands: dict[tuple[int, int], set[tuple[int, tuple[str, str], str]]] = defaultdict(set)
+    added_bands: dict[tuple[int, int], set[tuple[int, tuple[str, str], str]]] = defaultdict(set)
     rendered = {}
     image_nodes = {}
     unresolved = []
-    for name, item in data.items():
+    scan_names = [name for name in data if name in previous_names] + [
+        name for name in data if name not in previous_names
+    ]
+    for name in scan_names:
+        item = data[name]
         for group, record in item["groups"].items():
             node = (name, group)
             for key in record["origin_keys"]:
@@ -258,18 +339,25 @@ def audit_media_identities(
                 continue
             code = int(image["phash"], 16)
             candidates = set()
+            candidate_bands = added_bands if name in previous_names else bands
             for band, (offset, width) in enumerate(PHASH_BANDS):
-                candidates.update(bands[(band, (code >> offset) & ((1 << width) - 1))])
+                candidates.update(candidate_bands[(band, (code >> offset) & ((1 << width) - 1))])
             for other_code, other, _rgb in candidates:
                 if (code ^ other_code).bit_count() <= 6:
                     connect(node, other, "phash_hamming_le_6")
             for band, (offset, width) in enumerate(PHASH_BANDS):
-                bands[(band, (code >> offset) & ((1 << width) - 1))].add((code, node, identity))
+                band_key = (band, (code >> offset) & ((1 << width) - 1))
+                bands[band_key].add((code, node, identity))
+                if previous is not None and name not in previous_names:
+                    added_bands[band_key].add((code, node, identity))
         if progress:
             progress(dict(state="building_media_group_index", indexed_images=len(image_nodes)))
     if progress:
         progress(dict(state="matching_rendered_text", rendered_images=len(rendered)))
-    for left, right in _text_neighbors(rendered, max_comparisons=max_text_comparisons):
+    queries = {key for key in rendered if key[0] not in previous_names} if previous else None
+    for left, right in _text_neighbors(
+        rendered, max_comparisons=max_text_comparisons, query_keys=queries
+    ):
         connect(image_nodes[left], image_nodes[right], "rendered_text_jaccard_ge_0.85")
     if progress:
         progress(dict(state="matching_rendered_external_images", checked_rendered_images=0))
@@ -277,8 +365,9 @@ def audit_media_identities(
         node = image_nodes[(name, identity)]
         code = int(data[name]["images"][identity]["phash"], 16)
         candidates = set()
+        candidate_bands = added_bands if name in previous_names else bands
         for band, (offset, width) in enumerate(PHASH_BANDS):
-            candidates.update(bands[(band, (code >> offset) & ((1 << width) - 1))])
+            candidates.update(candidate_bands[(band, (code >> offset) & ((1 << width) - 1))])
         # Most shared-band candidates exceed the Hamming threshold. Sorting only
         # qualifying neighbors preserves the original order of emitted records.
         neighbors = [
@@ -306,7 +395,7 @@ def audit_media_identities(
                     phash_distance=distance,
                 )
             )
-            if len(unresolved) + len(edges) > max_edges:
+            if len(unresolved) + len(edges) + sum(inherited_links.values()) > max_edges:
                 raise ValueError("media candidate/edge budget exceeded; no pass published")
         if progress and checked % 10_000 == 0:
             progress(
@@ -352,8 +441,10 @@ def audit_media_identities(
         unique_rgb_images=len(pixels),
         input_groups=len(nodes),
         connected_groups=len(components),
-        link_counts=dict(Counter(reason for _a, _b, reason in edges)),
-        cross_inventory_link_counts=dict(Counter(reason for a, b, reason in edges if a[0] != b[0])),
+        link_counts=dict(inherited_links + Counter(reason for _a, _b, reason in edges)),
+        cross_inventory_link_counts=dict(
+            inherited_cross_links + Counter(reason for a, b, reason in edges if a[0] != b[0])
+        ),
         linked_components=linked,
         split_conflicts=conflicts,
         status="split_conflicts_require_partition_update"
@@ -361,7 +452,7 @@ def audit_media_identities(
         else "rendered_visual_candidates_require_verification"
         if unresolved
         else "mechanical_group_checks_passed",
-        rendered_text_policy="known complete OCR targets; casefolded normalized 5-character shingle Jaccard >=0.85; pHash does not join rendered text layouts",
+        rendered_text_policy=RENDERED_TEXT_POLICY,
         rendered_images=len(rendered),
         unresolved_rendered_visual_candidates=unresolved,
         max_text_comparisons=max_text_comparisons,
@@ -373,6 +464,17 @@ def audit_media_identities(
             "bound canonical raw-pixel audit, source quality and benchmark identity checks remain separate",
         ],
     )
+    if previous is not None:
+        report["incremental"] = dict(
+            previous_audit_sha256=sha256(previous_audit),
+            inherited_inventories=sorted(previous_names),
+            added_inventories=sorted(set(bindings) - previous_names),
+            inherited_input_images=previous["input_images"],
+            inherited_link_counts=dict(inherited_links),
+            inherited_reviewed_visual_candidates=previous.get("reviewed_visual_candidates", 0)
+            + previous.get("incremental", {}).get("inherited_reviewed_visual_candidates", 0),
+            comparisons="only pairs with at least one added inventory; unchanged old components and closed reviews inherited",
+        )
     _write_new(output, report, max_bytes)
     return report
 

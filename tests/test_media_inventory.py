@@ -198,6 +198,140 @@ def test_text_prefix_join_matches_brute_force_including_threshold_and_budget():
     assert (2, 0) not in set(_text_neighbors(boundary, max_comparisons=100))
     with pytest.raises(ValueError, match="comparison budget"):
         list(_text_neighbors({i: set(range(20)) for i in range(5)}, max_comparisons=1))
+    for queries in ({0, 19, 33, 98}, set(), set(signatures)):
+        assert set(_text_neighbors(signatures, max_comparisons=10000, query_keys=queries)) == {
+            (i, j) for i, j in expected if i in queries or j in queries
+        }
+    # Dense old duplicates must not consume the new-pair comparison budget.
+    assert (
+        list(
+            _text_neighbors(
+                {i: set(range(20)) for i in range(5)}, max_comparisons=1, query_keys=set()
+            )
+        )
+        == []
+    )
+
+
+@pytest.mark.parametrize("added_first", [False, True])
+def test_incremental_media_audit_matches_full_graph_and_only_emits_new_candidates(
+    tmp_path, added_first
+):
+    import hashlib
+
+    from minifrontier.data.media_inventory import _rendered_signature
+
+    text_a = "The expedition recorded every observation before returning to the research station."
+    text_b = "Local farmers plant seeds and measure soil temperature throughout the spring season."
+
+    def make(name, rows):
+        groups, images = {}, {}
+        for group, split, rgb, code, text, origin in rows:
+            groups[group] = node(split, origin) if origin else node(split)
+            images[rgb] = dict(group=group, phash=f"{code:016x}")
+            if text:
+                images[rgb]["rendered_text"] = _rendered_signature(
+                    dict(
+                        source="MiniFrontier/source-grounded-ocr",
+                        visual_answer=text,
+                        rendering={"fixture": True},
+                        text_origin={"fixture": True},
+                    )
+                )
+        path = inventory(tmp_path / (name + ".json"), groups, images)
+        value = json.loads(path.read_text())
+        value["format"] = TEXT_FORMAT
+        path.write_text(json.dumps(value))
+        return path
+
+    old = {
+        "a": make("a", [("a", "train", "a" * 64, 0, None, "shared")]),
+        "b": make("b", [("b", "train", "b" * 64, 63, None, "shared")]),
+        "r": make(
+            "r",
+            [
+                ("r", "train", "c" * 64, 2**64 - 1, text_a, ""),
+                ("s", "train", "d" * 64, 0, text_b, ""),
+            ],
+        ),
+    }
+    parent = tmp_path / "parent.json"
+    original = audit_media_identities(old, parent)
+    assert len(original["unresolved_rendered_visual_candidates"]) == 2
+    review = tmp_path / "fixture-review.json"
+    decisions = [
+        dict(
+            candidate_index=i,
+            candidate_sha256=hashlib.sha256(json.dumps(v, sort_keys=True).encode()).hexdigest(),
+            rendered_rgb_sha256=v["rendered"]["rgb_sha256"],
+            external_rgb_sha256=v["external"]["rgb_sha256"],
+            rendered_file_sha256="1" * 64,
+            external_raw_sha256="2" * 64,
+            disposition="not_visual_duplicate",
+            reason="Synthetic fixture: unrelated prose and natural image metadata share their pHash.",
+        )
+        for i, v in enumerate(original["unresolved_rendered_visual_candidates"])
+    ]
+    review.write_text(
+        json.dumps(
+            dict(
+                kind="model_assisted_visual_candidate_review",
+                group_audit_sha256=sha256(parent),
+                reviewer="synthetic fixture",
+                decisions=decisions,
+            )
+        )
+    )
+    closed = tmp_path / "closed.json"
+    close_media_candidate_review(parent, [review], closed)
+    added = {
+        "new-rendered": make("new-rendered", [("t", "test", "e" * 64, 0, text_a, "")]),
+        "new-natural": make(
+            "new-natural",
+            [
+                ("u", "train", "f" * 64, 2**64 - 1, None, ""),
+                ("v", "test", "a" * 64, 0, None, "shared"),
+            ],
+        ),
+    }
+    inputs = dict(added, **old) if added_first else dict(old, **added)
+    full = audit_media_identities(inputs, tmp_path / "full.json")
+    incremental = audit_media_identities(
+        inputs, tmp_path / "incremental.json", previous_audit=closed
+    )
+    for field in ("linked_components", "split_conflicts"):
+        assert sorted(json.dumps(v, sort_keys=True) for v in full[field]) == sorted(
+            json.dumps(v, sort_keys=True) for v in incremental[field]
+        )
+    for field in (
+        "input_images",
+        "unique_rgb_images",
+        "input_groups",
+        "connected_groups",
+        "link_counts",
+        "cross_inventory_link_counts",
+        "rendered_images",
+    ):
+        assert full[field] == incremental[field]
+    expected = [
+        v
+        for v in full["unresolved_rendered_visual_candidates"]
+        if v["rendered"]["inventory"] in added or v["external"]["inventory"] in added
+    ]
+    assert sorted(json.dumps(v, sort_keys=True) for v in expected) == sorted(
+        json.dumps(v, sort_keys=True) for v in incremental["unresolved_rendered_visual_candidates"]
+    )
+    assert incremental["incremental"]["previous_audit_sha256"] == sha256(closed)
+    assert incremental["incremental"]["inherited_reviewed_visual_candidates"] == 2
+    assert not incremental["formal_admission"] and incremental["split_conflicts"]
+    with pytest.raises(ValueError, match="closed and bind"):
+        audit_media_identities(inputs, tmp_path / "unreviewed.json", previous_audit=parent)
+    with pytest.raises(ValueError, match="closed and bind"):
+        audit_media_identities(old, tmp_path / "no-additions.json", previous_audit=closed)
+    old["a"].write_text(old["a"].read_text() + "\n")
+    with pytest.raises(ValueError, match="closed and bind"):
+        audit_media_identities(inputs, tmp_path / "changed.json", previous_audit=closed)
+    assert not (tmp_path / "changed.json").exists()
 
 
 def test_visual_candidates_match_brute_force_with_stable_order_after_filtering(tmp_path):
