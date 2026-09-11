@@ -1,7 +1,7 @@
 {
   "kind": "deepseek_first_formal_phase_cutover",
-  "observed_unix": 1789127836.0744855,
-  "source_commit": "366f96350547e403389d62f4ff1e5ed6a8ebd2d4",
+  "observed_unix": 1789127950.789389,
+  "source_commit": "6c2e37be4a88ca6cdedd062d0fde5e1d249ac81f",
   "model": "MiniDeepSeek-V4",
   "parameters": 243983472,
   "data": {
@@ -73,7 +73,7 @@
     "The 4000-update pause is an observation within the full 250M D1 budget; its actual CE comes from the training ledger."
   ],
   "engineering_repair": {
-    "state": "gpu_qualification_running",
+    "state": "gpu_qualification_running_with_completed_updates",
     "change": "Dense attention uses 128-query chunks and backward recomputation; complete key support retained",
     "tests_passed": 46,
     "cuda_tests_deselected": 2,
@@ -83,6 +83,11 @@
     "source_commit": "6c2e37be4a88ca6cdedd062d0fde5e1d249ac81f",
     "max_completed_updates": 250,
     "prior_attempt_completed_updates": 0,
-    "automatic_retry": false
+    "automatic_retry": false,
+    "latest_observed_optimizer_updates": 10,
+    "latest_observed_ce_tokens": 330470,
+    "startup_ce_tokens_per_second": 4202.355584333409,
+    "peak_allocated_gib": 13.609557151794434,
+    "throughput_scope": "startup logged update, not the completed 200-update measurement"
   }
 }
