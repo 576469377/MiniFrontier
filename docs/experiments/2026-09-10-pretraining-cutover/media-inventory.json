@@ -5026,8 +5026,8 @@
     }
   },
   "shared_text_near_duplicate_blocker": {
-    "observed_unix": 1789092789.8728194,
-    "status": "full_text_cross_split_audit_in_progress_known_quarantine_not_encoded",
+    "observed_unix": 1789096052.08094,
+    "status": "text_conflicts_resolved_pending_derivative_and_encoding_refresh",
     "formal_admission": false,
     "main_budget_eligible": false,
     "text_conflict_report_sha256": "33ef671beda2b54395642d882123d1cd6b68d640d6a8de7e25bdd3352f90b074",
@@ -5075,8 +5075,8 @@
     "affects_all_four_model_text_consumers": true,
     "formal_training_ce": 0,
     "old_encoded_inventory_is_pre_quarantine": true,
-    "tokenizer_training_membership_recheck_required": true,
-    "full_shared_text_holdout_audit_state": "checking_training_holdouts",
+    "tokenizer_training_membership_recheck_required": false,
+    "full_shared_text_holdout_audit_state": "split_conflicts_require_partition_update",
     "review_reuse": {
       "prior_reviewed_pairs": 455,
       "identical_candidates_still_present": 455,
@@ -5195,7 +5195,7 @@
           "source_archive_sha256": "2a62e5103c5c0ccbfd82912f652f2c4b105198970b71dbb51d805cb163d1f803",
           "arguments_sha256": "f22b52557fb3012a3236429f31ffccef03555b566326c6232e8629284d8d27c6",
           "driver_sha256": "7841e8fbf106ef26a589d92e7ac0cdd48a194118ed7cf4af2f298b1151ea6506",
-          "state": "checking_training_holdouts",
+          "state": "split_conflicts_require_partition_update",
           "scope": "Does any effective train/val, train/test or val/test full-document pair reach exact normalized whitespace-free 5-character Jaccard >=0.85, without the Simhash candidate gate?",
           "input_manifest_sha256": "724b67f6760f67822d9321cbea9a18b175b1354dec3f77dc40d1995aadd4374c",
           "budget": {
@@ -5216,20 +5216,77 @@
           },
           "formal_admission": false,
           "started_unix": 1789092511.3152444,
-          "observed_unix": 1789092789.022145,
-          "elapsed_seconds": 277.70589416846633,
+          "observed_unix": 1789094957.1832511,
+          "completed_unix": 1789094959.4866078,
+          "elapsed_seconds": 2445.867047291249,
           "scanned_records": {
             "test": 4392,
             "val": 3735,
-            "train": 24000
+            "train": 398806
           },
           "reference_shingles": 20872897,
-          "candidates": 4549656,
-          "comparisons": 641530,
-          "matched_pairs": 12,
+          "candidates": 70891252,
+          "comparisons": 9904455,
+          "matched_pairs": 224,
           "peak_resident_bytes": 4988456960,
+          "group_audit_sha256": "737c85c2eb8aa240c3e41c77847a29bb873f992967cd95eaa17c7883796d6ecf",
+          "effective_records": {
+            "test": 4392,
+            "val": 3735,
+            "train": 398806
+          },
+          "conflict_components": 97,
+          "full_shared_text_cross_split_audit_complete": true,
           "retry_of": "full-audit-v1",
           "retry_reason": "measured candidate density exceeds initial counting caps before the one-hour wall bound; same input and exact algorithm; one explicit retry"
+        },
+        {
+          "attempt": "heldout-self-join-v1",
+          "source_commit": "2c36f974a3150cce81334130d6ccf074fb4b798d",
+          "source_archive_sha256": "2729239edc4cef12901f0cdc5d02c4a4e17fefaf7ce3d93bbf439b0a876e10b0",
+          "arguments_sha256": "77f6e836e90eb0c24380cf845fb5de5271104e1cd8fea28d7db8ab7acdc6bf88",
+          "driver_sha256": "3766708a2a42649b4ce14c55694f9172f7b24ad4a66df6b03e78ffed8b3af10f",
+          "state": "split_conflicts_require_partition_update",
+          "scope": "Complete all validation/validation, validation/test and test/test links so test precedence cannot introduce a new held-out cross-split overlap",
+          "input_manifest_sha256": "724b67f6760f67822d9321cbea9a18b175b1354dec3f77dc40d1995aadd4374c",
+          "budget": {
+            "wall_seconds": 600,
+            "max_resident_gib": 24,
+            "max_virtual_gib": 32,
+            "max_control_mib": 64,
+            "source_bundle_mib": 256,
+            "minimum_free_gib": 80,
+            "gpu_hours": 0,
+            "training_tokens": 0,
+            "max_reference_shingles": 60000000,
+            "max_candidates": 20000000,
+            "max_comparisons": 5000000,
+            "max_matches": 10000,
+            "max_seconds": 600,
+            "max_bytes": 16777216
+          },
+          "formal_admission": false,
+          "started_unix": 1789095216.633434,
+          "observed_unix": 1789095363.4007785,
+          "completed_unix": 1789095365.7660902,
+          "elapsed_seconds": 146.76650557294488,
+          "scanned_records": {
+            "test": 4392,
+            "val": 3735
+          },
+          "reference_shingles": 20872897,
+          "candidates": 589976,
+          "comparisons": 84222,
+          "matched_pairs": 7,
+          "peak_resident_bytes": 4988628992,
+          "group_audit_sha256": "cf17431bae772e8f308f854f3ae4df48bf35253dab807b2eef0aad18f1353212",
+          "effective_records": {
+            "test": 4392,
+            "val": 3735
+          },
+          "conflict_components": 3,
+          "full_shared_text_cross_split_audit_complete": false,
+          "heldout_self_join_complete": true
         }
       ]
     },
@@ -5259,6 +5316,564 @@
       "mapping_frozen": false,
       "formal_admission": false,
       "observed_unix": 1789092577.539974
+    },
+    "combined_group_audit": {
+      "state": "split_conflicts_require_partition_update",
+      "source_commit": "2c36f974a3150cce81334130d6ccf074fb4b798d",
+      "source_archive_sha256": "2729239edc4cef12901f0cdc5d02c4a4e17fefaf7ce3d93bbf439b0a876e10b0",
+      "driver_sha256": "21e5096d5ad5ff2a9f8f7416b649302307910f605617de51d44140cc96eef05a",
+      "arguments_sha256": "ff9b3bcbc47e134ee46505470d3dc6c4996291df7febedc5656779ed474b113c",
+      "group_audit_sha256": "ad4bc049e59a072d4fa3c09fb3f85ce6e8f52e6b46211eb3dfeb956c2caffe7e",
+      "full_shared_text_cross_split_audit_complete": true,
+      "heldout_self_join_complete": true,
+      "effective_records": {
+        "test": 4392,
+        "val": 3735,
+        "train": 398806
+      },
+      "conflict_components": 97,
+      "linked_components": 100,
+      "completed_unix": 1789095385.574554
+    },
+    "resolved_text_view": {
+      "state": "text_conflicts_resolved_pending_derivative_and_encoding_refresh",
+      "source_commit": "29d3f0de76f87408dd4c8db3ce8d83401ba03580",
+      "source_archive_sha256": "8f5e4f11f5481f3b4f62c194606ad0050cddf88d9b2806bd8972f8b3436e368f",
+      "manifest_sha256": "c97873bb89ffd86b35d64d6cfe3cea8a639d81ec3b00a3735d2409ee39bb46f7",
+      "source_audit_sha256": "4baaa7fb88f5b53d18d5d5d58c6a59234ddb5c6df19efef2f23d73c75822e34e",
+      "input_group_audit_sha256": "ad4bc049e59a072d4fa3c09fb3f85ce6e8f52e6b46211eb3dfeb956c2caffe7e",
+      "splits": {
+        "test": 4432,
+        "train": 396884,
+        "val": 3695
+      },
+      "output_bytes": 9941735,
+      "newly_excluded_training_records": 1922,
+      "promoted_validation_records": 40,
+      "prior_holdout_membership_sha256": "3a6b8f8218151a8147fd14291707a32586e0291c8de3b30aa92f7034f49e6655",
+      "holdout_membership_sha256": "97c33a432bff73c91cb0f95189ced87f9583e315112eea9a57ff508169d1d19c",
+      "completed_unix": 1789095735.361796,
+      "output": "data/pretraining-text-partition-v4",
+      "excluded_training_groups": 193,
+      "validation_groups_promoted_to_test": 5
+    },
+    "resolution_attempts": [
+      {
+        "started_unix": 1789095385.7238493,
+        "driver_sha256": "bb35677e005f23680330a0025e6d2314e8d486429f36a650b37554a3f2c53b41",
+        "arguments_sha256": "71fa75a0a514d36332e3752f9f28ea16d5c4c4309e49d81b79820a92053cd09b",
+        "source_commit": "2c36f974a3150cce81334130d6ccf074fb4b798d",
+        "source_archive_sha256": "2729239edc4cef12901f0cdc5d02c4a4e17fefaf7ce3d93bbf439b0a876e10b0",
+        "state": "failed",
+        "error": "launcher subprocess.TimeoutExpired: 120-second process bound; no output published",
+        "completed_unix": 1789095553.154259
+      },
+      {
+        "started_unix": 1789095591.3788939,
+        "driver_sha256": "9e01a1d769922ccab1629882d3de885f814d8ad5b32a8012cc36b5bec455a2c7",
+        "arguments_sha256": "e3c8e59b6e80e21d9cb67526ace2bd34de5d2eff2591c81e2903ae2c3303fdde",
+        "source_commit": "2c36f974a3150cce81334130d6ccf074fb4b798d",
+        "source_archive_sha256": "2729239edc4cef12901f0cdc5d02c4a4e17fefaf7ce3d93bbf439b0a876e10b0",
+        "state": "failed",
+        "retry_of": "full-resolution-v1",
+        "retry_reason": "per-group scans exceeded launcher timeout; one grouped count replaces repeated scans; same source, complete evidence and partition policy",
+        "error": "cancelled: source was frozen before the pending bulk-query commit completed",
+        "completed_unix": 1789095657.1484451
+      },
+      {
+        "started_unix": 1789095657.6006129,
+        "driver_sha256": "9e01a1d769922ccab1629882d3de885f814d8ad5b32a8012cc36b5bec455a2c7",
+        "arguments_sha256": "8c7f2845aba89eaace9d47184078933bae3dc6524c1fe9246a1ac85b012a740f",
+        "source_commit": "29d3f0de76f87408dd4c8db3ce8d83401ba03580",
+        "source_archive_sha256": "8f5e4f11f5481f3b4f62c194606ad0050cddf88d9b2806bd8972f8b3436e368f",
+        "state": "text_conflicts_resolved_pending_derivative_and_encoding_refresh",
+        "retry_of": "full-resolution-retry1",
+        "retry_reason": "previous launch was cancelled before output because the pending source commit had not completed; freeze and verify committed bulk-query code",
+        "completed_unix": 1789095735.361796
+      }
+    ],
+    "tokenizer_repair": {
+      "kind": "tokenizer_training_membership_after_complete_text_resolution",
+      "observed_unix": 1789095800.2168286,
+      "source_manifest_sha256": "c97873bb89ffd86b35d64d6cfe3cea8a639d81ec3b00a3735d2409ee39bb46f7",
+      "combined_group_audit_sha256": "ad4bc049e59a072d4fa3c09fb3f85ce6e8f52e6b46211eb3dfeb956c2caffe7e",
+      "prior_membership_sha256": "123d8f358ef540dbf35221391c6edb6ab26484eb541ecb6d09773b9f68087aca",
+      "training_records": 10880,
+      "affected_training_records": 61,
+      "affected_training_groups": 32,
+      "decision": "retrain prescribed 65536/32768 vocabularies once on corrected train; no vocabulary grid",
+      "old_encoded_consumers_need_refresh": true,
+      "tokenizer_retrained": true,
+      "mapping_frozen": false,
+      "formal_admission": false,
+      "report_sha256": "152f08a1b6f6fa39b5a0cb373216e1a4caa3439cf1f488c74535deefa489a437",
+      "rebuild_completed_unix": 1789095989.5417597
+    },
+    "ocr_parent_impact": {
+      "kind": "ocr_parent_partition_impact",
+      "observed_unix": 1789095803.2541506,
+      "source_manifest_sha256": "c97873bb89ffd86b35d64d6cfe3cea8a639d81ec3b00a3735d2409ee39bb46f7",
+      "combined_group_audit_sha256": "ad4bc049e59a072d4fa3c09fb3f85ce6e8f52e6b46211eb3dfeb956c2caffe7e",
+      "shards": {
+        "pretraining-ocr-p0-shard-00-v1": {
+          "corpus_manifest_sha256": "4b810934db0c2d91fa2881c431b27c5506cba3a8e2184870caa3c62fff1e4a28",
+          "scanned_records": 19535,
+          "parent_training_group_excluded": 3
+        },
+        "pretraining-ocr-p0-shard-01-v1": {
+          "corpus_manifest_sha256": "bcc4f71cee30f79c49287507cf44917552132f180c4fea9054991dd35d4ae591",
+          "scanned_records": 19112,
+          "parent_training_group_excluded": 3
+        },
+        "pretraining-ocr-p0-shard-02-v1": {
+          "corpus_manifest_sha256": "1ca82e8cf26487c858732c754a126b365f051c991ee2117334b3a5aed7abb7e4",
+          "scanned_records": 19054,
+          "parent_training_group_excluded": 7
+        },
+        "pretraining-ocr-p0-shard-03-v1": {
+          "corpus_manifest_sha256": "8ab02a4e4c1910b7f3b0f5af7b56751147451495a0028e8a8e31fd0cf9a7ce28",
+          "scanned_records": 18975,
+          "parent_training_group_excluded": 4
+        },
+        "pretraining-ocr-p0-shard-04-v1": {
+          "corpus_manifest_sha256": "c12767b87f948bdbdb0f864eeb355cf3fc24256dc6b9896484427868b983b1da",
+          "scanned_records": 19181,
+          "parent_training_group_excluded": 2
+        },
+        "pretraining-ocr-p0-shard-05-v1": {
+          "corpus_manifest_sha256": "7617c10c1da3d838c64242b29016073a7b8bcd594a4c2a28e942f4a56d6349f4",
+          "scanned_records": 19306,
+          "parent_training_group_excluded": 3
+        },
+        "pretraining-ocr-p0-shard-06-v2": {
+          "corpus_manifest_sha256": "3ed04700fd3b440ec80903e8a657e26698678184082089a90f43c41df7a106d8",
+          "scanned_records": 19173,
+          "parent_training_group_excluded": 5
+        },
+        "pretraining-ocr-p0-shard-07-v1": {
+          "corpus_manifest_sha256": "d2c529a4053458ec6c1e2ec959f9680bf1f7b4bd5a4e4e8fa020ca189cf4a096",
+          "scanned_records": 19305,
+          "parent_training_group_excluded": 3
+        },
+        "pretraining-ocr-p0-shard-08-v1": {
+          "corpus_manifest_sha256": "8b3e2d9d5b34a5da02d26e1bff02542a7a5c541a341553d84ddfa5b039ad59d0",
+          "scanned_records": 19460,
+          "parent_training_group_excluded": 2
+        },
+        "pretraining-ocr-p0-shard-09-v1": {
+          "corpus_manifest_sha256": "3733e4f3c2cb50022a8cda2fb550e74949dbef6ae4cb9814c867ea6685f2500b",
+          "scanned_records": 19298,
+          "parent_training_group_excluded": 6
+        },
+        "pretraining-ocr-p0-shard-10-v1": {
+          "corpus_manifest_sha256": "e418e15e7b5292675b2430abe7573cf8570a0d6a7782c84c2bac8bad587306c6",
+          "scanned_records": 19170,
+          "parent_training_group_excluded": 5
+        },
+        "pretraining-ocr-p0-shard-11-v1": {
+          "corpus_manifest_sha256": "6672f2b1167f5cc2ec3621e482677f7661934e75cc919e9b15d43b8d335c8ee4",
+          "scanned_records": 19399,
+          "parent_training_group_excluded": 5
+        },
+        "pretraining-ocr-p0-shard-12-v1": {
+          "corpus_manifest_sha256": "8e793f9361df1fb638d40880b2574145ed0af4a29862c99053cc4ebb79660db2",
+          "scanned_records": 19329,
+          "parent_training_group_excluded": 1
+        },
+        "pretraining-ocr-p0-shard-13-v1": {
+          "corpus_manifest_sha256": "077758d930e74d95184e8c42e698e2a39a34dcb1bd1c6f407df854e8c8cbb146",
+          "scanned_records": 19250,
+          "parent_training_group_excluded": 2
+        },
+        "pretraining-ocr-p0-shard-14-v1": {
+          "corpus_manifest_sha256": "f860f338d22142215347681654893c0e966e331792bb1091521c735b808bdae2",
+          "scanned_records": 19442,
+          "parent_training_group_excluded": 4
+        },
+        "pretraining-ocr-p0-shard-15-v1": {
+          "corpus_manifest_sha256": "1237f0d13d14ad3cf08f8bc799f2e54ec26e429d54ecfd52c71645d7cbbfb42c",
+          "scanned_records": 19260,
+          "parent_training_group_excluded": 4
+        }
+      },
+      "affected_records": 59,
+      "reason_counts": {
+        "parent_training_group_excluded": 59
+      },
+      "formal_admission": false,
+      "derivatives_refreshed": false,
+      "decision": "exclude complete affected OCR train groups; val-parent promotions require separately preserving the disjoint font/layout contract, never blindly relabel rendered val images as test",
+      "report_sha256": "f7c151e1c1b1bc283cb438f69842db9e5d1200c40f4b6095351b0ddcef73e9ab"
+    },
+    "bulk_membership_validation": {
+      "source_commit": "29d3f0de76f87408dd4c8db3ce8d83401ba03580",
+      "targeted_tests_passed": 42,
+      "log_sha256": "97c29a205e017e4d34b51d40fc9202c8f1fe44877a4a5320abaebc19ec1dda77",
+      "mypy": "passed",
+      "ruff": "passed"
+    },
+    "heldout_resolution_validation": {
+      "source_commit": "2c36f974a3150cce81334130d6ccf074fb4b798d",
+      "targeted_tests_passed": 42,
+      "full_cpu_passed": 531,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "full_cpu_seconds": 154.48,
+      "full_cpu_log_sha256": "74ed412e2b7babac0daf23e504975e5757c9153c63f4fc4c2a0c50f870289d16",
+      "mypy_source_files": 187,
+      "ruff": "passed",
+      "formatted_files": 335
+    },
+    "tokenizer_rebuild": {
+      "state": "mappings_prepared_pending_quality_and_encoding_admission",
+      "source_commit": "29d3f0de76f87408dd4c8db3ce8d83401ba03580",
+      "source_archive_sha256": "8f5e4f11f5481f3b4f62c194606ad0050cddf88d9b2806bd8972f8b3436e368f",
+      "driver_sha256": "729c17d2f8d43ca772b83590356c68b769024e75dba79f93d2707f19a589a86c",
+      "arguments_sha256": "3d30b138628825610e9358d0268a35f392bad3e5eadb9b28a730ef7794e64501",
+      "preparation_driver_sha256": "eb4bf887a71ef8a7553e5ccbb77b8c0a35763e97fcf2a8ced0774a165fa427bc",
+      "started_unix": 1789095855.755411,
+      "completed_unix": 1789095989.5417597,
+      "corpus_manifest_sha256": "c97873bb89ffd86b35d64d6cfe3cea8a639d81ec3b00a3735d2409ee39bb46f7",
+      "membership_report_sha256": "152f08a1b6f6fa39b5a0cb373216e1a4caa3439cf1f488c74535deefa489a437",
+      "output_bytes": 7706774,
+      "preparation_sha256": "bb5862ea8690eb9ae53c2d63335d04ac6c84ffdeef67c31f9e06ca65d3343319",
+      "peak_resident_bytes": 3904286720,
+      "budget": {
+        "training_bytes_per_mapping": 67108864,
+        "max_output_mib": 32,
+        "wall_seconds": 600,
+        "max_virtual_gib": 16,
+        "rayon_threads": 4,
+        "minimum_free_gib": 80,
+        "gpu_hours": 0,
+        "model_training_tokens": 0
+      },
+      "mappings": {
+        "source-models": {
+          "requested_vocab": 65536,
+          "actual_vocab": 65536,
+          "training_bytes": 67088944,
+          "training_byte_sha256": "f778da290a5f671699de6016008f818831c1dddb54f832a77a186de668a470d9",
+          "sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+          "file": "source-models-65536.json",
+          "controls": [
+            "<|pad|>",
+            "<|bos|>",
+            "<|eos|>",
+            "<|system|>",
+            "<|user|>",
+            "<|assistant|>",
+            "<|tool|>",
+            "<|image|>",
+            "<|video|>",
+            "<|media_begin|>",
+            "<|media_end|>",
+            "<|media_content|>",
+            "<|effort_low|>",
+            "<|effort_high|>",
+            "<|effort_max|>",
+            "<think>",
+            "</think>",
+            "<|final|>",
+            "<|tool_call|>",
+            "<|tool_result|>",
+            "<|draft_noise|>"
+          ],
+          "training_seconds": 67.28879499435425,
+          "validation": {
+            "scope": "fixed 500 training review records; tokenizer mechanics only, not quality review",
+            "records": 500,
+            "round_trip_errors": 0,
+            "out_of_range_records": 0,
+            "literal_control_records": 0,
+            "source_counts": {
+              "HuggingFaceFW/fineweb-edu": {
+                "records": 100,
+                "characters": 476619,
+                "tokens": 104645
+              },
+              "opencsg/Fineweb-Edu-Chinese-V2.1": {
+                "records": 100,
+                "characters": 224101,
+                "tokens": 120606
+              },
+              "open-web-math/open-web-math": {
+                "records": 100,
+                "characters": 1072985,
+                "tokens": 283154
+              },
+              "HuggingFaceH4/ultrachat_200k": {
+                "records": 100,
+                "characters": 577680,
+                "tokens": 126002
+              },
+              "codeparrot/codeparrot-clean-train": {
+                "records": 100,
+                "characters": 1124208,
+                "tokens": 274276
+              }
+            }
+          }
+        },
+        "mf1": {
+          "requested_vocab": 32768,
+          "actual_vocab": 32768,
+          "training_bytes": 67088944,
+          "training_byte_sha256": "f778da290a5f671699de6016008f818831c1dddb54f832a77a186de668a470d9",
+          "sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
+          "file": "mf1-32768.json",
+          "controls": [
+            "<|pad|>",
+            "<|bos|>",
+            "<|eos|>",
+            "<|system|>",
+            "<|user|>",
+            "<|assistant|>",
+            "<|tool|>",
+            "<|image|>",
+            "<|video|>",
+            "<|media_begin|>",
+            "<|media_end|>",
+            "<|media_content|>",
+            "<|effort_low|>",
+            "<|effort_high|>",
+            "<|effort_max|>",
+            "<think>",
+            "</think>",
+            "<|final|>",
+            "<|tool_call|>",
+            "<|tool_result|>",
+            "<|video_begin|>",
+            "<|video_end|>",
+            "<|frame|>",
+            "<|time|>"
+          ],
+          "training_seconds": 65.15078115463257,
+          "validation": {
+            "scope": "fixed 500 training review records; tokenizer mechanics only, not quality review",
+            "records": 500,
+            "round_trip_errors": 0,
+            "out_of_range_records": 0,
+            "literal_control_records": 0,
+            "source_counts": {
+              "HuggingFaceFW/fineweb-edu": {
+                "records": 100,
+                "characters": 476619,
+                "tokens": 111448
+              },
+              "opencsg/Fineweb-Edu-Chinese-V2.1": {
+                "records": 100,
+                "characters": 224101,
+                "tokens": 132699
+              },
+              "open-web-math/open-web-math": {
+                "records": 100,
+                "characters": 1072985,
+                "tokens": 299321
+              },
+              "HuggingFaceH4/ultrachat_200k": {
+                "records": 100,
+                "characters": 577680,
+                "tokens": 133408
+              },
+              "codeparrot/codeparrot-clean-train": {
+                "records": 100,
+                "characters": 1124208,
+                "tokens": 286204
+              }
+            }
+          }
+        }
+      },
+      "output": "data/pretraining-tokenizers-v2",
+      "observed_unix": 1789096052.096328,
+      "mapping_frozen": false,
+      "formal_admission": false
+    }
+  },
+  "natural_extension_three_pool_refinement": {
+    "observed_unix": 1789095495.2193246,
+    "status": "three_pool_group_checks_passed_pending_ocr_global_review_and_new_encoding",
+    "scope": "natural, natural-extension, documents-charts only; expanded OCR global review remains pending",
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "initial_cross_split_components": 9,
+    "grouping_policy": "conservative pHash grouping; not a claim that every perceptual link is a semantic duplicate",
+    "views": {
+      "natural": {
+        "state": "media_group_conflicts_resolved_pending_global_ocr_and_encoding",
+        "source_commit": "811ca07dd31aaa432970cf2cc6c8e61b95966d47",
+        "source_archive_sha256": "9384e14f518632c8e418400df31ccce564e0ae504a408385f7782691f4b8d10f",
+        "driver_sha256": "21e45bac492f2e445825796815ae2e20bcd76e1611f19ce45c4f143409c6f2a3",
+        "arguments_sha256": "81782c97cde4be486d469db34467278ff61b4f4a0e39c32b2e7546cdde63919f",
+        "manifest_sha256": "516bb72c0b0924d1c888c08d87506fe19431566a76f7226ab422e6ef2379343b",
+        "source_audit_sha256": "d62f3bacfa3e9c8f743bca936cb881ed3c138ec60c547ee7d547a1a4579b60aa",
+        "identity_export_sha256": "0319bbcc779c48c79a1aac5f3e12271abdb0e65e45304ad9611dfef360c6a069",
+        "identity_export_bytes": 9613748,
+        "view_output_bytes": 774446,
+        "splits": {
+          "test": 400,
+          "train": 42907,
+          "val": 205
+        },
+        "split_independent_images": {
+          "train": 22921,
+          "test": 211,
+          "val": 111
+        },
+        "split_answer_reference_tokens": {
+          "train": {
+            "vqa": 2479812,
+            "caption": 4365965
+          },
+          "test": {
+            "vqa": 23306,
+            "caption": 41290
+          },
+          "val": {
+            "caption": 21101,
+            "vqa": 11301
+          }
+        },
+        "newly_excluded_training_records": 17,
+        "promoted_validation_records": 0,
+        "prior_holdout_membership_sha256": "85d7d2705092eca2927e65678886fbab518893c0076df5c0ff575524442ceecc",
+        "holdout_membership_sha256": "85d7d2705092eca2927e65678886fbab518893c0076df5c0ff575524442ceecc",
+        "completed_unix": 1789093823.2539744,
+        "output": "data/pretraining-natural-partition-v3",
+        "excluded_training_groups": 7,
+        "validation_groups_promoted_to_test": 0,
+        "encoded_consumers_need_refresh": true
+      },
+      "documents-charts": {
+        "state": "media_group_conflicts_resolved_pending_global_ocr_and_encoding",
+        "source_commit": "811ca07dd31aaa432970cf2cc6c8e61b95966d47",
+        "source_archive_sha256": "9384e14f518632c8e418400df31ccce564e0ae504a408385f7782691f4b8d10f",
+        "driver_sha256": "21e45bac492f2e445825796815ae2e20bcd76e1611f19ce45c4f143409c6f2a3",
+        "arguments_sha256": "9abd2c915b6b366b63fd9cc7bdb6db78eb232d832ab9c0c764035d6f9976286c",
+        "manifest_sha256": "7e18603ea9ad061604c7fbea024e77dc16c35ede846c2a1c544607020763e4a5",
+        "source_audit_sha256": "671d24dec6bdba74f661d4615167743b1f14a9569441dd29a23055257bc2829d",
+        "identity_export_sha256": "3dab2d149f03682358db3a1fa27dd478584b998a7ec24b6bc7a33f0f0a7ea116",
+        "identity_export_bytes": 16016879,
+        "view_output_bytes": 629789,
+        "splits": {
+          "test": 1336,
+          "train": 153544,
+          "val": 4219
+        },
+        "split_independent_images": {
+          "train": 38586,
+          "test": 344,
+          "val": 1052
+        },
+        "split_answer_reference_tokens": {
+          "train": {
+            "chart_table": 4793112,
+            "ocr_document": 1227971
+          },
+          "test": {
+            "chart_table": 39652,
+            "ocr_document": 11062
+          },
+          "val": {
+            "chart_table": 130986,
+            "ocr_document": 33805
+          }
+        },
+        "newly_excluded_training_records": 92,
+        "promoted_validation_records": 59,
+        "prior_holdout_membership_sha256": "e7fe3dbc5e1e69a2763e038d4b7aaf7ca0eb8a30bb90057c59934d7db46a88c1",
+        "holdout_membership_sha256": "9eb4f3d9745f53bf2e57de2c50d22aaf1a869708f847f0ab24db095c7b9cbbba",
+        "completed_unix": 1789093878.0865004,
+        "output": "data/pretraining-doc-chart-partition-v3",
+        "excluded_training_groups": 8,
+        "validation_groups_promoted_to_test": 1,
+        "encoded_consumers_need_refresh": true
+      },
+      "natural-extension": {
+        "state": "media_group_conflicts_resolved_pending_global_ocr_and_encoding",
+        "source_commit": "811ca07dd31aaa432970cf2cc6c8e61b95966d47",
+        "source_archive_sha256": "9384e14f518632c8e418400df31ccce564e0ae504a408385f7782691f4b8d10f",
+        "driver_sha256": "21e45bac492f2e445825796815ae2e20bcd76e1611f19ce45c4f143409c6f2a3",
+        "arguments_sha256": "58e7ee17cacbfd8deacdeb134229f0f6dba64e20c19812314ebc3d2ad7ea90cc",
+        "manifest_sha256": "9036d167bfd0cad61b9ef0c9971b1a4bbcd65f5f34b99edf25a8d3b032a27a8e",
+        "source_audit_sha256": "dc406a0ef61233ead21582de2d0dbd7783e1b731ea65c93837c0a75b06f94e71",
+        "identity_export_sha256": "456e5d35e4fbb70e8bbb8775d9d94fb7e4de83c16292bdd83e904044d66b4104",
+        "identity_export_bytes": 15175937,
+        "view_output_bytes": 888579,
+        "splits": {
+          "test": 747,
+          "train": 67754,
+          "val": 305
+        },
+        "split_independent_images": {
+          "train": 36151,
+          "val": 168,
+          "test": 395
+        },
+        "split_answer_reference_tokens": {
+          "train": {
+            "caption": 6864529,
+            "vqa": 3922252
+          },
+          "val": {
+            "caption": 31301,
+            "vqa": 17536
+          },
+          "test": {
+            "caption": 74659,
+            "vqa": 42610
+          }
+        },
+        "newly_excluded_training_records": 50,
+        "promoted_validation_records": 0,
+        "prior_holdout_membership_sha256": "803efa38fd63e230eb2be9c4018249cbd1f37bff889fb68dc4ad84108ef39496",
+        "holdout_membership_sha256": "803efa38fd63e230eb2be9c4018249cbd1f37bff889fb68dc4ad84108ef39496",
+        "completed_unix": 1789093871.1964967,
+        "output": "data/pretraining-natural-extension-partition-v2",
+        "excluded_training_groups": 16,
+        "validation_groups_promoted_to_test": 0,
+        "encoded_consumers_need_refresh": true
+      }
+    },
+    "closure": {
+      "state": "mechanical_group_checks_passed",
+      "source_commit": "811ca07dd31aaa432970cf2cc6c8e61b95966d47",
+      "source_archive_sha256": "9384e14f518632c8e418400df31ccce564e0ae504a408385f7782691f4b8d10f",
+      "driver_sha256": "688b91c98e2ac547a1eed015dfcc89c5e50a78a6bcc32b051cf2ca5f94fc51c2",
+      "arguments_sha256": "82ccde49411d01dde4dc2f445ccf5221bcc058e716f1b3a892c2375a280c6288",
+      "parent_group_audit_sha256": "fe0f4ea14244775585d229ec35af0cac48f5596ecd753a4b0389e3ae413d91cb",
+      "group_audit_sha256": "67b9197cb9930c81d5d77586f27e44015147bf1afeb98772b8efa9b5e1ffa2df",
+      "result": {
+        "input_images": 99939,
+        "unique_rgb_images": 99939,
+        "input_groups": 93322,
+        "connected_groups": 92975,
+        "link_counts": {
+          "phash_hamming_le_6": 358
+        },
+        "cross_inventory_link_counts": {
+          "phash_hamming_le_6": 358
+        }
+      },
+      "split_conflict_components": 0,
+      "unresolved_rendered_visual_candidates": 0,
+      "completed_unix": 1789094132.7320209
+    },
+    "totals": {
+      "excluded_training_qa": 159,
+      "excluded_training_groups": 31,
+      "excluded_rgb_images": 51,
+      "validation_qa_promoted_to_test": 59,
+      "retained_rgb_images": 99939
+    },
+    "validation": {
+      "source_commit": "811ca07dd31aaa432970cf2cc6c8e61b95966d47",
+      "full_cpu_passed": 522,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "seconds": 154.65,
+      "log_sha256": "3817ccd226d75450e73648f67db94cd341ee9e9c9751b531d9f7c9ff9485376c"
     }
   }
 }
