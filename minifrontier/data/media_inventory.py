@@ -1,7 +1,9 @@
 """Small immutable media-identity exports for grouping corpora held on different hosts."""
 
 import contextlib
+import hashlib
 import json
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
@@ -12,6 +14,51 @@ from minifrontier.data.partitions import corpus_storage_root, open_corpus
 from minifrontier.storage import GIB, reserve_write
 
 FORMAT = "media-group-identities-v1"
+TEXT_FORMAT = "media-group-identities-v2"
+OCR_SOURCE = "MiniFrontier/source-grounded-ocr"
+
+
+def _rendered_signature(row):
+    from minifrontier.data.corpus import text_shingles
+
+    if row.get("source") != OCR_SOURCE:
+        return None
+    if not row.get("rendering") or not row.get("text_origin") or not row.get("visual_answer"):
+        raise ValueError("rendered OCR requires its printed text and source provenance")
+    text = row["visual_answer"]
+    return dict(
+        sha256=hashlib.sha256(re.sub(r"\s+", "", text).encode()).hexdigest(),
+        shingles=sorted(
+            hashlib.blake2b(s.encode(), digest_size=8).hexdigest() for s in text_shingles(text)
+        ),
+    )
+
+
+def _text_neighbors(signatures, *, max_comparisons):
+    """Exact >=0.85 Jaccard join of hashed 5-gram sets using shared prefix candidates.
+
+    A common global token order and n-ceil(0.85*n)+1 prefixes preserve recall
+    at this threshold, independently of the font, layout or image pHash.
+    """
+    frequency = Counter(token for values in signatures.values() for token in values)
+    index: dict[Any, set[Any]] = defaultdict(set)
+    comparisons = 0
+    for key, values in signatures.items():
+        ordered = sorted(values, key=lambda token: (frequency[token], token))
+        prefix = ordered[: len(values) - (85 * len(values) + 99) // 100 + 1]
+        candidates = set().union(*(index[token] for token in prefix))
+        for other in sorted(candidates):
+            previous = signatures[other]
+            if 100 * min(len(values), len(previous)) < 85 * max(len(values), len(previous)):
+                continue
+            comparisons += 1
+            if comparisons > max_comparisons:
+                raise ValueError("rendered-text candidate comparison budget exceeded")
+            intersection = len(values & previous)
+            if 100 * intersection >= 85 * (len(values) + len(previous) - intersection):
+                yield key, other
+        for token in prefix:
+            index[token].add(key)
 
 
 def _write_new(path, record, max_bytes):
@@ -35,7 +82,7 @@ def export_media_identities(corpus, output, *, max_images=100_000, max_bytes=64 
         raise ValueError("choose a new output and positive identity inventory bounds")
     manifest = json.loads((corpus / "corpus-manifest.json").read_text())
     groups: dict[str, Any] = {}
-    images: dict[str, dict[str, str]] = {}
+    images: dict[str, dict[str, Any]] = {}
     with contextlib.closing(open_corpus(corpus)) as db:
         storage = corpus_storage_root(db)
         if sha256(storage / "corpus.sqlite") != manifest["database_sha256"]:
@@ -59,7 +106,10 @@ def export_media_identities(corpus, output, *, max_images=100_000, max_bytes=64 
                 ):
                     raise ValueError("this inventory requires still images with the declared pHash")
                 identity = media["rgb_sha256"]
-                value = dict(group=group, phash=media["phash"])
+                value: dict[str, Any] = dict(group=group, phash=media["phash"])
+                signature = _rendered_signature(row)
+                if signature is not None:
+                    value["rendered_text"] = signature
                 if identity in images and images[identity] != value:
                     raise ValueError("one RGB identity has inconsistent source groups or hashes")
                 images[identity] = value
@@ -75,7 +125,7 @@ def export_media_identities(corpus, output, *, max_images=100_000, max_bytes=64 
             if group in groups:
                 groups[group]["origin_keys"].append(key)
     record = dict(
-        format=FORMAT,
+        format=TEXT_FORMAT,
         corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
         database_sha256=manifest["database_sha256"],
         processor_sha256=sha256(__file__),
@@ -94,18 +144,30 @@ def export_media_identities(corpus, output, *, max_images=100_000, max_bytes=64 
     return record
 
 
-def audit_media_identities(inventories, output, *, max_edges=100_000, max_bytes=64 * 1024**2):
-    """Group exact pixels, origin aliases and <=6-bit pHash neighbors across shards."""
-    if len(inventories) < 2 or max_edges < 1 or Path(output).exists():
+def audit_media_identities(
+    inventories,
+    output,
+    *,
+    max_edges=100_000,
+    max_bytes=64 * 1024**2,
+    max_text_comparisons=5_000_000,
+):
+    """Group source/pixel identities, natural pHash and known printed OCR content.
+
+    OCR-to-external pHash matches remain explicit unresolved candidates: a
+    similar page layout alone cannot establish matching printed content.
+    """
+    if len(inventories) < 2 or min(max_edges, max_text_comparisons) < 1 or Path(output).exists():
         raise ValueError("choose at least two inventories, a positive edge cap and a new output")
     data, bindings, nodes = {}, {}, {}
+    ocr_nodes = set()
     for name, path in inventories.items():
         path = Path(path)
         if not isinstance(name, str) or not name or path.stat().st_size > max_bytes:
             raise ValueError("invalid media inventory label or byte bound")
         item = json.loads(path.read_text())
         if (
-            item["format"] != FORMAT
+            item["format"] not in {FORMAT, TEXT_FORMAT}
             or item["image_count"] != len(item["images"])
             or item["group_count"] != len(item["groups"])
         ):
@@ -114,6 +176,12 @@ def audit_media_identities(inventories, output, *, max_edges=100_000, max_bytes=
             if record["split"] not in {"train", "val", "test"}:
                 raise ValueError("media inventory has an unknown split")
             nodes[(name, group)] = record
+            if any(
+                key.startswith("source-group:" + OCR_SOURCE + ":") for key in record["origin_keys"]
+            ):
+                if item["format"] == FORMAT:
+                    raise ValueError("rendered OCR needs a text-aware identity export")
+                ocr_nodes.add((name, group))
         data[name] = item
         bindings[name] = dict(
             sha256=sha256(path),
@@ -141,7 +209,10 @@ def audit_media_identities(inventories, output, *, max_edges=100_000, max_bytes=
 
     origins: dict[str, tuple[str, str]] = {}
     pixels: dict[str, tuple[str, str]] = {}
-    bands: dict[tuple[int, int], set[tuple[int, tuple[str, str]]]] = defaultdict(set)
+    bands: dict[tuple[int, int], set[tuple[int, tuple[str, str], str]]] = defaultdict(set)
+    rendered = {}
+    image_nodes = {}
+    unresolved = []
     for name, item in data.items():
         for group, record in item["groups"].items():
             node = (name, group)
@@ -160,15 +231,67 @@ def audit_media_identities(inventories, output, *, max_edges=100_000, max_bytes=
             ):
                 raise ValueError("media inventory has an invalid pHash")
             connect(node, pixels.setdefault(identity, node), "exact_rgb")
+            image_key = (name, identity)
+            image_nodes[image_key] = node
+            signature = image.get("rendered_text")
+            if node in ocr_nodes and signature is None:
+                raise ValueError("rendered OCR identity export lacks its text signature")
+            if signature is not None:
+                if (
+                    item["format"] != TEXT_FORMAT
+                    or not isinstance(signature, dict)
+                    or not isinstance(signature.get("shingles"), list)
+                    or not signature["shingles"]
+                    or len(signature["shingles"]) != len(set(signature["shingles"]))
+                    or any(
+                        not isinstance(s, str) or re.fullmatch("[0-9a-f]{16}", s) is None
+                        for s in signature["shingles"]
+                    )
+                    or not isinstance(signature.get("sha256"), str)
+                    or re.fullmatch("[0-9a-f]{64}", signature["sha256"]) is None
+                ):
+                    raise ValueError("invalid rendered-text signature")
+                rendered[image_key] = set(signature["shingles"])
+                continue
             code = int(image["phash"], 16)
             candidates = set()
             for band, (offset, width) in enumerate(PHASH_BANDS):
                 candidates.update(bands[(band, (code >> offset) & ((1 << width) - 1))])
-            for other_code, other in candidates:
+            for other_code, other, _rgb in candidates:
                 if (code ^ other_code).bit_count() <= 6:
                     connect(node, other, "phash_hamming_le_6")
             for band, (offset, width) in enumerate(PHASH_BANDS):
-                bands[(band, (code >> offset) & ((1 << width) - 1))].add((code, node))
+                bands[(band, (code >> offset) & ((1 << width) - 1))].add((code, node, identity))
+    for left, right in _text_neighbors(rendered, max_comparisons=max_text_comparisons):
+        connect(image_nodes[left], image_nodes[right], "rendered_text_jaccard_ge_0.85")
+    for name, identity in rendered:
+        node = image_nodes[(name, identity)]
+        code = int(data[name]["images"][identity]["phash"], 16)
+        candidates = set()
+        for band, (offset, width) in enumerate(PHASH_BANDS):
+            candidates.update(bands[(band, (code >> offset) & ((1 << width) - 1))])
+        for other_code, other, rgb in sorted(candidates):
+            distance = (code ^ other_code).bit_count()
+            if distance <= 6 and rgb != identity and node != other:
+                unresolved.append(
+                    dict(
+                        rendered=dict(
+                            inventory=name,
+                            group=node[1],
+                            rgb_sha256=identity,
+                            split=nodes[node]["split"],
+                        ),
+                        external=dict(
+                            inventory=other[0],
+                            group=other[1],
+                            rgb_sha256=rgb,
+                            split=nodes[other]["split"],
+                        ),
+                        phash_distance=distance,
+                    )
+                )
+                if len(unresolved) + len(edges) > max_edges:
+                    raise ValueError("media candidate/edge budget exceeded; no pass published")
     components = defaultdict(list)
     for node in nodes:
         components[find(node)].append(node)
@@ -211,7 +334,13 @@ def audit_media_identities(inventories, output, *, max_edges=100_000, max_bytes=
         split_conflicts=conflicts,
         status="split_conflicts_require_partition_update"
         if conflicts
+        else "rendered_visual_candidates_require_verification"
+        if unresolved
         else "mechanical_group_checks_passed",
+        rendered_text_policy="known complete OCR targets; casefolded normalized 5-character shingle Jaccard >=0.85; pHash does not join rendered text layouts",
+        rendered_images=len(rendered),
+        unresolved_rendered_visual_candidates=unresolved,
+        max_text_comparisons=max_text_comparisons,
         formal_admission=False,
         partition_changes_applied=False,
         benchmark_exclusion_performed=False,

@@ -122,6 +122,13 @@ def test_source_partition_and_pixels_survive_generation_and_actual_mf1_encoding(
     assert audit["status"] == "candidate_slice_complete_pending_admission"
     assert not audit["formal_admission"] and not audit["main_budget_eligible"]
     assert audit["split_origin_mismatches"] == 0 and audit["independent_text_supply_added"] == 0
+    from minifrontier.data.media_inventory import TEXT_FORMAT, export_media_identities
+
+    exported = export_media_identities(out, tmp_path / "ocr-identities.json")
+    assert exported["format"] == TEXT_FORMAT
+    assert exported["image_count"] == audit["counts"]["accepted"]
+    assert all(image["rendered_text"]["shingles"] for image in exported["images"].values())
+    assert "visual_answer" not in (tmp_path / "ocr-identities.json").read_text()
     renderer = Renderer(fonts)
     seen = set()
     with (

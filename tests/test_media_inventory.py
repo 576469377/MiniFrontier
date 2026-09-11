@@ -10,6 +10,8 @@ from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder
 from minifrontier.data.media_inventory import (
     FORMAT,
+    TEXT_FORMAT,
+    _text_neighbors,
     audit_media_identities,
     export_media_identities,
 )
@@ -110,6 +112,91 @@ def test_exact_pixels_are_grouped_and_edge_budget_cannot_publish_a_pass(tmp_path
     with pytest.raises(ValueError, match="edge bound"):
         audit_media_identities(inventories, tmp_path / "too-small.json", max_edges=1)
     assert not (tmp_path / "too-small.json").exists()
+
+
+def test_rendered_text_groups_across_fonts_without_joining_unrelated_page_layouts(tmp_path):
+    def rendered(path, group, split, rgb, phash, text, origin=""):
+        from minifrontier.data.media_inventory import _rendered_signature
+
+        value = dict(group=group, phash=phash)
+        if text is not None:
+            value["rendered_text"] = _rendered_signature(
+                dict(
+                    source="MiniFrontier/source-grounded-ocr",
+                    visual_answer=text,
+                    rendering={"font": "fixture"},
+                    text_origin={"sample_id": "source"},
+                )
+            )
+        p = inventory(path, {group: node(split, origin) if origin else node(split)}, {rgb: value})
+        data = json.loads(p.read_text())
+        data["format"] = TEXT_FORMAT
+        p.write_text(json.dumps(data))
+        return p
+
+    text = "The expedition carefully recorded every observation before returning to the coastal research station."
+    inputs = {
+        "train": rendered(tmp_path / "train.json", "a", "train", "a" * 64, "0" * 16, text),
+        # A font/layout change alters pHash dramatically, but must preserve the text holdout.
+        "held": rendered(tmp_path / "held.json", "b", "test", "b" * 64, "f" * 16, text),
+        # An identical low-frequency layout must not join unrelated printed content.
+        "unrelated": rendered(
+            tmp_path / "other.json",
+            "c",
+            "val",
+            "c" * 64,
+            "0" * 16,
+            "地下水的变化需要结合当地岩层结构进行分析，观测仪器每天记录水位和温度，随后整理全部结果。",  # noqa: RUF001
+        ),
+    }
+    result = audit_media_identities(inputs, tmp_path / "text.json")
+    assert result["connected_groups"] == 2
+    assert result["link_counts"] == {"rendered_text_jaccard_ge_0.85": 1}
+    assert {m["inventory"] for m in result["split_conflicts"][0]["members"]} == {"train", "held"}
+    assert not result["unresolved_rendered_visual_candidates"]
+
+    # A natural/document image lacks exact printed-text ground truth. Keep its
+    # pHash candidate explicit, and never publish a pass merely by ignoring it.
+    external = rendered(tmp_path / "external.json", "d", "val", "d" * 64, "0" * 16, None)
+    result = audit_media_identities(
+        {"ocr": inputs["train"], "external": external}, tmp_path / "external-audit.json"
+    )
+    assert result["status"] == "rendered_visual_candidates_require_verification"
+    assert len(result["unresolved_rendered_visual_candidates"]) == 1
+    assert result["connected_groups"] == 2
+
+    # Old exports of known rendered OCR must be regenerated, not silently treated
+    # as natural images because they lack the new text signatures.
+    old = inventory(
+        tmp_path / "old.json",
+        {"e": node("train", "source-group:MiniFrontier/source-grounded-ocr:parent")},
+        {"e" * 64: dict(group="e", phash="0" * 16)},
+    )
+    with pytest.raises(ValueError, match="text-aware"):
+        audit_media_identities({"old": old, "external": external}, tmp_path / "old-audit.json")
+
+
+def test_text_prefix_join_matches_brute_force_including_threshold_and_budget():
+    import random
+
+    rng = random.Random(712)
+    signatures = {}
+    for i in range(50):
+        base = set(rng.sample(range(200), rng.randint(10, 60)))
+        signatures[2 * i] = base
+        signatures[2 * i + 1] = (base - set(sorted(base)[: rng.randint(0, 4)])) | {200 + i}
+    expected = {
+        (i, j)
+        for i, a in signatures.items()
+        for j, b in signatures.items()
+        if i > j and 100 * len(a & b) >= 85 * len(a | b)
+    }
+    assert set(_text_neighbors(signatures, max_comparisons=10000)) == expected
+    boundary = {0: set(range(20)), 1: set(range(17)), 2: set(range(16))}
+    assert (1, 0) in set(_text_neighbors(boundary, max_comparisons=100))
+    assert (2, 0) not in set(_text_neighbors(boundary, max_comparisons=100))
+    with pytest.raises(ValueError, match="comparison budget"):
+        list(_text_neighbors({i: set(range(20)) for i in range(5)}, max_comparisons=1))
 
 
 def test_identity_export_retains_rejected_origin_aliases_and_actual_holdouts(tmp_path):
