@@ -11,11 +11,13 @@ from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokeniz
 from minifrontier.data.encoding_audit import audit_image_encoding
 from minifrontier.data.encoding_filters import filter_media_encoding
 from minifrontier.data.media_hash import decoded_hashes
+from minifrontier.data.media_inventory import audit_media_identities, export_media_identities
 from minifrontier.data.media_tasks import REVISION, SOURCE, allava_task
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS
 from minifrontier.data.minifrontier1_encoding import encode_canonical_images
 from minifrontier.data.native import audit_native_encoding, encode_native
 from minifrontier.data.partitions import (
+    HOLDOUT_FORMAT,
     TASK_FORMAT,
     create_media_exclusion_view,
     create_partition_view,
@@ -265,3 +267,56 @@ def test_task_repacking_preserves_all_supervision_and_passes_independent_audit(
     assert independent["status"] == proof["status"] and not independent.get("errors")
     with pytest.raises(ValueError, match="declared refinement"):
         filter_media_encoding(view, parent, tmp_path / "wrong-operation", config=asdict(config))
+
+
+@pytest.mark.parametrize("classify_first", [False, True])
+def test_external_test_duplicate_promotes_validation_and_preserves_task_policy(
+    corpus, tmp_path, classify_first
+):
+    root, rows, groups = corpus
+    selected = next(row for row in rows if row["item_id"] == "4")
+    remote = tmp_path / "remote"
+    builder = CorpusBuilder(remote)
+    assert builder.add(dict(selected, group_id="remote-test", item_id="remote-test"))
+    builder.finalize(split_locks={"source-group:" + SOURCE + ":remote-test": "test"})
+    builder.db.close()
+    source = root
+    if classify_first:
+        source = tmp_path / "classified"
+        create_task_classification_view(root, source)
+    left, right = tmp_path / "left.json", tmp_path / "right.json"
+    export_media_identities(source, left)
+    export_media_identities(remote, right)
+    report = tmp_path / "grouping.json"
+    result = audit_media_identities({"local": left, "remote": right}, report)
+    assert len(result["split_conflicts"]) == 1
+    view = tmp_path / "resolved"
+    output = create_media_exclusion_view(
+        source, report, "local", view, resolve_validation_conflicts=True
+    )
+    assert output["format"] == HOLDOUT_FORMAT and output["promoted_validation_records"] == 1
+    assert output["splits"] == {"train": 4, "test": 2}
+    if not classify_first:
+        classified = tmp_path / "classified-after"
+        create_task_classification_view(view, classified)
+        view = classified
+    with closing(open_corpus(view)) as db:
+        assert db.execute(
+            "SELECT split FROM samples WHERE group_root=?", (groups["4"],)
+        ).fetchone() == ("test",)
+        assert db.execute(
+            "SELECT split FROM samples WHERE group_root=?", (groups["5"],)
+        ).fetchone() == ("test",)
+        assert all(
+            task == allava_task(question)
+            for task, question in db.execute(
+                "SELECT task,json_extract(payload,'$.visual_question') FROM samples"
+            )
+        )
+    # Unreviewed rendered-image candidates cannot authorize held-out promotions.
+    result["unresolved_rendered_visual_candidates"] = [dict(pending="review")]
+    report.write_text(json.dumps(result))
+    with pytest.raises(ValueError, match="complete grouping"):
+        create_media_exclusion_view(
+            source, report, "local", tmp_path / "unreviewed", resolve_validation_conflicts=True
+        )

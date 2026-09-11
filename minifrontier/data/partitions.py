@@ -277,9 +277,13 @@ def create_partition_view(corpus_root, reservation, output):
     return result
 
 
-def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
-    """Quarantine train groups linked to holds; preserve original val/test and raw data."""
-    return _create_group_exclusion_view(corpus_root, group_audit, inventory, output, "media")
+def create_media_exclusion_view(
+    corpus_root, group_audit, inventory, output, *, resolve_validation_conflicts=False
+):
+    """Exclude train conflicts; optionally apply test precedence from closed media grouping."""
+    return _create_group_exclusion_view(
+        corpus_root, group_audit, inventory, output, "media", resolve_validation_conflicts
+    )
 
 
 def create_text_exclusion_view(
@@ -307,13 +311,16 @@ def _create_group_exclusion_view(
     manifest = json.loads((source / "corpus-manifest.json").read_text())
     audit = json.loads((source / "source-audit.json").read_text())
     binding = report["inputs"][inventory]
+    complete_grouping = (
+        report.get("full_shared_text_cross_split_audit_complete") is True
+        if kind == "text"
+        else report.get("status") == "split_conflicts_require_partition_update"
+        and report.get("unresolved_rendered_visual_candidates") == []
+    )
     if type(resolve_validation_conflicts) is not bool or (
-        resolve_validation_conflicts
-        and (
-            kind != "text" or report.get("full_shared_text_cross_split_audit_complete") is not True
-        )
+        resolve_validation_conflicts and not complete_grouping
     ):
-        raise ValueError("validation conflicts require an explicit, complete text audit")
+        raise ValueError("validation conflicts require an explicit, complete grouping audit")
     if (
         report["kind"] != f"cross_corpus_{kind}_group_audit"
         or binding["corpus_manifest_sha256"] != sha256(source / "corpus-manifest.json")
@@ -341,7 +348,19 @@ def _create_group_exclusion_view(
                     for m in component["members"]
                     if m["inventory"] == inventory and m["split"] == "test"
                 }
-                if not anchors:
+                external_anchors = [
+                    m
+                    for m in component["members"]
+                    if m["inventory"] != inventory and m["split"] == "test"
+                ]
+                for anchor in external_anchors:
+                    evidence = report["inputs"].get(anchor["inventory"], {})
+                    if kind != "media" or any(
+                        not evidence.get(key)
+                        for key in ("sha256", "corpus_manifest_sha256", "database_sha256")
+                    ):
+                        raise ValueError("external test anchor lacks bound media identity evidence")
+                if not anchors and not external_anchors:
                     raise ValueError("validation promotion has no test member in its component")
                 test_anchors.update(anchors)
                 promotions[member["group"]] = member["records"]
@@ -476,7 +495,7 @@ def _create_group_exclusion_view(
         root / "source-audit.json",
         dict(
             audit,
-            operation="resolve_text_split_conflicts"
+            operation=f"resolve_{kind}_split_conflicts"
             if promotions
             else "exclude_cross_pool_train_groups",
             corpus=result,
