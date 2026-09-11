@@ -442,6 +442,21 @@ def test_review_closure_requires_complete_bound_decisions_without_claiming_human
     parent.write_text(json.dumps(changed))
     with pytest.raises(ValueError, match="split conflicts"):
         close_media_candidate_review(parent, [review], tmp_path / "still-conflicting.json")
+    # Visual decisions can be recorded while a separate partition repair is pending.
+    # This must preserve the conflicts and must not publish a grouping pass.
+    changed["status"] = "split_conflicts_require_partition_update"
+    parent.write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match="bound"):
+        close_media_candidate_review(parent, [review], tmp_path / "stale-review.json")
+    valid["group_audit_sha256"] = sha256(parent)
+    review.write_text(json.dumps(valid))
+    pending = close_media_candidate_review(parent, [review], tmp_path / "visual-reviewed.json")
+    assert pending["status"] == "split_conflicts_require_partition_update"
+    assert pending["split_conflicts"] == changed["split_conflicts"]
+    assert pending["unresolved_rendered_visual_candidates"] == []
+    assert pending["reviewed_visual_candidates"] == 1
+    assert not pending["formal_admission"] and not pending["human_source_quality_review_completed"]
+    assert json.loads(parent.read_text()) == changed
 
 
 def test_deferred_ocr_layout_hash_preserves_source_holds_and_reports_pending_near_audit(tmp_path):

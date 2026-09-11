@@ -483,19 +483,27 @@ def close_media_candidate_review(audit_path, reviews, output, *, max_bytes=64 * 
     """Close a fixed candidate list only with complete, bound nonduplicate decisions.
 
     This records an explicit model-assisted visual review, never human source
-    quality or formal admission. Confirmed duplicates need a partition update.
+    quality or formal admission. Split conflicts remain pending in the output;
+    reviewing visual candidates must not clear them. Confirmed duplicates need
+    a partition update.
     """
     audit_path, output = Path(audit_path), Path(output)
     if output.exists() or not reviews or max_bytes < 1 or audit_path.stat().st_size > max_bytes:
         raise ValueError("choose review records, a new output and a positive byte bound")
     parent_hash = sha256(audit_path)
     audit = json.loads(audit_path.read_text())
+    conflicts = audit.get("split_conflicts")
+    expected_status = (
+        "split_conflicts_require_partition_update"
+        if conflicts
+        else "rendered_visual_candidates_require_verification"
+    )
     if (
         audit.get("kind") != "cross_corpus_media_group_audit"
-        or audit.get("split_conflicts") != []
-        or audit.get("status") != "rendered_visual_candidates_require_verification"
+        or not isinstance(conflicts, list)
+        or audit.get("status") != expected_status
     ):
-        raise ValueError("candidate review cannot clear unresolved connected split conflicts")
+        raise ValueError("candidate review requires a consistent status for split conflicts")
     candidates = audit["unresolved_rendered_visual_candidates"]
     if not candidates:
         raise ValueError("candidate review has no fixed candidates")
@@ -542,7 +550,9 @@ def close_media_candidate_review(audit_path, reviews, output, *, max_bytes=64 * 
         raise ValueError("visual candidate review is incomplete")
     result = dict(
         audit,
-        status="mechanical_group_checks_passed_with_model_assisted_review",
+        status="split_conflicts_require_partition_update"
+        if conflicts
+        else "mechanical_group_checks_passed_with_model_assisted_review",
         parent_group_audit_sha256=parent_hash,
         visual_candidate_reviews=references,
         reviewed_visual_candidates=len(checked),
