@@ -21,6 +21,7 @@ from minifrontier.data.partitions import (
     TASK_FORMAT,
     create_media_exclusion_view,
     create_partition_view,
+    create_quality_exclusion_view,
     create_task_classification_view,
     open_corpus,
 )
@@ -182,7 +183,7 @@ def test_task_view_keeps_contents_partitions_and_subsequent_group_exclusions(cor
 def test_task_repacking_preserves_all_supervision_and_passes_independent_audit(
     corpus, tmp_path, monkeypatch, family
 ):
-    root, _, _ = corpus
+    root, _, groups = corpus
     tokenizer = tmp_path / "tokenizer.json"
     if family == "mf1":
         train_tokenizer(root, tokenizer, 400, special_tokens=SPECIAL_TOKENS)
@@ -267,6 +268,43 @@ def test_task_repacking_preserves_all_supervision_and_passes_independent_audit(
     assert independent["status"] == proof["status"] and not independent.get("errors")
     with pytest.raises(ValueError, match="declared refinement"):
         filter_media_encoding(view, parent, tmp_path / "wrong-operation", config=asdict(config))
+
+    # Excluding a group after task correction must compare against its effective
+    # caption/VQA metadata, while the original database retains the old task.
+    review = tmp_path / "quality-review.json"
+    review.write_text(
+        json.dumps(
+            dict(
+                kind="source_quality_exclusion_review",
+                corpus_kind="media",
+                status="targeted_defects_confirmed",
+                review_method="model_assisted",
+                inputs=dict(
+                    fixture=dict(
+                        corpus_manifest_sha256=sha256(view / "corpus-manifest.json"),
+                        source_audit_sha256=sha256(view / "source-audit.json"),
+                        database_sha256=sha256(root / "corpus.sqlite"),
+                    )
+                ),
+                excluded_training_groups=[
+                    dict(group=groups["0"], records=1, reason="Confirmed ungrounded answer")
+                ],
+            )
+        )
+    )
+    excluded = tmp_path / "excluded-view"
+    create_quality_exclusion_view(view, review, "fixture", excluded)
+    filtered = tmp_path / "excluded-encoding"
+    final = filter_media_encoding(excluded, output, filtered, config=asdict(config))
+    derivation = json.loads((filtered / "encoding-audit.json").read_text())
+    assert derivation["quality_review_sha256"] == sha256(review)
+    assert derivation["sealed_holdout_payloads_unchanged"]
+    if family == "mf1":
+        assert final["splits"]["train"]["counts"]["records"] == 3
+        audit_image_encoding(excluded, filtered, tmp_path / "excluded-audit.json", asdict(config))
+    else:
+        assert final["stages"]["pretrain"]["train"]["media"]["examples"] == 3
+        audit_native_encoding(excluded, filtered, tmp_path / "excluded-audit.json")
 
 
 @pytest.mark.parametrize("classify_first", [False, True])

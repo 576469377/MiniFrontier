@@ -21,7 +21,11 @@ from minifrontier.data.encoding_filters import filter_media_encoding
 from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.data.native import audit_native_encoding, encode_native
 from minifrontier.data.native_components import assemble_native_components
-from minifrontier.data.partitions import create_media_exclusion_view, create_partition_view
+from minifrontier.data.partitions import (
+    create_media_exclusion_view,
+    create_partition_view,
+    create_quality_exclusion_view,
+)
 from minifrontier.models.minikimik3 import MiniKimiK3ForCausalLM
 from minifrontier.models.minikimik3.vision import KimiVisionConfig
 from minifrontier.models.miniqwen4 import MiniQwen4ForCausalLM
@@ -297,8 +301,9 @@ def test_native_full_audit_rejects_rehashed_partial_text_supervision(inputs, tmp
 
 @pytest.mark.parametrize("family", ["minikimik3", "miniqwen4"])
 @pytest.mark.parametrize("overflow", [False, True])
+@pytest.mark.parametrize("quality", [False, True])
 def test_native_exclusions_preserve_kept_bytes_shared_text_and_overflow_accounting(
-    inputs, tmp_path, family, overflow, monkeypatch
+    inputs, tmp_path, family, overflow, quality, monkeypatch
 ):
     monkeypatch.setattr(shutil, "disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3))
     root, tokenizer, rows, shared = inputs
@@ -353,7 +358,23 @@ def test_native_exclusions_preserve_kept_bytes_shared_text_and_overflow_accounti
         )
     )
     view = tmp_path / "view"
-    create_media_exclusion_view(root, grouping, "fixture", view)
+    if quality:
+        evidence = json.loads(grouping.read_text())
+        evidence.update(
+            kind="source_quality_exclusion_review",
+            corpus_kind="media",
+            status="targeted_defects_confirmed",
+            review_method="model_assisted",
+            excluded_training_groups=[
+                dict(group=rejected[2], records=1, reason="Answer is not grounded in the image")
+            ],
+        )
+        evidence["inputs"]["fixture"]["source_audit_sha256"] = sha256(root / "source-audit.json")
+        quality_review = tmp_path / "quality-review.json"
+        quality_review.write_text(json.dumps(evidence))
+        create_quality_exclusion_view(root, quality_review, "fixture", view)
+    else:
+        create_media_exclusion_view(root, grouping, "fixture", view)
     output = tmp_path / "filtered"
     filtered = filter_media_encoding(view, parent, output)
     audit_native_encoding(view, output, tmp_path / "independent-filter-audit.json")

@@ -54,10 +54,10 @@ def _inputs(corpus, encoded, *, reclassify=False):
         or parent["manifest_sha256"] != parent_hash
         or proof.get("encoded_manifest_sha256", proof.get("manifest_sha256")) != parent_hash
         or source_audit["operation"]
-        != (
-            "correct_source_task_classification"
+        not in (
+            {"correct_source_task_classification"}
             if reclassify
-            else "exclude_cross_pool_train_groups"
+            else {"exclude_cross_pool_train_groups", "exclude_source_quality_train_groups"}
         )
     ):
         raise ValueError(
@@ -99,12 +99,17 @@ def _inputs(corpus, encoded, *, reclassify=False):
             )
             if len(rows) != count or any(split != "train" for _id, _stage, split, _payload in rows):
                 raise ValueError("excluded original group differs from the checked partition")
-            removed.update(
-                {
-                    identity: (stage, group, json.loads(payload))
-                    for identity, stage, _split, payload in rows
-                }
-            )
+            for identity, stage, _split, payload in rows:
+                row = json.loads(payload)
+                if canonical.get("task_policy") is not None:
+                    from minifrontier.data.media_tasks import effective_task
+
+                    # Excluded rows are absent from the effective SQL view. Apply its
+                    # already-validated task policy to their immutable source payloads.
+                    row["task"] = effective_task(
+                        row["source"], row.get("revision"), row["task"], row.get("visual_question")
+                    )
+                removed[identity] = (stage, group, row)
         if set(removed) & remaining.keys():
             raise ValueError("excluded record is still present in the effective corpus")
         if any(stage != "pretrain" for stage, _group, _row in removed.values()):
@@ -130,7 +135,12 @@ def _inputs(corpus, encoded, *, reclassify=False):
     if reclassify:
         bindings["task_policy"] = canonical["task_policy"]
     else:
-        bindings["grouping_audit_sha256"] = canonical["grouping_audit_sha256"]
+        evidence_key = (
+            "quality_review_sha256"
+            if source_audit["operation"] == "exclude_source_quality_train_groups"
+            else "grouping_audit_sha256"
+        )
+        bindings[evidence_key] = canonical[evidence_key]
     return manifest, proof, remaining, removed, bindings, task_changes
 
 

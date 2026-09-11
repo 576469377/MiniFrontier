@@ -29,7 +29,7 @@ from minifrontier.data.minifrontier1_encoding import (
     evaluation_items,
     open_dataset,
 )
-from minifrontier.data.partitions import create_media_exclusion_view
+from minifrontier.data.partitions import create_media_exclusion_view, create_quality_exclusion_view
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
 from minifrontier.training.minifrontier1 import Sampler, train
 from minifrontier.training.minifrontier1_curriculum import collate_records
@@ -162,8 +162,9 @@ def test_canonical_media_rejects_changed_pixels_and_unfinished_inventory(corpus,
 
 
 @pytest.mark.parametrize("audit_binding", ["integrity_report", "encoding_audit_sha256"])
+@pytest.mark.parametrize("quality", [False, True])
 def test_compact_exclusion_preserves_tokens_spans_holdout_bytes_and_actual_loader(
-    corpus, tmp_path, monkeypatch, audit_binding
+    corpus, tmp_path, monkeypatch, audit_binding, quality
 ):
     monkeypatch.setattr(
         "minifrontier.storage.shutil.disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3)
@@ -213,7 +214,22 @@ def test_compact_exclusion_preserves_tokens_spans_holdout_bytes_and_actual_loade
         )
     )
     view = tmp_path / "view"
-    create_media_exclusion_view(root, grouping, "fixture", view)
+    if quality:
+        evidence = json.loads(grouping.read_text())
+        evidence.update(
+            kind="source_quality_exclusion_review",
+            corpus_kind="media",
+            status="targeted_defects_confirmed",
+            review_method="model_assisted",
+            excluded_training_groups=[
+                dict(group=rejected[2], records=1, reason="Answer is not grounded in the image")
+            ],
+        )
+        evidence["inputs"]["fixture"]["source_audit_sha256"] = sha256(root / "source-audit.json")
+        grouping.write_text(json.dumps(evidence))
+        create_quality_exclusion_view(root, grouping, "fixture", view)
+    else:
+        create_media_exclusion_view(root, grouping, "fixture", view)
     output = tmp_path / "filtered"
     with monkeypatch.context() as patch:
 
