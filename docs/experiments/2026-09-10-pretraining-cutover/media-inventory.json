@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789119723.0767949,
+  "observed_unix": 1789120719.2925007,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -6267,7 +6267,7 @@
     "formal_admission": false,
     "main_budget_eligible": false,
     "inventory_count": 19,
-    "snapshot_unix": 1789119722.6500888,
+    "snapshot_unix": 1789120718.8649032,
     "previous_attempt": {
       "state": "failed",
       "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
@@ -6293,7 +6293,7 @@
       "formal_admission": false,
       "main_budget_eligible": false,
       "inventory_count": 19,
-      "snapshot_unix": 1789119722.6501935
+      "snapshot_unix": 1789120718.8650064
     },
     "candidate_filter_validation": {
       "kind": "bounded_cpu_candidate_filter_equivalence",
@@ -6337,8 +6337,8 @@
       "formal_admission": false
     },
     "local_storage": {
-      "observed_unix": 1789119723.044663,
-      "free_gib": 118.59929275512695,
+      "observed_unix": 1789120719.258882,
+      "free_gib": 118.50502014160156,
       "minimum_free_gib": 80
     },
     "visual_review_plan": {
@@ -7219,9 +7219,9 @@
       }
     },
     "auxiliary_storage": {
-      "free_gib": 995.5063552856445,
+      "free_gib": 995.3103942871094,
       "minimum_free_gib": 80,
-      "observed_unix": 1789116830.7348683
+      "observed_unix": 1789120694.7551308
     },
     "corrected_native_media_encoding": {
       "minikimik3": {
@@ -7378,7 +7378,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789116830.7293458,
+            "observed_unix": 1789120694.7531261,
             "state": "checking_every_encoded_media_record",
             "process_identity_verified": true
           },
@@ -7413,7 +7413,7 @@
             "formal_admission": false,
             "main_budget_eligible": false,
             "process_observation": {
-              "observed_unix": 1789116830.728004,
+              "observed_unix": 1789120694.752604,
               "state": "stopped_to_correct_wall_budget_with_prefix_preserved",
               "process_identity_verified": false
             },
@@ -7569,7 +7569,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789116830.7258785,
+            "observed_unix": 1789120694.751985,
             "state": "mechanical_checks_passed_pending_quality_admission",
             "process_identity_verified": false
           },
@@ -7740,7 +7740,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789116830.7337794,
+            "observed_unix": 1789120694.7546818,
             "state": "checking_every_encoded_media_record",
             "process_identity_verified": true
           },
@@ -7775,7 +7775,7 @@
             "formal_admission": false,
             "main_budget_eligible": false,
             "process_observation": {
-              "observed_unix": 1789116830.7320802,
+              "observed_unix": 1789120694.7541988,
               "state": "stopped_to_correct_wall_budget_with_prefix_preserved",
               "process_identity_verified": false
             },
@@ -7931,7 +7931,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789116830.7307658,
+            "observed_unix": 1789120694.7537465,
             "state": "mechanical_checks_passed_pending_quality_admission",
             "process_identity_verified": false
           },
@@ -7984,7 +7984,7 @@
     },
     "partial_mf1_p0_supply": {
       "kind": "partial_mf1_p0_candidate_supply",
-      "status": "first_media_encodings_complete_pending_domain_topups_and_admission",
+      "status": "ocr_and_chart_supply_sufficient_pending_caption_vqa_topup_and_admission",
       "main_phase_ce_tokens": 200000000,
       "visual_phase_ce_tokens": 40000000,
       "formal_admission": false,
@@ -8010,6 +8010,13 @@
           "manifest_sha256": "5c2ded2ed56df31bed9f9101271572b8815b0498e4c48e3d27d28728cb7fb412",
           "source_audit_sha256": "63b81dd3b4202772b81244b4d71f252b7ce62f031b02f656005df8b197bfb13a",
           "encoding_audit_sha256": "ae296c57fb83bf0f998a6ad8be947c8bc9615e1cff7454b8c044c83564cc0221"
+        },
+        {
+          "record": "outputs/strategy-pretraining-ocr-topup-v1/refinement-v1/run.json",
+          "sha256": "2e47571c667fc017dc48471896eb901b75f1e14e73df369340eac729b61c35cb",
+          "manifest_sha256": "468634b7e2099845be99fcaec1e5a90e58dfb3d4c3be7432969f3f366b0cc359",
+          "encoding_audit_sha256": "65f617835c5fca1295456cddc7b51846df41a3684f95f3905608dc5058ac0901",
+          "group_audit_reviewed_sha256": "f94e045a08ae2feb0a99bad9b3b55243325b5a59f8611e967b6b90bcfd2b78b0"
         }
       ],
       "domains": {
@@ -8021,9 +8028,9 @@
         },
         "ocr_document": {
           "planned_visual_ce": 14000000,
-          "completed_candidate_train_ce": 12345637,
-          "completed_candidate_validation_ce": 158732,
-          "remaining_independent_train_ce_gap": 1654363
+          "completed_candidate_train_ce": 14138494,
+          "completed_candidate_validation_ce": 183211,
+          "remaining_independent_train_ce_gap": 0
         },
         "vqa": {
           "planned_visual_ce": 8000000,
@@ -8044,21 +8051,21 @@
           "remaining_independent_train_ce_gap": 0
         }
       },
-      "total_completed_candidate_visual_ce": 36952302,
+      "total_completed_candidate_visual_ce": 38745159,
       "limitations": [
-        "Candidate counters include the completed document/chart quality derivative; all source quality and final mixed validation admissions are still pending.",
-        "New natural and OCR top-ups have not been counted as completed supply.",
-        "Chart CE surplus cannot replace required caption, VQA or OCR CE; repeated exposure adds no independent candidate supply."
+        "Counters include the completed document/chart quality derivative and the exact retained OCR supplement; source quality and final mixed validation admissions remain pending.",
+        "The interrupted natural top-up is not counted as completed supply.",
+        "OCR/chart surplus cannot replace the required caption/VQA CE; repeated exposure adds no independent supply."
       ],
-      "observed_unix": 1789111224.8735168,
-      "previous_progress_sha256": "200345686c9c77ee5f2c90b84b4565c5545a5b90e652c2e7985fd1f6cf408cf9",
+      "observed_unix": 1789120038.066134,
+      "previous_progress_sha256": "1f97d6748e9bb8f2018245fda355d338325737c8e71dde003144213438936747",
       "benchmark_group_refinement": {
         "removed_train_records": 2,
         "removed_ce_tokens": 360,
         "encoding_audit_sha256": "d9f7ac57e8adc894486099d4c30b8ba4041e495f878181e2dabdcc9a33285e2a"
       },
-      "mix_usable_candidate_visual_ce": 35541641,
-      "remaining_domain_ce_gap": 4458359,
+      "mix_usable_candidate_visual_ce": 37196004,
+      "remaining_domain_ce_gap": 2803996,
       "document_chart_encoding": {
         "manifest_sha256": "5c2ded2ed56df31bed9f9101271572b8815b0498e4c48e3d27d28728cb7fb412",
         "source_audit_sha256": "63b81dd3b4202772b81244b4d71f252b7ce62f031b02f656005df8b197bfb13a",
@@ -8107,13 +8114,27 @@
         },
         "observed_unix": 1789111224.8923037
       },
-      "report_sha256": "1f97d6748e9bb8f2018245fda355d338325737c8e71dde003144213438936747",
+      "ocr_supplement": {
+        "output": "data/pretraining-mf1-ocr-topup-p0-v1",
+        "records": 54308,
+        "train_records": 52882,
+        "train_ce": 1792857,
+        "val_ce": 24479,
+        "manifest_sha256": "468634b7e2099845be99fcaec1e5a90e58dfb3d4c3be7432969f3f366b0cc359",
+        "source_audit_sha256": "4107e6427897077f38915ade1cc39a52c5c0216a8dc18ffef38faaad2aeaba4d",
+        "encoding_audit_sha256": "65f617835c5fca1295456cddc7b51846df41a3684f95f3905608dc5058ac0901",
+        "identity_reviewed_images": 453798,
+        "raw_pixels_shared": true,
+        "completed_unix": 1789119857.8854423,
+        "formal_admission": false
+      },
+      "report_sha256": "7d774db3d3a512953c46c20881098ecfd29d8226a0884b0a4b974e85ee2fb28a",
       "natural_benchmark_refinement": {
         "removed_train_records": 2,
         "removed_main_ce_tokens": 360,
         "removed_caption_ce_tokens": 207,
         "removed_vqa_ce_tokens": 153,
-        "corrected_completed_main_ce_tokens": 36952302,
+        "corrected_completed_main_ce_tokens": 38745159,
         "document_chart_refinement_pending": false,
         "formal_admission": false
       }
@@ -8557,7 +8578,7 @@
         "source_archive_sha256": "fdbfb103a9820aa96e4b726ab7a4dfad82087d60bc0ec4645ba23a2ba28d5e5b",
         "driver_sha256": "8282ff6939b4af11ea14c17755fc362652b53783d58bfe06f46c1debc3ac1cfa",
         "started_unix": 1789108319.4663,
-        "observed_unix": 1789116805.488576,
+        "observed_unix": 1789120675.7698755,
         "budget": {
           "wall_seconds": 39600,
           "max_virtual_gib": 32,
@@ -8570,7 +8591,7 @@
           "minikimik3",
           "miniqwen4"
         ],
-        "report_sha256": "b7a03c39674ff79cf0e94943c5165561cc28914243caf0a76ac486b296d12c39",
+        "report_sha256": "eb9bc90da4925d95eb0c62f4bb4f5844c2caf8dd385c0933b47b7b54d9d4bcb7",
         "formal_admission": false,
         "main_budget_eligible": false,
         "completed_components": [
@@ -8630,8 +8651,8 @@
           "argv_matches": true,
           "state": "waiting_for_existing_parent_encodings",
           "process_identity_verified": true,
-          "observed_unix": 1789116831.2051263,
-          "free_gib": 995.5063552856445,
+          "observed_unix": 1789120695.1107576,
+          "free_gib": 995.305362701416,
           "minimum_free_gib": 80
         }
       },
@@ -8707,7 +8728,7 @@
         "record_sha256": "4a967e0da99f553deac5fb34e124b33b993fe0a4d3be2a2851a250c027823a0a",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789119723.060187
+        "snapshot_unix": 1789120719.2745256
       },
       "first_attempt": {
         "state": "failed",
@@ -8732,7 +8753,7 @@
         "record_sha256": "5dd75a745441e5d30af4576b405e7601a752c0d57cfc69bcfa25221d8f23674d",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789119723.060278
+        "snapshot_unix": 1789120719.2746294
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8760,7 +8781,7 @@
         "record_sha256": "bad4bc7dfed043e0b5735b5d97c6fc7b461752b8bb36269e294920225501b8a4",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789119723.060368
+        "snapshot_unix": 1789120719.2747185
       },
       "matching_validation": {
         "ordered_result_sha256": "db77f1bc02a8567fc0ce7eb80c06c728d4203e13cd94241d9dcd01779c6a6ec1",
@@ -8824,7 +8845,7 @@
         "record_sha256": "9582bff720de38ee69ee01b5ab9e628f58f9e326e63f81ef303c7b2ed6a27a12",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789119723.060805
+        "snapshot_unix": 1789120719.2751815
       },
       "first_attempt": {
         "state": "failed",
@@ -8849,7 +8870,7 @@
         "record_sha256": "b48fe5e775f7d080401674326b263245070c2900b71f17882f0f2b9a25991a7f",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789119723.060891
+        "snapshot_unix": 1789120719.2752707
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8877,7 +8898,7 @@
         "record_sha256": "71b5633369c727306eee5fe8a41c23e318e89cb3e689cf0108ad50cb8e173189",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789119723.0609741
+        "snapshot_unix": 1789120719.275357
       },
       "matching_validation": {
         "ordered_result_sha256": "f99edfcb887e825c753f5abd6604c33de91f208779a521b5118301bb77f0d531",
@@ -9099,18 +9120,18 @@
     ]
   },
   "next_natural_candidate_slice": {
-    "state": "failed",
-    "run_id": "strategy-pretraining-natural-topup-v1/retry1",
-    "registry_id": "exp-06db9c5a6d61",
+    "state": "resuming_next_natural_image_slice",
+    "run_id": "strategy-pretraining-natural-topup-v1/retry2",
+    "registry_id": "exp-19860ca1a560",
     "output": "data/pretraining-natural-topup-v1",
     "source": "HuggingFaceM4/FineVision",
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
     "source_commit": "b813e4f348d93ab07882eeaec382367acf25391c",
     "source_archive_sha256": "4cf0f2218152d3922b60a0dcd9fb03146ecdfb14287a287497f1551093315943",
-    "driver_sha256": "3ca793dcb30c6ac8943ae40345bab768196d465cd6e1f7f335dc806e3402c378",
-    "arguments_sha256": "b3dce83b32fc50d152e96a433c9830572f463ca14ae5123007c800a6ae47bbb2",
-    "record_sha256": "05fc4da36025b3c2726fe7dad81e2686a69e57a3dd0881ac9371640d2f53907b",
-    "data_audit_sha256": "dc50c5295ad22fd934801b11ba08a2c921a12b5e4ada56dcc4b863f232a89735",
+    "driver_sha256": "2241ca56fa74cc2377459a018d4050757535ccc94a39ec2aa862a3a8a23d987f",
+    "arguments_sha256": "36219723d3fe367f46162b21c195a5d66e78c650713a6ffce40a2f51a1c8b87a",
+    "record_sha256": "f4f2b528eb0ac60cf4fe6636b55715cc41128615e4f833d1123dcdc752b743ae",
+    "data_audit_sha256": "e11ce7763d55ed924ab10a75970a4a27ae924b4ff4d96be714ca06103e6884ee",
     "target_independent_images": 12000,
     "source_start_row": 61420,
     "prior_exact_images_excluded": 60000,
@@ -9118,7 +9139,7 @@
     "reference_tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
     "reference_tokenizer_is_final_training_mapping": false,
     "budget": {
-      "wall_seconds": 16607,
+      "wall_seconds": 6652,
       "max_virtual_gib": 32,
       "max_output_gib": 16,
       "metadata_gib": 2,
@@ -9132,21 +9153,21 @@
     "stop_rule": "Stop at target, 48000 new source rows, fixed storage/wall bound or source error; below-target results remain explicit and no repeated images count as new inventory",
     "next_decision": "Match new identities against all effective pools and sealed visual benchmarks, review newly introduced groups, encode with fixed v2 tokenizers and measure actual per-domain CE before admission",
     "observation": {
-      "argv_matches": false,
-      "state": "failed",
-      "process_identity_verified": false,
-      "observed_unix": 1789116831.7638807,
+      "argv_matches": true,
+      "state": "resuming_next_natural_image_slice",
+      "process_identity_verified": true,
+      "observed_unix": 1789120695.4823196,
       "source_start_row": 61420,
       "previous_exact_image_identities": 60000,
-      "resume_skip_rows": 61630,
-      "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'huggingface.co\\', port=443): Max retries exceeded with url: /datasets/HuggingFaceM4/FineVision/resolve/3c380a731a3429c1d04693d6ec16d7e683def84c/allava_laion/train-00550-of-00734.parquet (Caused by ReadTimeoutError(\"HTTPSConnectionPool(host=\\'huggingface.co\\', port=443): Read timed out. (read timeout=60)\"))'))",
-      "attempt": "retry1",
-      "control": "outputs/strategy-pretraining-natural-topup-v1/retry1",
-      "read_rows": 2825,
-      "unique_images": 2752,
-      "accepted_records": 5150,
-      "media_bytes": 2064472343,
-      "free_gib": 995.5063552856445,
+      "resume_skip_rows": 64245,
+      "error": null,
+      "attempt": "retry2",
+      "control": "outputs/strategy-pretraining-natural-topup-v1/retry2",
+      "read_rows": 3077,
+      "unique_images": 3000,
+      "accepted_records": 5622,
+      "media_bytes": 2261460300,
+      "free_gib": 995.2992820739746,
       "minimum_free_gib": 80
     },
     "formal_admission": false,
@@ -9167,21 +9188,82 @@
       "record_sha256": "8e74c125357945589bf228950a3df7620bb378a3c9cc5da535c9136bd67002b9"
     },
     "transport_resume": {
-      "retry_reason": "Exact response range was honored but its body ended early; bounded retry and narrow legacy-error resume now preserve the existing 203 images and 375 records",
-      "prior_run_sha256": "8e74c125357945589bf228950a3df7620bb378a3c9cc5da535c9136bd67002b9",
-      "prior_source_audit_sha256": "9ef0fa15aca4a5aceae9c6f5c69f16e7b0a9e90de1115b0ac5313634b2a090e2",
+      "retry_reason": "Previous proxy CONNECT repeatedly timed out; both exact-range routes now return matching bytes. Use direct routing for this one continuation, preserving original source and deadline.",
+      "prior_run_sha256": "05fc4da36025b3c2726fe7dad81e2686a69e57a3dd0881ac9371640d2f53907b",
+      "prior_source_audit_sha256": "dc50c5295ad22fd934801b11ba08a2c921a12b5e4ada56dcc4b863f232a89735",
       "original_wall_deadline_unix": 1789126834.625114,
-      "retained_records_before_resume": 375,
-      "retained_images_before_resume": 203,
-      "retained_record_hashes_sha256": "86219e49e474a4288aca5c712cb520c8940a4f8ac5d669877818dce70e8eb5aa",
-      "resume_skip_rows": 61630,
+      "retained_records_before_resume": 5150,
+      "retained_images_before_resume": 2752,
+      "retained_record_hashes_sha256": "847fbb147d723873fb7ea16638d2eb3da3cb7134825d00d15a44898515fdfefc",
+      "resume_skip_rows": 64245,
       "validation": {
-        "targeted_tests_passed": 33,
-        "short_range_recheck": "Two successful reads of the exact failing range with identical complete bytes.",
-        "short_range_recheck_sha256": "eafc2a749bbf37d15d54ea77864d0a2d1b613911379a1299db404572756462cc",
-        "bounded_retries": 3,
-        "all_attempts_charged_to_transfer_budget": true
+        "transport_policy": {
+          "route": "direct_without_environment_proxy",
+          "probe_sha256": "99f14cb1027195d43b30b55fdebe128e17684ec53c85fc040ce4496f10de291b",
+          "existing_range_retries_unchanged": true
+        },
+        "range_probe_sha256": "99f14cb1027195d43b30b55fdebe128e17684ec53c85fc040ce4496f10de291b",
+        "range_probe": {
+          "kind": "bounded_failed_range_transport_probe",
+          "started_unix": 1789119986.0116,
+          "purpose": "Compare inherited proxy routing with a direct request for one exact range that previously timed out.",
+          "file_revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
+          "file": "allava_laion/train-00550-of-00734.parquet",
+          "file_size": 484593930,
+          "range": [
+            316669952,
+            317718527
+          ],
+          "budget": {
+            "wall_seconds": 55,
+            "total_body_bytes": 2097154,
+            "attempts_per_route": 1
+          },
+          "results": [
+            {
+              "route": "inherited_proxy",
+              "status": "exact_range_success",
+              "bytes": 1048576,
+              "sha256": "bcc3e8ce270016338d83946eeeabe0206c2a08337e1567aff2d07763620af8d0",
+              "elapsed_seconds": 1.9907240540014755
+            },
+            {
+              "route": "direct_no_environment_proxy",
+              "status": "exact_range_success",
+              "bytes": 1048576,
+              "sha256": "bcc3e8ce270016338d83946eeeabe0206c2a08337e1567aff2d07763620af8d0",
+              "elapsed_seconds": 2.1846474049998506
+            }
+          ],
+          "formal_admission": false,
+          "source_data_modified": false,
+          "completed_unix": 1789119990.1870475
+        },
+        "inherited_transport_code_tests": 33,
+        "code_changed_for_this_retry": false,
+        "bounded_range_retries": 3
       }
+    },
+    "preceding_failed_attempt": {
+      "record_sha256": "05fc4da36025b3c2726fe7dad81e2686a69e57a3dd0881ac9371640d2f53907b",
+      "state": "failed",
+      "source_commit": "b813e4f348d93ab07882eeaec382367acf25391c",
+      "started_unix": 1789110229.2342436,
+      "completed_unix": 1789115007.971151,
+      "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'huggingface.co\\', port=443): Max retries exceeded with url: /datasets/HuggingFaceM4/FineVision/resolve/3c380a731a3429c1d04693d6ec16d7e683def84c/allava_laion/train-00550-of-00734.parquet (Caused by ReadTimeoutError(\"HTTPSConnectionPool(host=\\'huggingface.co\\', port=443): Read timed out. (read timeout=60)\"))'))"
+    },
+    "completion_followup": {
+      "state": "waiting_for_natural_producer_exit",
+      "phase": "one_shot_natural_completion_followup",
+      "started_unix": 1789120332.5995576,
+      "observed_unix": 1789120332.5995605,
+      "observation_method": "one blocking remote pidfd exit event; no polling, no producer retry",
+      "parent_arguments_sha256": "36219723d3fe367f46162b21c195a5d66e78c650713a6ffce40a2f51a1c8b87a",
+      "record_sha256": "47403a9c4efc8d380cded7caf5680766f28e2ec48fa373dbb3b9eff5890d9fc6",
+      "planned_identity_base_images": 453798,
+      "identity_control": "strategy-pretraining-natural-topup-v1/identity-audit-v2",
+      "formal_admission": false,
+      "process_identity_verified": true
     }
   },
   "next_ocr_candidate_slice": {
@@ -9242,7 +9324,7 @@
     "main_budget_eligible": false,
     "included_in_current_effective_pool": false,
     "observation": {
-      "observed_unix": 1789119723.0647178,
+      "observed_unix": 1789120719.2797973,
       "process_identity_verified": false,
       "state": "candidate_slice_complete_pending_admission",
       "data_state": "candidate_slice_complete_pending_admission",
@@ -9442,7 +9524,7 @@
       "registry_id": "exp-e05c3a041622",
       "record_sha256": "bcbc84cf6d8d26e0a1c41d535dba92eb254ac2fd942e63dd1d295287f2196f90",
       "process_observation": {
-        "observed_unix": 1789119723.0652966,
+        "observed_unix": 1789120719.2803981,
         "process_identity_verified": false
       },
       "formal_admission": false,
@@ -9617,14 +9699,15 @@
       }
     },
     "refined_candidate": {
-      "state": "identity_closed_encoding_mf1_candidate",
+      "state": "mechanical_checks_passed_pending_quality_admission",
       "phase": "quarantine_and_encode_ocr_supplement",
       "source_commit": "cc192f1a76902bea0866694c8acca56da08ebd8e",
       "source_archive_sha256": "177a23e284d1c3bc5846d035931e27749f23f62391e81da7a4c812b516d404d8",
       "driver_sha256": "14cacc9e5aac3f4b6ce286acfd69189f8e35867cec613655e677ddc9fccf8609",
       "arguments_sha256": "c57a2ac87ed4bbe5e8480b4eebf973f4b6500123105649c765cc4111960a0ac4",
       "started_unix": 1789119512.7709184,
-      "observed_unix": 1789119703.6969662,
+      "observed_unix": 1789119857.8862393,
+      "completed_unix": 1789119857.8854423,
       "budget": {
         "wall_seconds": 10800,
         "address_space_gib": 32,
@@ -9654,14 +9737,16 @@
           "status": "mechanical_checks_passed_with_reused_model_assisted_review"
         }
       },
+      "encoded_manifest_sha256": "468634b7e2099845be99fcaec1e5a90e58dfb3d4c3be7432969f3f366b0cc359",
+      "encoding_audit_sha256": "65f617835c5fca1295456cddc7b51846df41a3684f95f3905608dc5058ac0901",
+      "encoded_output_bytes": 118863636,
       "run_id": "strategy-pretraining-ocr-topup-v1/refinement-v1",
       "output": "data/pretraining-ocr-topup-partition-v2",
       "encoded_output": "data/pretraining-mf1-ocr-topup-p0-v1",
-      "record_sha256": "a89a4e6cad37223f9b0452e7b0e33997e7dafbf012f9a453eef0d8bdd92d3ed0",
+      "record_sha256": "2e47571c667fc017dc48471896eb901b75f1e14e73df369340eac729b61c35cb",
       "formal_admission": false,
       "human_source_quality_review_completed": false,
       "main_budget_eligible": false,
-      "process_identity_verified": true,
       "exact_retained_corpus_subset": {
         "kind": "exact_corpus_subset_proof",
         "status": "all_retained_contents_splits_and_raw_bytes_unchanged",
@@ -9702,6 +9787,44 @@
         "reviewed_visual_candidates": 495,
         "formal_admission": false
       },
+      "encoded_splits": {
+        "train": {
+          "counts": {
+            "records": 52882,
+            "input_tokens": 5653243,
+            "ce_tokens": 1792857,
+            "media_exposures": 52882,
+            "vision_tokens": 2591218
+          },
+          "domain_ce": {
+            "ocr_document": 1792857
+          }
+        },
+        "val": {
+          "counts": {
+            "records": 667,
+            "input_tokens": 73170,
+            "ce_tokens": 24479,
+            "media_exposures": 667,
+            "vision_tokens": 32683
+          },
+          "domain_ce": {
+            "ocr_document": 24479
+          }
+        },
+        "test": {
+          "counts": {
+            "records": 759,
+            "input_tokens": 81206,
+            "ce_tokens": 25799,
+            "media_exposures": 759,
+            "vision_tokens": 37191
+          },
+          "domain_ce": {
+            "ocr_document": 25799
+          }
+        }
+      },
       "source_license_summary": "Counts retain each source revision/license combination from the retained parent records; aggregation no longer overwrites multiple code licenses."
     }
   },
@@ -9715,7 +9838,7 @@
   },
   "data_event_followups": {
     "state": "watching_data_events",
-    "observed_unix": 1789119720.62943,
+    "observed_unix": 1789120694.3356154,
     "source_commit": "b212cd37cb4e75bc51ac0703e4286ab2855b937a",
     "tasks": {
       "ocr-build": {
@@ -9727,13 +9850,13 @@
       "kimi-docs": {
         "state": "checking_every_encoded_media_record",
         "alive": true,
-        "observed_unix": 1789119710.8940253,
+        "observed_unix": 1789120671.2116213,
         "completed_unix": null
       },
       "qwen-docs": {
         "state": "checking_every_encoded_media_record",
         "alive": true,
-        "observed_unix": 1789119710.8940253,
+        "observed_unix": 1789120671.2116213,
         "completed_unix": null
       },
       "ocr-identity": {
@@ -9751,13 +9874,13 @@
       "doc-refinement": {
         "state": "waiting_for_existing_parent_encodings",
         "alive": true,
-        "observed_unix": 1789119710.8940253,
+        "observed_unix": 1789120671.2116213,
         "completed_unix": null
       },
       "natural-build": {
         "state": "failed",
         "alive": false,
-        "observed_unix": 1789115007.9824767,
+        "observed_unix": 1789120694.2900145,
         "completed_unix": 1789115007.971151
       }
     },
