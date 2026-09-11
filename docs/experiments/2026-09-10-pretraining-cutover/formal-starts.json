@@ -1,0 +1,141 @@
+{
+  "kind": "formal_initial_training_snapshot",
+  "observed_utc": "2026-09-11T17:11:55Z",
+  "live_feed": false,
+  "compute_policy": "One primary RTX 3090 per model; auxiliary storage only, private-network direct transfer without proxies.",
+  "models": [
+    {
+      "model": "minideepseekv4",
+      "phase": "D1",
+      "state": "formal_training_updating",
+      "observed_step": 1985,
+      "main_ce_tokens": 65813197,
+      "phase_ce_budget": 250000000,
+      "program_main_ce_budget": 2500000000,
+      "source": {
+        "commit": "6c2e37be4a88ca6cdedd062d0fde5e1d249ac81f",
+        "dirty": false,
+        "implementation_sha256": "2dfb8920eca446fa912b62e7ef533a6ce0a7f4b49ed057dcdc3a0a762252f3a9"
+      },
+      "initialization": "random",
+      "independent_preflight_profile_passed": true,
+      "initial_start_policy": "existing_qualified_launch",
+      "data_manifest_sha256": "f972b1fe1620befc1a7a90f6fb55f370a03672a4f427bb71639acaae373e4f95",
+      "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+      "batch_size": 16,
+      "global_input_tokens": 32768,
+      "finite_latest_loss_and_gradient": true,
+      "generation_capability_qualified": false,
+      "metrics_path": "outputs/strategy-base-pretraining-v1/minideepseekv4/D1/metrics.jsonl",
+      "last_reported_validation": {
+        "step": 1810,
+        "main_ce_tokens": 60008168,
+        "lm_loss": 5.04307234228285
+      },
+      "model_config_file": "configs/strategies/minideepseekv4-v2.json",
+      "model_config_file_sha256": "b660f89fcf82048d087ba26b143a76b9b27baa38cfe71cb09e0ec9f997633b35"
+    },
+    {
+      "model": "minikimik3",
+      "phase": "K1",
+      "state": "formal_training_updating",
+      "observed_step": 10,
+      "main_ce_tokens": 310241,
+      "phase_ce_budget": 200000000,
+      "program_main_ce_budget": 2000000000,
+      "source": {
+        "commit": "cb89c05ffd9ab0a77b37c388b6d5451b6898998c",
+        "dirty": false,
+        "implementation_sha256": "91bd12f0208ebb8f7d6e0264db8907dbf6563d3243ddea4db6b0020ed289f876"
+      },
+      "initialization": "random",
+      "independent_preflight_profile_passed": false,
+      "initial_start_policy": "maintainer_authorized_runtime_monitoring",
+      "data_manifest_sha256": "a81dabbdc785daa77bb9afd69123e10fffbde2528370ee80b1279d83119e6ed8",
+      "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+      "batch_size": 64,
+      "global_input_tokens": 32768,
+      "finite_latest_loss_and_gradient": true,
+      "generation_capability_qualified": false,
+      "metrics_path": "outputs/strategy-base-pretraining-v1/minikimik3/K1/metrics.jsonl",
+      "last_reported_validation": {
+        "step": 0,
+        "main_ce_tokens": 0,
+        "lm_loss": 11.19237308486661
+      },
+      "model_config_file": "configs/strategies/minikimik3-v2.json",
+      "model_config_file_sha256": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634"
+    },
+    {
+      "model": "miniqwen4",
+      "phase": "Q1",
+      "state": "formal_training_updating",
+      "observed_step": 10,
+      "main_ce_tokens": 159054,
+      "phase_ce_budget": 300000000,
+      "program_main_ce_budget": 3000000000,
+      "source": {
+        "commit": "cb89c05ffd9ab0a77b37c388b6d5451b6898998c",
+        "dirty": false,
+        "implementation_sha256": "91bd12f0208ebb8f7d6e0264db8907dbf6563d3243ddea4db6b0020ed289f876"
+      },
+      "initialization": "random",
+      "independent_preflight_profile_passed": false,
+      "initial_start_policy": "maintainer_authorized_runtime_monitoring",
+      "data_manifest_sha256": "c475eaa3fb9ffe1f0a3b855def363e8cf99d0239ec674ef83b1f83b17ef182f3",
+      "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+      "batch_size": 32,
+      "global_input_tokens": 16384,
+      "finite_latest_loss_and_gradient": true,
+      "generation_capability_qualified": false,
+      "metrics_path": "outputs/strategy-base-pretraining-v1/miniqwen4/Q1/metrics.jsonl",
+      "last_reported_validation": {
+        "step": 0,
+        "main_ce_tokens": 0,
+        "lm_loss": 11.116453101194853
+      },
+      "model_config_file": "configs/strategies/miniqwen4-v2.json",
+      "model_config_file_sha256": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253"
+    },
+    {
+      "model": "minifrontier1",
+      "phase": "P0",
+      "state": "formal_training_updating",
+      "observed_step": 83,
+      "main_ce_tokens": 1137874,
+      "phase_ce_budget": 200000000,
+      "program_main_ce_budget": 3000000000,
+      "source": {
+        "commit": "dc541edebe4172a9f814dc5596c06b64c78e6434",
+        "dirty": false,
+        "implementation_sha256": "27ad7b21b69319b0da00abdb3a1635dd3d160ffa77c140d8884320d2681fd058"
+      },
+      "initialization": "random",
+      "independent_preflight_profile_passed": false,
+      "initial_start_policy": "maintainer_authorized_runtime_monitoring",
+      "data_manifest_sha256": "2a024d4fedd3e11568bdc9d4bf047e061f1dc463042f3cfdba4c23b65c3b72d2",
+      "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
+      "batch_size": 8,
+      "global_input_tokens": 16384,
+      "finite_latest_loss_and_gradient": true,
+      "generation_capability_qualified": false,
+      "metrics_path": "outputs/strategy-base-pretraining-v1/minifrontier1/P0/metrics.jsonl",
+      "last_reported_validation": {
+        "step": 0,
+        "main_ce_tokens": 0,
+        "nll": 10.421806040400584,
+        "ce_tokens": 1000915
+      },
+      "model_config_file": "configs/minifrontier1/model_228m_native.json",
+      "model_config_file_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8"
+    }
+  ],
+  "standalone_preflight_runs_added_after_maintainer_instruction": 0,
+  "notes": [
+    "All four runs have actual optimizer updates; startup processes alone are not counted as training.",
+    "Initial validation and early training samples do not demonstrate usable generation or visual capability.",
+    "Kimi/Qwen startup errors occurred before any completed update: the empirical 0.466% natural holdout was retained under the explicit initial-start policy, and the text mixture domain names were corrected without changing proportions.",
+    "Native image exposure requirements need at most two passes through retained records; exposures and unique images are separate.",
+    "Process exits are captured by an event-based local monitor without periodic polling or automatic retries."
+  ]
+}

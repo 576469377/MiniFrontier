@@ -531,7 +531,7 @@
   ],
   "execution_program": {
     "id": "four-model-base-pretraining-2026-09-10",
-    "status": "deepseek_formal_D1_running_other_models_finishing_media",
+    "status": "four_formal_initial_phases_training",
     "document": "docs/pretraining-plan.md",
     "user_objectives": [
       "record_and_close_experiments",
@@ -558,7 +558,12 @@
       "current_policy": "formal_first_phase_start_with_runtime_monitoring",
       "standalone_runs_required_before_first_phase": false,
       "maintainer_decision": "docs/experiments/2026-09-10-pretraining-cutover/direct-training-start.json",
-      "historical_profile_schedule": "The 50+200 profile remains a recorded measurement protocol; it is no longer a mandatory extra job before the three remaining initial phases."
+      "historical_profile_schedule": "The 50+200 profile remains a recorded measurement protocol; it is no longer a mandatory extra job before the three remaining initial phases.",
+      "additional_performance_runs": {
+        "default": "none",
+        "if_a_specific_failure_requires_one": "Bound by a short wall-clock budget, normally at most 10 minutes; never use an additional 20M training budget as performance acceptance.",
+        "formal_update_accounting": "Performance observations of formal updates remain inside the original training ledger and schedule."
+      }
     },
     "mf1_engineering": {
       "review_timebox_hours": 48,
@@ -579,7 +584,7 @@
           "initial_microbatch_ceiling": 64,
           "mtp_coef": 0.1
         },
-        "recipe_status": "working_parameters_selected_pending_final_bindings",
+        "recipe_status": "formal_first_phase_training",
         "formal_init": null,
         "formal_resume": null,
         "existing_pilot_candidates": {
@@ -749,7 +754,7 @@
           "initial_microbatch_ceiling": 64,
           "mtp_coef": 0.1
         },
-        "recipe_status": "working_parameters_selected_pending_final_bindings",
+        "recipe_status": "formal_first_phase_training",
         "formal_init": null,
         "formal_resume": null,
         "existing_pilot_candidates": {
@@ -944,7 +949,7 @@
           "initial_microbatch_ceiling": 32,
           "mtp_coef": 0.3
         },
-        "recipe_status": "working_parameters_selected_pending_final_bindings",
+        "recipe_status": "formal_first_phase_training",
         "formal_init": null,
         "formal_resume": null,
         "existing_pilot_candidates": {
@@ -1138,7 +1143,7 @@
           "initial_microbatch_ceiling": "determine_once_after_execution_fix",
           "mtp_coef": 0.1
         },
-        "recipe_status": "working_parameters_selected_pending_final_bindings",
+        "recipe_status": "formal_first_phase_training",
         "formal_init": null,
         "formal_resume": null,
         "documented_implementation_baseline": {
@@ -1251,10 +1256,9 @@
       "training_loss_mask_causality_media_gradient_errors",
       "unadmitted_or_insufficient_stage_data",
       "resume_or_checkpoint_integrity_errors",
-      "unqualified_stage_resource_budget",
-      "MF1 execution_cost",
       "model_specific_production_recipe_not_frozen",
-      "planned_phase_state_transfer_or_schedule_not_implemented"
+      "planned_phase_state_transfer_or_schedule_not_implemented",
+      "actual_runtime_gpu_or_storage_limit_exceeded"
     ],
     "deferred_after_base": [
       "full_batch_lr_schedule_grids",
@@ -1366,8 +1370,8 @@
     },
     "readiness_priority": {
       "first": "minideepseekv4",
-      "scope": "DeepSeek passed actual production qualification and started fresh formal D1; continue its fixed schedule while other models finish their own data bindings and qualification",
-      "other_models": "follow their own admitted data readiness",
+      "scope": "All four models have completed actual formal optimizer updates on separate primary GPUs; continue their frozen first phases and monitor concrete runtime failures.",
+      "other_models": "No additional standalone pilot or performance-profile queue; monitor the formal runs and fix concrete failures.",
       "new_parameter_grids": false,
       "additional_first_stage_text_expansion": false
     },
@@ -1381,7 +1385,7 @@
       "max_project_tasks_per_gpu": 1,
       "dispatch": "Assign new compute jobs only to eligible primary devices; auxiliary compute is withdrawn from the plan.",
       "running_tasks": "Keep healthy running jobs and their frozen launch identities in place; move only unstarted jobs, or resume at a verified checkpoint with the same scientific recipe.",
-      "data_preparation": "Keep immutable original media on auxiliary storage. Store token encodings and run state on primary; fetch raw media through SSH-forwarded loopback file services with content hashes and bounded primary caches.",
+      "data_preparation": "Original media remains on auxiliary storage; completed token encodings and formal run state are on primary. All three visual readers use content-checked bounded caches over direct private-network SSH.",
       "file_transfer": {
         "policy": "direct_private_network_only",
         "proxy_allowed": false,
