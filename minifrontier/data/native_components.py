@@ -3,7 +3,7 @@
 import json
 import os
 import shutil
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -146,6 +146,7 @@ def assemble_native_components(components, output, *, max_bytes=64 * 1024**2, me
     partitions = _shared_text_partitions(shared, baseline["text_source"]["manifest_sha256"])
     samples = set(partitions)
     groups: dict[str, str] = {}
+    source_groups = defaultdict(lambda: defaultdict(set))
     pixels: dict[str, str] = {}
     stages: dict[str, dict[str, Any]] = {}
     for stage in ("pretrain", "sft"):
@@ -172,6 +173,7 @@ def assemble_native_components(components, output, *, max_bytes=64 * 1024**2, me
                         if len(raw) != size or len(ids) != length or len(labels) != length:
                             raise ValueError("native component token/index lengths differ")
                         record, group = row["record"], row["split_group"]
+                        source_groups[record["source"]][split].add(group)
                         identity = record["sample_id"]
                         if identity in samples:
                             raise ValueError("duplicate sample in native composition")
@@ -230,6 +232,14 @@ def assemble_native_components(components, output, *, max_bytes=64 * 1024**2, me
         raw_media_copied=False,
         sample_order="shared text once, then component argument order and original media order",
         identity_checks=dict(duplicate_samples=0, cross_split_groups=0, cross_split_rgb=0),
+        source_group_splits={
+            source: {
+                "groups": {split: len(members[split]) for split in ("train", "val", "test")},
+                "validation_group_fraction": len(members["val"])
+                / sum(len(members[split]) for split in ("train", "val", "test")),
+            }
+            for source, members in sorted(source_groups.items())
+        },
         remaining=[
             "bound cross-corpus near-duplicate checks",
             "source quality and phase admission",
