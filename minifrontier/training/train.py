@@ -998,6 +998,10 @@ def run(args, rank, world, device):
             )
         restore_rng(random_state, device)
         model.train()
+        # Validation uses different shapes with optimizer state already resident
+        # on resume. Release its unused blocks before the next training window.
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
 
     token_budget = args.ce_tokens or args.input_tokens or args.response_tokens
 
@@ -1484,8 +1488,28 @@ def run(args, rank, world, device):
         if world > 1:
             dist.all_reduce(performance, op=dist.ReduceOp.MAX)
         if device.type == "cuda" and -float(performance[5]) < args.min_device_free_gib:
-            save(step)
-            raise RuntimeError("device reserve fell below configured minimum; checkpoint retained")
+            before_free = -float(performance[5])
+            torch.cuda.empty_cache()
+            performance[5] = -torch.cuda.mem_get_info(device)[0] / 2**30
+            elapsed = time.monotonic() - started
+            performance[0] = elapsed
+            if world > 1:
+                dist.all_reduce(performance, op=dist.ReduceOp.MAX)
+            record(
+                dict(
+                    event="cuda_cache_reclaim",
+                    step=step,
+                    free_before_gib=before_free,
+                    free_after_gib=-float(performance[5]),
+                    allocated_gib=torch.cuda.memory_allocated(device) / 2**30,
+                    reserved_gib=torch.cuda.memory_reserved(device) / 2**30,
+                )
+            )
+            if -float(performance[5]) < args.min_device_free_gib:
+                save(step)
+                raise RuntimeError(
+                    "device reserve fell below configured minimum; checkpoint retained"
+                )
         if args.profile_warmup < step <= args.profile_warmup + args.profile_updates:
             profile.append(
                 dict(
