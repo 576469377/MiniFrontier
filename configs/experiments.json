@@ -226,7 +226,9 @@
         "strategy-pretraining-data-*",
         "strategy-pretraining-media-*",
         "strategy-pretraining-ocr-*",
-        "strategy-pretraining-code-*"
+        "strategy-pretraining-code-*",
+        "strategy-pretraining-native-components-*",
+        "strategy-pretraining-text-leakage-*"
       ],
       "purpose": "正式共享语料候选构造、划分与准入记录",
       "decision": "data_construction_only",

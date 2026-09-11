@@ -1527,5 +1527,109 @@
     "evaluation_time_fraction_measured_on_production_gpu": false,
     "capability_qualified": false,
     "formal_admission": false
+  },
+  "shared_text_near_duplicate_blocker": {
+    "observed_unix": 1789091143.9885912,
+    "status": "known_parent_and_derivative_quarantined_pending_full_audit_and_encoded_refresh",
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "text_conflict_report_sha256": "33ef671beda2b54395642d882123d1cd6b68d640d6a8de7e25bdd3352f90b074",
+    "parent_media_group_audit_sha256": "289cab409d516677a1962500ae56adda9ebe739c00672c36f7e8089d239425f7",
+    "original_text_partition": "data/pretraining-text-partition-v2",
+    "original_text_partition_manifest_sha256": "b7df9509c5c71c380da9029ee1d735c6fc32ce2f92a13c04818cbb85f55f27ab",
+    "comparison": {
+      "parent_lengths": [
+        1722,
+        1645
+      ],
+      "parent_splits": [
+        "train",
+        "test"
+      ],
+      "parent_jaccard": 0.9775349119611415,
+      "printed_text_jaccard": 0.8615384615384616,
+      "train_parent_contains_test_ocr_shingle_fraction": 1.0,
+      "method": "existing whitespace-free normalized casefold five-character shingles",
+      "next_action": "quarantine the training derivative and trace its shared-text parent exposure before admitting expanded data",
+      "simhash_hamming_distance": 4,
+      "legacy_hamming_gate": 3,
+      "equal_16bit_bands": [
+        0
+      ]
+    },
+    "members": [
+      {
+        "inventory": "shared-text",
+        "group": "6f8cc0109e6c88d3e4299c9043d669e537baa92df2e76c11f537dae9c0f7a072",
+        "split": "train",
+        "records": 1,
+        "sample_id": "6f8cc0109e6c88d3e4299c9043d669e537baa92df2e76c11f537dae9c0f7a072"
+      },
+      {
+        "inventory": "shared-text",
+        "group": "7b2c1641a1f922a9e0d98dd2240ac7374b3248b7e4ea83974cf658867dcd339a",
+        "split": "test",
+        "records": 1,
+        "sample_id": "7b2c1641a1f922a9e0d98dd2240ac7374b3248b7e4ea83974cf658867dcd339a"
+      }
+    ],
+    "scope": "one confirmed full-document near-duplicate across train/test; not an exhaustive text audit",
+    "cause": "a retrieved candidate at Simhash distance four was discarded by the distance-three prefilter before Jaccard comparison",
+    "affects_all_four_model_text_consumers": true,
+    "formal_training_ce": 0,
+    "old_encoded_inventory_is_pre_quarantine": true,
+    "tokenizer_training_membership_recheck_required": true,
+    "full_shared_text_holdout_audit_state": "required_not_started",
+    "review_reuse": {
+      "prior_reviewed_pairs": 455,
+      "identical_candidates_still_present": 455,
+      "pairs_without_prior_decisions": 1444,
+      "expanded_pairs": 1899,
+      "scope": "candidate content identity only; carry-forward review records still need explicit binding"
+    },
+    "quarantine_views": {
+      "text": {
+        "state": "known_training_group_quarantined_pending_full_audit_and_encoding",
+        "source_commit": "c9f1cdd085ed2871ad1cdaaf1300b4df73081a6f",
+        "output": "data/pretraining-text-partition-v3",
+        "manifest_sha256": "724b67f6760f67822d9321cbea9a18b175b1354dec3f77dc40d1995aadd4374c",
+        "source_audit_sha256": "3380dd92034f5191a4fa142ba66ab8e3595128de627980b13f538dd17038626c",
+        "newly_excluded_records": 1,
+        "splits": {
+          "test": 4392,
+          "train": 398806,
+          "val": 3735
+        },
+        "output_bytes": 9958825,
+        "holdout_membership_sha256": "3a6b8f8218151a8147fd14291707a32586e0291c8de3b30aa92f7034f49e6655"
+      },
+      "ocr": {
+        "state": "known_training_group_quarantined_pending_full_audit_and_encoding",
+        "source_commit": "c9f1cdd085ed2871ad1cdaaf1300b4df73081a6f",
+        "output": "data/pretraining-ocr-p0-shard-06-v2",
+        "manifest_sha256": "3ed04700fd3b440ec80903e8a657e26698678184082089a90f43c41df7a106d8",
+        "source_audit_sha256": "c74d42af8e30742c5d446b018085966968f95b53a914eb2e3be4e7e8a56ef23a",
+        "newly_excluded_records": 1,
+        "splits": {
+          "test": 201,
+          "train": 18794,
+          "val": 178
+        },
+        "output_bytes": 5454859,
+        "holdout_membership_sha256": "863300aadcf4bf75b34dd48b31ee7ca1076367a4a94bab743e7ea3d97a687dea"
+      }
+    },
+    "validation": {
+      "source_commit": "c9f1cdd085ed2871ad1cdaaf1300b4df73081a6f",
+      "full_cpu_passed": 505,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "full_cpu_seconds": 154.13,
+      "targeted_group_exclusion_tests_passed": 54,
+      "full_cpu_log_sha256": "141543fde553f1d5c9f8f80434ca07448301151fb203360ae0a5d7245888a91f",
+      "mypy_source_files": 186,
+      "ruff": "passed",
+      "formatted_files": 333
+    }
   }
 }

@@ -12,6 +12,19 @@
 
 本轮四模型 base 的数据、预算、配方与更严格的 80/60/50 GiB 存储规则统一见[预训练主计划](../pretraining-plan.md)。来源模型的连续阶段路径使用 `--pretraining-program`、`--pretraining-phase` 与 `--schedule program`；它保留主干优化状态、累计主 CE 和阶段谱系，仍需原正式策略的全部准入证据。普通 `--init` 不等于这条连续路径。工作参数和状态继承说明见[执行配方](../experiments/2026-09-10-pretraining-cutover/working-recipes.md)。
 
+同一模型的多份原生媒体编码可以组合成一个训练入口。组件须已完成各自的全量编码审计，并引用同一份文本编码；模型、tokenizer 和媒体处理配置必须一致。例如：
+
+```python
+from minifrontier.data.native_components import assemble_native_components
+
+assemble_native_components(
+    ["data/kimi-native-natural", "data/kimi-native-ocr"],
+    "data/kimi-native-combined",
+)
+```
+
+组合只保存 tokenizer 和索引描述，文本只采样一次，媒体从原组件读取。现有 `StageDataset` 自动识别该入口，继续使用原来的领域采样与恢复逻辑。需要排除样本或修正任务时，先更新各媒体组件，再重新组合。组合成功只证明这些编码可以共同消费，来源质量、跨池近重复和正式阶段准入仍按主计划核对。
+
 ## 训练阶段与启动条件
 
 ```text

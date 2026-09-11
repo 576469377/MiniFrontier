@@ -1078,9 +1078,9 @@
     "source": "HuggingFaceM4/FineVision/allava_laion",
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
     "output": "data/pretraining-media-natural-extension-v1",
-    "state": "building",
-    "observed_unix": 1789087917.9162977,
-    "process_identity_verified": true,
+    "state": "candidate_slice_complete_pending_admission",
+    "observed_unix": 1789091143.7796915,
+    "process_identity_verified": false,
     "source_commit": "c96973035a22c983b8ec6c705ca7f29908d43d57",
     "source_archive_sha256": "6132b492456fe6aa0657ddb694e01a596420675b885b58b50e6b7b74c336255a",
     "driver_sha256": "ea65294847f7b1dbbd25bfd78c76a2667fb433daa3419358531eacf370b48391",
@@ -1089,7 +1089,7 @@
     "source_row_offset": 23790,
     "prior_pixels_excluded": 23260,
     "target_additional_images": 36740,
-    "observed_additional_images": 30750,
+    "observed_additional_images": 36740,
     "max_examined_new_rows": 146960,
     "storage": {
       "new_slice_max_gib": 40,
@@ -1097,7 +1097,7 @@
       "existing_data_allocated_bytes": 18725085184,
       "existing_encoder_reservation_gib": 1,
       "remote_combined_data_cap_gib": 60,
-      "observed_free_gib": 1012.238208770752,
+      "observed_free_gib": 1007.7044830322266,
       "required_free_reserve_gib": 80,
       "local_raw_copy_bytes": 0
     },
@@ -1113,8 +1113,8 @@
       "cross-slice near-duplicate connected groups and benchmark exclusion are pending",
       "candidate supply is not human quality or phase exposure admission"
     ],
-    "observed_additional_qa_records": 57579,
-    "observed_media_bytes": 23803991264,
+    "observed_additional_qa_records": 68856,
+    "observed_media_bytes": 28577571315,
     "requires_task_classification_correction": true
   },
   "cross_pool_grouping": {
@@ -2171,7 +2171,7 @@
     "document_supply_note": "CoSyn document subset has 71,282 source training images before our filtering, and its short document QA is not full-page OCR transcription. Do not budget 200K CoSyn document images or infer full OCR coverage from the combined ocr_document label."
   },
   "basic_ocr_p0": {
-    "observed_unix": 1789087917.6609306,
+    "observed_unix": 1789091143.533306,
     "status": "first_wave_group_review_closed_and_mf1_components_assembled_pending_supply_and_quality",
     "source_commits": {
       "producer": "366822bc585fbc40f956229598be30526c521d49",
@@ -3075,9 +3075,9 @@
       "total_max_output_gib": 9,
       "no_automatic_training": true
     },
-    "free_gib_at_observation": 133.26714706420898,
+    "free_gib_at_observation": 129.30442810058594,
     "next_source_wave": {
-      "observed_unix": 1789087917.6609306,
+      "observed_unix": 1789091143.533306,
       "source_commit": "0e53f27d2db72a653c2301d79ca7228bfbadcf1f",
       "source_archive_sha256": "ea79fef43d06e01d855ee4843b4bc626487c45908fb15ba15ce0493293e2e155",
       "jobs": [
@@ -3305,16 +3305,25 @@
             "d"
           ],
           "output": "data/pretraining-ocr-p0-shard-12-v1",
-          "state": "constructing_candidate_shard",
+          "state": "candidate_slice_complete_pending_admission",
           "counts": {
-            "examined": 5095,
-            "accepted": 5000,
-            "word_exceeds_line": 19,
-            "unsupported_glyph": 4,
-            "would_create_text_training_ocr_holdout": 72
+            "examined": 19756,
+            "accepted": 19329,
+            "word_exceeds_line": 82,
+            "unsupported_glyph": 25,
+            "would_create_text_training_ocr_holdout": 320
           },
-          "media_bytes": 85027065,
-          "process_observed_live": true
+          "media_bytes": 325394918,
+          "process_observed_live": false,
+          "manifest_sha256": "8e793f9361df1fb638d40880b2574145ed0af4a29862c99053cc4ebb79660db2",
+          "source_audit_sha256": "12042b2bff8abdc2f006679e9c360bb724bfd3f2d8b666f6d299cb60ae7d8332",
+          "split_origin_mismatches": 0,
+          "splits": {
+            "train": 18958,
+            "test": 208,
+            "val": 163
+          },
+          "completed_unix": 1789088141.8310595
         },
         {
           "shard": "13",
@@ -3323,16 +3332,25 @@
             "e"
           ],
           "output": "data/pretraining-ocr-p0-shard-13-v1",
-          "state": "constructing_candidate_shard",
+          "state": "candidate_slice_complete_pending_admission",
           "counts": {
-            "examined": 5108,
-            "accepted": 5000,
-            "word_exceeds_line": 24,
-            "would_create_text_training_ocr_holdout": 80,
-            "unsupported_glyph": 4
+            "examined": 19635,
+            "accepted": 19250,
+            "word_exceeds_line": 75,
+            "would_create_text_training_ocr_holdout": 285,
+            "unsupported_glyph": 25
           },
-          "media_bytes": 83723596,
-          "process_observed_live": true
+          "media_bytes": 325030133,
+          "process_observed_live": false,
+          "manifest_sha256": "077758d930e74d95184e8c42e698e2a39a34dcb1bd1c6f407df854e8c8cbb146",
+          "source_audit_sha256": "325497c0d56a87973c019a9a6f32a7b45acaf399b6a24f6d3adfba1e2b4862b6",
+          "split_origin_mismatches": 0,
+          "splits": {
+            "train": 18865,
+            "val": 197,
+            "test": 188
+          },
+          "completed_unix": 1789088143.5034587
         },
         {
           "shard": "14",
@@ -3341,16 +3359,25 @@
             "f"
           ],
           "output": "data/pretraining-ocr-p0-shard-14-v1",
-          "state": "constructing_candidate_shard",
+          "state": "candidate_slice_complete_pending_admission",
           "counts": {
-            "examined": 5103,
-            "accepted": 5000,
-            "word_exceeds_line": 23,
-            "would_create_text_training_ocr_holdout": 74,
-            "unsupported_glyph": 6
+            "examined": 19832,
+            "accepted": 19442,
+            "word_exceeds_line": 83,
+            "would_create_text_training_ocr_holdout": 277,
+            "unsupported_glyph": 30
           },
-          "media_bytes": 84520489,
-          "process_observed_live": true
+          "media_bytes": 325981583,
+          "process_observed_live": false,
+          "manifest_sha256": "f860f338d22142215347681654893c0e966e331792bb1091521c735b808bdae2",
+          "source_audit_sha256": "2e1c11892406b66106402e5af918585e2d9de394921827559ed8f98c5520dc78",
+          "split_origin_mismatches": 0,
+          "splits": {
+            "train": 19062,
+            "val": 165,
+            "test": 215
+          },
+          "completed_unix": 1789088146.8002744
         },
         {
           "shard": "15",
@@ -3359,16 +3386,25 @@
             "g"
           ],
           "output": "data/pretraining-ocr-p0-shard-15-v1",
-          "state": "constructing_candidate_shard",
+          "state": "candidate_slice_complete_pending_admission",
           "counts": {
-            "examined": 4853,
-            "accepted": 4750,
-            "word_exceeds_line": 27,
-            "would_create_text_training_ocr_holdout": 73,
-            "unsupported_glyph": 3
+            "examined": 19673,
+            "accepted": 19260,
+            "word_exceeds_line": 92,
+            "would_create_text_training_ocr_holdout": 285,
+            "unsupported_glyph": 36
           },
-          "media_bytes": 80140143,
-          "process_observed_live": true
+          "media_bytes": 324881262,
+          "process_observed_live": false,
+          "manifest_sha256": "1237f0d13d14ad3cf08f8bc799f2e54ec26e429d54ecfd52c71645d7cbbfb42c",
+          "source_audit_sha256": "4f5ec3b8001d090a985a84be227815b59ecf28881c22cb4256b317fbfeda33c1",
+          "split_origin_mismatches": 0,
+          "splits": {
+            "train": 18924,
+            "val": 166,
+            "test": 170
+          },
+          "completed_unix": 1789088143.9801955
         }
       ],
       "maximum_parallel_cpu_producers": 4,
@@ -3385,12 +3421,12 @@
       "automatic_training": false,
       "automatic_retry": false,
       "first_four_shards_unchanged": true,
-      "completed_shards": 8,
-      "live_shards": 4,
+      "completed_shards": 12,
+      "live_shards": 0,
       "queued_shards": 0,
       "producer_metadata_note": "The inherited human-readable budget.source_id_prefix and scope text in raw control arguments refer to the original template. Actual arguments.id_start/id_stop and source-audit.source_id_range bind the ranges listed here; completed records are retained unchanged.",
       "encoding": {
-        "observed_unix": 1789087917.6609306,
+        "observed_unix": 1789091143.533306,
         "source_commit": "0e53f27d2db72a653c2301d79ca7228bfbadcf1f",
         "source_archive_sha256": "ea79fef43d06e01d855ee4843b4bc626487c45908fb15ba15ce0493293e2e155",
         "maximum_parallel_cpu_encoders": 3,
@@ -3420,73 +3456,19 @@
             "encoding_audit_sha256": "71d1aeff5e11b11d3d8fda00b90801320f0eac892c67c7bf675d1ecf3d8e894e",
             "splits": {
               "train": {
-                "counts": {
-                  "records": 18780,
-                  "input_tokens": 2053081,
-                  "ce_tokens": 691037,
-                  "media_exposures": 18780,
-                  "vision_tokens": 920220
-                },
-                "domain_ce": {
-                  "ocr_document": 691037
-                },
-                "complete_record_length_buckets": {
-                  "ocr_document": {
-                    "512": {
-                      "records": 18780,
-                      "input_tokens": 2053081,
-                      "ce_tokens": 691037,
-                      "media_exposures": 18780,
-                      "vision_tokens": 920220
-                    }
-                  }
-                }
+                "records": 18780,
+                "input_tokens": 2053081,
+                "ce_tokens": 691037
               },
               "val": {
-                "counts": {
-                  "records": 204,
-                  "input_tokens": 23033,
-                  "ce_tokens": 8240,
-                  "media_exposures": 204,
-                  "vision_tokens": 9996
-                },
-                "domain_ce": {
-                  "ocr_document": 8240
-                },
-                "complete_record_length_buckets": {
-                  "ocr_document": {
-                    "512": {
-                      "records": 204,
-                      "input_tokens": 23033,
-                      "ce_tokens": 8240,
-                      "media_exposures": 204,
-                      "vision_tokens": 9996
-                    }
-                  }
-                }
+                "records": 204,
+                "input_tokens": 23033,
+                "ce_tokens": 8240
               },
               "test": {
-                "counts": {
-                  "records": 197,
-                  "input_tokens": 21523,
-                  "ce_tokens": 7227,
-                  "media_exposures": 197,
-                  "vision_tokens": 9653
-                },
-                "domain_ce": {
-                  "ocr_document": 7227
-                },
-                "complete_record_length_buckets": {
-                  "ocr_document": {
-                    "512": {
-                      "records": 197,
-                      "input_tokens": 21523,
-                      "ce_tokens": 7227,
-                      "media_exposures": 197,
-                      "vision_tokens": 9653
-                    }
-                  }
-                }
+                "records": 197,
+                "input_tokens": 21523,
+                "ce_tokens": 7227
               }
             },
             "output_bytes": 43276892
@@ -3495,75 +3477,1575 @@
             "model": "mf1",
             "shard": "05",
             "output": "data/pretraining-mf1-ocr-p0-shard-05-v1",
-            "state": "encoding_candidate",
-            "process_observed_live": true
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789087964.4854643,
+            "manifest_sha256": "195b19d79fb8b14398256d4dbe2e457f43238683284dc52ee94ded8fc94697ce",
+            "source_audit_sha256": "5436ba898373414a57538440c5cb5588528414390cd63fbbd1a63967004e3676",
+            "encoding_audit_sha256": "6689b65a9b55dff4b13f553c7b58cc2c4c30cb57b126765d054c361b25a03890",
+            "splits": {
+              "train": {
+                "records": 18924,
+                "input_tokens": 2071226,
+                "ce_tokens": 698658
+              },
+              "val": {
+                "records": 178,
+                "input_tokens": 20272,
+                "ce_tokens": 7364
+              },
+              "test": {
+                "records": 204,
+                "input_tokens": 22114,
+                "ce_tokens": 7322
+              }
+            },
+            "output_bytes": 43546106
           },
           {
             "model": "mf1",
             "shard": "06",
             "output": "data/pretraining-mf1-ocr-p0-shard-06-v1",
-            "state": "queued_closed_shard_encoding"
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088022.5034165,
+            "manifest_sha256": "7b558c8c469fbe60f3537c7cbaf0b39b444c99975ec4b2c7fef9608c137e0c8f",
+            "source_audit_sha256": "79719838112e033915ee09b264f1062387b68517186c2524f3358fc6b94a7e8b",
+            "encoding_audit_sha256": "ffb424ab7af59d7828208a68a5eb5dd062dc578354482c079b564b8d8ef20135",
+            "splits": {
+              "train": {
+                "records": 18795,
+                "input_tokens": 2060363,
+                "ce_tokens": 697137
+              },
+              "val": {
+                "records": 178,
+                "input_tokens": 20277,
+                "ce_tokens": 7362
+              },
+              "test": {
+                "records": 201,
+                "input_tokens": 21948,
+                "ce_tokens": 7371
+              }
+            },
+            "output_bytes": 43272272
           },
           {
             "model": "mf1",
             "shard": "07",
             "output": "data/pretraining-mf1-ocr-p0-shard-07-v1",
-            "state": "queued_closed_shard_encoding"
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088081.4704392,
+            "manifest_sha256": "50469df594902a82fb01f56b65bf782f9c04e21a92218f100240ecb18b7c1573",
+            "source_audit_sha256": "1da8cb2f59403ed70559ec98b0dccae578e4a32bf06ba41b850745335d28c1a3",
+            "encoding_audit_sha256": "205cd3bdb3e6d2c16fcd1013caf2ec5b12403a767146d68a2c59c80eda7b71bb",
+            "splits": {
+              "train": {
+                "records": 18917,
+                "input_tokens": 2070651,
+                "ce_tokens": 698670
+              },
+              "val": {
+                "records": 191,
+                "input_tokens": 21597,
+                "ce_tokens": 7745
+              },
+              "test": {
+                "records": 197,
+                "input_tokens": 21603,
+                "ce_tokens": 7318
+              }
+            },
+            "output_bytes": 43546515
           },
           {
             "model": "minikimik3",
             "shard": "04",
             "output": "data/pretraining-minikimik3-ocr-p0-shard-04-v1",
-            "state": "encoding_candidate",
-            "process_observed_live": true
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088032.276637,
+            "manifest_sha256": "7401e355bdcc76fd9efd192f71b8e50e4a344620e950a32ec25313e3b23ce086",
+            "source_audit_sha256": "202e24c1b8457e9051d7c1ccce2b99429ff83cb46ae16820e1ab62bb5d1c2b28",
+            "encoding_audit_sha256": "41acc95337f81141dd8a05f38669d09c93729121db08583e5c3314879b078fc3",
+            "splits": {
+              "train": {
+                "records": 18780,
+                "input_tokens": 2421425,
+                "ce_tokens": 1069265
+              },
+              "val": {
+                "records": 204,
+                "input_tokens": 27015,
+                "ce_tokens": 12327
+              },
+              "test": {
+                "records": 197,
+                "input_tokens": 25431,
+                "ce_tokens": 11247
+              }
+            },
+            "output_bytes": 83687459
           },
           {
             "model": "minikimik3",
             "shard": "05",
             "output": "data/pretraining-minikimik3-ocr-p0-shard-05-v1",
-            "state": "queued_closed_shard_encoding"
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088222.730077,
+            "manifest_sha256": "fbe15eff7bcfa209b6bec0b866dfa700951d0fa7c8f7e24266eacb08424295ab",
+            "source_audit_sha256": "3ebd0da4a2b7e94959d00f4b91b024759ebb982b52a02417ed48cca2208d67ba",
+            "encoding_audit_sha256": "1d3d11251f9a7ddc6bb3fd9b22cdf9286656609e5ca8d56f9dcd5e241d66ddbe",
+            "splits": {
+              "train": {
+                "records": 18924,
+                "input_tokens": 2442824,
+                "ce_tokens": 1080296
+              },
+              "val": {
+                "records": 178,
+                "input_tokens": 23670,
+                "ce_tokens": 10854
+              },
+              "test": {
+                "records": 204,
+                "input_tokens": 26133,
+                "ce_tokens": 11445
+              }
+            },
+            "output_bytes": 84242462
           },
           {
             "model": "minikimik3",
             "shard": "06",
             "output": "data/pretraining-minikimik3-ocr-p0-shard-06-v1",
-            "state": "queued_closed_shard_encoding"
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088405.418721,
+            "manifest_sha256": "169a02fe1a43cb9371f9666d070e027fc52fda4c6a663c0928c0d00804df19a3",
+            "source_audit_sha256": "425694b2deab8a5d9f729afd0b2279c49cecf327be25481b0039d1d7fcab4f6e",
+            "encoding_audit_sha256": "347cafcb7337bfa9b51ab6c8982dbb59d898a38e04a7089b7c5149b16ee4d897",
+            "splits": {
+              "train": {
+                "records": 18795,
+                "input_tokens": 2429427,
+                "ce_tokens": 1076187
+              },
+              "val": {
+                "records": 178,
+                "input_tokens": 23712,
+                "ce_tokens": 10896
+              },
+              "test": {
+                "records": 201,
+                "input_tokens": 25892,
+                "ce_tokens": 11420
+              }
+            },
+            "output_bytes": 83762218
           },
           {
             "model": "minikimik3",
             "shard": "07",
             "output": "data/pretraining-minikimik3-ocr-p0-shard-07-v1",
-            "state": "queued_closed_shard_encoding"
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088589.9674506,
+            "manifest_sha256": "d90baeaed1076de83713faa355f75603f3fb9e638910effdc7f2451bd6384c70",
+            "source_audit_sha256": "ecbbe023c8890252dd6bb058c79ca9be174b434ee6e990f013b5a10ee296bb64",
+            "encoding_audit_sha256": "226115f9138ca51af1b82bac9aee20fc9b935f6bc8279f0f086057ad0f8dfe70",
+            "splits": {
+              "train": {
+                "records": 18917,
+                "input_tokens": 2441761,
+                "ce_tokens": 1079737
+              },
+              "val": {
+                "records": 191,
+                "input_tokens": 25354,
+                "ce_tokens": 11602
+              },
+              "test": {
+                "records": 197,
+                "input_tokens": 25454,
+                "ce_tokens": 11270
+              }
+            },
+            "output_bytes": 84230512
           },
           {
             "model": "miniqwen4",
             "shard": "04",
             "output": "data/pretraining-miniqwen4-ocr-p0-shard-04-v1",
-            "state": "encoding_candidate",
-            "process_observed_live": true
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789087995.3775256,
+            "manifest_sha256": "f5fe8a5c74bc3a9c9deab76a41169aac05ee18d559a1b408f6ba9170e82a0745",
+            "source_audit_sha256": "cfeb98ba339949c9efc560a40579fe4b8aa03348109f7b027e488c34a0bb7324",
+            "encoding_audit_sha256": "ccf0fd06578240ec5b54322e11b13d3ff4236155168d178c41482ce7c7316497",
+            "splits": {
+              "train": {
+                "records": 18780,
+                "input_tokens": 2045825,
+                "ce_tokens": 1069265
+              },
+              "val": {
+                "records": 204,
+                "input_tokens": 22935,
+                "ce_tokens": 12327
+              },
+              "test": {
+                "records": 197,
+                "input_tokens": 21491,
+                "ce_tokens": 11247
+              }
+            },
+            "output_bytes": 79966336
           },
           {
             "model": "miniqwen4",
             "shard": "05",
             "output": "data/pretraining-miniqwen4-ocr-p0-shard-05-v1",
-            "state": "queued_closed_shard_encoding"
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088150.269424,
+            "manifest_sha256": "d96bd10bcc9faa6c4e3a440ac9f9e0bec816f3500aec7f4ff52a5a2b71ceb6ba",
+            "source_audit_sha256": "46a39c17eb473b7580cde82ffd30bff2a2573486c4ddc1e5e0c261cb64592f9c",
+            "encoding_audit_sha256": "cd6a253aa90be69f8c9078218f21311dfdef742edcc83818ad6ad7b92a166cd4",
+            "splits": {
+              "train": {
+                "records": 18924,
+                "input_tokens": 2064344,
+                "ce_tokens": 1080296
+              },
+              "val": {
+                "records": 178,
+                "input_tokens": 20110,
+                "ce_tokens": 10854
+              },
+              "test": {
+                "records": 204,
+                "input_tokens": 22053,
+                "ce_tokens": 11445
+              }
+            },
+            "output_bytes": 80497089
           },
           {
             "model": "miniqwen4",
             "shard": "06",
             "output": "data/pretraining-miniqwen4-ocr-p0-shard-06-v1",
-            "state": "queued_closed_shard_encoding"
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088299.3449247,
+            "manifest_sha256": "326444ea965fb4b9af65a4d62d68256ab5e33d0c53eebb844f6932531d1560da",
+            "source_audit_sha256": "93e30b173f354d10e62706f88049e0aa8bfd75a4f3fb501e9fdc68e735ade05d",
+            "encoding_audit_sha256": "fb87b3e866661d4aa83053c8ddd9eb292cb2f5667637b9a757d6273762edae53",
+            "splits": {
+              "train": {
+                "records": 18795,
+                "input_tokens": 2053527,
+                "ce_tokens": 1076187
+              },
+              "val": {
+                "records": 178,
+                "input_tokens": 20152,
+                "ce_tokens": 10896
+              },
+              "test": {
+                "records": 201,
+                "input_tokens": 21872,
+                "ce_tokens": 11420
+              }
+            },
+            "output_bytes": 80042453
           },
           {
             "model": "miniqwen4",
             "shard": "07",
             "output": "data/pretraining-miniqwen4-ocr-p0-shard-07-v1",
-            "state": "queued_closed_shard_encoding"
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "completed_unix": 1789088449.438358,
+            "manifest_sha256": "30c2bd6b9d8b05e4201640d07e9bbce374991dc4067627dae8aec6404c82f68d",
+            "source_audit_sha256": "ac9c318a158bff3b3a39c349ec9a1a1dd43aede42f3af1575d77904091839966",
+            "encoding_audit_sha256": "f16da0e1151e9aa0b96531be9fbee66ea35c3cf62c8bd812c6d95f8974c683b3",
+            "splits": {
+              "train": {
+                "records": 18917,
+                "input_tokens": 2063421,
+                "ce_tokens": 1079737
+              },
+              "val": {
+                "records": 191,
+                "input_tokens": 21534,
+                "ce_tokens": 11602
+              },
+              "test": {
+                "records": 197,
+                "input_tokens": 21514,
+                "ce_tokens": 11270
+              }
+            },
+            "output_bytes": 80485333
           }
         ],
-        "completed_jobs": 1,
-        "live_jobs": 3
+        "completed_jobs": 12,
+        "live_jobs": 0
+      },
+      "remaining_encoding": {
+        "observed_unix": 1789091143.9115922,
+        "source_commit": "0e53f27d2db72a653c2301d79ca7228bfbadcf1f",
+        "source_archive_sha256": "ea79fef43d06e01d855ee4843b4bc626487c45908fb15ba15ce0493293e2e155",
+        "total_jobs": 24,
+        "source_shards": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "maximum_parallel_cpu_encoders": 3,
+        "maximum_output_gib": 6,
+        "per_output_max_gib": 0.25,
+        "minimum_free_gib": 80,
+        "formal_admission": false,
+        "main_budget_eligible": false,
+        "jobs": [
+          {
+            "model": "mf1",
+            "shard": "08",
+            "output": "data/pretraining-mf1-ocr-p0-shard-08-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "934d23e68a53b74a217d9f8e1d04dc76d163fdcff016ea82546ee281c04043b9",
+            "source_audit_sha256": "7c6e72bbfb83ea53d911414af4d7198561951f83d45bb5d4ed5d39e9e7f4d01e",
+            "encoding_audit_sha256": "717d26750f9e72e034ac20b680a66200a40c3c47114077cdab516b26f94c3bc3",
+            "output_bytes": 43877709,
+            "splits": {
+              "train": {
+                "records": 19062,
+                "input_tokens": 2090221,
+                "ce_tokens": 707448
+              },
+              "val": {
+                "records": 190,
+                "input_tokens": 21624,
+                "ce_tokens": 7835
+              },
+              "test": {
+                "records": 208,
+                "input_tokens": 22698,
+                "ce_tokens": 7608
+              }
+            }
+          },
+          {
+            "model": "mf1",
+            "shard": "09",
+            "output": "data/pretraining-mf1-ocr-p0-shard-09-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "d584eb3b2cda110c86699233c6c7775b0ecb739221f1195f6972c4c1f2b17fe8",
+            "source_audit_sha256": "0792ee69e35dbba8cc93c55264e8455d906a47038234894264eb535b2e34087c",
+            "encoding_audit_sha256": "d2c8aba79f26e8dae6b0d9444a3dd55124c44aecb670fb48178110f0d3390dc7",
+            "output_bytes": 43533687,
+            "splits": {
+              "train": {
+                "records": 18912,
+                "input_tokens": 2072319,
+                "ce_tokens": 700574
+              },
+              "val": {
+                "records": 199,
+                "input_tokens": 22467,
+                "ce_tokens": 8043
+              },
+              "test": {
+                "records": 187,
+                "input_tokens": 20387,
+                "ce_tokens": 6828
+              }
+            }
+          },
+          {
+            "model": "mf1",
+            "shard": "10",
+            "output": "data/pretraining-mf1-ocr-p0-shard-10-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "8bb78d7c2ad460a787fbb0642866243a8c85de52a05a2e92242bc884f9a39758",
+            "source_audit_sha256": "eb156b9b0fb53afbcb2f122d8d4b4aa06651ff7f45fffe91ad4768844aae6f32",
+            "encoding_audit_sha256": "57f8d06babc7c92c3ffb7926ea48cf242e851770bbc42a6629d5535750c75089",
+            "output_bytes": 43255210,
+            "splits": {
+              "train": {
+                "records": 18810,
+                "input_tokens": 2059021,
+                "ce_tokens": 694605
+              },
+              "val": {
+                "records": 169,
+                "input_tokens": 19216,
+                "ce_tokens": 6960
+              },
+              "test": {
+                "records": 191,
+                "input_tokens": 20820,
+                "ce_tokens": 6971
+              }
+            }
+          },
+          {
+            "model": "mf1",
+            "shard": "11",
+            "output": "data/pretraining-mf1-ocr-p0-shard-11-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "dbaacf7da664177015fda16787e24a20117f2c20abe6dc616922fee9719f277c",
+            "source_audit_sha256": "d6a726a72abb78c2d81521531e8c7c802dad8df3bd018e6b07fd2f9f96acd842",
+            "encoding_audit_sha256": "7291302ce7f700af70aa1366ebaefe3b184892906b0e42b55ad89425eb2a5fc1",
+            "output_bytes": 43746386,
+            "splits": {
+              "train": {
+                "records": 19008,
+                "input_tokens": 2080164,
+                "ce_tokens": 701638
+              },
+              "val": {
+                "records": 180,
+                "input_tokens": 20557,
+                "ce_tokens": 7499
+              },
+              "test": {
+                "records": 211,
+                "input_tokens": 22910,
+                "ce_tokens": 7602
+              }
+            }
+          },
+          {
+            "model": "mf1",
+            "shard": "12",
+            "output": "data/pretraining-mf1-ocr-p0-shard-12-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "14b339cf918880fc304a82f981e476e31bd7674964f01767bf3cd157c9f79a92",
+            "source_audit_sha256": "b8ed68ab3a8287ddef18da6f8c8f8222b07eb11979e6dd381f8a781925fc0c76",
+            "encoding_audit_sha256": "2c124156f62878e8e83d4a566abc696771d39bd395e10e1f230b887cbf59988e",
+            "output_bytes": 43596763,
+            "splits": {
+              "train": {
+                "records": 18958,
+                "input_tokens": 2076066,
+                "ce_tokens": 701015
+              },
+              "val": {
+                "records": 163,
+                "input_tokens": 18354,
+                "ce_tokens": 6534
+              },
+              "test": {
+                "records": 208,
+                "input_tokens": 22631,
+                "ce_tokens": 7552
+              }
+            }
+          },
+          {
+            "model": "mf1",
+            "shard": "13",
+            "output": "data/pretraining-mf1-ocr-p0-shard-13-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "61c74696035e1c43a2cb5cf6fae1e84f82523fe8767d71ffc7067412db414c89",
+            "source_audit_sha256": "fe2a365d6fb9780d566d77c1ef675d36511ea476540d27b9a34155a141e0e27f",
+            "encoding_audit_sha256": "7a34d8302c8b812e2d96d0db39239ac9d2956d421784bcbaa402312b1947983d",
+            "output_bytes": 43424617,
+            "splits": {
+              "train": {
+                "records": 18865,
+                "input_tokens": 2063905,
+                "ce_tokens": 695590
+              },
+              "val": {
+                "records": 197,
+                "input_tokens": 22461,
+                "ce_tokens": 8159
+              },
+              "test": {
+                "records": 188,
+                "input_tokens": 20456,
+                "ce_tokens": 6814
+              }
+            }
+          },
+          {
+            "model": "mf1",
+            "shard": "14",
+            "output": "data/pretraining-mf1-ocr-p0-shard-14-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "17602f78058c336117fec3c2c6eab0affc14ca1110fe940e902367e79c13d3e6",
+            "source_audit_sha256": "08ad7eac35358a15a57fc9153337f28957fb609e48343e428065ee8170a7176d",
+            "encoding_audit_sha256": "37d3732ece916b99d04161438aae83de943e07ac89e82e029489b6535e164d64",
+            "output_bytes": 43835431,
+            "splits": {
+              "train": {
+                "records": 19062,
+                "input_tokens": 2085320,
+                "ce_tokens": 702851
+              },
+              "val": {
+                "records": 165,
+                "input_tokens": 18844,
+                "ce_tokens": 6866
+              },
+              "test": {
+                "records": 215,
+                "input_tokens": 23369,
+                "ce_tokens": 7776
+              }
+            }
+          },
+          {
+            "model": "mf1",
+            "shard": "15",
+            "output": "data/pretraining-mf1-ocr-p0-shard-15-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "3ba763890627650d9530de22ec23849d189f6c0af1d2b0db4c2a1ece9b1703d9",
+            "source_audit_sha256": "4306c9869a317047f07d85c0ed8758cad75f1d7312d8b21b7155e1a36bc08d2a",
+            "encoding_audit_sha256": "5ce28881cf572b9e7d56ce39d8eb8775d3df8576457f09427ec847abf03046e4",
+            "output_bytes": 43447398,
+            "splits": {
+              "train": {
+                "records": 18924,
+                "input_tokens": 2071466,
+                "ce_tokens": 698829
+              },
+              "val": {
+                "records": 166,
+                "input_tokens": 18756,
+                "ce_tokens": 6717
+              },
+              "test": {
+                "records": 170,
+                "input_tokens": 18751,
+                "ce_tokens": 6408
+              }
+            }
+          },
+          {
+            "model": "minikimik3",
+            "shard": "08",
+            "output": "data/pretraining-minikimik3-ocr-p0-shard-08-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "ee00e443201b590d286397fc4cc30467794346a756070254ae6e8ec42e12526b",
+            "source_audit_sha256": "be795c34cf4809bef4edd44ae9cff4649ec0d38e61b4f748608035e803c8b274",
+            "encoding_audit_sha256": "07a91b4fec1bffc2cccf9559092639f8b328d0b1c6978f9c1c14d340977c81ae",
+            "output_bytes": 84932980,
+            "splits": {
+              "train": {
+                "records": 19062,
+                "input_tokens": 2464532,
+                "ce_tokens": 1092068
+              },
+              "val": {
+                "records": 190,
+                "input_tokens": 25316,
+                "ce_tokens": 11636
+              },
+              "test": {
+                "records": 208,
+                "input_tokens": 26805,
+                "ce_tokens": 11829
+              }
+            }
+          },
+          {
+            "model": "minikimik3",
+            "shard": "09",
+            "output": "data/pretraining-minikimik3-ocr-p0-shard-09-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "d67e59fa7a162e51b7ccf1865f79c7adb33aa5ed6a1eb89f01368a69adbf61aa",
+            "source_audit_sha256": "69580fe37171e9308311cac54cab6026f3ffce1402913fa57c521c8b840022df",
+            "encoding_audit_sha256": "44db76d1ebdcd4b1bb3bffdbea58d15dbddbbd87d2ea273e020d0735621f60bd",
+            "output_bytes": 84237235,
+            "splits": {
+              "train": {
+                "records": 18912,
+                "input_tokens": 2443480,
+                "ce_tokens": 1081816
+              },
+              "val": {
+                "records": 199,
+                "input_tokens": 26297,
+                "ce_tokens": 11969
+              },
+              "test": {
+                "records": 187,
+                "input_tokens": 24051,
+                "ce_tokens": 10587
+              }
+            }
+          },
+          {
+            "model": "minikimik3",
+            "shard": "10",
+            "output": "data/pretraining-minikimik3-ocr-p0-shard-10-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "020be98301d6d57bca06b04c947c73feda2f8d9aa5b11972f94692eb401513c3",
+            "source_audit_sha256": "2844536d05cb00b60f209452bdb42a2541400e6749d8bcd864198c1c87d39487",
+            "encoding_audit_sha256": "a0dd3020dfb2dace7897a79c4534bacfe466ef268190ae405d684a1c50962b3b",
+            "output_bytes": 83700801,
+            "splits": {
+              "train": {
+                "records": 18810,
+                "input_tokens": 2428338,
+                "ce_tokens": 1074018
+              },
+              "val": {
+                "records": 169,
+                "input_tokens": 22440,
+                "ce_tokens": 10272
+              },
+              "test": {
+                "records": 191,
+                "input_tokens": 24556,
+                "ce_tokens": 10804
+              }
+            }
+          },
+          {
+            "model": "minikimik3",
+            "shard": "11",
+            "output": "data/pretraining-minikimik3-ocr-p0-shard-11-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "3c368855f0060f5daa14b171e622cc58ca66160a7c23176a2438f245fab3b06e",
+            "source_audit_sha256": "2c09edf6dd09bba11e7cca0240edee54eae65084c7b0a943dd5cd8850b5aa81f",
+            "encoding_audit_sha256": "a9cef25bd0c65af05819648e547da01e9735aee486f52bd949097effc96398b6",
+            "output_bytes": 84624429,
+            "splits": {
+              "train": {
+                "records": 19008,
+                "input_tokens": 2453186,
+                "ce_tokens": 1084610
+              },
+              "val": {
+                "records": 180,
+                "input_tokens": 24044,
+                "ce_tokens": 11084
+              },
+              "test": {
+                "records": 211,
+                "input_tokens": 27100,
+                "ce_tokens": 11908
+              }
+            }
+          },
+          {
+            "model": "minikimik3",
+            "shard": "12",
+            "output": "data/pretraining-minikimik3-ocr-p0-shard-12-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "7425cf66bb4ec1c3eb92919247e535487f57d08c0e3e3c22385d11730dba3830",
+            "source_audit_sha256": "f73db605d13546eaaa7f6ecbd1587df9c8f09cd5ad41fc500494bf3ad4eb0f9b",
+            "encoding_audit_sha256": "d476e60404aa5ff1768622e587d4d058df8d22b04c54df5623ccd8ab4871e603",
+            "output_bytes": 84351238,
+            "splits": {
+              "train": {
+                "records": 18958,
+                "input_tokens": 2448155,
+                "ce_tokens": 1083179
+              },
+              "val": {
+                "records": 163,
+                "input_tokens": 21517,
+                "ce_tokens": 9781
+              },
+              "test": {
+                "records": 208,
+                "input_tokens": 26707,
+                "ce_tokens": 11731
+              }
+            }
+          },
+          {
+            "model": "minikimik3",
+            "shard": "13",
+            "output": "data/pretraining-minikimik3-ocr-p0-shard-13-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "93e619ea2f6068962e7407e7f725914863874000b9b57ac502d9c18bd0e6d07f",
+            "source_audit_sha256": "0f780db08a1fa078f9c06daac40286327eb0d10774ab725f16441c6d1db859e3",
+            "encoding_audit_sha256": "f95b65191b5e20770dedaa018e8b9a0a933c81935e0e9a8e8409397337850e46",
+            "output_bytes": 84010288,
+            "splits": {
+              "train": {
+                "records": 18865,
+                "input_tokens": 2434286,
+                "ce_tokens": 1076006
+              },
+              "val": {
+                "records": 197,
+                "input_tokens": 26295,
+                "ce_tokens": 12111
+              },
+              "test": {
+                "records": 188,
+                "input_tokens": 24159,
+                "ce_tokens": 10623
+              }
+            }
+          },
+          {
+            "model": "minikimik3",
+            "shard": "14",
+            "output": "data/pretraining-minikimik3-ocr-p0-shard-14-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "7fadf9d39f41271f1010ff1b54d7b2d850fb32e6dc831f39735ba4289b1519a0",
+            "source_audit_sha256": "857a81268087a04476728eacbb09b5235fec60cdee9904ee29ab7064be9f1d00",
+            "encoding_audit_sha256": "3d8606ace87f82d228ca945c572a754bd823a1366bceef989b263e35c408b2d2",
+            "output_bytes": 84771787,
+            "splits": {
+              "train": {
+                "records": 19062,
+                "input_tokens": 2459161,
+                "ce_tokens": 1086697
+              },
+              "val": {
+                "records": 165,
+                "input_tokens": 22054,
+                "ce_tokens": 10174
+              },
+              "test": {
+                "records": 215,
+                "input_tokens": 27558,
+                "ce_tokens": 12078
+              }
+            }
+          },
+          {
+            "model": "minikimik3",
+            "shard": "15",
+            "output": "data/pretraining-minikimik3-ocr-p0-shard-15-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "cd3fc74a60db25dcbe2330bb260538d76d3cf89ac14edb42d4fbbcffce3aed50",
+            "source_audit_sha256": "e2e738c69ac68e2b40744135fde20c509b69bd93db4214e4bed38c920fbaf924",
+            "encoding_audit_sha256": "8a0f0b93f5ced9599aabe592f8043fda099f2f131920cf4a7421668a94cbd4db",
+            "output_bytes": 84050036,
+            "splits": {
+              "train": {
+                "records": 18924,
+                "input_tokens": 2442998,
+                "ce_tokens": 1080470
+              },
+              "val": {
+                "records": 166,
+                "input_tokens": 21970,
+                "ce_tokens": 10018
+              },
+              "test": {
+                "records": 170,
+                "input_tokens": 22135,
+                "ce_tokens": 9895
+              }
+            }
+          },
+          {
+            "model": "miniqwen4",
+            "shard": "08",
+            "output": "data/pretraining-miniqwen4-ocr-p0-shard-08-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "6b7e3ef3ceb46cf340ddcd74a54039121a51c8f9bb2ee875861ef3d08544630e",
+            "source_audit_sha256": "cc41791f63cf0843585152e4da2923938e2790cd71f79e5337acc4d1b60a1088",
+            "encoding_audit_sha256": "d8743e83d11d53247b4aac4a46130d357ac9aa135906e9fa0e7c40f65d7bdf36",
+            "output_bytes": 81157733,
+            "splits": {
+              "train": {
+                "records": 19062,
+                "input_tokens": 2083292,
+                "ce_tokens": 1092068
+              },
+              "val": {
+                "records": 190,
+                "input_tokens": 21516,
+                "ce_tokens": 11636
+              },
+              "test": {
+                "records": 208,
+                "input_tokens": 22645,
+                "ce_tokens": 11829
+              }
+            }
+          },
+          {
+            "model": "miniqwen4",
+            "shard": "09",
+            "output": "data/pretraining-miniqwen4-ocr-p0-shard-09-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "c1530855ee04a07e29dcb00c5a1408464e928d6449d50134cf417d3433e33089",
+            "source_audit_sha256": "f3296b48cf9f7fc3bf2ca4d35497ae5146622bf603c71551975cdb769fffa432",
+            "encoding_audit_sha256": "4f36bb17914679fa4a503be47692b1b83f1731e0dd50077dd4191310ce97fc6d",
+            "output_bytes": 80493414,
+            "splits": {
+              "train": {
+                "records": 18912,
+                "input_tokens": 2065240,
+                "ce_tokens": 1081816
+              },
+              "val": {
+                "records": 199,
+                "input_tokens": 22317,
+                "ce_tokens": 11969
+              },
+              "test": {
+                "records": 187,
+                "input_tokens": 20311,
+                "ce_tokens": 10587
+              }
+            }
+          },
+          {
+            "model": "miniqwen4",
+            "shard": "10",
+            "output": "data/pretraining-miniqwen4-ocr-p0-shard-10-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "fdaeef65f03b44f4eb153d973f3d7a58c41b715618cc2e7e13c47c75f2c87513",
+            "source_audit_sha256": "5f37899695c5178bca2393511b1565190c572a98c08859e862713c29642d4822",
+            "encoding_audit_sha256": "cfec48121968d1366751744e2af1b459d2455011f5c56ff921e66a3d95846d22",
+            "output_bytes": 79981813,
+            "splits": {
+              "train": {
+                "records": 18810,
+                "input_tokens": 2052138,
+                "ce_tokens": 1074018
+              },
+              "val": {
+                "records": 169,
+                "input_tokens": 19060,
+                "ce_tokens": 10272
+              },
+              "test": {
+                "records": 191,
+                "input_tokens": 20736,
+                "ce_tokens": 10804
+              }
+            }
+          },
+          {
+            "model": "miniqwen4",
+            "shard": "11",
+            "output": "data/pretraining-miniqwen4-ocr-p0-shard-11-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "a8ed41048992a81436a0b42d8168b2acf4ad63865d25aca4b63455a6cdfc0ce5",
+            "source_audit_sha256": "230b0ff318a8dc79ddad3066780beddb065f3aa462cd4d822396ce0407909f5c",
+            "encoding_audit_sha256": "f200b1b17344f4be0b12edc3ae68ffc3494f306b0240f1ccdf128b26335eeec2",
+            "output_bytes": 80861016,
+            "splits": {
+              "train": {
+                "records": 19008,
+                "input_tokens": 2073026,
+                "ce_tokens": 1084610
+              },
+              "val": {
+                "records": 180,
+                "input_tokens": 20444,
+                "ce_tokens": 11084
+              },
+              "test": {
+                "records": 211,
+                "input_tokens": 22880,
+                "ce_tokens": 11908
+              }
+            }
+          },
+          {
+            "model": "miniqwen4",
+            "shard": "12",
+            "output": "data/pretraining-miniqwen4-ocr-p0-shard-12-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "67e7f01b54679f826f301786e0d82df62282856f77bba467b494661bd80e4c30",
+            "source_audit_sha256": "d897212897cad3d1d0efcc8e0083a717c9a863df841fac03629e4be88a3f0aaf",
+            "encoding_audit_sha256": "618d6ad3f63f305c3b62dc578642f611a9f5e60a2ca6082ff265323f11610035",
+            "output_bytes": 80601405,
+            "splits": {
+              "train": {
+                "records": 18958,
+                "input_tokens": 2068995,
+                "ce_tokens": 1083179
+              },
+              "val": {
+                "records": 163,
+                "input_tokens": 18257,
+                "ce_tokens": 9781
+              },
+              "test": {
+                "records": 208,
+                "input_tokens": 22547,
+                "ce_tokens": 11731
+              }
+            }
+          },
+          {
+            "model": "miniqwen4",
+            "shard": "13",
+            "output": "data/pretraining-miniqwen4-ocr-p0-shard-13-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "e8da2588252fb1ebb448e5dde78909eb0f6be58881786f9c64c2d2f4e5bd8027",
+            "source_audit_sha256": "759db1892bf34b753df6c620a81f625cc1afe67e5722c16c3d176bba1b310fb8",
+            "encoding_audit_sha256": "f9c72b3afc3e608d3898c7a671f49a2b3bc7ba5281bb01ad12413c486e962de0",
+            "output_bytes": 80275779,
+            "splits": {
+              "train": {
+                "records": 18865,
+                "input_tokens": 2056986,
+                "ce_tokens": 1076006
+              },
+              "val": {
+                "records": 197,
+                "input_tokens": 22355,
+                "ce_tokens": 12111
+              },
+              "test": {
+                "records": 188,
+                "input_tokens": 20399,
+                "ce_tokens": 10623
+              }
+            }
+          },
+          {
+            "model": "miniqwen4",
+            "shard": "14",
+            "output": "data/pretraining-miniqwen4-ocr-p0-shard-14-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "8ac3b13a4ac0ba658a493675f952eb9d43f6aa9ae75b1e84483e6a13a7c2e0f8",
+            "source_audit_sha256": "f9b95bc04c35ca2f02994a27fc9715dde672e1a429e7093e078f7941a220d9c0",
+            "encoding_audit_sha256": "57299bd48c0b3e625348896d8b70c42ff936c643b44627f006bff91c1e472c54",
+            "output_bytes": 81000032,
+            "splits": {
+              "train": {
+                "records": 19062,
+                "input_tokens": 2077921,
+                "ce_tokens": 1086697
+              },
+              "val": {
+                "records": 165,
+                "input_tokens": 18754,
+                "ce_tokens": 10174
+              },
+              "test": {
+                "records": 215,
+                "input_tokens": 23258,
+                "ce_tokens": 12078
+              }
+            }
+          },
+          {
+            "model": "miniqwen4",
+            "shard": "15",
+            "output": "data/pretraining-miniqwen4-ocr-p0-shard-15-v1",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "process_observed_live": false,
+            "manifest_sha256": "fea86f74255c6c0e90034ee520e41b412aa1edaceba14a2808a95b738662b800",
+            "source_audit_sha256": "3ad240c8e5f7fdd68fd7267aeb773f07dcb3b236e3cbcef13ecbdf73c7aad294",
+            "encoding_audit_sha256": "8a4a928119e06f4bbfdc53b86465ea66975b3819620941f337ee9ab0704d2b98",
+            "output_bytes": 80313587,
+            "splits": {
+              "train": {
+                "records": 18924,
+                "input_tokens": 2064518,
+                "ce_tokens": 1080470
+              },
+              "val": {
+                "records": 166,
+                "input_tokens": 18650,
+                "ce_tokens": 10018
+              },
+              "test": {
+                "records": 170,
+                "input_tokens": 18735,
+                "ce_tokens": 9895
+              }
+            }
+          }
+        ],
+        "completed_jobs": 24,
+        "live_jobs": 0
+      },
+      "all_sixteen_raw_shards": {
+        "records": 308250,
+        "raw_media_bytes": 5192448222,
+        "train": 302190,
+        "val": 2892,
+        "test": 3168,
+        "source_split_mismatches": 0,
+        "independent_text_supply_added": 0,
+        "cross_shard_duplicate_checks_pending": false,
+        "cross_shard_admission_pending": true
+      },
+      "expanded_grouping": {
+        "observed_unix": 1789091143.9407654,
+        "state": "split_conflicts_require_partition_update",
+        "source_commit": "0e53f27d2db72a653c2301d79ca7228bfbadcf1f",
+        "source_archive_sha256": "ea79fef43d06e01d855ee4843b4bc626487c45908fb15ba15ce0493293e2e155",
+        "process_identity_verified": false,
+        "new_identity_exports": 12,
+        "unchanged_identity_exports_reused": 6,
+        "output_bound_gib": 1,
+        "max_text_comparisons": 5000000,
+        "first_wave_review_does_not_cover_new_candidates": true,
+        "formal_admission": false,
+        "main_budget_eligible": false,
+        "group_audit_sha256": "289cab409d516677a1962500ae56adda9ebe739c00672c36f7e8089d239425f7",
+        "result": {
+          "input_images": 371500,
+          "unique_rgb_images": 371500,
+          "input_groups": 342553,
+          "connected_groups": 342440,
+          "link_counts": {
+            "phash_hamming_le_6": 78,
+            "rendered_text_jaccard_ge_0.85": 33,
+            "origin_alias": 4
+          },
+          "cross_inventory_link_counts": {
+            "phash_hamming_le_6": 78,
+            "rendered_text_jaccard_ge_0.85": 31,
+            "origin_alias": 4
+          },
+          "rendered_images": 308250
+        },
+        "split_conflict_components": 1,
+        "unresolved_rendered_visual_candidates": 1899
+      },
+      "all_shard_encoding_totals": {
+        "mf1": {
+          "completed_shards": 16,
+          "expected_shards": 16,
+          "train_media_records": 302190,
+          "train_ce_inventory": 11167680,
+          "train_input_tokens": 33086013,
+          "output_bytes": 695382540,
+          "formal_admission": false,
+          "main_budget_eligible": false,
+          "inventory_precedes_known_text_parent_and_ocr_quarantine": true
+        },
+        "minikimik3": {
+          "completed_shards": 16,
+          "expected_shards": 16,
+          "train_media_records": 302190,
+          "train_ce_inventory": 17258470,
+          "train_input_tokens": 39016150,
+          "output_bytes": 1345389627,
+          "formal_admission": false,
+          "main_budget_eligible": false,
+          "inventory_precedes_known_text_parent_and_ocr_quarantine": true
+        },
+        "miniqwen4": {
+          "completed_shards": 16,
+          "expected_shards": 16,
+          "train_media_records": 302190,
+          "train_ce_inventory": 17258470,
+          "train_input_tokens": 32972350,
+          "output_bytes": 1285588998,
+          "formal_admission": false,
+          "main_budget_eligible": false,
+          "inventory_precedes_known_text_parent_and_ocr_quarantine": true
+        }
+      },
+      "actual_mf1_ocr_supply": {
+        "candidate_ce_with_prior_document_component": 12639190,
+        "p0_ocr_ce_target": 14000000,
+        "deficit_ce": 1360810,
+        "grouping_and_quality_admission_pending": true
       }
+    }
+  },
+  "source_native_composition": {
+    "observed_unix": 1789091143.940805,
+    "source_commit": "8a940cd26d527b25297228d4f279d736e2959bbb",
+    "code_change": "native reader shares text once and indexes original media components; no token/pixel payload copies",
+    "validation": {
+      "full_cpu_source_commit": "dceac571dd57d2783022cc919cc1496e85724123",
+      "full_cpu_passed": 501,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "full_cpu_seconds": 159.45,
+      "full_cpu_log_sha256": "66b256b11a53969851c2b5ccb9cab10d0846ae17cbf864cb2ed7906e91ffd6ff",
+      "derivation_compatibility_tests_passed": 19,
+      "derivation_compatibility_log_sha256": "bf15a5a97995cbffeaec23f575d7222fcc0d2c9631963aad0422e58b7d689077",
+      "mypy_source_files": 186,
+      "mypy_log_sha256": "65638be1b18ffeafcffbbb3243e3cc2c739a82ed3b00bca512594205965022a3",
+      "registry_failed_attempt_tests_passed": 14,
+      "registry_tests_log_sha256": "043fab74ff735b1dee07f17d30bddb402e20ea4cfc2be20eabbf50eaf2e86912",
+      "registry_processor_sha256": "f3e0324cafb6371bc140f3af2ed85076ab9d1433d00d7c55052c2fc355941bb8"
+    },
+    "initial_failure": {
+      "source_commit": "dceac571dd57d2783022cc919cc1496e85724123",
+      "reason": "reader accepted only original audit field; task/exclusion derivations use encoded_manifest_sha256",
+      "resolution": "accept and verify the existing derivation binding; actual filtered-component regression added",
+      "raw_or_encoded_inputs_rewritten": false
+    },
+    "models": {
+      "minikimik3": {
+        "output": "data/pretraining-minikimik3-k1-components-v1",
+        "state": "assembled_pending_supply_and_quality_admission",
+        "source_commit": "8a940cd26d527b25297228d4f279d736e2959bbb",
+        "source_archive_sha256": "c552b14d66fb68a52fa516f3cef579d128af259d535a4791cc7e7b3f1b9845b6",
+        "output_bytes": 5526154,
+        "manifest_sha256": "c8ada0eabda52b3edfec663050749c0fd323f5a46601eeea6caa8bb9569cc442",
+        "source_audit_sha256": "c88ec66bdc4770b09c28fe9ddee93b3a061dc839b2b6403cb9aff30ac20b3686",
+        "reader_inventory_sha256": "b87b1a59c1bb551334566536c22b2ad3c9ad92a7092dfda974986992fccb84b5",
+        "group_audit_sha256": "3fe504e3c28daf8522f1182d7c7e502a6093a8f3a453bac6697a1d3274e901c1",
+        "readers": {
+          "512": {
+            "train": {
+              "examples": 1373004,
+              "ce_tokens": 552224519,
+              "input_tokens": 561940227,
+              "domain_ce": {
+                "en_edu": 148804506,
+                "zh_edu": 216158852,
+                "verified_math_science": 47135246,
+                "dialogue": 39551438,
+                "code": 88260002,
+                "vqa": 3255412,
+                "caption": 4764942,
+                "ocr_document": 4294121
+              },
+              "image_occurrences": 118012,
+              "video_examples": 0,
+              "shared_text_examples": 1254992,
+              "media_components": 5
+            },
+            "val": {
+              "examples": 12709,
+              "ce_tokens": 5146839,
+              "input_tokens": 5224433,
+              "domain_ce": {
+                "en_edu": 1437696,
+                "zh_edu": 2056042,
+                "dialogue": 368247,
+                "verified_math_science": 485963,
+                "code": 717975,
+                "caption": 22735,
+                "vqa": 15054,
+                "ocr_document": 43127
+              },
+              "image_occurrences": 916,
+              "video_examples": 0,
+              "shared_text_examples": 11793,
+              "media_components": 5
+            }
+          },
+          "1024": {
+            "train": {
+              "examples": 846665,
+              "ce_tokens": 552265096,
+              "input_tokens": 561460508,
+              "domain_ce": {
+                "en_edu": 148804506,
+                "zh_edu": 216158852,
+                "verified_math_science": 47135246,
+                "dialogue": 39551438,
+                "code": 88260002,
+                "vqa": 3255412,
+                "caption": 4805519,
+                "ocr_document": 4294121
+              },
+              "image_occurrences": 118097,
+              "video_examples": 0,
+              "shared_text_examples": 728568,
+              "media_components": 5
+            },
+            "val": {
+              "examples": 7785,
+              "ce_tokens": 5147325,
+              "input_tokens": 5220066,
+              "domain_ce": {
+                "en_edu": 1437696,
+                "zh_edu": 2056042,
+                "dialogue": 368247,
+                "verified_math_science": 485963,
+                "code": 717975,
+                "caption": 23221,
+                "vqa": 15054,
+                "ocr_document": 43127
+              },
+              "image_occurrences": 917,
+              "video_examples": 0,
+              "shared_text_examples": 6868,
+              "media_components": 5
+            }
+          }
+        },
+        "original_record_counts": {
+          "train": 516904,
+          "val": 4652,
+          "test": 5583
+        },
+        "unique_rgb_images": {
+          "train": 98103,
+          "val": 823,
+          "test": 1002
+        },
+        "component_manifest_sha256": [
+          "ea3d8ff172e24ee552a908bfb5f19305b4afce5f9636bd3a0ed9c7d2a5209653",
+          "b249519b3cff65cb0c7d9cb0d7f1283a95a9780aa06107c305b6360498aff642",
+          "dfc6b8accce6d6306bab5929bdeab4bef84e429f5a71d43380dd63e67a9a2f86",
+          "87642d26cad32ac7974b9a070f775fc77a12e3dbd8c321a54e48486a94a8998f",
+          "196cee2eccb8561b33d63e53d57afce3713a7ef64a79464acb2c625426a72ae2"
+        ],
+        "image_shards": 5,
+        "shared_text_encodings": 1,
+        "model_training_ce": 0,
+        "missing_media_components": [
+          "document/chart encoding",
+          "next OCR wave",
+          "natural-image extension"
+        ],
+        "scope": "natural plus first four OCR shards; reader examples count text context windows and media records, not independent source documents",
+        "uses_shared_validation_selections": true
+      },
+      "miniqwen4": {
+        "output": "data/pretraining-miniqwen4-q1-components-v1",
+        "state": "assembled_pending_supply_and_quality_admission",
+        "source_commit": "8a940cd26d527b25297228d4f279d736e2959bbb",
+        "source_archive_sha256": "c552b14d66fb68a52fa516f3cef579d128af259d535a4791cc7e7b3f1b9845b6",
+        "output_bytes": 5526147,
+        "manifest_sha256": "4884067c49394f6d5b29d68901bf9c4570e793bd16fc9bb8b41aea61f44d080f",
+        "source_audit_sha256": "ada2e7b7d65261510ef86567aaf1a7b608ffe0902a9e184f0e0ae9ce7c9ae281",
+        "reader_inventory_sha256": "2be49e2b2aa830f658f426e3114fab96c761815c1eda0d6e73f2a1d26d240386",
+        "group_audit_sha256": "3fe504e3c28daf8522f1182d7c7e502a6093a8f3a453bac6697a1d3274e901c1",
+        "readers": {
+          "512": {
+            "train": {
+              "examples": 1373044,
+              "ce_tokens": 552242516,
+              "input_tokens": 559408383,
+              "domain_ce": {
+                "en_edu": 148804506,
+                "zh_edu": 216158852,
+                "verified_math_science": 47135246,
+                "dialogue": 39551438,
+                "code": 88260002,
+                "vqa": 3255412,
+                "caption": 4782939,
+                "ocr_document": 4294121
+              },
+              "image_occurrences": 118052,
+              "video_examples": 0,
+              "shared_text_examples": 1254992,
+              "media_components": 5
+            },
+            "val": {
+              "examples": 12709,
+              "ce_tokens": 5146839,
+              "input_tokens": 5205126,
+              "domain_ce": {
+                "en_edu": 1437696,
+                "zh_edu": 2056042,
+                "dialogue": 368247,
+                "verified_math_science": 485963,
+                "code": 717975,
+                "caption": 22735,
+                "vqa": 15054,
+                "ocr_document": 43127
+              },
+              "image_occurrences": 916,
+              "video_examples": 0,
+              "shared_text_examples": 11793,
+              "media_components": 5
+            }
+          },
+          "1024": {
+            "train": {
+              "examples": 846665,
+              "ce_tokens": 552265096,
+              "input_tokens": 558906698,
+              "domain_ce": {
+                "en_edu": 148804506,
+                "zh_edu": 216158852,
+                "verified_math_science": 47135246,
+                "dialogue": 39551438,
+                "code": 88260002,
+                "vqa": 3255412,
+                "caption": 4805519,
+                "ocr_document": 4294121
+              },
+              "image_occurrences": 118097,
+              "video_examples": 0,
+              "shared_text_examples": 728568,
+              "media_components": 5
+            },
+            "val": {
+              "examples": 7785,
+              "ce_tokens": 5147325,
+              "input_tokens": 5200730,
+              "domain_ce": {
+                "en_edu": 1437696,
+                "zh_edu": 2056042,
+                "dialogue": 368247,
+                "verified_math_science": 485963,
+                "code": 717975,
+                "caption": 23221,
+                "vqa": 15054,
+                "ocr_document": 43127
+              },
+              "image_occurrences": 917,
+              "video_examples": 0,
+              "shared_text_examples": 6868,
+              "media_components": 5
+            }
+          }
+        },
+        "original_record_counts": {
+          "train": 516904,
+          "val": 4652,
+          "test": 5583
+        },
+        "unique_rgb_images": {
+          "train": 98103,
+          "val": 823,
+          "test": 1002
+        },
+        "component_manifest_sha256": [
+          "b0d987acfd3738acb8bf8bca1bb5396b05f8801c029b4a13f0609d6cf5c143f0",
+          "5a664ca018988c1f39a927c5e4cff58c40bc3597309361882b49d3571d2cc4d5",
+          "985be901b4265c4ddd0ad340ef587d31894c817baf3edc0cc01f6acf3f597b25",
+          "d13c483da2bb259b4da350d9ead6650412759490da2a8ad9a8ca38e3b0c3dbcc",
+          "c9a84c67a49e7602a27e64920053d92c538d5854eeae2c0f502320c11442df2b"
+        ],
+        "image_shards": 5,
+        "shared_text_encodings": 1,
+        "model_training_ce": 0,
+        "missing_media_components": [
+          "document/chart encoding",
+          "next OCR wave",
+          "natural-image extension"
+        ],
+        "scope": "natural plus first four OCR shards; reader examples count text context windows and media records, not independent source documents",
+        "uses_shared_validation_selections": true
+      }
+    },
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "shared_validation_selections": {
+      "512": {
+        "policy": {
+          "periodic_ce_tokens": 1000000,
+          "phase_end_ce_tokens": 5000000,
+          "early_interval_ce": 10000000,
+          "early_until_ce": 100000000,
+          "later_interval_ce": 50000000
+        },
+        "seed": 42,
+        "selection": "fixed_without_replacement",
+        "periodic": {
+          "requested_ce_tokens": 1000000,
+          "actual_ce_tokens": 1000286,
+          "examples": 2454,
+          "domain_ce": {
+            "zh_edu": 402757,
+            "en_edu": 289663,
+            "code": 142427,
+            "ocr_document": 7278,
+            "verified_math_science": 83434,
+            "dialogue": 65739,
+            "vqa": 3224,
+            "caption": 5764
+          },
+          "indices_sha256": "371541895d3a0b17dbd6ce6bde8abedff48d00322bc3956cf357f0accdcaab29",
+          "overshoot_bound_ce": 511
+        },
+        "phase_end": {
+          "requested_ce_tokens": 5000000,
+          "actual_ce_tokens": 5000380,
+          "examples": 12345,
+          "domain_ce": {
+            "zh_edu": 1996776,
+            "en_edu": 1404647,
+            "code": 698219,
+            "ocr_document": 42040,
+            "verified_math_science": 468035,
+            "dialogue": 354754,
+            "vqa": 14359,
+            "caption": 21550
+          },
+          "indices_sha256": "82c97fd9a44712cab365c1b6e40a04b50185384faa23d8f93774562ef2e46f58",
+          "overshoot_bound_ce": 511
+        }
+      },
+      "1024": {
+        "policy": {
+          "periodic_ce_tokens": 1000000,
+          "phase_end_ce_tokens": 5000000,
+          "early_interval_ce": 10000000,
+          "early_until_ce": 100000000,
+          "later_interval_ce": 50000000
+        },
+        "seed": 42,
+        "selection": "fixed_without_replacement",
+        "periodic": {
+          "requested_ce_tokens": 1000000,
+          "actual_ce_tokens": 1000862,
+          "examples": 1551,
+          "domain_ce": {
+            "ocr_document": 8918,
+            "zh_edu": 393757,
+            "code": 131949,
+            "verified_math_science": 99602,
+            "dialogue": 77070,
+            "en_edu": 281779,
+            "vqa": 2944,
+            "caption": 4843
+          },
+          "indices_sha256": "b2aee6711606c7b36cafac3f1d2d83c659d1fed3f4d193267d7cb5978b8767d8",
+          "overshoot_bound_ce": 1023
+        },
+        "phase_end": {
+          "requested_ce_tokens": 5000000,
+          "actual_ce_tokens": 5000299,
+          "examples": 7550,
+          "domain_ce": {
+            "ocr_document": 41802,
+            "zh_edu": 1990913,
+            "code": 701763,
+            "verified_math_science": 469452,
+            "dialogue": 358924,
+            "en_edu": 1399810,
+            "vqa": 14929,
+            "caption": 22706
+          },
+          "indices_sha256": "5251c542df97136cd70bbb3fa3a999ea9abb117635b6df692f43a5bcd8d65888",
+          "overshoot_bound_ce": 1023
+        }
+      }
+    }
+  },
+  "shared_text_near_duplicate_blocker": {
+    "observed_unix": 1789091143.9885912,
+    "status": "known_parent_and_derivative_quarantined_pending_full_audit_and_encoded_refresh",
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "text_conflict_report_sha256": "33ef671beda2b54395642d882123d1cd6b68d640d6a8de7e25bdd3352f90b074",
+    "parent_media_group_audit_sha256": "289cab409d516677a1962500ae56adda9ebe739c00672c36f7e8089d239425f7",
+    "original_text_partition": "data/pretraining-text-partition-v2",
+    "original_text_partition_manifest_sha256": "b7df9509c5c71c380da9029ee1d735c6fc32ce2f92a13c04818cbb85f55f27ab",
+    "comparison": {
+      "parent_lengths": [
+        1722,
+        1645
+      ],
+      "parent_splits": [
+        "train",
+        "test"
+      ],
+      "parent_jaccard": 0.9775349119611415,
+      "printed_text_jaccard": 0.8615384615384616,
+      "train_parent_contains_test_ocr_shingle_fraction": 1.0,
+      "method": "existing whitespace-free normalized casefold five-character shingles",
+      "next_action": "quarantine the training derivative and trace its shared-text parent exposure before admitting expanded data",
+      "simhash_hamming_distance": 4,
+      "legacy_hamming_gate": 3,
+      "equal_16bit_bands": [
+        0
+      ]
+    },
+    "members": [
+      {
+        "inventory": "shared-text",
+        "group": "6f8cc0109e6c88d3e4299c9043d669e537baa92df2e76c11f537dae9c0f7a072",
+        "split": "train",
+        "records": 1,
+        "sample_id": "6f8cc0109e6c88d3e4299c9043d669e537baa92df2e76c11f537dae9c0f7a072"
+      },
+      {
+        "inventory": "shared-text",
+        "group": "7b2c1641a1f922a9e0d98dd2240ac7374b3248b7e4ea83974cf658867dcd339a",
+        "split": "test",
+        "records": 1,
+        "sample_id": "7b2c1641a1f922a9e0d98dd2240ac7374b3248b7e4ea83974cf658867dcd339a"
+      }
+    ],
+    "scope": "one confirmed full-document near-duplicate across train/test; not an exhaustive text audit",
+    "cause": "a retrieved candidate at Simhash distance four was discarded by the distance-three prefilter before Jaccard comparison",
+    "affects_all_four_model_text_consumers": true,
+    "formal_training_ce": 0,
+    "old_encoded_inventory_is_pre_quarantine": true,
+    "tokenizer_training_membership_recheck_required": true,
+    "full_shared_text_holdout_audit_state": "required_not_started",
+    "review_reuse": {
+      "prior_reviewed_pairs": 455,
+      "identical_candidates_still_present": 455,
+      "pairs_without_prior_decisions": 1444,
+      "expanded_pairs": 1899,
+      "scope": "candidate content identity only; carry-forward review records still need explicit binding"
+    },
+    "quarantine_views": {
+      "text": {
+        "state": "known_training_group_quarantined_pending_full_audit_and_encoding",
+        "source_commit": "c9f1cdd085ed2871ad1cdaaf1300b4df73081a6f",
+        "output": "data/pretraining-text-partition-v3",
+        "manifest_sha256": "724b67f6760f67822d9321cbea9a18b175b1354dec3f77dc40d1995aadd4374c",
+        "source_audit_sha256": "3380dd92034f5191a4fa142ba66ab8e3595128de627980b13f538dd17038626c",
+        "newly_excluded_records": 1,
+        "splits": {
+          "test": 4392,
+          "train": 398806,
+          "val": 3735
+        },
+        "output_bytes": 9958825,
+        "holdout_membership_sha256": "3a6b8f8218151a8147fd14291707a32586e0291c8de3b30aa92f7034f49e6655"
+      },
+      "ocr": {
+        "state": "known_training_group_quarantined_pending_full_audit_and_encoding",
+        "source_commit": "c9f1cdd085ed2871ad1cdaaf1300b4df73081a6f",
+        "output": "data/pretraining-ocr-p0-shard-06-v2",
+        "manifest_sha256": "3ed04700fd3b440ec80903e8a657e26698678184082089a90f43c41df7a106d8",
+        "source_audit_sha256": "c74d42af8e30742c5d446b018085966968f95b53a914eb2e3be4e7e8a56ef23a",
+        "newly_excluded_records": 1,
+        "splits": {
+          "test": 201,
+          "train": 18794,
+          "val": 178
+        },
+        "output_bytes": 5454859,
+        "holdout_membership_sha256": "863300aadcf4bf75b34dd48b31ee7ca1076367a4a94bab743e7ea3d97a687dea"
+      }
+    },
+    "validation": {
+      "source_commit": "c9f1cdd085ed2871ad1cdaaf1300b4df73081a6f",
+      "full_cpu_passed": 505,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "full_cpu_seconds": 154.13,
+      "targeted_group_exclusion_tests_passed": 54,
+      "full_cpu_log_sha256": "141543fde553f1d5c9f8f80434ca07448301151fb203360ae0a5d7245888a91f",
+      "mypy_source_files": 186,
+      "ruff": "passed",
+      "formatted_files": 333
     }
   }
 }
