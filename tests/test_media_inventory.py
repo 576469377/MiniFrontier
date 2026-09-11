@@ -13,6 +13,7 @@ from minifrontier.data.media_inventory import (
     TEXT_FORMAT,
     _text_neighbors,
     audit_media_identities,
+    close_media_candidate_review,
     export_media_identities,
 )
 from minifrontier.data.partitions import (
@@ -197,6 +198,107 @@ def test_text_prefix_join_matches_brute_force_including_threshold_and_budget():
     assert (2, 0) not in set(_text_neighbors(boundary, max_comparisons=100))
     with pytest.raises(ValueError, match="comparison budget"):
         list(_text_neighbors({i: set(range(20)) for i in range(5)}, max_comparisons=1))
+
+
+def test_review_closure_requires_complete_bound_decisions_without_claiming_human_quality(tmp_path):
+    import hashlib
+
+    candidate = dict(
+        rendered=dict(inventory="ocr", group="one", split="train", rgb_sha256="a" * 64),
+        external=dict(inventory="external", group="two", split="val", rgb_sha256="b" * 64),
+        phash_distance=6,
+    )
+    parent = tmp_path / "grouping.json"
+    parent.write_text(
+        json.dumps(
+            dict(
+                kind="cross_corpus_media_group_audit",
+                split_conflicts=[],
+                status="rendered_visual_candidates_require_verification",
+                unresolved_rendered_visual_candidates=[candidate],
+                formal_admission=False,
+            )
+        )
+    )
+    decision = dict(
+        candidate_index=0,
+        candidate_sha256=hashlib.sha256(json.dumps(candidate, sort_keys=True).encode()).hexdigest(),
+        rendered_rgb_sha256="a" * 64,
+        external_rgb_sha256="b" * 64,
+        rendered_file_sha256="c" * 64,
+        external_raw_sha256="d" * 64,
+        disposition="not_visual_duplicate",
+        reason="Printed prose versus a colored chart.",
+    )
+    review = tmp_path / "review.json"
+    valid = dict(
+        kind="model_assisted_visual_candidate_review",
+        group_audit_sha256=sha256(parent),
+        reviewer="model-assisted image inspection",
+        decisions=[decision],
+    )
+    for change in [
+        dict(decisions=[]),
+        dict(decisions=[decision, decision]),
+        dict(group_audit_sha256="e" * 64),
+        dict(decisions=[dict(decision, candidate_index=True)]),
+        dict(decisions=[dict(decision, candidate_sha256="e" * 64)]),
+        dict(decisions=[dict(decision, disposition="duplicate")]),
+        dict(decisions=[dict(decision, external_raw_sha256="missing")]),
+    ]:
+        review.write_text(json.dumps(dict(valid, **change)))
+        with pytest.raises(ValueError):
+            close_media_candidate_review(parent, [review], tmp_path / "rejected.json")
+        assert not (tmp_path / "rejected.json").exists()
+    review.write_text(json.dumps(valid))
+    proof = close_media_candidate_review(parent, [review], tmp_path / "closed.json")
+    assert proof["status"] == "mechanical_group_checks_passed_with_model_assisted_review"
+    assert proof["reviewed_visual_candidates"] == 1
+    assert not proof["unresolved_rendered_visual_candidates"]
+    assert not proof["formal_admission"] and not proof["human_source_quality_review_completed"]
+    assert proof["parent_group_audit_sha256"] == sha256(parent)
+    assert json.loads(parent.read_text())["unresolved_rendered_visual_candidates"] == [candidate]
+    changed = json.loads(parent.read_text())
+    changed["split_conflicts"] = [{"unresolved": True}]
+    parent.write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match="split conflicts"):
+        close_media_candidate_review(parent, [review], tmp_path / "still-conflicting.json")
+
+
+def test_deferred_ocr_layout_hash_preserves_source_holds_and_reports_pending_near_audit(tmp_path):
+    for enabled in (True, False):
+        builder = CorpusBuilder(
+            tmp_path / str(enabled), val_buckets=1, test_buckets=1, group_image_phash=enabled
+        )
+        for group, text, rgb in [
+            ("held", "The first passage discusses a distant research station.", "a"),
+            ("train", "A different passage records the method for planting seeds.", "b"),
+        ]:
+            assert builder.add(
+                dict(
+                    source="fixture",
+                    revision="fixed",
+                    item_id=group,
+                    group_id=group,
+                    license="CC0",
+                    lang="en",
+                    task="ocr_document",
+                    stage="pretrain",
+                    text=text,
+                    media=[dict(kind="image", rgb_sha256=rgb * 64, phash="0" * 16)],
+                )
+            )
+        manifest = builder.finalize(split_locks={"source-group:fixture:held": "test"})
+        splits = {
+            json.loads(p)["group_id"]: s
+            for p, s in builder.db.execute("SELECT payload,split FROM samples")
+        }
+        assert splits["held"] == "test"
+        assert splits["train"] == ("test" if enabled else "train")
+        if not enabled:
+            assert manifest["image_phash_grouping"] is False
+            assert manifest["image_near_duplicate_audit"].startswith("deferred")
+        builder.db.close()
 
 
 def test_identity_export_retains_rejected_origin_aliases_and_actual_holdouts(tmp_path):

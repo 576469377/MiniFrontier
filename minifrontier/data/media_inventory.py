@@ -351,3 +351,80 @@ def audit_media_identities(
     )
     _write_new(output, report, max_bytes)
     return report
+
+
+def close_media_candidate_review(audit_path, reviews, output, *, max_bytes=64 * 1024**2):
+    """Close a fixed candidate list only with complete, bound nonduplicate decisions.
+
+    This records an explicit model-assisted visual review, never human source
+    quality or formal admission. Confirmed duplicates need a partition update.
+    """
+    audit_path, output = Path(audit_path), Path(output)
+    if output.exists() or not reviews or max_bytes < 1 or audit_path.stat().st_size > max_bytes:
+        raise ValueError("choose review records, a new output and a positive byte bound")
+    parent_hash = sha256(audit_path)
+    audit = json.loads(audit_path.read_text())
+    if (
+        audit.get("kind") != "cross_corpus_media_group_audit"
+        or audit.get("split_conflicts") != []
+        or audit.get("status") != "rendered_visual_candidates_require_verification"
+    ):
+        raise ValueError("candidate review cannot clear unresolved connected split conflicts")
+    candidates = audit["unresolved_rendered_visual_candidates"]
+    if not candidates:
+        raise ValueError("candidate review has no fixed candidates")
+    checked, references = set(), []
+    for path in reviews:
+        path = Path(path)
+        if path.stat().st_size > max_bytes:
+            raise ValueError("visual review exceeds the metadata byte bound")
+        review = json.loads(path.read_text())
+        if (
+            review.get("kind") != "model_assisted_visual_candidate_review"
+            or review.get("group_audit_sha256") != parent_hash
+            or not review.get("reviewer")
+        ):
+            raise ValueError("visual review is not bound to this audit and reviewer")
+        for decision in review["decisions"]:
+            index = decision["candidate_index"]
+            if type(index) is not int or not 0 <= index < len(candidates) or index in checked:
+                raise ValueError("visual candidate review has a duplicate or invalid index")
+            candidate = candidates[index]
+            expected = hashlib.sha256(json.dumps(candidate, sort_keys=True).encode()).hexdigest()
+            if (
+                decision.get("candidate_sha256") != expected
+                or decision.get("rendered_rgb_sha256") != candidate["rendered"]["rgb_sha256"]
+                or decision.get("external_rgb_sha256") != candidate["external"]["rgb_sha256"]
+                or decision.get("disposition") != "not_visual_duplicate"
+                or not decision.get("reason")
+                or any(
+                    not isinstance(decision.get(k), str)
+                    or re.fullmatch("[0-9a-f]{64}", decision[k]) is None
+                    for k in ("rendered_file_sha256", "external_raw_sha256")
+                )
+            ):
+                raise ValueError(
+                    "candidate identity/decision is unresolved or needs partition repair"
+                )
+            checked.add(index)
+        references.append(
+            dict(
+                sha256=sha256(path), reviewer=review["reviewer"], decisions=len(review["decisions"])
+            )
+        )
+    if len(checked) != len(candidates):
+        raise ValueError("visual candidate review is incomplete")
+    result = dict(
+        audit,
+        status="mechanical_group_checks_passed_with_model_assisted_review",
+        parent_group_audit_sha256=parent_hash,
+        visual_candidate_reviews=references,
+        reviewed_visual_candidates=len(checked),
+        unresolved_rendered_visual_candidates=[],
+        original_visual_candidates_retained_in_parent=True,
+        review_processor_sha256=sha256(__file__),
+        human_source_quality_review_completed=False,
+        formal_admission=False,
+    )
+    _write_new(output, result, max_bytes)
+    return result

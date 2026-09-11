@@ -122,6 +122,7 @@ def test_source_partition_and_pixels_survive_generation_and_actual_mf1_encoding(
     assert audit["status"] == "candidate_slice_complete_pending_admission"
     assert not audit["formal_admission"] and not audit["main_budget_eligible"]
     assert audit["split_origin_mismatches"] == 0 and audit["independent_text_supply_added"] == 0
+    assert audit["corpus"]["image_phash_grouping"] is False
     from minifrontier.data.media_inventory import TEXT_FORMAT, export_media_identities
 
     exported = export_media_identities(out, tmp_path / "ocr-identities.json")
@@ -135,6 +136,7 @@ def test_source_partition_and_pixels_survive_generation_and_actual_mf1_encoding(
         contextlib.closing(open_corpus(root)) as source,
         contextlib.closing(open_corpus(out)) as generated,
     ):
+        assert generated.execute("SELECT COUNT(*) FROM image_bands").fetchone()[0] == 0
         for payload, split in generated.execute("SELECT payload,split FROM samples"):
             row = json.loads(payload)
             origin = row["text_origin"]

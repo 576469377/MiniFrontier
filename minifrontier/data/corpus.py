@@ -66,7 +66,12 @@ def simhash(text):
 
 
 class CorpusBuilder:
-    def __init__(self, root, *, seed=42, max_gib=48, val_buckets=50, test_buckets=50):
+    def __init__(
+        self, root, *, seed=42, max_gib=48, val_buckets=50, test_buckets=50, group_image_phash=True
+    ):
+        if type(group_image_phash) is not bool:
+            raise ValueError("image pHash grouping must be explicitly enabled or deferred")
+        self.group_image_phash = group_image_phash
         if min(val_buckets, test_buckets) <= 0 or val_buckets + test_buckets >= 10000:
             raise ValueError("held-out hash buckets must leave a nonempty training fraction")
         self.val_buckets, self.test_buckets = val_buckets, test_buckets
@@ -89,6 +94,12 @@ class CorpusBuilder:
             CREATE TABLE IF NOT EXISTS image_bands (band INTEGER, value INTEGER, phash TEXT, id TEXT);
             CREATE INDEX IF NOT EXISTS image_band_idx ON image_bands(band,value);
         """)
+        if (
+            not group_image_phash
+            and self.db.execute("SELECT 1 FROM image_bands LIMIT 1").fetchone()
+        ):
+            self.db.close()
+            raise ValueError("cannot defer image grouping on a partially grouped corpus")
         # Existing interrupted databases retain their schema until explicitly compacted.
         link_schema = self.db.execute(
             "SELECT sql FROM sqlite_schema WHERE name='links'"
@@ -237,7 +248,7 @@ class CorpusBuilder:
         for media in record.get("media", []):
             keys.append("rgb:" + media["rgb_sha256"])
             keys.extend("rgb:" + value for value in media.get("frame_rgb_sha256", []))
-            if media.get("phash"):
+            if media.get("phash") and self.group_image_phash:
                 image_code = int(media["phash"], 16)
                 # Seven disjoint bands guarantee a candidate for <=6 bit changes.
                 for band, (offset, width) in enumerate(PHASH_BANDS):
@@ -402,6 +413,11 @@ class CorpusBuilder:
                 excluded_groups=len(excluded_groups),
                 excluded_records=len(removed),
                 policy="prior test takes precedence over prior val; whole matched groups removed",
+            )
+        if not self.group_image_phash:
+            manifest["image_phash_grouping"] = False
+            manifest["image_near_duplicate_audit"] = (
+                "deferred; requires a bound cross-corpus audit before admission"
             )
         (self.root / "corpus-manifest.json").write_text(json.dumps(manifest, indent=2))
         return manifest

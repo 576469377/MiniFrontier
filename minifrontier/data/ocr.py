@@ -21,7 +21,7 @@ from tokenizers import Tokenizer
 
 from minifrontier.data import fingerprint, sha256
 from minifrontier.data.corpus import CorpusBuilder
-from minifrontier.data.media_hash import PHASH_BANDS, decoded_hashes
+from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.data.minifrontier1 import write_json
 from minifrontier.data.partitions import open_corpus
 from minifrontier.storage import GIB, require_space, reserve_write
@@ -179,22 +179,6 @@ class Renderer:
         )
 
 
-def _cross_split_neighbor(builder, hashes, split):
-    """Reject a new derivative that would connect two inherited source partitions."""
-    code = int(hashes["phash"], 16)
-    for band, (offset, width) in enumerate(PHASH_BANDS):
-        for value, payload in builder.db.execute(
-            "SELECT b.phash,s.payload FROM image_bands b JOIN samples s ON s.id=b.id "
-            "WHERE b.band=? AND b.value=?",
-            (band, (code >> offset) & ((1 << width) - 1)),
-        ):
-            if (code ^ int(value, 16)).bit_count() <= 6 and json.loads(payload)["text_origin"][
-                "split"
-            ] != split:
-                return True
-    return False
-
-
 def generate_ocr(
     corpus,
     font_manifest,
@@ -229,7 +213,12 @@ def generate_ocr(
         raise ValueError("OCR metadata cap cannot hold the tokenizer and audit records")
     require_space(root, int(max_gib * GIB), reserve_bytes=80 * GIB)
     builder = CorpusBuilder(
-        root, seed=seed, max_gib=metadata_gib - header_bytes / GIB, val_buckets=50, test_buckets=100
+        root,
+        seed=seed,
+        max_gib=metadata_gib - header_bytes / GIB,
+        val_buckets=50,
+        test_buckets=100,
+        group_image_phash=False,
     )
     (root / "images").mkdir()
     font_binding = dict(
@@ -259,6 +248,7 @@ def generate_ocr(
         sources={},
         started_unix=time.time(),
         remaining=[
+            "bound cross-corpus known-transcription and external-image candidate audit",
             "source and rendered-image human quality review",
             "external visual benchmark exclusion",
             "full encoding and per-model CE/length/exposure admission",
@@ -282,7 +272,8 @@ def generate_ocr(
     progress()
     try:
         with contextlib.closing(open_corpus(source)) as db:
-            # Seal test first; reject later pHash links across inherited splits.
+            # Seal test first. Similar page layouts are not printed-text identities;
+            # the cross-corpus text-aware audit resolves visual candidates later.
             for split in ("test", "val", "train"):
                 query = "SELECT payload,group_root FROM samples WHERE stage='pretrain' AND task IN ('zh_edu','en_edu') AND split=? AND id>=? AND id<? ORDER BY id"
                 for payload, group in db.execute(query, (split, id_start, id_stop)):
@@ -310,9 +301,6 @@ def generate_ocr(
                     )
                     if split == "train" and bucket < 150:
                         counts["would_create_text_training_ocr_holdout"] += 1
-                        continue
-                    if _cross_split_neighbor(builder, hashes, split):
-                        counts["cross_split_visual_neighbor"] += 1
                         continue
                     buffer = io.BytesIO()
                     image.save(buffer, format="PNG")
