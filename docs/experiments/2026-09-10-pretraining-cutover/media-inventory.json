@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789115400.7234623,
+  "observed_unix": 1789115582.1514146,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -6267,7 +6267,7 @@
     "formal_admission": false,
     "main_budget_eligible": false,
     "inventory_count": 19,
-    "snapshot_unix": 1789115400.3305562,
+    "snapshot_unix": 1789115581.7510676,
     "previous_attempt": {
       "state": "failed",
       "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
@@ -6293,7 +6293,7 @@
       "formal_admission": false,
       "main_budget_eligible": false,
       "inventory_count": 19,
-      "snapshot_unix": 1789115400.33066
+      "snapshot_unix": 1789115581.7511702
     },
     "candidate_filter_validation": {
       "kind": "bounded_cpu_candidate_filter_equivalence",
@@ -6337,8 +6337,8 @@
       "formal_admission": false
     },
     "local_storage": {
-      "observed_unix": 1789115400.7014725,
-      "free_gib": 119.24874496459961,
+      "observed_unix": 1789115582.129093,
+      "free_gib": 119.24854278564453,
       "minimum_free_gib": 80
     },
     "visual_review_plan": {
@@ -8705,7 +8705,7 @@
         "record_sha256": "4a967e0da99f553deac5fb34e124b33b993fe0a4d3be2a2851a250c027823a0a",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789115400.7167222
+        "snapshot_unix": 1789115582.144467
       },
       "first_attempt": {
         "state": "failed",
@@ -8730,7 +8730,7 @@
         "record_sha256": "5dd75a745441e5d30af4576b405e7601a752c0d57cfc69bcfa25221d8f23674d",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789115400.7168195
+        "snapshot_unix": 1789115582.144557
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8758,7 +8758,7 @@
         "record_sha256": "bad4bc7dfed043e0b5735b5d97c6fc7b461752b8bb36269e294920225501b8a4",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789115400.7169032
+        "snapshot_unix": 1789115582.1446402
       },
       "matching_validation": {
         "ordered_result_sha256": "db77f1bc02a8567fc0ce7eb80c06c728d4203e13cd94241d9dcd01779c6a6ec1",
@@ -8822,7 +8822,7 @@
         "record_sha256": "9582bff720de38ee69ee01b5ab9e628f58f9e326e63f81ef303c7b2ed6a27a12",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789115400.717326
+        "snapshot_unix": 1789115582.1450949
       },
       "first_attempt": {
         "state": "failed",
@@ -8847,7 +8847,7 @@
         "record_sha256": "b48fe5e775f7d080401674326b263245070c2900b71f17882f0f2b9a25991a7f",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789115400.7174153
+        "snapshot_unix": 1789115582.1451824
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8875,7 +8875,7 @@
         "record_sha256": "71b5633369c727306eee5fe8a41c23e318e89cb3e689cf0108ad50cb8e173189",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789115400.717504
+        "snapshot_unix": 1789115582.1452703
       },
       "matching_validation": {
         "ordered_result_sha256": "f99edfcb887e825c753f5abd6604c33de91f208779a521b5118301bb77f0d531",
@@ -9240,7 +9240,7 @@
     "main_budget_eligible": false,
     "included_in_current_effective_pool": false,
     "observation": {
-      "observed_unix": 1789115400.7211344,
+      "observed_unix": 1789115582.149081,
       "process_identity_verified": false,
       "state": "candidate_slice_complete_pending_admission",
       "data_state": "candidate_slice_complete_pending_admission",
@@ -9440,7 +9440,7 @@
       "registry_id": "exp-e05c3a041622",
       "record_sha256": "bcbc84cf6d8d26e0a1c41d535dba92eb254ac2fd942e63dd1d295287f2196f90",
       "process_observation": {
-        "observed_unix": 1789115400.7217076,
+        "observed_unix": 1789115582.1496763,
         "process_identity_verified": false
       },
       "formal_admission": false,
@@ -9537,7 +9537,7 @@
   },
   "data_event_followups": {
     "state": "watching_data_events",
-    "observed_unix": 1789115396.819576,
+    "observed_unix": 1789115577.0005326,
     "source_commit": "b212cd37cb4e75bc51ac0703e4286ab2855b937a",
     "tasks": {
       "ocr-build": {
@@ -9549,13 +9549,13 @@
       "kimi-docs": {
         "state": "encoding_candidate_component",
         "alive": true,
-        "observed_unix": 1789115389.229605,
+        "observed_unix": 1789115569.3015509,
         "completed_unix": null
       },
       "qwen-docs": {
         "state": "checking_every_encoded_media_record",
         "alive": true,
-        "observed_unix": 1789115389.229605,
+        "observed_unix": 1789115569.3015509,
         "completed_unix": null
       },
       "ocr-identity": {
@@ -9573,7 +9573,7 @@
       "doc-refinement": {
         "state": "waiting_for_existing_parent_encodings",
         "alive": true,
-        "observed_unix": 1789115389.229605,
+        "observed_unix": 1789115569.3015509,
         "completed_unix": null
       },
       "natural-build": {
