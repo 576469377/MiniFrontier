@@ -8,6 +8,7 @@
   },
   "scope": "The initial MF1 P0, Kimi K1 and Qwen Q1 may start formal learning without additional standalone smoke, recipe-pilot or production-profile runs. Bind completed data and the selected recipe; retain prior evidence with its original scope.",
   "qualification_passed": false,
+  "retained_holdout_policy": "For these initial starts, retain the completed disjoint validation/test partition, require positive representation for each source, at least 1M periodic and 5M phase-end validation CE, and at least 1000 held-out visual groups. Record an empirical source fraction below the old 0.5% target without claiming that target passed; do not reconstruct completed data merely to round up that target.",
   "runtime_checks_retained": true,
   "monitoring": [
     "Real-data hash and label checks",

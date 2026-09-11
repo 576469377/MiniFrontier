@@ -158,7 +158,8 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
             evidence, plan["model"], phase, sha256(data / "manifest.json")
         ):
             errors.append("data admission missing readable_200_passed or bound maintainer waiver")
-        if audit.get("minimum_source_holdout_fraction", 0) < 0.005:
+        holdout_fraction = audit.get("minimum_source_holdout_fraction", 0)
+        if holdout_fraction < 0.005 and not (direct_start and holdout_fraction > 0):
             errors.append("some source has less than 0.5% group holdout")
         base_pretraining = phase["budget_scope"] == "main"
         minimum_periodic = 1_000_000 if base_pretraining else 5_000_000
