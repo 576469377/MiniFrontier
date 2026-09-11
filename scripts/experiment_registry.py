@@ -150,6 +150,9 @@ def collect(workspace):
             relative = str(target.relative_to(root))
             job, queued = binding.get("job", {}), binding.get("status", {})
             run = read_json(target / "run.json")
+            if run.get("kind") == "pretraining_qualification_dispatch":
+                # Its qualification and formal children have their own run records.
+                continue
             report = read_json(target / "report.json")
             state = read_json(target / "status.json")
             supervisor = read_json(target / "supervisor.json")

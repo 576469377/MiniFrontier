@@ -1,0 +1,84 @@
+{
+  "kind": "deepseek_first_formal_phase_cutover",
+  "observed_unix": 1789127700.2360816,
+  "source_commit": "366f96350547e403389d62f4ff1e5ed6a8ebd2d4",
+  "model": "MiniDeepSeek-V4",
+  "parameters": 243983472,
+  "data": {
+    "canonical_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+    "encoded_manifest_sha256": "f972b1fe1620befc1a7a90f6fb55f370a03672a4f427bb71639acaae373e4f95",
+    "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+    "train_documents": 396842,
+    "train_ce_tokens": 532915828,
+    "formal_data_admission": true,
+    "human_review_completed": false,
+    "human_review_method": "waived_by_maintainer",
+    "authorization_record": "human-review-waiver.json"
+  },
+  "recipe": {
+    "global_input_tokens": 32768,
+    "microbatch": 16,
+    "sequence_length": 1024,
+    "seed": 42,
+    "optimizer": "deepseek_muon",
+    "shared_peak_lr": 0.0003,
+    "main_ce_warmup": 25000000,
+    "D1_ce_budget": 250000000,
+    "whole_program_ce_budget": 2500000000,
+    "D1_max_domain_epochs": 1
+  },
+  "qualification": {
+    "state": "failed_engineering_memory_block",
+    "warmup_updates": 50,
+    "measured_updates": 200,
+    "max_input_tokens": 8447750,
+    "main_budget_eligible": false,
+    "initial_attempt": {
+      "state": "failed",
+      "microbatch": 32,
+      "completed_optimizer_updates": 0,
+      "reason": "CUDA OOM in first backward",
+      "log_sha256": "46b202ec84aa24a9e67a2920db3deca93857f8cadcb33d273966175000047b71"
+    },
+    "retry": {
+      "microbatch": 16,
+      "reason": "Reduce activation microbatch; preserve complete 32K input windows and CE normalization",
+      "additional_retries_allowed": 0,
+      "state": "failed",
+      "completed_optimizer_updates": 0,
+      "log_sha256": "c79813f5ea8ac4877c68a5c2b5c11b95fb950dbc29f83a486cb7760ed815da74"
+    }
+  },
+  "formal": {
+    "state": "not_started",
+    "main_ce_tokens": 0,
+    "random_init": true,
+    "automatic_start": "Disabled by failed qualification; backward-memory engineering repair required",
+    "planned_observation_pause_updates": 4000,
+    "planned_observation_ce_approx": 130000000,
+    "phase_budget_unchanged": true
+  },
+  "checks": {
+    "gate_and_phase_tests_passed": 17,
+    "numerical_cpu_tests_passed": 31,
+    "registry_tests_passed": 19
+  },
+  "disk": {
+    "free_reserve_gib": 80,
+    "shared_text_cache_gib": 8.1671
+  },
+  "limitations": [
+    "Snapshot at observed_unix, not a live progress feed.",
+    "Old 20M pilot generation remains failed; recipe viability does not grant model capability or initialize formal training.",
+    "The 4000-update pause is an observation within the full 250M D1 budget; its actual CE comes from the training ledger."
+  ],
+  "engineering_repair": {
+    "state": "cpu_validated_gpu_qualification_pending",
+    "change": "Dense attention uses 128-query chunks and backward recomputation; complete key support retained",
+    "tests_passed": 46,
+    "cuda_tests_deselected": 2,
+    "global_input_tokens": 32768,
+    "microbatch": 16,
+    "no_further_batch_candidates": true
+  }
+}

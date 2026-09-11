@@ -1,6 +1,6 @@
 # 首版 base 工作参数与阶段继承
 
-依据[主计划](../../pretraining-plan.md)及现有试验选择一套工作参数。机器记录在 `configs/experiments.json` 的 `execution_program.models.*.training_recipe`，状态为 `selected_pending_data_and_resource_freeze`。这意味着优化器、全局输入目标与主日程已经选定；数据/tokenizer、真实媒体微批和生产资格尚未完成，不能据此派发正式训练。
+依据[主计划](../../pretraining-plan.md)及现有试验选择一套工作参数。机器记录在 `configs/experiments.json` 的 `execution_program.models.*.training_recipe`，这里保存通用工作配方；实际阶段使用独立冻结的运行快照。DeepSeek D1 的文本和 tokenizer 已准入，当前以 microbatch 16 做生产资格复验，见[首阶段快照](deepseek-first-stage.json)；其余模型仍需完成各自媒体组合与资格。
 
 ## 已选工作参数
 
@@ -10,7 +10,7 @@
 |---|---:|---:|---|---|
 | Kimi | 32,768 | 64 | Muon 0.005，Adam 3e-4；视觉 1e-4，projector 3e-4 | 累计主 CE：前 20M warmup，随后 cosine，2B 时降至 0.1 peak |
 | Qwen | 16,384 | 32 | Q1/Q2 Muon 0.01、Adam 3e-4；视觉 1e-4，projector 3e-4 | Q1/Q2 共 1.5B，前 15M warmup，其后保持 peak；Q4/Q5 另见下文 |
-| DeepSeek | 32,768 | 32 | 主干 Muon/Adam 共用 3e-4 | 前 25M 主 CE warmup，保持到累计 2B，最后 500M cosine 至 0.1 peak；固定 batch |
+| DeepSeek | 32,768 | 16（生产资格复验） | 主干 Muon/Adam 共用 3e-4 | 前 25M 主 CE warmup，保持到累计 2B，最后 500M cosine 至 0.1 peak；固定 batch |
 | MF1 | 16,384 | 8 | 主干 3e-4，视觉/标量 1e-4 | 沿用前 2M warmup、保持至 2.4B、最后 600M cosine 至 0.1 peak |
 
 前三个来源模型保留 WD=0.1，标量及各自规定的特殊参数继续使用原分组，Adam eps=1e-8、betas=(0.9,0.95)。DeepSeek 的 eps 是本项目的 FP32 稳定性适配，不声称复刻官方全部数值。MF1 保留矩阵/视觉 WD=0.1、embedding/head/lookup WD=0.01、标量 WD=0，以及原参数分组。
@@ -58,7 +58,7 @@ CPU 回归比较 Kimi 的连续训练与两个阶段的模型、优化器、路�
 
 program 与既有策略准入的定向回归共 8 项通过；合并 MF1 位置修复后的完整 CPU 回归为 379 passed / 1 skipped，Ruff、格式与项目 CI 的 174 源文件 mypy 检查通过。
 
-尚未完成的最终绑定：正式数据/媒体与 tokenizer、按阶段的长度消费与实际微批、固定评估、资源资格，以及绑定实际父权重的阶段质量门槛。四模型正式主 CE 当前均为零。
+DeepSeek D1 已绑定现有文本、64K tokenizer、固定 1M/5M 验证及 32K 全局输入目标；人工审核按维护者授权豁免。microbatch 32 在首次反向中 OOM，已记录 0 个完成更新，改为 16 的复验也在反向阶段 OOM，仍为 0 个完成更新。停止 batch 尝试后，对 dense attention 加入 128-query 分块重算；CPU 数值/机制检查已通过，等待同一 microbatch 16 的 GPU 工程复验。其他模型的媒体组合、资源资格及后续阶段父权重质量仍分别验收；实际训练进度以带时间的阶段快照和训练账本为准。
 
 
 ## 分阶段绑定数据

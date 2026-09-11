@@ -13,9 +13,31 @@ from typing import cast
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch.utils.checkpoint import checkpoint
 
 from .kernels import rotary
 from .upstream_layers import Linear, RMSNorm, precompute_freqs_cis
+
+
+def _dense_attention(q, kv, mask, sink, *, recompute=False, chunk_size=128):
+    """Keep complete key support while bounding score/probability temporaries."""
+
+    def attend(queries, keys, allowed, sink_logits):
+        logits = torch.einsum("bthd,bcd->bhtc", queries.float(), keys.float())
+        logits = (logits * queries.shape[-1] ** -0.5).masked_fill(~allowed[:, None], float("-inf"))
+        sinks = sink_logits.view(1, -1, 1, 1).expand(queries.shape[0], -1, queries.shape[1], 1)
+        probs = torch.cat((logits, sinks), dim=-1).softmax(-1)[..., :-1]
+        return torch.einsum("bhtc,bcd->bthd", probs.to(keys.dtype), keys)
+
+    chunks = []
+    for start in range(0, q.shape[1], chunk_size):
+        args = (q[:, start : start + chunk_size], kv, mask[:, start : start + chunk_size], sink)
+        chunks.append(
+            checkpoint(attend, *args, use_reentrant=False)
+            if recompute and q.shape[1] > chunk_size
+            else attend(*args)
+        )
+    return torch.cat(chunks, dim=1)
 
 
 class Compressor(nn.Module):
@@ -188,6 +210,11 @@ class Attention(nn.Module):
             from .incremental import initialize_state
 
             initialize_state(self, self.decode_state, x, raw_kv, compressed)
+        if self.training_phase == "dense_pretrain":
+            out = _dense_attention(
+                q, kv, mask, self.attn_sink, recompute=self.training and torch.is_grad_enabled()
+            )
+            return self._output(out, freqs, b, length)
         logits = torch.einsum("bthd,bcd->bhtc", q.float(), kv.float()) * self.head_dim**-0.5
         logits = logits.masked_fill(~mask[:, None], float("-inf"))
         sinks = self.attn_sink.view(1, -1, 1, 1).expand(b, -1, length, 1)
@@ -206,6 +233,10 @@ class Attention(nn.Module):
             )
             self.indexer_loss = (kl.sum(-1) * query_valid).sum() / query_valid.sum().clamp_min(1)
         out = torch.einsum("bhtc,bcd->bthd", probs.to(kv.dtype), kv)
+        return self._output(out, freqs, b, length)
+
+    def _output(self, out, freqs, b, length):
+        rd = self.rope_head_dim
         out = torch.cat((out[..., :-rd], rotary(out[..., -rd:], freqs, inverse=True)), dim=-1)
         out = out.reshape(b, length, self.n_groups, -1)
         weight = self.wo_a.weight.view(self.n_groups, self.o_lora_rank, -1)

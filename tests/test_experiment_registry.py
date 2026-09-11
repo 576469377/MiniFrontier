@@ -15,6 +15,17 @@ def write(path, value):
     path.write_text(json.dumps(value))
 
 
+def test_qualification_dispatch_is_not_an_additional_training_run(tmp_path):
+    target = tmp_path / "outputs/strategy-pretraining-start/admission"
+    write(target / "run.json", dict(kind="pretraining_qualification_dispatch"))
+    child = tmp_path / "outputs/strategy-pretraining-qualification/model"
+    write(child / "run.json", dict(kind="acceptance", model_name="minideepseekv4"))
+    entries = collect(tmp_path)["experiments"]
+    assert len(entries) == 1
+    assert entries[0]["model"] == "minideepseekv4"
+    assert entries[0]["main_budget_eligible"] is False
+
+
 def test_standalone_data_audit_uses_verified_process_and_preserves_scanned_counts(tmp_path):
     target = tmp_path / "outputs/strategy-pretraining-text-leakage-v1/audit"
     target.mkdir(parents=True)
