@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789109665.5951226,
+  "observed_unix": 1789111752.566478,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -6267,7 +6267,7 @@
     "formal_admission": false,
     "main_budget_eligible": false,
     "inventory_count": 19,
-    "snapshot_unix": 1789109665.189892,
+    "snapshot_unix": 1789111752.1770618,
     "previous_attempt": {
       "state": "failed",
       "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
@@ -6293,7 +6293,7 @@
       "formal_admission": false,
       "main_budget_eligible": false,
       "inventory_count": 19,
-      "snapshot_unix": 1789109665.1900024
+      "snapshot_unix": 1789111752.1771646
     },
     "candidate_filter_validation": {
       "kind": "bounded_cpu_candidate_filter_equivalence",
@@ -6337,8 +6337,8 @@
       "formal_admission": false
     },
     "local_storage": {
-      "observed_unix": 1789109665.5763557,
-      "free_gib": 112.22000122070312,
+      "observed_unix": 1789111752.5465617,
+      "free_gib": 111.78176498413086,
       "minimum_free_gib": 80
     },
     "visual_review_plan": {
@@ -6946,7 +6946,7 @@
         "formal_admission": false,
         "main_budget_eligible": false,
         "process_observation": {
-          "observed_unix": 1789109590.275488,
+          "observed_unix": 1789111160.2005312,
           "process_identity_verified": false,
           "state": "mechanical_checks_passed_pending_quality_admission"
         },
@@ -6955,13 +6955,14 @@
         "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362"
       },
       "documents-charts": {
-        "state": "encoding_candidate_component",
+        "state": "mechanical_checks_passed_pending_quality_admission",
         "source_commit": "64ce579d72713fe5129e7dc1869d4454717e5f75",
         "source_archive_sha256": "0c2821d2fdc77adcbaf80e54fe10b88537590b7ae3511a280338e111ff8bd53b",
         "driver_sha256": "d4e2fc6640d645d8f1e69dbb9145215996dc4e793cfe3ac6e20a89002dacbd1d",
         "arguments_sha256": "8a1401ebb811ac5415f9cdef4bd8eb21b21331db1a70f6c486dabba7574569b6",
         "started_unix": 1789101752.28576,
-        "observed_unix": 1789101752.2931325,
+        "observed_unix": 1789110024.6423626,
+        "completed_unix": 1789110024.6421587,
         "budget": {
           "wall_seconds": 10800,
           "max_output_gib": 1,
@@ -6969,17 +6970,125 @@
           "max_virtual_gib": 32,
           "training_tokens": 0
         },
-        "report_sha256": "321ec2f25a74f17db79ec5a32c59089e0994af54dc66e37f39ea6a57ba317a63",
+        "manifest_sha256": "ec1db32d21b5502685241541ccd523b523e5611145f44e407901d97cad73fa1f",
+        "source_audit_sha256": "d3ca2001412d3ee5abbdf63c4631d60591c04c6a0e0d33e21abbb3abfc36f7fb",
+        "integrity_report_sha256": "f23ba2ade8872da9e2249cffcf64de42f02aee97ed9cb96dbb483588a8ea86ae",
+        "splits": {
+          "train": {
+            "counts": {
+              "records": 153536,
+              "input_tokens": 16513030,
+              "ce_tokens": 6883944,
+              "media_exposures": 153536,
+              "vision_tokens": 6433492
+            },
+            "domain_ce": {
+              "chart_table": 5411158,
+              "ocr_document": 1472786
+            },
+            "complete_record_length_buckets": {
+              "chart_table": {
+                "512": {
+                  "records": 105423,
+                  "input_tokens": 12180680,
+                  "ce_tokens": 5411158,
+                  "media_exposures": 105423,
+                  "vision_tokens": 4427874
+                }
+              },
+              "ocr_document": {
+                "512": {
+                  "records": 48113,
+                  "input_tokens": 4332350,
+                  "ce_tokens": 1472786,
+                  "media_exposures": 48113,
+                  "vision_tokens": 2005618
+                }
+              }
+            }
+          },
+          "val": {
+            "counts": {
+              "records": 4219,
+              "input_tokens": 452494,
+              "ce_tokens": 188134,
+              "media_exposures": 4219,
+              "vision_tokens": 176648
+            },
+            "domain_ce": {
+              "chart_table": 147716,
+              "ocr_document": 40418
+            },
+            "complete_record_length_buckets": {
+              "chart_table": {
+                "512": {
+                  "records": 2882,
+                  "input_tokens": 332627,
+                  "ce_tokens": 147716,
+                  "media_exposures": 2882,
+                  "vision_tokens": 121025
+                }
+              },
+              "ocr_document": {
+                "512": {
+                  "records": 1337,
+                  "input_tokens": 119867,
+                  "ce_tokens": 40418,
+                  "media_exposures": 1337,
+                  "vision_tokens": 55623
+                }
+              }
+            }
+          },
+          "test": {
+            "counts": {
+              "records": 1336,
+              "input_tokens": 141902,
+              "ce_tokens": 57981,
+              "media_exposures": 1336,
+              "vision_tokens": 56128
+            },
+            "domain_ce": {
+              "chart_table": 44711,
+              "ocr_document": 13270
+            },
+            "complete_record_length_buckets": {
+              "chart_table": {
+                "512": {
+                  "records": 912,
+                  "input_tokens": 103446,
+                  "ce_tokens": 44711,
+                  "media_exposures": 912,
+                  "vision_tokens": 38457
+                }
+              },
+              "ocr_document": {
+                "512": {
+                  "records": 424,
+                  "input_tokens": 38456,
+                  "ce_tokens": 13270,
+                  "media_exposures": 424,
+                  "vision_tokens": 17671
+                }
+              }
+            }
+          }
+        },
+        "output_bytes": 260312893,
+        "peak_resident_bytes": 707284992,
+        "report_sha256": "2da693284d751e70f66b4975991051dbb9967e064b46f5f27c509f930239f503",
         "formal_admission": false,
         "main_budget_eligible": false,
         "process_observation": {
-          "observed_unix": 1789109590.274921,
-          "process_identity_verified": true,
-          "state": "encoding_candidate_component"
+          "observed_unix": 1789111160.1991506,
+          "process_identity_verified": false,
+          "state": "mechanical_checks_passed_pending_quality_admission"
         },
         "corpus": "data/pretraining-doc-chart-partition-v4",
         "output": "data/pretraining-mf1-doc-chart-p0-v4",
-        "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362"
+        "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
+        "superseded_by": "data/pretraining-mf1-doc-chart-p0-v5",
+        "reason": "Completed derivative removes six ungrounded chart QAs while preserving retained tokens and held-out records."
       },
       "stopped_attempts": {
         "natural": {
@@ -7041,7 +7150,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789109590.2752044,
+            "observed_unix": 1789111160.2001061,
             "process_identity_verified": false,
             "state": "stopped_to_correct_insufficient_wall_budget"
           },
@@ -7084,7 +7193,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789109590.2744923,
+            "observed_unix": 1789111160.1982539,
             "process_identity_verified": false,
             "state": "stopped_to_correct_insufficient_wall_budget"
           },
@@ -7110,9 +7219,9 @@
       }
     },
     "auxiliary_storage": {
-      "free_gib": 998.2082214355469,
+      "free_gib": 997.3253631591797,
       "minimum_free_gib": 80,
-      "observed_unix": 1789109553.7190034
+      "observed_unix": 1789111718.1165252
     },
     "corrected_native_media_encoding": {
       "minikimik3": {
@@ -7269,7 +7378,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789109553.7171707,
+            "observed_unix": 1789111718.113022,
             "state": "encoding_candidate_component",
             "process_identity_verified": true
           },
@@ -7304,7 +7413,7 @@
             "formal_admission": false,
             "main_budget_eligible": false,
             "process_observation": {
-              "observed_unix": 1789109553.7166822,
+              "observed_unix": 1789111718.1121032,
               "state": "stopped_to_correct_wall_budget_with_prefix_preserved",
               "process_identity_verified": false
             },
@@ -7458,7 +7567,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789109553.7161076,
+            "observed_unix": 1789111718.107427,
             "state": "mechanical_checks_passed_pending_quality_admission",
             "process_identity_verified": false
           },
@@ -7629,7 +7738,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789109553.7186203,
+            "observed_unix": 1789111718.1161628,
             "state": "encoding_candidate_component",
             "process_identity_verified": true
           },
@@ -7664,7 +7773,7 @@
             "formal_admission": false,
             "main_budget_eligible": false,
             "process_observation": {
-              "observed_unix": 1789109553.7181504,
+              "observed_unix": 1789111718.1152992,
               "state": "stopped_to_correct_wall_budget_with_prefix_preserved",
               "process_identity_verified": false
             },
@@ -7818,7 +7927,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789109553.7177098,
+            "observed_unix": 1789111718.1142635,
             "state": "mechanical_checks_passed_pending_quality_admission",
             "process_identity_verified": false
           },
@@ -7871,7 +7980,7 @@
     },
     "partial_mf1_p0_supply": {
       "kind": "partial_mf1_p0_candidate_supply",
-      "status": "document_chart_encoding_and_admission_pending",
+      "status": "first_media_encodings_complete_pending_domain_topups_and_admission",
       "main_phase_ce_tokens": 200000000,
       "visual_phase_ce_tokens": 40000000,
       "formal_admission": false,
@@ -7889,6 +7998,14 @@
         {
           "record": "outputs/remote-239/outputs/strategy-pretraining-media-natural-grouping-v1/mf1-encoding-refresh-v1/natural-extension-retry1/run.json",
           "sha256": "97ca77c4bb7c299a3d5f50a057db4ffcc38e2a9c9a0ae33c9a70ceab14a85f07"
+        },
+        {
+          "record": "outputs/remote-239/outputs/strategy-pretraining-visual-benchmarks-v1/chartqa-encoded-refresh-v1/run.json",
+          "sha256": "072b68023b7d41fcd4f6acde48cef4b2a396816301014c5421bfcf0e04b78935",
+          "output": "data/pretraining-mf1-doc-chart-p0-v5",
+          "manifest_sha256": "5c2ded2ed56df31bed9f9101271572b8815b0498e4c48e3d27d28728cb7fb412",
+          "source_audit_sha256": "63b81dd3b4202772b81244b4d71f252b7ce62f031b02f656005df8b197bfb13a",
+          "encoding_audit_sha256": "ae296c57fb83bf0f998a6ad8be947c8bc9615e1cff7454b8c044c83564cc0221"
         }
       ],
       "domains": {
@@ -7896,54 +8013,104 @@
           "planned_visual_ce": 14000000,
           "completed_candidate_train_ce": 12225121,
           "completed_candidate_validation_ce": 57001,
-          "gap_before_pending_document_chart_component": 1774879
+          "remaining_independent_train_ce_gap": 1774879
         },
         "ocr_document": {
           "planned_visual_ce": 14000000,
-          "completed_candidate_train_ce": 10872851,
-          "completed_candidate_validation_ce": 118314,
-          "gap_before_pending_document_chart_component": 3127149
+          "completed_candidate_train_ce": 12345637,
+          "completed_candidate_validation_ce": 158732,
+          "remaining_independent_train_ce_gap": 1654363
         },
         "vqa": {
           "planned_visual_ce": 8000000,
           "completed_candidate_train_ce": 6970883,
           "completed_candidate_validation_ce": 31405,
-          "gap_before_pending_document_chart_component": 1029117
+          "remaining_independent_train_ce_gap": 1029117
         },
         "chart_table": {
           "planned_visual_ce": 4000000,
-          "completed_candidate_train_ce": 0,
-          "completed_candidate_validation_ce": 0,
-          "gap_before_pending_document_chart_component": 4000000
+          "completed_candidate_train_ce": 5410661,
+          "completed_candidate_validation_ce": 147716,
+          "remaining_independent_train_ce_gap": 0
         },
         "video": {
           "planned_visual_ce": 0,
           "completed_candidate_train_ce": 0,
           "completed_candidate_validation_ce": 0,
-          "gap_before_pending_document_chart_component": 0
+          "remaining_independent_train_ce_gap": 0
         }
       },
-      "total_completed_candidate_visual_ce": 30068855,
+      "total_completed_candidate_visual_ce": 36952302,
       "limitations": [
-        "Document/chart encoding is still active and excluded from completed counters.",
-        "Final validation reservations and source-quality admission may reduce inventory; the confirmed TextVQA natural group has been excluded.",
-        "No repeated exposure has been counted as additional independent candidate CE."
+        "Candidate counters include the completed document/chart quality derivative; all source quality and final mixed validation admissions are still pending.",
+        "New natural and OCR top-ups have not been counted as completed supply.",
+        "Chart CE surplus cannot replace required caption, VQA or OCR CE; repeated exposure adds no independent candidate supply."
       ],
-      "observed_unix": 1789108482.7870085,
-      "previous_progress_sha256": "d9ebe66a1869385a8dfb44c9b393c4734986f88c48ad0a9437254595c8ebb774",
+      "observed_unix": 1789111224.8735168,
+      "previous_progress_sha256": "200345686c9c77ee5f2c90b84b4565c5545a5b90e652c2e7985fd1f6cf408cf9",
       "benchmark_group_refinement": {
         "removed_train_records": 2,
         "removed_ce_tokens": 360,
         "encoding_audit_sha256": "d9f7ac57e8adc894486099d4c30b8ba4041e495f878181e2dabdcc9a33285e2a"
       },
-      "report_sha256": "200345686c9c77ee5f2c90b84b4565c5545a5b90e652c2e7985fd1f6cf408cf9",
+      "mix_usable_candidate_visual_ce": 35541641,
+      "remaining_domain_ce_gap": 4458359,
+      "document_chart_encoding": {
+        "manifest_sha256": "5c2ded2ed56df31bed9f9101271572b8815b0498e4c48e3d27d28728cb7fb412",
+        "source_audit_sha256": "63b81dd3b4202772b81244b4d71f252b7ce62f031b02f656005df8b197bfb13a",
+        "encoding_audit_sha256": "ae296c57fb83bf0f998a6ad8be947c8bc9615e1cff7454b8c044c83564cc0221",
+        "audit_state": "mechanical_checks_passed_pending_quality_admission",
+        "splits": {
+          "train": {
+            "counts": {
+              "records": 153530,
+              "input_tokens": 16512146,
+              "ce_tokens": 6883447,
+              "media_exposures": 153530,
+              "vision_tokens": 6433228
+            },
+            "domain_ce": {
+              "chart_table": 5410661,
+              "ocr_document": 1472786
+            }
+          },
+          "val": {
+            "counts": {
+              "records": 4219,
+              "input_tokens": 452494,
+              "ce_tokens": 188134,
+              "media_exposures": 4219,
+              "vision_tokens": 176648
+            },
+            "domain_ce": {
+              "chart_table": 147716,
+              "ocr_document": 40418
+            }
+          },
+          "test": {
+            "counts": {
+              "records": 1336,
+              "input_tokens": 141902,
+              "ce_tokens": 57981,
+              "media_exposures": 1336,
+              "vision_tokens": 56128
+            },
+            "domain_ce": {
+              "chart_table": 44711,
+              "ocr_document": 13270
+            }
+          }
+        },
+        "observed_unix": 1789111224.8923037
+      },
+      "report_sha256": "1f97d6748e9bb8f2018245fda355d338325737c8e71dde003144213438936747",
       "natural_benchmark_refinement": {
         "removed_train_records": 2,
         "removed_main_ce_tokens": 360,
         "removed_caption_ce_tokens": 207,
         "removed_vqa_ce_tokens": 153,
-        "corrected_completed_main_ce_tokens": 30068855,
-        "document_chart_refinement_pending": true,
+        "corrected_completed_main_ce_tokens": 36952302,
+        "document_chart_refinement_pending": false,
         "formal_admission": false
       }
     },
@@ -8386,7 +8553,7 @@
         "source_archive_sha256": "fdbfb103a9820aa96e4b726ab7a4dfad82087d60bc0ec4645ba23a2ba28d5e5b",
         "driver_sha256": "8282ff6939b4af11ea14c17755fc362652b53783d58bfe06f46c1debc3ac1cfa",
         "started_unix": 1789108319.4663,
-        "observed_unix": 1789109489.5452998,
+        "observed_unix": 1789111705.1283915,
         "budget": {
           "wall_seconds": 39600,
           "max_virtual_gib": 32,
@@ -8396,20 +8563,71 @@
           "training_tokens": 0
         },
         "pending": [
-          "minifrontier1",
           "minikimik3",
           "miniqwen4"
         ],
-        "report_sha256": "43abf30780e3837ee7762e006be50d807b9cb0630cd054d5b8b4bd71fed9a158",
+        "report_sha256": "d2b837dca950735c0372b5212de0a983a6d7b468c9593176679279285e773bf8",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "completed_components": [],
+        "completed_components": [
+          {
+            "model": "minifrontier1",
+            "parent": "data/pretraining-mf1-doc-chart-p0-v4",
+            "output": "data/pretraining-mf1-doc-chart-p0-v5",
+            "manifest_sha256": "5c2ded2ed56df31bed9f9101271572b8815b0498e4c48e3d27d28728cb7fb412",
+            "source_audit_sha256": "63b81dd3b4202772b81244b4d71f252b7ce62f031b02f656005df8b197bfb13a",
+            "encoding_audit_sha256": "ae296c57fb83bf0f998a6ad8be947c8bc9615e1cff7454b8c044c83564cc0221",
+            "output_bytes": 260307394,
+            "completed_unix": 1789110115.0181804,
+            "splits": {
+              "train": {
+                "counts": {
+                  "records": 153530,
+                  "input_tokens": 16512146,
+                  "ce_tokens": 6883447,
+                  "media_exposures": 153530,
+                  "vision_tokens": 6433228
+                },
+                "domain_ce": {
+                  "chart_table": 5410661,
+                  "ocr_document": 1472786
+                }
+              },
+              "val": {
+                "counts": {
+                  "records": 4219,
+                  "input_tokens": 452494,
+                  "ce_tokens": 188134,
+                  "media_exposures": 4219,
+                  "vision_tokens": 176648
+                },
+                "domain_ce": {
+                  "chart_table": 147716,
+                  "ocr_document": 40418
+                }
+              },
+              "test": {
+                "counts": {
+                  "records": 1336,
+                  "input_tokens": 141902,
+                  "ce_tokens": 57981,
+                  "media_exposures": 1336,
+                  "vision_tokens": 56128
+                },
+                "domain_ce": {
+                  "chart_table": 44711,
+                  "ocr_document": 13270
+                }
+              }
+            }
+          }
+        ],
         "process_observation": {
           "argv_matches": true,
           "state": "waiting_for_existing_parent_encodings",
           "process_identity_verified": true,
-          "observed_unix": 1789109504.450022,
-          "free_gib": 998.2458763122559,
+          "observed_unix": 1789111718.2736897,
+          "free_gib": 997.3253593444824,
           "minimum_free_gib": 80
         }
       },
@@ -8485,7 +8703,7 @@
         "record_sha256": "4a967e0da99f553deac5fb34e124b33b993fe0a4d3be2a2851a250c027823a0a",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789109665.590932
+        "snapshot_unix": 1789111752.5616379
       },
       "first_attempt": {
         "state": "failed",
@@ -8510,7 +8728,7 @@
         "record_sha256": "5dd75a745441e5d30af4576b405e7601a752c0d57cfc69bcfa25221d8f23674d",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789109665.5910265
+        "snapshot_unix": 1789111752.5617304
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8538,7 +8756,7 @@
         "record_sha256": "bad4bc7dfed043e0b5735b5d97c6fc7b461752b8bb36269e294920225501b8a4",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789109665.591111
+        "snapshot_unix": 1789111752.561836
       },
       "matching_validation": {
         "ordered_result_sha256": "db77f1bc02a8567fc0ce7eb80c06c728d4203e13cd94241d9dcd01779c6a6ec1",
@@ -8602,7 +8820,7 @@
         "record_sha256": "9582bff720de38ee69ee01b5ab9e628f58f9e326e63f81ef303c7b2ed6a27a12",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789109665.5915463
+        "snapshot_unix": 1789111752.5622916
       },
       "first_attempt": {
         "state": "failed",
@@ -8627,7 +8845,7 @@
         "record_sha256": "b48fe5e775f7d080401674326b263245070c2900b71f17882f0f2b9a25991a7f",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789109665.591642
+        "snapshot_unix": 1789111752.5623796
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8655,7 +8873,7 @@
         "record_sha256": "71b5633369c727306eee5fe8a41c23e318e89cb3e689cf0108ad50cb8e173189",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789109665.5921361
+        "snapshot_unix": 1789111752.562464
       },
       "matching_validation": {
         "ordered_result_sha256": "f99edfcb887e825c753f5abd6604c33de91f208779a521b5118301bb77f0d531",
@@ -8877,18 +9095,18 @@
     ]
   },
   "next_natural_candidate_slice": {
-    "state": "extracting_next_natural_image_slice",
-    "run_id": "strategy-pretraining-natural-topup-v1",
-    "registry_id": "exp-366efd537d9b",
+    "state": "resuming_next_natural_image_slice",
+    "run_id": "strategy-pretraining-natural-topup-v1/retry1",
+    "registry_id": "exp-06db9c5a6d61",
     "output": "data/pretraining-natural-topup-v1",
     "source": "HuggingFaceM4/FineVision",
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
-    "source_commit": "44adca629df351d8768454f850a27c75cea5433d",
-    "source_archive_sha256": "fdbfb103a9820aa96e4b726ab7a4dfad82087d60bc0ec4645ba23a2ba28d5e5b",
-    "driver_sha256": "c30d42944d143927b8b39c07ae314f262d419b963b0768997e404e9ae119dc41",
-    "arguments_sha256": "6fe6db10923f36dd070cda4c4833965215f3399e30b1cea60a41e5c8b36817c5",
-    "record_sha256": "f739d11a6ff48bc0dd336939fba98cc8ec4b1b6a3012de35156158c00de9dfe0",
-    "data_audit_sha256": "20a8fe96146a93d37cca065a4c47c913684096cc93cfcef3a7bdb99bedf44aa7",
+    "source_commit": "b813e4f348d93ab07882eeaec382367acf25391c",
+    "source_archive_sha256": "4cf0f2218152d3922b60a0dcd9fb03146ecdfb14287a287497f1551093315943",
+    "driver_sha256": "3ca793dcb30c6ac8943ae40345bab768196d465cd6e1f7f335dc806e3402c378",
+    "arguments_sha256": "b3dce83b32fc50d152e96a433c9830572f463ca14ae5123007c800a6ae47bbb2",
+    "record_sha256": "3a154230663a71f0d47ba783f294f8bca63a3dd81a50b7c1850228e47bf70386",
+    "data_audit_sha256": "448dcdc4f2d957f3c226078f58a6cc3a07bfd63591968a59229681701a46feee",
     "target_independent_images": 12000,
     "source_start_row": 61420,
     "prior_exact_images_excluded": 60000,
@@ -8896,32 +9114,36 @@
     "reference_tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
     "reference_tokenizer_is_final_training_mapping": false,
     "budget": {
-      "wall_seconds": 18000,
+      "wall_seconds": 16607,
       "max_virtual_gib": 32,
       "max_output_gib": 16,
       "metadata_gib": 2,
       "max_source_rows": 48000,
       "minimum_free_gib": 80,
       "training_tokens": 0,
-      "gpu_hours": 0
+      "gpu_hours": 0,
+      "original_total_wall_seconds": 18000
     },
     "question": "Supply the measured P0 caption deficit 1774879 CE and VQA deficit 1029117 CE using new source images; 12000-image target includes roughly 25 percent cleaning margin under previous observed per-image yield",
     "stop_rule": "Stop at target, 48000 new source rows, fixed storage/wall bound or source error; below-target results remain explicit and no repeated images count as new inventory",
     "next_decision": "Match new identities against all effective pools and sealed visual benchmarks, review newly introduced groups, encode with fixed v2 tokenizers and measure actual per-domain CE before admission",
     "observation": {
       "argv_matches": true,
-      "state": "extracting_next_natural_image_slice",
+      "state": "resuming_next_natural_image_slice",
       "process_identity_verified": true,
-      "observed_unix": 1789109589.9570956,
+      "observed_unix": 1789111718.0967908,
       "source_start_row": 61420,
       "previous_exact_image_identities": 60000,
-      "read_rows": 0,
-      "unique_images": 0,
-      "accepted_records": 0,
-      "media_bytes": 0,
-      "free_gib": 998.1841125488281,
-      "minimum_free_gib": 80,
-      "error": null
+      "resume_skip_rows": 61630,
+      "error": null,
+      "attempt": "retry1",
+      "control": "outputs/strategy-pretraining-natural-topup-v1/retry1",
+      "read_rows": 777,
+      "unique_images": 750,
+      "accepted_records": 1383,
+      "media_bytes": 467884700,
+      "free_gib": 997.325366973877,
+      "minimum_free_gib": 80
     },
     "formal_admission": false,
     "main_budget_eligible": false,
@@ -8930,6 +9152,212 @@
     "limitations": [
       "Target count is not acquired/clean independent supply; actual CE is measured only after completed construction, group and benchmark checks, and encoding.",
       "Existing benchmark closure applies to the earlier 399490-image pool, not this new candidate slice."
-    ]
+    ],
+    "prior_failed_attempt": {
+      "state": "failed",
+      "source_commit": "44adca629df351d8768454f850a27c75cea5433d",
+      "source_archive_sha256": "fdbfb103a9820aa96e4b726ab7a4dfad82087d60bc0ec4645ba23a2ba28d5e5b",
+      "started_unix": 1789108834.625114,
+      "completed_unix": 1789109696.5791545,
+      "error": "ValueError('range 274726912-275775487: expected 1048576 bytes, got 877448')",
+      "record_sha256": "8e74c125357945589bf228950a3df7620bb378a3c9cc5da535c9136bd67002b9"
+    },
+    "transport_resume": {
+      "retry_reason": "Exact response range was honored but its body ended early; bounded retry and narrow legacy-error resume now preserve the existing 203 images and 375 records",
+      "prior_run_sha256": "8e74c125357945589bf228950a3df7620bb378a3c9cc5da535c9136bd67002b9",
+      "prior_source_audit_sha256": "9ef0fa15aca4a5aceae9c6f5c69f16e7b0a9e90de1115b0ac5313634b2a090e2",
+      "original_wall_deadline_unix": 1789126834.625114,
+      "retained_records_before_resume": 375,
+      "retained_images_before_resume": 203,
+      "retained_record_hashes_sha256": "86219e49e474a4288aca5c712cb520c8940a4f8ac5d669877818dce70e8eb5aa",
+      "resume_skip_rows": 61630,
+      "validation": {
+        "targeted_tests_passed": 33,
+        "short_range_recheck": "Two successful reads of the exact failing range with identical complete bytes.",
+        "short_range_recheck_sha256": "eafc2a749bbf37d15d54ea77864d0a2d1b613911379a1299db404572756462cc",
+        "bounded_retries": 3,
+        "all_attempts_charged_to_transfer_budget": true
+      }
+    }
+  },
+  "next_ocr_candidate_slice": {
+    "run_id": "strategy-pretraining-ocr-topup-v1",
+    "registry_id": "exp-75951d45a0ee",
+    "state": "constructing_new_source_grounded_ocr_candidate",
+    "source": "MiniFrontier/source-grounded-ocr",
+    "source_commit": "3d23841d24bb34bdf8b4fa3e537825fb21673dd7",
+    "source_archive_sha256": "e1c14df78512736ab82e1ca10b7a7a18dcff3a47c8f97dd48bc5de27b5c31d50",
+    "driver_sha256": "5f178f57ff2688b753ed723176f984ac43ed29e080b2c92eda70491321e93e25",
+    "arguments_sha256": "51ae2480f9beedffa128573d7aba4bb61bdecaaf1dd38e98a6768cdfb077a603",
+    "record_sha256": "b428eb743a87d87af39ab37c300ad703eb378c4bfa0dddbabf9f68ff7b8e1448",
+    "corpus": "data/pretraining-text-partition-v5",
+    "corpus_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+    "output": "data/pretraining-ocr-topup-v1",
+    "source_tasks": [
+      "verified_math_science",
+      "code",
+      "dialogue"
+    ],
+    "source_id_range": [
+      "0",
+      "g"
+    ],
+    "seed": 20260912,
+    "reference_tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+    "reference_tokenizer_is_final_training_mapping": false,
+    "font_manifest_sha256": "d19b11677b4b7202b33eabe6c9835560515c37be19f8c568663f8f308966cfa3",
+    "target_maximum_records": 60000,
+    "budget": {
+      "max_records": 60000,
+      "max_total_gib": 4,
+      "max_metadata_gib": 2,
+      "max_identity_export_mib": 128,
+      "max_control_gib": 0.25,
+      "minimum_free_gib": 80,
+      "wall_seconds": 21600,
+      "max_virtual_gib": 32,
+      "cpu_threads": 2,
+      "training_tokens": 0
+    },
+    "question": "Fill the remaining MF1 P0 OCR CE gap with new original source records outside all prior education-only OCR selections.",
+    "stop_rule": "Stop at 60000 accepted records, source exhaustion, 21600 seconds or the storage bound; stop on changed inputs, font/license checks or any split mismatch; no automatic retry.",
+    "next_decision": "On completion apply delta text/group and fixed external benchmark checks, then the existing MF1 encoder to measure remaining actual CE supply; preserve all prior valid decisions. Human quality and final validation admission remain required.",
+    "prior_checks": {
+      "ocr_tests_passed": 11,
+      "test_log_sha256": "6a10498ce95455afe92e2f96e41718cc63868cf75f042d55c3aac9166c8e54f8",
+      "mypy_log_sha256": "5d4b6d285b77932e3d08212c3b4974d0a803f98ec60408ac6ccf6a063fa6c19e",
+      "ruff": "passed",
+      "human_source_quality_review": false
+    },
+    "independent_text_supply_added": 0,
+    "prior_ocr_source_tasks": [
+      "zh_edu",
+      "en_edu"
+    ],
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "included_in_current_effective_pool": false,
+    "observation": {
+      "observed_unix": 1789111752.566046,
+      "process_identity_verified": true,
+      "state": "constructing_new_source_grounded_ocr_candidate",
+      "data_state": "building",
+      "counts": {
+        "examined": 26500,
+        "accepted": 22500,
+        "word_exceeds_line": 2825,
+        "unsupported_glyph": 75,
+        "duplicate_transcription": 777,
+        "would_create_text_training_ocr_holdout": 320,
+        "builder_rejected": 3
+      },
+      "splits": {
+        "test.en": {
+          "records": 1036,
+          "answer_reference_tokens": 32817
+        },
+        "val.en": {
+          "records": 746,
+          "answer_reference_tokens": 25483
+        },
+        "train.en": {
+          "records": 20718,
+          "answer_reference_tokens": 655533
+        }
+      },
+      "media_bytes": 228047792
+    },
+    "data_audit_sha256": "e446e51b8d62a793e78dc918b6f1e44beb22ecf587305341a353c59b4d94aafa",
+    "source_task_inventory": {
+      "corpus_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+      "rows": [
+        {
+          "task": "code",
+          "split": "test",
+          "records": 608,
+          "groups": 156
+        },
+        {
+          "task": "code",
+          "split": "train",
+          "records": 29432,
+          "groups": 8171
+        },
+        {
+          "task": "code",
+          "split": "val",
+          "records": 231,
+          "groups": 101
+        },
+        {
+          "task": "dialogue",
+          "split": "test",
+          "records": 340,
+          "groups": 340
+        },
+        {
+          "task": "dialogue",
+          "split": "train",
+          "records": 32305,
+          "groups": 32305
+        },
+        {
+          "task": "dialogue",
+          "split": "val",
+          "records": 308,
+          "groups": 308
+        },
+        {
+          "task": "verified_math_science",
+          "split": "test",
+          "records": 293,
+          "groups": 292
+        },
+        {
+          "task": "verified_math_science",
+          "split": "train",
+          "records": 26271,
+          "groups": 26242
+        },
+        {
+          "task": "verified_math_science",
+          "split": "val",
+          "records": 285,
+          "groups": 285
+        }
+      ],
+      "previous_ocr_tasks": [
+        "zh_edu",
+        "en_edu"
+      ],
+      "source_selection_disjoint_from_previous_ocr_tasks": true,
+      "independent_text_supply_added": 0,
+      "formal_admission": false,
+      "previous_generator_sha256": "d50c347f354ddd6e080a6feb25600734aa460d7b7a6e8b1a0e9b07bfe61c25a8",
+      "observed_unix": 1789111360.79684,
+      "report_sha256": "3700cd2d3e7738d04ad1da5890b4bf8136b2199405f5fd30034d90f2ca90f98c"
+    },
+    "initial_training_image_inspection": {
+      "report_sha256": "71241f4d85722644091b75d8326ad8f5037b47a8c8cfdb19bf76779e329e2515",
+      "state": "six_training_images_visually_inspected",
+      "review_method": "model_assisted",
+      "reviewed_records": 6,
+      "source_tasks": [
+        "code",
+        "dialogue",
+        "verified_math_science"
+      ],
+      "checks": [
+        "All six rendered training images were viewed and their visible line breaks, punctuation and glyphs matched the recorded transcription.",
+        "No cropped characters or invisible answer lines were observed in these six examples."
+      ],
+      "limitations": [
+        "Six engineering examples are not the plan-required human review of 100 examples per source/domain.",
+        "Code sources include comments and license text; mathematical sources include literal TeX syntax. These targets are printed transcription, not executable code or mathematical reasoning labels.",
+        "Cross-pool grouping, benchmark exclusion, complete encoding and source quality admission remain pending."
+      ],
+      "human_source_quality_review": false,
+      "formal_admission": false
+    }
   }
 }
