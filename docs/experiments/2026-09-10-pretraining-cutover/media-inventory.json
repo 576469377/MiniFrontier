@@ -5023,6 +5023,27 @@
           "overshoot_bound_ce": 1023
         }
       }
+    },
+    "primary_document_component_transfers": {
+      "observed_unix": 1789140841.4467285,
+      "components": {
+        "minikimik3": {
+          "state": "encoded_component_staged_pixels_and_phase_admission_pending",
+          "verified_files": 16,
+          "verified_bytes": 612015980,
+          "manifest_sha256": "ba7aab1a44d91d2f6fa9bd147a6227eed80174e1d2302eb2138ca4172258125c",
+          "raw_pixels_copied": false,
+          "formal_admission": false
+        },
+        "miniqwen4": {
+          "state": "encoded_component_staged_pixels_and_phase_admission_pending",
+          "verified_files": 16,
+          "verified_bytes": 572347693,
+          "manifest_sha256": "e6c982377b558d7eda03b619efffcfd2795bab456949468bd0e043915a671aca",
+          "raw_pixels_copied": false,
+          "formal_admission": false
+        }
+      }
     }
   },
   "shared_text_near_duplicate_blocker": {
@@ -9264,6 +9285,72 @@
       "identity_control": "strategy-pretraining-natural-topup-v1/identity-audit-v2",
       "formal_admission": false,
       "process_identity_verified": true
+    },
+    "refinement": {
+      "observed_unix": 1789140841.4467285,
+      "status": "bounded_cpu_encoding_launched",
+      "source_commit": "b813e4f348d93ab07882eeaec382367acf25391c",
+      "retained_images": 11956,
+      "retained_records": 22508,
+      "splits": {
+        "train": 22167,
+        "test": 236,
+        "val": 105
+      },
+      "quarantined_groups": 42,
+      "quarantined_records": 79,
+      "quarantined_images": 44,
+      "decision": "Conservatively exclude complete groups from the new slice for cross-split components and unresolved internal/benchmark visual candidates; ambiguous candidates are not labelled confirmed duplicates.",
+      "old_corpora_modified": false,
+      "additional_raw_media_bytes": 0,
+      "corpus_manifest_sha256": "b54ce8a3e2d8bc45b51e5eb1a664eb8ad8cb42c0a81303ad9b6cf434384dfc52",
+      "source_audit_sha256": "ecd85f6bfb7e8bbe54891f408e94dd606ff23e0b37e2b0d2581f7c8a0db5d540",
+      "inventory_sha256": "00c1de662222eccc1c1a78a52456f56562cd9fafb9e1f2ceb166b00b597c2dba",
+      "subset_proof_sha256": "21998f9f51236c210d2c1d3a41cb5acf8c0d8242e6b27adda5eeb7118dff555a",
+      "exclusion_plan_sha256": "9e6fa37d2e6566fd4b4b7a321003acdf24fd98f543aabf01df29f9d051f73103",
+      "domains": {
+        "train.vqa": {
+          "records": 11180,
+          "answer_reference_tokens": 1289377
+        },
+        "train.caption": {
+          "records": 10987,
+          "answer_reference_tokens": 2226696
+        },
+        "test.vqa": {
+          "records": 120,
+          "answer_reference_tokens": 13161
+        },
+        "val.vqa": {
+          "records": 54,
+          "answer_reference_tokens": 6225
+        },
+        "test.caption": {
+          "records": 116,
+          "answer_reference_tokens": 23127
+        },
+        "val.caption": {
+          "records": 51,
+          "answer_reference_tokens": 10429
+        }
+      },
+      "reference_token_counts_are_not_encoded_ce": true,
+      "formal_admission": false,
+      "human_source_quality_review_completed": false,
+      "manual_source_quality_review": "waived_by_maintainer",
+      "continuation": "One bounded process-exit hook performs effective identity and benchmark checks; only zero unresolved candidates permits existing MF1 encoding and full audit. No GPU training is launched by this hook.",
+      "encoding_budget": {
+        "wall_seconds": 10800,
+        "output_gib": 1,
+        "reserve_gib": 80,
+        "max_features": 49
+      },
+      "engineering_interruption": {
+        "reason": "nested non-reentrant storage reservation during identity export",
+        "resolution": "Interrupted only the owned data process, retained the completed subset, checked row/split identity and shared image links, then exported outside the outer reservation.",
+        "original_slice_modified": false,
+        "corpus_rebuilt": false
+      }
     }
   },
   "next_ocr_candidate_slice": {
