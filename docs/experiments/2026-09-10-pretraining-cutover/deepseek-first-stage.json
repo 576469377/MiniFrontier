@@ -1,6 +1,6 @@
 {
   "kind": "deepseek_first_formal_phase_cutover",
-  "observed_unix": 1789127700.2360816,
+  "observed_unix": 1789127836.0744855,
   "source_commit": "366f96350547e403389d62f4ff1e5ed6a8ebd2d4",
   "model": "MiniDeepSeek-V4",
   "parameters": 243983472,
@@ -28,7 +28,7 @@
     "D1_max_domain_epochs": 1
   },
   "qualification": {
-    "state": "failed_engineering_memory_block",
+    "state": "memory_repair_under_qualification",
     "warmup_updates": 50,
     "measured_updates": 200,
     "max_input_tokens": 8447750,
@@ -53,7 +53,7 @@
     "state": "not_started",
     "main_ce_tokens": 0,
     "random_init": true,
-    "automatic_start": "Disabled by failed qualification; backward-memory engineering repair required",
+    "automatic_start": "Only after the repaired implementation passes actual C1 and strategy gate; random initialization",
     "planned_observation_pause_updates": 4000,
     "planned_observation_ce_approx": 130000000,
     "phase_budget_unchanged": true
@@ -73,12 +73,16 @@
     "The 4000-update pause is an observation within the full 250M D1 budget; its actual CE comes from the training ledger."
   ],
   "engineering_repair": {
-    "state": "cpu_validated_gpu_qualification_pending",
+    "state": "gpu_qualification_running",
     "change": "Dense attention uses 128-query chunks and backward recomputation; complete key support retained",
     "tests_passed": 46,
     "cuda_tests_deselected": 2,
     "global_input_tokens": 32768,
     "microbatch": 16,
-    "no_further_batch_candidates": true
+    "no_further_batch_candidates": true,
+    "source_commit": "6c2e37be4a88ca6cdedd062d0fde5e1d249ac81f",
+    "max_completed_updates": 250,
+    "prior_attempt_completed_updates": 0,
+    "automatic_retry": false
   }
 }
