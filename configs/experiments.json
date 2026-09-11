@@ -531,7 +531,7 @@
   ],
   "execution_program": {
     "id": "four-model-base-pretraining-2026-09-10",
-    "status": "production_qualification_running_other_models_finishing_media",
+    "status": "deepseek_formal_D1_running_other_models_finishing_media",
     "document": "docs/pretraining-plan.md",
     "user_objectives": [
       "record_and_close_experiments",
@@ -1362,7 +1362,7 @@
     },
     "readiness_priority": {
       "first": "minideepseekv4",
-      "scope": "text admitted and tokenizer frozen with maintainer source-quality-review waiver; complete the running production qualification, then start fresh D1 independently of other models media",
+      "scope": "DeepSeek passed actual production qualification and started fresh formal D1; continue its fixed schedule while other models finish their own data bindings and qualification",
       "other_models": "follow their own admitted data readiness",
       "new_parameter_grids": false,
       "additional_first_stage_text_expansion": false

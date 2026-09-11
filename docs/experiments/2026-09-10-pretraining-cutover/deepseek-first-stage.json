@@ -1,6 +1,6 @@
 {
   "kind": "deepseek_first_formal_phase_cutover",
-  "observed_unix": 1789127950.789389,
+  "observed_unix": 1789133971.4845319,
   "source_commit": "6c2e37be4a88ca6cdedd062d0fde5e1d249ac81f",
   "model": "MiniDeepSeek-V4",
   "parameters": 243983472,
@@ -28,7 +28,7 @@
     "D1_max_domain_epochs": 1
   },
   "qualification": {
-    "state": "memory_repair_under_qualification",
+    "state": "passed",
     "warmup_updates": 50,
     "measured_updates": 200,
     "max_input_tokens": 8447750,
@@ -47,16 +47,68 @@
       "state": "failed",
       "completed_optimizer_updates": 0,
       "log_sha256": "c79813f5ea8ac4877c68a5c2b5c11b95fb950dbc29f83a486cb7760ed815da74"
-    }
+    },
+    "completed_optimizer_updates": 250,
+    "completed_ce_tokens": 8283446,
+    "completed_input_tokens": 8294615,
+    "ce_tokens_per_second": 4049.384315651251,
+    "throughput_scope": "200 measured updates after 50 warmup updates; completed token counters include all 250",
+    "peak_reserved_gib": 14.552734375,
+    "min_device_free_gib": 8.6654052734375,
+    "completed_unix": 1789129906.8599074,
+    "result_sha256": "6e97c682880089cdf25f336588b2f386e8715f32b1c5046d25c090dd5008e35d"
   },
   "formal": {
-    "state": "not_started",
-    "main_ce_tokens": 0,
+    "state": "running",
+    "main_ce_tokens": 15739760,
     "random_init": true,
-    "automatic_start": "Only after the repaired implementation passes actual C1 and strategy gate; random initialization",
+    "automatic_start": "C1 and strategy gate passed; dispatcher started fresh formal D1",
     "planned_observation_pause_updates": 4000,
     "planned_observation_ce_approx": 130000000,
-    "phase_budget_unchanged": true
+    "phase_budget_unchanged": true,
+    "started_unix": 1789129946.1952863,
+    "optimizer_updates": 475,
+    "skipped_windows": 0,
+    "latest_saved_optimizer_updates": 400,
+    "latest_saved_ce_tokens": 13249958,
+    "recent_logged_ce_tokens_per_second": 4143.119650666975,
+    "throughput_scope": "mean of last 20 logged train updates; excludes evaluation and checkpoint time",
+    "output": "outputs/strategy-base-pretraining-v1/minideepseekv4/D1",
+    "run_sha256": "ec5f3f8e20149ed602b28d4ae9d6c12c92accf3f885af8c0b9c8f528b2bf18b6",
+    "metrics_prefix_bytes": 70456,
+    "metrics_prefix_sha256": "c598dff619201a72795b9378b878580d7831365e7048586fc54f7fbe58464ddb",
+    "tensorboard_run": "MiniDeepSeek-V4/D1",
+    "tensorboard_port": 6008,
+    "validation": {
+      "selection_sha256": "45fa9f81fc5eb2e38bb0b02be903ba22146f05aca8ad030c6b2d836bfa295c79",
+      "fixed_ce_tokens": 1000132,
+      "initial_lm_nll": 11.203361061613304,
+      "latest_lm_nll": 7.6258967024360595,
+      "at_main_ce_tokens": 10003981,
+      "per_domain": {
+        "code": {
+          "lm_loss": 6.174267561098885,
+          "ce_tokens": 123317
+        },
+        "dialogue": {
+          "lm_loss": 6.973325845139037,
+          "ce_tokens": 60811
+        },
+        "en_edu": {
+          "lm_loss": 7.342618246210177,
+          "ce_tokens": 259049
+        },
+        "verified_math_science": {
+          "lm_loss": 7.352732342019875,
+          "ce_tokens": 140073
+        },
+        "zh_edu": {
+          "lm_loss": 8.41830316155111,
+          "ce_tokens": 416882
+        }
+      },
+      "generation_capability_assessed": false
+    }
   },
   "checks": {
     "gate_and_phase_tests_passed": 17,
@@ -65,7 +117,9 @@
   },
   "disk": {
     "free_reserve_gib": 80,
-    "shared_text_cache_gib": 8.1671
+    "shared_text_cache_gib": 8.1671,
+    "observed_free_gib": 112.85,
+    "observed_unix": 1789133971.4845319
   },
   "limitations": [
     "Snapshot at observed_unix, not a live progress feed.",
@@ -73,7 +127,7 @@
     "The 4000-update pause is an observation within the full 250M D1 budget; its actual CE comes from the training ledger."
   ],
   "engineering_repair": {
-    "state": "gpu_qualification_running_with_completed_updates",
+    "state": "production_qualification_passed",
     "change": "Dense attention uses 128-query chunks and backward recomputation; complete key support retained",
     "tests_passed": 46,
     "cuda_tests_deselected": 2,
@@ -84,10 +138,11 @@
     "max_completed_updates": 250,
     "prior_attempt_completed_updates": 0,
     "automatic_retry": false,
-    "latest_observed_optimizer_updates": 10,
-    "latest_observed_ce_tokens": 330470,
+    "latest_observed_optimizer_updates": 250,
+    "latest_observed_ce_tokens": 8283446,
     "startup_ce_tokens_per_second": 4202.355584333409,
     "peak_allocated_gib": 13.609557151794434,
-    "throughput_scope": "startup logged update, not the completed 200-update measurement"
+    "throughput_scope": "startup logged update, not the completed 200-update measurement",
+    "completed_measurement_ce_tokens_per_second": 4049.384315651251
   }
 }
