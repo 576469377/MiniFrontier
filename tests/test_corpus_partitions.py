@@ -242,6 +242,7 @@ def test_reserved_validation_group_moves_whole_to_test_and_reaches_text_encoding
             dict(
                 kind="cross_corpus_text_group_audit",
                 full_shared_text_cross_split_audit_complete=True,
+                heldout_self_join_complete=True,
                 inputs={
                     "text": dict(
                         corpus_manifest_sha256=sha256(prior / "corpus-manifest.json"),

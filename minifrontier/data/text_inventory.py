@@ -95,9 +95,10 @@ def audit_text_holdouts(
     max_matches=10_000,
     max_seconds=3600,
     max_bytes=16 * 1024**2,
+    include_training=True,
     progress=None,
 ):
-    """Check every train/val, train/test and val/test pair at the declared metric.
+    """Check train/held-out pairs and the complete held-out self-join.
 
     Includes code regardless of AST equivalence: quarantining near-identical
     held-out content is conservative and does not assert program equivalence.
@@ -108,6 +109,8 @@ def audit_text_holdouts(
         raise FileExistsError("text audit is immutable; choose a new output")
     if min(max_reference_shingles, max_matches, max_seconds, max_bytes) < 1 or not inventory:
         raise ValueError("text audit bounds and inventory must be positive/nonempty")
+    if type(include_training) is not bool:
+        raise ValueError("training audit scope must be explicit")
     started = time.monotonic()
     manifest_path = root / "corpus-manifest.json"
     manifest_hash = sha256(manifest_path)
@@ -206,18 +209,24 @@ def audit_text_holdouts(
             compare(
                 member,
                 values,
-                lambda k, key=key, split=member["split"]: k < key and members[k]["split"] != split,
+                lambda k, key=key: k < key,
             )
             if key % 1000 == 0:
-                report("checking_validation_test")
+                report("checking_all_heldout_pairs")
         signatures.clear()
-        for identity, group, split, text in db.execute(query.format("=")):
+        training = db.execute(query.format("=")) if include_training else ()
+        for identity, group, split, text in training:
             compare(dict(sample_id=identity, group=group, split=split), text_shingles(text), None)
             counts[split] += 1
             identity_digest.update(f"{identity}:{group}:{split}\n".encode())
             if counts[split] % 1000 == 0:
                 report("checking_training_holdouts")
-        if dict(counts) != manifest["splits"]:
+        expected_counts = {
+            split: count
+            for split, count in manifest["splits"].items()
+            if include_training or split != "train"
+        }
+        if dict(counts) != expected_counts:
             raise ValueError("text audit effective record counts differ from manifest")
         final_stat = database.stat()
         if (
@@ -229,13 +238,14 @@ def audit_text_holdouts(
     components = defaultdict(list)
     for group in sorted(parent):
         components[representative(group)].append(groups[group])
-    conflicts = [
+    linked: list[dict[str, Any]] = [
         dict(
             required_split="test" if any(m["split"] == "test" for m in component) else "val",
             members=component,
         )
         for _, component in sorted(components.items())
     ]
+    conflicts = [c for c in linked if len({m["split"] for m in c["members"]}) > 1]
     report("all_pairs_checked")
     result = dict(
         kind="cross_corpus_text_group_audit",
@@ -248,11 +258,13 @@ def audit_text_holdouts(
                 database_sha256=manifest["database_sha256"],
             )
         },
-        scope="all train/val, train/test and val/test pairs; no within-split dedup or semantic/paraphrase guarantee",
+        scope=("all train/held-out pairs and " if include_training else "")
+        + "complete held-out self-join; no within-training dedup or semantic/paraphrase guarantee",
         method="exact whitespace-free normalized casefold five-character shingle Jaccard >=85/100; collision-free prefix index; no Simhash prefilter",
         method_reference=METHOD_REFERENCE,
         code_policy="include code regardless of AST equivalence; quarantine is not semantic dedup",
         effective_records=dict(counts),
+        corpus_records=manifest["splits"],
         member_sha256=identity_digest.hexdigest(),
         reference_shingles=reference_shingles,
         vocabulary_shingles=len(index.ranks),
@@ -260,7 +272,9 @@ def audit_text_holdouts(
         comparisons=index.comparisons,
         matches=matches,
         split_conflicts=conflicts,
-        full_shared_text_cross_split_audit_complete=True,
+        linked_components=linked,
+        full_shared_text_cross_split_audit_complete=include_training,
+        heldout_self_join_complete=True,
         formal_admission=False,
         main_budget_eligible=False,
         processor_sha256=sha256(__file__),
@@ -270,6 +284,102 @@ def audit_text_holdouts(
     content = (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode()
     if len(content) > max_bytes:
         raise ValueError("text audit output byte budget exceeded; no complete report published")
+    with reserve_write(output, len(content), reserve_bytes=80 * GIB), output.open("xb") as stream:
+        stream.write(content)
+    return result
+
+
+def combine_text_group_audits(full_audit, heldout_audit, output, *, max_bytes=16 * 1024**2):
+    """Reuse a complete train/held-out scan and close all held-out group links.
+
+    Same-split val links matter: promoting just one endpoint to test could create
+    a new cross-split duplicate. Merging the complete held-out self-join before
+    applying test precedence avoids repeating the full training scan.
+    """
+    paths = [Path(full_audit), Path(heldout_audit)]
+    reports = [json.loads(p.read_text()) for p in paths]
+    first, second = reports
+    output = Path(output)
+    if output.exists():
+        raise FileExistsError("combined text audit is immutable")
+    if (
+        any(r.get("kind") != "cross_corpus_text_group_audit" for r in reports)
+        or first.get("full_shared_text_cross_split_audit_complete") is not True
+        or second.get("heldout_self_join_complete") is not True
+        or first["inputs"] != second["inputs"]
+        or first.get("shingle_processor_sha256") != second.get("shingle_processor_sha256")
+        or not first.get("shingle_processor_sha256")
+        or first["effective_records"] != second["corpus_records"]
+    ):
+        raise ValueError("complete text and held-out audits must bind the same source")
+    nodes: dict[tuple[str, str], dict[str, Any]] = {}
+    parents: dict[tuple[str, str], tuple[str, str]] = {}
+
+    def find(key):
+        parents.setdefault(key, key)
+        while parents[key] != key:
+            parents[key] = parents[parents[key]]
+            key = parents[key]
+        return key
+
+    for report in reports:
+        for component in report.get("linked_components", report["split_conflicts"]):
+            if not component["members"]:
+                raise ValueError("text audit components cannot be empty")
+            keys = []
+            for member in component["members"]:
+                if (
+                    member["inventory"] not in report["inputs"]
+                    or not member["group"]
+                    or member["split"] not in {"train", "val", "test"}
+                    or type(member["records"]) is not int
+                    or member["records"] < 1
+                ):
+                    raise ValueError("invalid group member in text audit")
+                key = (member["inventory"], member["group"])
+                if key in nodes and nodes[key] != member:
+                    raise ValueError("group membership differs between text audits")
+                nodes[key] = member
+                keys.append(key)
+            for key in keys:
+                left, right = find(keys[0]), find(key)
+                parents[max(left, right)] = min(left, right)
+    groups = defaultdict(list)
+    for key in sorted(nodes):
+        groups[find(key)].append(nodes[key])
+    linked: list[dict[str, Any]] = [
+        dict(
+            members=members,
+            required_split=max(
+                {m["split"] for m in members}, key={"train": 0, "val": 1, "test": 2}.__getitem__
+            ),
+        )
+        for _, members in sorted(groups.items())
+    ]
+    conflicts = [c for c in linked if len({m["split"] for m in c["members"]}) > 1]
+    result = dict(
+        kind="cross_corpus_text_group_audit",
+        inputs=first["inputs"],
+        status="split_conflicts_require_partition_update"
+        if conflicts
+        else "cross_split_check_passed",
+        scope="complete train/held-out comparison plus complete held-out self-join; no within-training or paraphrase guarantee",
+        source_audit_sha256=[sha256(p) for p in paths],
+        method="connected union of exact Jaccard group evidence with identical source bindings",
+        linked_components=linked,
+        split_conflicts=conflicts,
+        effective_records=first["effective_records"],
+        corpus_records=first["effective_records"],
+        full_shared_text_cross_split_audit_complete=True,
+        heldout_self_join_complete=True,
+        formal_admission=False,
+        main_budget_eligible=False,
+        processor_sha256=sha256(__file__),
+        shingle_processor_sha256=first["shingle_processor_sha256"],
+    )
+    content = (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode()
+    if max_bytes < len(content):
+        raise ValueError("combined text audit exceeds its output byte budget")
     with reserve_write(output, len(content), reserve_bytes=80 * GIB), output.open("xb") as stream:
         stream.write(content)
     return result

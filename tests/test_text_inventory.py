@@ -14,7 +14,11 @@ import pytest
 from minifrontier.data import sha256
 from minifrontier.data.corpus import simhash, text_shingles
 from minifrontier.data.partitions import HOLDOUT_FORMAT, create_text_exclusion_view, open_corpus
-from minifrontier.data.text_inventory import ExactTextIndex, audit_text_holdouts
+from minifrontier.data.text_inventory import (
+    ExactTextIndex,
+    audit_text_holdouts,
+    combine_text_group_audits,
+)
 
 
 def test_prefix_index_matches_exhaustive_sets_including_novel_query_tokens():
@@ -205,18 +209,29 @@ def test_complete_text_conflicts_preserve_test_and_promote_whole_validation_grou
             "test-code": "test",
         }
     closed = audit_text_holdouts(view, tmp_path / "resolved-audit.json")
-    assert closed["status"] == "cross_split_check_passed" and not closed["matches"]
+    assert closed["status"] == "cross_split_check_passed" and not closed["split_conflicts"]
+    assert all(len(set(m["splits"])) == 1 for m in closed["matches"])
     assert not closed["formal_admission"]
 
 
 @pytest.mark.parametrize(
-    "fault", ["incomplete", "no_test_member", "wrong_count", "wrong_split", "wrong_anchor"]
+    "fault",
+    [
+        "incomplete",
+        "missing_self_join",
+        "no_test_member",
+        "wrong_count",
+        "wrong_split",
+        "wrong_anchor",
+    ],
 )
 def test_validation_promotion_requires_complete_bound_membership(corpus, tmp_path, fault):
     output = tmp_path / "audit.json"
     result = audit_text_holdouts(corpus, output)
     if fault == "incomplete":
         result["full_shared_text_cross_split_audit_complete"] = False
+    elif fault == "missing_self_join":
+        result.pop("heldout_self_join_complete")
     else:
         component = next(
             c for c in result["split_conflicts"] if any(m["split"] == "val" for m in c["members"])
@@ -240,3 +255,76 @@ def test_validation_promotion_requires_complete_bound_membership(corpus, tmp_pat
             corpus, output, "shared-text", view, resolve_validation_conflicts=True
         )
     assert not view.exists()
+
+
+def test_heldout_union_prevents_new_leak_from_validation_promotion(corpus, tmp_path):
+    base, _ = _missed_pair()
+    extension = "".join(random.Random(19).choices(string.ascii_lowercase, k=200))
+    values = [base, base + extension, base[:-200]]
+    sets = [text_shingles(value) for value in values]
+    assert len(sets[0] & sets[1]) / len(sets[0] | sets[1]) >= 0.85
+    assert len(sets[0] & sets[2]) / len(sets[0] | sets[2]) >= 0.85
+    assert len(sets[1] & sets[2]) / len(sets[1] | sets[2]) < 0.85
+    with sqlite3.connect(corpus / "corpus.sqlite") as db:
+        db.execute("DELETE FROM samples WHERE id NOT IN ('val-near','test-near','test-code')")
+        for name, split, value in zip(
+            ("val-near", "test-code", "test-near"), ("val", "val", "test"), values, strict=True
+        ):
+            db.execute("UPDATE samples SET text=?,split=? WHERE id=?", (value, split, name))
+    manifest = json.loads((corpus / "corpus-manifest.json").read_text())
+    manifest.update(database_sha256=sha256(corpus / "corpus.sqlite"), splits=dict(val=2, test=1))
+    (corpus / "corpus-manifest.json").write_text(json.dumps(manifest))
+    full_path, heldout_path = tmp_path / "full.json", tmp_path / "heldout.json"
+    full = audit_text_holdouts(corpus, full_path)
+    # Model the old cross-split-only report: it missed the val/val edge.
+    full.pop("linked_components")
+    full.pop("heldout_self_join_complete")
+    component = full["split_conflicts"][0]
+    component["members"] = [m for m in component["members"] if m["group"] != "code-test"]
+    full_path.write_text(json.dumps(full))
+    heldout = audit_text_holdouts(corpus, heldout_path, include_training=False)
+    assert not heldout["full_shared_text_cross_split_audit_complete"]
+    assert heldout["heldout_self_join_complete"]
+    assert heldout["effective_records"] == dict(val=2, test=1)
+    combined_path = tmp_path / "combined.json"
+    combined = combine_text_group_audits(full_path, heldout_path, combined_path)
+    assert len(combined["split_conflicts"][0]["members"]) == 3
+    result = create_text_exclusion_view(
+        corpus,
+        combined_path,
+        "shared-text",
+        tmp_path / "resolved",
+        resolve_validation_conflicts=True,
+    )
+    assert result["splits"] == dict(test=3)
+    assert result["promoted_validation_records"] == 2
+    closed = audit_text_holdouts(tmp_path / "resolved", tmp_path / "closed.json")
+    assert not closed["split_conflicts"]
+
+
+@pytest.mark.parametrize("fault", ["source", "incomplete", "shingles", "count", "split", "bytes"])
+def test_combined_audit_rejects_mismatched_evidence_without_publishing(corpus, tmp_path, fault):
+    full_path, heldout_path = tmp_path / "full.json", tmp_path / "heldout.json"
+    audit_text_holdouts(corpus, full_path)
+    heldout = audit_text_holdouts(corpus, heldout_path, include_training=False)
+    assert heldout["effective_records"] == dict(val=1, test=2)
+    assert not heldout["full_shared_text_cross_split_audit_complete"]
+    if fault == "source":
+        heldout["inputs"]["shared-text"]["corpus_manifest_sha256"] = "other"
+    elif fault == "incomplete":
+        heldout["heldout_self_join_complete"] = False
+    elif fault == "shingles":
+        heldout["shingle_processor_sha256"] = "other"
+    elif fault in {"count", "split"}:
+        member = heldout["linked_components"][0]["members"][0]
+        if fault == "count":
+            member["records"] += 1
+        else:
+            member["split"] = "train"
+    heldout_path.write_text(json.dumps(heldout))
+    output = tmp_path / "invalid.json"
+    with pytest.raises(ValueError):
+        combine_text_group_audits(
+            full_path, heldout_path, output, **({"max_bytes": 1} if fault == "bytes" else {})
+        )
+    assert not output.exists()

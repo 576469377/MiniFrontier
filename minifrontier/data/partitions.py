@@ -313,6 +313,7 @@ def _create_group_exclusion_view(
     binding = report["inputs"][inventory]
     complete_grouping = (
         report.get("full_shared_text_cross_split_audit_complete") is True
+        and report.get("heldout_self_join_complete") is True
         if kind == "text"
         else report.get("status") == "split_conflicts_require_partition_update"
         and report.get("unresolved_rendered_visual_candidates") == []
