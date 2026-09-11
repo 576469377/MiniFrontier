@@ -1529,7 +1529,7 @@
     "formal_admission": false
   },
   "shared_text_near_duplicate_blocker": {
-    "observed_unix": 1789097547.646442,
+    "observed_unix": 1789099152.5555475,
     "status": "corrected_views_pending_complete_encoding_and_media_checks",
     "formal_admission": false,
     "main_budget_eligible": false,
@@ -2189,7 +2189,7 @@
         }
       },
       "output": "data/pretraining-tokenizers-v2",
-      "observed_unix": 1789097547.6619434,
+      "observed_unix": 1789099152.570671,
       "mapping_frozen": false,
       "formal_admission": false
     },
@@ -2277,15 +2277,39 @@
     },
     "encoding_refresh": {
       "source": {
-        "state": "encoding_corrected_partition",
+        "state": "mechanical_checks_passed_pending_quality_admission",
         "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
         "source_archive_sha256": "57d97379b81b70dfd5ff6285431b41af02f0688f6aad41b771bc55bdf8ea2db8",
         "driver_sha256": "7758168c5ffd1989311e352c9ca4c26d4d8f7f5199e3f05f020e9d4d929f320a",
         "arguments_sha256": "ab8a27e244227303b75516517dc2c834e5281c2c4290d8e45473fd0ec2813e37",
         "started_unix": 1789097365.9062796,
+        "completed_unix": 1789098811.0429118,
         "corpus_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
         "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
         "expected_validation_ce": 5104105,
+        "encoded_manifest_sha256": "f972b1fe1620befc1a7a90f6fb55f370a03672a4f427bb71639acaae373e4f95",
+        "source_audit_sha256": "c23c48ce125541d2d1b5944fb0c8bd43e2654bb91225faf39c7311b8efa6ee4c",
+        "integrity_report_sha256": "e01c1d4bb3056df9e43a8c91d423b4bef13408492665f8f2dfcdce2ed43e3555",
+        "actual_encoded_bytes": 7299652971,
+        "counts": {
+          "train": {
+            "records": 396842,
+            "input_tokens": 533312670,
+            "ce_tokens": 532915828
+          },
+          "val": {
+            "records": 3737,
+            "input_tokens": 5107842,
+            "ce_tokens": 5104105
+          },
+          "test": {
+            "records": 4432,
+            "input_tokens": 6381473,
+            "ce_tokens": 6377041
+          }
+        },
+        "integrity_errors": {},
+        "peak_resident_bytes": 4960714752,
         "budget": {
           "max_output_gib": 11,
           "minimum_free_gib": 80,
@@ -2297,21 +2321,42 @@
         },
         "output": "data/pretraining-text-64k-v4",
         "formal_admission": false,
-        "observed_unix": 1789097547.662199,
-        "process_identity_verified": true,
-        "partial_output_bytes": 1043922568,
-        "partial_output_is_usable": false
+        "observed_unix": 1789099152.570935
       },
       "mf1": {
-        "state": "encoding_corrected_partition",
+        "state": "mechanical_checks_passed_pending_quality_admission",
         "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
         "source_archive_sha256": "57d97379b81b70dfd5ff6285431b41af02f0688f6aad41b771bc55bdf8ea2db8",
         "driver_sha256": "7758168c5ffd1989311e352c9ca4c26d4d8f7f5199e3f05f020e9d4d929f320a",
         "arguments_sha256": "b6fed637c057fc41effa3d3528c67c9606454c571e5370512457c6d9064c93c2",
         "started_unix": 1789097365.9240634,
+        "completed_unix": 1789098801.3215072,
         "corpus_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
         "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
         "expected_validation_ce": 5459526,
+        "encoded_manifest_sha256": "703c38bba6fe0a0171657093428e02796a2344a9b145dbac84291b2b32d69e5a",
+        "source_audit_sha256": "2fe04d1ff56c5869ca52413655aa2a1218cc40bca0b57818a55d4a6b40398476",
+        "integrity_report_sha256": "00e657077cead17d816f8a59b010f4ff5c8c662c1a454287a958d6c8d0284236",
+        "actual_encoded_bytes": 1449027741,
+        "counts": {
+          "train": {
+            "records": 396842,
+            "input_tokens": 570187164,
+            "ce_tokens": 569790322
+          },
+          "val": {
+            "records": 3737,
+            "input_tokens": 5463263,
+            "ce_tokens": 5459526
+          },
+          "test": {
+            "records": 4432,
+            "input_tokens": 6792699,
+            "ce_tokens": 6788267
+          }
+        },
+        "integrity_errors": {},
+        "peak_resident_bytes": 799834112,
         "budget": {
           "max_output_gib": 3,
           "minimum_free_gib": 80,
@@ -2323,10 +2368,7 @@
         },
         "output": "data/pretraining-mf1-text-v3",
         "formal_admission": false,
-        "observed_unix": 1789097547.6625664,
-        "process_identity_verified": true,
-        "partial_output_bytes": 207308495,
-        "partial_output_is_usable": false
+        "observed_unix": 1789099152.5710528
       }
     },
     "latest_validation": {

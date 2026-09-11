@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789087418.4666276,
+  "observed_unix": 1789099285.6385515,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -5507,33 +5507,271 @@
     },
     "total_effective_images": 299555,
     "encoded_consumers_need_refresh": true,
-    "scope_note": "59 directly affected OCR parents expand to 8694 complete-group removals under existing source groups; most collateral removals are in shards 01/02; these are conservative lineage exclusions, not 8694 asserted visual duplicates"
+    "scope_note": "59 directly affected OCR parents expand to 8694 complete-group removals under existing source groups; most collateral removals are in shards 01/02; these are conservative lineage exclusions, not 8694 asserted visual duplicates",
+    "mf1_encoding_refresh": {
+      "state": "parent_membership_verified_ready_for_candidate_encoding",
+      "source_commit": "f9e005fc3d5707a40744e8dce6a0c71809dd1683",
+      "source_archive_sha256": "5874f8b52ef028109446786def148ca8d80469b724a03ea0917fe5960bd51acb",
+      "driver_sha256": "92ba423b926c66e875068fde1b79e8495e64136a53ce004e4cdf4af6e183e7db",
+      "started_unix": 1789098993.2132533,
+      "completed_unix": 1789099014.4640524,
+      "text_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+      "global_media_audit_sha256": "a7afdba9864e21c4b67ffe37d56bf44ee709d0aec909a4d929900608e351bafc",
+      "checked_records": 299555,
+      "mismatches": [],
+      "peak_resident_bytes": 679944192,
+      "budget": {
+        "wall_seconds": 600,
+        "max_virtual_gib": 16,
+        "max_output_mib": 16,
+        "training_tokens": 0
+      },
+      "report_sha256": "3db39040d58359d94161b61aecfe990a61b4d05fd72c5c71a09e847d433ff348",
+      "encoding_lane": {
+        "state": "encoding_components",
+        "source_commit": "f9e005fc3d5707a40744e8dce6a0c71809dd1683",
+        "source_archive_sha256": "5874f8b52ef028109446786def148ca8d80469b724a03ea0917fe5960bd51acb",
+        "driver_sha256": "6641fe32423eaa457b4002def18dc7e44ee932499fa9a2153b6f7ee745e0edad",
+        "component_driver_sha256": "d0447ac57e54675eb0c528cbb78adcc4c3a15608ee3579bb8ba2e4ed84537716",
+        "arguments_sha256": "571c0484bd3d5943f159c07edad0545fed5337f4c3fcfc39ffc69237d5febf11",
+        "started_unix": 1789099130.246975,
+        "observed_unix": 1789099271.6007354,
+        "budget": {
+          "wall_seconds": 7200,
+          "child_wall_seconds": 600,
+          "total_max_output_gib": 4,
+          "minimum_free_gib": 80,
+          "max_virtual_gib": 32,
+          "parallel_encoders": 1,
+          "training_tokens": 0
+        },
+        "completed_components": [
+          {
+            "component": "ocr-00",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "returncode": 0,
+            "output_bytes": 44048160,
+            "manifest_sha256": "6724b0d664fa1f447f5129c87fb247cd4e55837336042b425bbd80cfb0e24eca",
+            "encoding_audit_sha256": "6757afbe129029a5b30e9d7e03992d75161c9cadfa39b609b93f8cf7e69c45b4",
+            "output": "data/pretraining-mf1-ocr-p0-shard-00-v2"
+          },
+          {
+            "component": "ocr-01",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "returncode": 0,
+            "output_bytes": 34092785,
+            "manifest_sha256": "22fbb41cc63abd3c733168f97182c5b8086a1dc259a765fdc24d985133650e46",
+            "encoding_audit_sha256": "bacd43ea19c757c3370847763ef8992e1fa6ccb9509fc81a127e06c50d165d5c",
+            "output": "data/pretraining-mf1-ocr-p0-shard-01-v2"
+          },
+          {
+            "component": "ocr-02",
+            "state": "mechanical_checks_passed_pending_quality_admission",
+            "returncode": 0,
+            "output_bytes": 33729221,
+            "manifest_sha256": "c51783c90c4c49426e42fb04d2086d8bb6d7a423e1ff79ce8fa435b2f0b17039",
+            "encoding_audit_sha256": "8303b57dad1d2c0c07067ce0ee345183c7730bc1085f7adcc190e40830be90d4",
+            "output": "data/pretraining-mf1-ocr-p0-shard-02-v2"
+          }
+        ],
+        "planned_components": 16,
+        "formal_admission": false,
+        "process_identity_verified": true,
+        "initial_launcher_failure": {
+          "kind": "data_launcher_failure",
+          "state": "failed_before_children_or_outputs",
+          "observed_unix": 1789099128.7442672,
+          "error": "TypeError: dict() got multiple values for keyword argument driver_sha256",
+          "prior_arguments_sha256": "158019519bd7bc77af8910debbbd69cd6c43de3d0e298ef2685c5f8a6e7be9e6",
+          "prior_driver_sha256": "17897ac7abb23883ffc4fe9f4dc85697592cb4e628ed49422287c85c8fa17690",
+          "fix": "separate component driver hash from lane driver hash and remove duplicate child admission argument",
+          "children_started": 0,
+          "formal_training_tokens": 0
+        }
+      }
+    }
   },
   "current_global_media_grouping": {
-    "state": "auditing_cross_pool_groups",
-    "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
-    "source_archive_sha256": "57d97379b81b70dfd5ff6285431b41af02f0688f6aad41b771bc55bdf8ea2db8",
-    "driver_sha256": "4fc89cc4921d3e3fb567ddbfb37588265bb3877d6820dbd2d013a709dd2a7d5f",
-    "started_unix": 1789097006.5387707,
-    "completed_exports": 16,
-    "last_export": "ocr-15",
-    "parent_quarantine_run_sha256": "e20aa26184c6acc6bba813e24a056ce245a0a4401f501434c6b2932c53f01a7d",
-    "observed_unix": 1789097547.8254182,
-    "formal_admission": false,
-    "main_budget_eligible": false,
-    "inventory_count": 19,
+    "state": "rendered_visual_candidates_require_verification",
+    "source_commit": "f9e005fc3d5707a40744e8dce6a0c71809dd1683",
+    "source_archive_sha256": "5874f8b52ef028109446786def148ca8d80469b724a03ea0917fe5960bd51acb",
+    "export_source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
+    "export_parent_run_sha256": "531b5209bdebb04c09eb6d41651bc8b31e11e05383c6fdcde2c24906447d3e11",
+    "candidate_filter_equivalence_sha256": "5684378f991bec37d8d7d85b03286131910b2779f1aa4ae712e9a0ab14ac4312",
+    "driver_sha256": "cee97ee84aa2c1d32a4366787fa03e8efbfc17e40cc95e794a7719be117ed6bd",
+    "arguments_sha256": "cb7ab08715d7f833d497ef28985eef28f8ac4662598990424c87f3adc5f483c4",
+    "started_unix": 1789098469.2620425,
+    "observed_unix": 1789098879.2836306,
+    "completed_unix": 1789098879.2824397,
+    "loaded_inventories": 19,
+    "indexed_images": 399494,
+    "rendered_images": 299555,
+    "checked_rendered_images": 290000,
+    "visual_candidates": 2066,
+    "peak_resident_bytes": 4800266240,
+    "group_audit_sha256": "a7afdba9864e21c4b67ffe37d56bf44ee709d0aec909a4d929900608e351bafc",
+    "result": {
+      "input_images": 399494,
+      "unique_rgb_images": 399494,
+      "input_groups": 378993,
+      "connected_groups": 378614,
+      "link_counts": {
+        "phash_hamming_le_6": 358,
+        "rendered_text_jaccard_ge_0.85": 31,
+        "origin_alias": 3
+      },
+      "cross_inventory_link_counts": {
+        "phash_hamming_le_6": 358,
+        "rendered_text_jaccard_ge_0.85": 29,
+        "origin_alias": 3
+      },
+      "rendered_images": 299555
+    },
+    "split_conflict_components": 0,
+    "unresolved_rendered_visual_candidates": 2131,
     "budget": {
+      "wall_seconds": 1800,
+      "max_virtual_gib": 32,
+      "max_resident_gib": 24,
       "max_output_gib": 1,
       "max_bytes_per_inventory": 67108864,
       "max_edges": 500000,
       "max_text_comparisons": 5000000,
       "minimum_free_gib": 80,
       "training_tokens": 0,
-      "wall_seconds": 900,
-      "max_virtual_gib": 32
+      "gpu_hours": 0
     },
+    "attempt": "grouping-v4-retry1",
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "inventory_count": 19,
+    "snapshot_unix": 1789099285.276878,
+    "previous_attempt": {
+      "state": "failed",
+      "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
+      "source_archive_sha256": "57d97379b81b70dfd5ff6285431b41af02f0688f6aad41b771bc55bdf8ea2db8",
+      "driver_sha256": "4fc89cc4921d3e3fb567ddbfb37588265bb3877d6820dbd2d013a709dd2a7d5f",
+      "started_unix": 1789097006.5387707,
+      "observed_unix": 1789097052.0845857,
+      "completed_unix": 1789097906.5400746,
+      "completed_exports": 16,
+      "last_export": "ocr-15",
+      "error": "TimeoutError('900-second complete media grouping bound exceeded')",
+      "budget": {
+        "max_output_gib": 1,
+        "max_bytes_per_inventory": 67108864,
+        "max_edges": 500000,
+        "max_text_comparisons": 5000000,
+        "minimum_free_gib": 80,
+        "training_tokens": 0,
+        "wall_seconds": 900,
+        "max_virtual_gib": 32
+      },
+      "attempt": "grouping-v4",
+      "formal_admission": false,
+      "main_budget_eligible": false,
+      "inventory_count": 19,
+      "snapshot_unix": 1789099285.276975
+    },
+    "candidate_filter_validation": {
+      "kind": "bounded_cpu_candidate_filter_equivalence",
+      "question": "Does filtering before sorting preserve ordered candidates and reduce work on actual media identities?",
+      "budget": {
+        "queries": 512,
+        "wall_seconds": 180,
+        "max_virtual_gib": 8,
+        "max_output_mib": 2,
+        "gpu_hours": 0,
+        "training_tokens": 0
+      },
+      "decision": "reuse identity exports for one complete audit with unchanged thresholds if ordered results are identical",
+      "external_images": 99939,
+      "queries": 512,
+      "shared_band_candidates": 2151251,
+      "qualifying_candidates": 7,
+      "old_seconds": 1.3858792893588543,
+      "new_seconds": 0.5124141592532396,
+      "ratio": 2.7046077168877383,
+      "ordered_results_equal": true,
+      "results_sha256": "9f66f97a1c5a17807768f534085ffddba439c4c9bdc66a6ca86cc09a55d2ced3",
+      "processor_sha256": "39545938efd15bdeeef2f65263bab684435f08c949f4cb026a2dd154ce54260a",
+      "max_rss_kib": 493400,
+      "formal_admission": false,
+      "scope": "single bounded CPU audit inner-loop comparison, not model throughput or full-audit timing",
+      "report_sha256": "5684378f991bec37d8d7d85b03286131910b2779f1aa4ae712e9a0ab14ac4312",
+      "targeted_tests_passed": 15,
+      "targeted_test_log_sha256": "b581fd6ebcca8423ab9450181f8ed6b368bdfdebf0afa84bf7217364ab4c6dc9",
+      "mypy": "passed",
+      "ruff": "passed",
+      "source_commit": "f9e005fc3d5707a40744e8dce6a0c71809dd1683"
+    },
+    "review_reuse": "only identical candidate contents and bound raw/RGB identities may inherit prior model-assisted decisions; all new candidates require review",
     "prior_review_sha256": "3fe504e3c28daf8522f1182d7c7e502a6093a8f3a453bac6697a1d3274e901c1",
-    "review_reuse": "only identical bound candidate/image identities may inherit prior model-assisted decisions; all new candidates remain pending",
-    "process_identity_verified": true
+    "remote_resource_metadata": {
+      "resources": 76696,
+      "bytes": 43047499,
+      "sha256": "b124bdff8fc56eced1efbe013a97535449844a1c6d395ae2af3c56e8a98169f7",
+      "raw_pixels_copied": false,
+      "formal_admission": false
+    },
+    "local_storage": {
+      "observed_unix": 1789099285.6371863,
+      "free_gib": 120.03543472290039,
+      "minimum_free_gib": 80
+    },
+    "visual_review_plan": {
+      "report_sha256": "93ca807378a4ddec4899610f12973628754974cb132b772ad0c87631e092d605",
+      "total_candidates": 2131,
+      "cross_split_candidates": 144,
+      "external_images": 507,
+      "identical_prior_candidate_contents": 315,
+      "new_or_changed_candidates": 1816,
+      "remaining_external_images": 452,
+      "decisions_applied": false,
+      "next_rule": "verify current raw/RGB identities against prior reviewed decisions before transferring identical candidate reviews; inspect all new or changed candidates"
+    },
+    "auxiliary_host_after_reboot": {
+      "kind": "runtime_observation_after_external_reboot",
+      "state": "system_nvml_available_pytorch_unchecked",
+      "observed_unix": 1789098743.9384723,
+      "kernel_driver_version": "580.178.04",
+      "system_nvidia_smi_passed": true,
+      "isolated_580_173_02_environment_applicable": false,
+      "action": "use current system libraries for future project tasks; retain the earlier isolated-library files as historical evidence; no system package or kernel modifications performed",
+      "formal_model_qualification": false,
+      "report_sha256": "6dbadc2776b0ab37898ac26b544d7999a23fbe7791829c0f32d2a6a73491d1ad",
+      "media_read_check": {
+        "kind": "post_reboot_media_read_checks",
+        "observed_unix": 1789098805.5828469,
+        "resource_metadata_sha256": "b124bdff8fc56eced1efbe013a97535449844a1c6d395ae2af3c56e8a98169f7",
+        "samples": [
+          {
+            "inventory": "documents-charts",
+            "raw_sha256": "2e712f7a7833d6c6201b4ec37b26b6fccdff6682972d5eb4a7a135a72d8704e9",
+            "rgb_sha256": "00012c210afdcccfcb057e5dff3ad3b0ffcf7f6ec99d84b02061e7e04ab6e36c",
+            "raw_bytes": 261746,
+            "dimensions": [
+              612,
+              1440
+            ],
+            "status": "bound_raw_and_decoded_identity_verified"
+          },
+          {
+            "inventory": "natural-extension",
+            "raw_sha256": "d95f4690cf2c4c00dc72c2ccfef42ba2c253d19f0dcf632d50436966437ef92c",
+            "rgb_sha256": "0003bed797c8c4528d6ee88d885e484e7a38038f0fa3ad4abbbf2d95d3ad5ff2",
+            "raw_bytes": 920137,
+            "dimensions": [
+              627,
+              1024
+            ],
+            "status": "bound_raw_and_decoded_identity_verified"
+          }
+        ],
+        "raw_images_saved": false,
+        "scope": "one bound image from each remote pool; service recovery check only, not full inventory or quality review",
+        "formal_admission": false
+      }
+    }
   }
 }
