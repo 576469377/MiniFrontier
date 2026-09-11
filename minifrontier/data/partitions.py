@@ -181,12 +181,54 @@ def create_partition_view(corpus_root, reservation, output):
     fraction = proposal["minimum_validation_group_fraction"]
     if not isinstance(fraction, (int, float)) or not 0 < fraction < 0.5:
         raise ValueError("invalid minimum validation group fraction")
+    metadata_source = source
+    inherited: dict[str, Any] = {}
+    prior_holdouts = {}
+    if proposal.get("prior_partition"):
+        prior = (proposal_path.parent / proposal["prior_partition"]).resolve()
+        if (
+            sha256(prior / "corpus-manifest.json") != proposal["prior_partition_manifest_sha256"]
+            or sha256(prior / "source-audit.json") != proposal["prior_partition_audit_sha256"]
+        ):
+            raise ValueError("prior partition identity differs from the reservation")
+        previous = json.loads((prior / "corpus-manifest.json").read_text())
+        if previous.get("format") not in VIEW_FORMATS:
+            raise ValueError("additional reservation requires an existing partition view")
+        with contextlib.closing(open_corpus(prior)) as db:
+            if corpus_storage_root(db) != source:
+                raise ValueError("prior partition refers to another canonical corpus")
+            prior_holdouts = dict(
+                db.execute("SELECT id,split FROM samples WHERE split!='train' ORDER BY id")
+            )
+        inherited = json.loads((prior / previous["partition_file"]).read_text())
+        if any(proposal["groups"].get(g) != split for g, split in inherited["groups"].items()):
+            raise ValueError("additional reservation cannot release previous validation groups")
+        audit = json.loads((prior / "source-audit.json").read_text())
+        if (
+            audit.get("formal_admission")
+            or audit["status"] != "candidate_slice_complete_pending_admission"
+        ):
+            raise ValueError("prior partition must remain an unadmitted candidate")
+        metadata_source = prior
     statistics: dict[str, dict[str, Any]] = {}
     totals: dict[str, int] = {}
     tokens: dict[str, dict[str, int]] = {}
     media_statistics = {}
     with contextlib.closing(open_corpus(source)) as db:
-        _reserve(db, proposal["groups"])
+        _reserve(
+            db,
+            proposal["groups"],
+            inherited.get("excluded_groups", []),
+            inherited.get("task_policy"),
+            inherited.get("test_groups", []),
+        )
+        current_holdouts = dict(
+            db.execute("SELECT id,split FROM samples WHERE split!='train' ORDER BY id")
+        )
+        if any(
+            current_holdouts.get(identity) != split for identity, split in prior_holdouts.items()
+        ):
+            raise ValueError("additional reservation changed a previous held-out member")
         for name, split, records, groups, count in db.execute(
             "SELECT source,split,COUNT(*),COUNT(DISTINCT group_root),"
             "SUM(json_extract(payload,'$.reference_tokens')) FROM samples GROUP BY source,split"
@@ -223,8 +265,8 @@ def create_partition_view(corpus_root, reservation, output):
                 ),
                 split_answer_reference_tokens=answers,
             )
-        if (source / "review-samples.jsonl").exists():
-            with (source / "review-samples.jsonl").open() as review:
+        if (metadata_source / "review-samples.jsonl").exists():
+            with (metadata_source / "review-samples.jsonl").open() as review:
                 for line in review:
                     row = json.loads(line)["record"]
                     if db.execute(
@@ -238,14 +280,21 @@ def create_partition_view(corpus_root, reservation, output):
     partition_path = root / "split-overrides.json"
     write_json(
         partition_path,
-        dict(schema_version=1, groups=proposal["groups"], reservation_sha256=sha256(proposal_path)),
+        dict(
+            inherited,
+            schema_version=1,
+            groups=proposal["groups"],
+            reservation_sha256=sha256(proposal_path),
+        ),
     )
     for name in ("source_allowlist.json", "reference-tokenizer.json", "review-samples.jsonl"):
-        if (source / name).exists():
-            shutil.copyfile(source / name, root / name)
+        if (metadata_source / name).exists():
+            shutil.copyfile(metadata_source / name, root / name)
     result = dict(
         manifest,
-        format=FORMAT,
+        format=HOLDOUT_FORMAT
+        if inherited.get("test_groups")
+        else (TASK_FORMAT if inherited.get("task_policy") else FORMAT),
         base_corpus=dict(
             path=os.path.relpath(source, root),
             manifest_sha256=sha256(source / "corpus-manifest.json"),
@@ -257,12 +306,18 @@ def create_partition_view(corpus_root, reservation, output):
         + "; minimal additional whole validation groups; prior test/val unchanged",
         minimum_validation_group_fraction=fraction,
         source_splits=statistics,
+        **({"task_policy": inherited["task_policy"]} if inherited.get("task_policy") else {}),
+        **(
+            dict(previous_effective_manifest_sha256=proposal["prior_partition_manifest_sha256"])
+            if inherited
+            else {}
+        ),
     )
     write_json(root / "corpus-manifest.json", result)
     audit = dict(
         audit,
         operation="apply_validation_group_reservation",
-        base_source_audit_sha256=sha256(source / "source-audit.json"),
+        base_source_audit_sha256=sha256(metadata_source / "source-audit.json"),
         reservation_sha256=sha256(proposal_path),
         reservation_applied=True,
         split_reference_tokens=tokens,
@@ -273,6 +328,19 @@ def create_partition_view(corpus_root, reservation, output):
         updated_unix=time.time(),
     )
     audit.update(media_statistics)
+    if inherited:
+        audit.update(
+            prior_holdout_membership_sha256=hashlib.sha256(
+                "".join(
+                    f"{identity}:{split}\n" for identity, split in prior_holdouts.items()
+                ).encode()
+            ).hexdigest(),
+            holdout_membership_sha256=hashlib.sha256(
+                "".join(
+                    f"{identity}:{split}\n" for identity, split in current_holdouts.items()
+                ).encode()
+            ).hexdigest(),
+        )
     write_json(root / "source-audit.json", audit)
     return result
 

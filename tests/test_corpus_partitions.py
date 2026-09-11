@@ -150,6 +150,72 @@ def test_invalid_reservation_is_rejected_before_output(corpus, tmp_path, fault):
     assert not output.exists()
 
 
+@pytest.mark.parametrize("fault", [None, "release", "binding", "review"])
+def test_additional_reservation_preserves_quarantine_and_test_precedence(corpus, tmp_path, fault):
+    root, reservation = corpus
+    # Build two additional singleton groups before creating the initial view.
+    with sqlite3.connect(root / "corpus.sqlite") as db:
+        row = list(db.execute("SELECT * FROM samples LIMIT 1").fetchone())
+        for name in ("additional", "quarantined"):
+            record = json.loads(row[6])
+            record.update(sample_id=name, group_id=name, item_id=name)
+            new = [*row]
+            new[0], new[6], new[8], new[9] = name, json.dumps(record), name, "train"
+            db.execute("INSERT INTO samples VALUES (?,?,?,?,?,?,?,?,?,?)", new)
+    manifest = json.loads((root / "corpus-manifest.json").read_text())
+    manifest["database_sha256"] = sha256(root / "corpus.sqlite")
+    manifest["splits"]["train"] += 2
+    (root / "corpus-manifest.json").write_text(json.dumps(manifest))
+    proposal = json.loads(reservation.read_text())
+    proposal["corpus_manifest_sha256"] = sha256(root / "corpus-manifest.json")
+    reservation.write_text(json.dumps(proposal))
+    prior = tmp_path / "prior"
+    create_partition_view(root, reservation, prior)
+    # This synthetic prior has already quarantined one train group and moved an
+    # original validation group to test. Those controls must survive the top-up.
+    with contextlib.closing(open_corpus(root)) as db:
+        promoted = db.execute("SELECT group_root FROM samples WHERE split='val'").fetchone()[0]
+    controls = json.loads((prior / "split-overrides.json").read_text())
+    controls.update(excluded_groups=["quarantined"], test_groups=[promoted])
+    (prior / "split-overrides.json").write_text(json.dumps(controls))
+    previous = json.loads((prior / "corpus-manifest.json").read_text())
+    previous.update(format=HOLDOUT_FORMAT, partition_sha256=sha256(prior / "split-overrides.json"))
+    (prior / "corpus-manifest.json").write_text(json.dumps(previous))
+    with contextlib.closing(open_corpus(prior)) as db:
+        held = dict(db.execute("SELECT id,split FROM samples WHERE split!='train'"))
+    proposal.update(
+        prior_partition=str(prior),
+        prior_partition_manifest_sha256=sha256(prior / "corpus-manifest.json"),
+        prior_partition_audit_sha256=sha256(prior / "source-audit.json"),
+        groups={**controls["groups"], "additional": "val"},
+    )
+    if fault == "release":
+        proposal["groups"] = {"additional": "val"}
+    elif fault == "binding":
+        proposal["prior_partition_manifest_sha256"] = "0" * 64
+    elif fault == "review":
+        review = json.loads((prior / "review-samples.jsonl").read_text())["record"]["sample_id"]
+        with contextlib.closing(open_corpus(root)) as db:
+            group = db.execute("SELECT group_root FROM samples WHERE id=?", (review,)).fetchone()[0]
+        proposal["groups"][group] = "val"
+    reservation.write_text(json.dumps(proposal))
+    output = tmp_path / "updated"
+    before = sha256(root / "corpus.sqlite")
+    if fault:
+        with pytest.raises(ValueError):
+            create_partition_view(root, reservation, output)
+        assert not output.exists()
+        return
+    result = create_partition_view(root, reservation, output)
+    assert result["format"] == HOLDOUT_FORMAT
+    assert result["splits"] == dict(train=1, val=3, test=2)
+    with contextlib.closing(open_corpus(output)) as db:
+        actual = dict(db.execute("SELECT id,split FROM samples"))
+    assert "quarantined" not in actual and actual["additional"] == "val"
+    assert all(actual[identity] == split for identity, split in held.items())
+    assert sha256(root / "corpus.sqlite") == before
+
+
 @pytest.mark.parametrize("target", ["split-overrides.json", "corpus.sqlite"])
 def test_reader_rejects_changed_partition_or_original_database(corpus, tmp_path, target):
     root, reservation = corpus
