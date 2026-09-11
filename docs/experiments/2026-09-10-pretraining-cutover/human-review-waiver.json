@@ -1,0 +1,29 @@
+{
+  "kind": "maintainer_human_review_waiver",
+  "status": "authorized",
+  "authorized_date": "2026-09-11",
+  "scope": "learning_project_pretraining_manual_review_only",
+  "authorization": {
+    "authority": "project_maintainer",
+    "user_statement": "我觉得不用审核了，既然这个是一个学习项目，这个步骤可以跳过，我看了几条，都是可以用来进行预训练的"
+  },
+  "human_review_completed": false,
+  "reviewed_sample_count": null,
+  "review_observation": "Maintainer reports inspecting a few samples; neither all 500 samples nor per-source coverage is claimed.",
+  "bindings": [
+    {
+      "model": "minideepseekv4",
+      "phase": "D1",
+      "data_sha256": "f972b1fe1620befc1a7a90f6fb55f370a03672a4f427bb71639acaae373e4f95"
+    }
+  ],
+  "canonical_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+  "samples_sha256": "094afb2d7e9e5d268ffbf41df0b4e584eab3be1c1650ec6dc274d4e8efd3a184",
+  "retained_requirements": [
+    "source provenance and license conditions",
+    "deduplication and sealed train/validation/test split",
+    "encoding, labels, boundaries and tokenizer checks",
+    "actual production qualification and model evaluation"
+  ],
+  "formal_admission_granted_by_this_record": false
+}

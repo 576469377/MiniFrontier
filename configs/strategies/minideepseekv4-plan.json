@@ -122,7 +122,10 @@
         "mtp_coefficient_comparison",
         "tokenizer_quality_comparison"
       ],
-      "status": "not_started"
+      "status": "not_started",
+      "dependency_quality_scopes": {
+        "D-pilot": "recipe_viability"
+      }
     },
     {
       "id": "D2",

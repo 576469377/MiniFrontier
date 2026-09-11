@@ -237,3 +237,95 @@ def test_main_phase_gate_keeps_separate_periodic_and_phase_end_minima(tmp_path, 
         assert result["allowed"] is allowed
         if not allowed:
             assert len(result["errors"]) == 1 and "validation" in result["errors"][0]
+
+    record["data_audit"].update(
+        periodic_validation_ce_tokens=1_000_000,
+        phase_end_validation_ce_tokens=5_000_000,
+        readable_200_passed=False,
+    )
+    waiver = tmp_path / "waiver.json"
+    authorized = dict(
+        kind="maintainer_human_review_waiver",
+        status="authorized",
+        scope="learning_project_pretraining_manual_review_only",
+        human_review_completed=False,
+        authorization=dict(user_statement="Skip manual review for this learning project."),
+        bindings=[dict(model="miniqwen4", phase="Q1", data_sha256=record["data_sha256"])],
+    )
+    waiver.write_text(json.dumps(authorized))
+    record["human_review_waiver"] = dict(path=str(waiver), sha256=sha256(waiver))
+
+    def check_record():
+        evidence.write_text(json.dumps(record))
+        return strategy_gate.check(
+            plan, "Q1", evidence, data=tmp_path, config=config, output=tmp_path
+        )
+
+    assert check_record()["allowed"]
+    assert record["data_audit"]["readable_200_passed"] is False
+    for key in ("split_groups_disjoint", "sealed_test", "source_licenses_reviewed"):
+        record["data_audit"][key] = False
+        assert not check_record()["allowed"]
+        record["data_audit"][key] = True
+    for key, value in (("model", "minideepseekv4"), ("phase", "Q2"), ("data_sha256", "stale")):
+        original = authorized["bindings"][0][key]
+        authorized["bindings"][0][key] = value
+        waiver.write_text(json.dumps(authorized))
+        record["human_review_waiver"]["sha256"] = sha256(waiver)
+        assert not check_record()["allowed"]
+        authorized["bindings"][0][key] = original
+    waiver.write_text(json.dumps(authorized))
+    record["human_review_waiver"]["sha256"] = "stale"
+    assert not check_record()["allowed"]
+
+
+def test_recipe_viability_never_qualifies_a_main_training_parent(tmp_path):
+    from minifrontier.training.strategy_gate import _pilot_recipe_passed
+
+    report = tmp_path / "recipe.json"
+    payload = dict(
+        kind="recipe_pilot_viability",
+        source_commit="fixture",
+        checkpoint_sha256="checkpoint",
+        passed=True,
+        generation_quality_passed=False,
+        checks=dict(
+            finite_updates=True,
+            heldout_learnability=True,
+            optimizer_mtp_choices_bound=True,
+            current_numerical_contracts=True,
+            generation_review_recorded=True,
+        ),
+    )
+    report.write_text(json.dumps(payload))
+    completed = dict(
+        quality_passed=False,
+        checkpoint_sha256="checkpoint",
+        recipe_viability=dict(path=str(report), sha256=sha256(report)),
+    )
+    phase = dict(dependency_quality_scopes={"D-pilot": "recipe_viability"})
+    phases = {"D-pilot": dict(budget_scope="recipe_pilot")}
+
+    def permitted():
+        return _pilot_recipe_passed(completed, "D-pilot", phase, phases, "fixture")
+
+    assert permitted()
+    assert completed["quality_passed"] is False
+    phases["D-pilot"]["budget_scope"] = "main"
+    assert not permitted()
+    phases["D-pilot"]["budget_scope"] = "recipe_pilot"
+    for key in payload["checks"]:
+        payload["checks"][key] = False
+        report.write_text(json.dumps(payload))
+        completed["recipe_viability"]["sha256"] = sha256(report)
+        assert not permitted()
+        payload["checks"][key] = True
+    for key, value in (("source_commit", "old"), ("checkpoint_sha256", "other")):
+        original = payload[key]
+        payload[key] = value
+        report.write_text(json.dumps(payload))
+        completed["recipe_viability"]["sha256"] = sha256(report)
+        assert not permitted()
+        payload[key] = original
+    report.write_text(json.dumps(payload))
+    assert not permitted()  # the previous reference hash cannot qualify modified evidence

@@ -8,6 +8,54 @@ from minifrontier.provenance import require_source_checkout, source_identity
 from minifrontier.storage import GIB, require_space
 
 
+def _bound_report(reference):
+    path = Path(reference.get("path", ""))
+    if not path.is_file() or sha256(path) != reference.get("sha256"):
+        return {}
+    return json.loads(path.read_text())
+
+
+def _human_review_waived(evidence, model, phase, data_sha256):
+    """A maintainer exception covers manual review only, for named artifacts."""
+    report = _bound_report(evidence.get("human_review_waiver", {}))
+    return (
+        report.get("kind") == "maintainer_human_review_waiver"
+        and report.get("status") == "authorized"
+        and report.get("scope") == "learning_project_pretraining_manual_review_only"
+        and report.get("human_review_completed") is False
+        and bool(report.get("authorization", {}).get("user_statement"))
+        and phase["budget_scope"] == "main"
+        and dict(model=model, phase=phase["id"], data_sha256=data_sha256)
+        in report.get("bindings", [])
+    )
+
+
+def _pilot_recipe_passed(completed, dependency, phase, phases, commit):
+    """Recipe pilots qualify choices; their generation verdict remains separate."""
+    if (
+        phases[dependency]["budget_scope"] != "recipe_pilot"
+        or phase.get("dependency_quality_scopes", {}).get(dependency) != "recipe_viability"
+    ):
+        return False
+    report = _bound_report(completed.get("recipe_viability", {}))
+    return (
+        report.get("kind") == "recipe_pilot_viability"
+        and report.get("source_commit") == commit
+        and report.get("checkpoint_sha256") == completed.get("checkpoint_sha256")
+        and report.get("passed") is True
+        and all(
+            report.get("checks", {}).get(key) is True
+            for key in (
+                "finite_updates",
+                "heldout_learnability",
+                "optimizer_mtp_choices_bound",
+                "current_numerical_contracts",
+                "generation_review_recorded",
+            )
+        )
+    )
+
+
 def check(plan_path, phase_id, evidence_path, *, data, config, output):
     plan_path, data = Path(plan_path).resolve(), Path(data).resolve()
     root = require_source_checkout()
@@ -49,7 +97,9 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
             or sha256(path) != completed.get("checkpoint_sha256")
         ):
             errors.append(f"missing immutable checkpoint for {dependency}")
-        if not completed.get("quality_passed"):
+        if not completed.get("quality_passed") and not _pilot_recipe_passed(
+            completed, dependency, phase, phases, identity["commit"]
+        ):
             errors.append(
                 f"{dependency} has no quality pass; token completion alone is insufficient"
             )
@@ -64,10 +114,13 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
             "source_licenses_reviewed",
             "split_groups_disjoint",
             "sealed_test",
-            "readable_200_passed",
         ):
             if not audit.get(key):
                 errors.append(f"data admission missing {key}")
+        if not audit.get("readable_200_passed") and not _human_review_waived(
+            evidence, plan["model"], phase, sha256(data / "manifest.json")
+        ):
+            errors.append("data admission missing readable_200_passed or bound maintainer waiver")
         if audit.get("minimum_source_holdout_fraction", 0) < 0.005:
             errors.append("some source has less than 0.5% group holdout")
         base_pretraining = phase["budget_scope"] == "main"
