@@ -1,4 +1,7 @@
+import hashlib
 import json
+import subprocess
+import sys
 import time
 
 import pytest
@@ -9,6 +12,41 @@ from scripts.experiment_registry import collect, refresh
 def write(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value))
+
+
+def test_standalone_data_audit_uses_verified_process_and_preserves_scanned_counts(tmp_path):
+    target = tmp_path / "outputs/strategy-pretraining-text-leakage-v1/audit"
+    target.mkdir(parents=True)
+    driver = target / "audit.py"
+    driver.write_text("import time\ntime.sleep(60)\n")
+    process = subprocess.Popen([sys.executable, str(driver)])
+    record = dict(
+        kind="data_construction",
+        state="checking_training_holdouts",
+        pid=process.pid,
+        driver_sha256=hashlib.sha256(driver.read_bytes()).hexdigest(),
+        scanned_records=dict(train=1000, val=20, test=30),
+        matched_pairs=2,
+    )
+    try:
+        write(target / "run.json", record)
+        entry = collect(tmp_path)["experiments"][0]
+        assert entry["state"] == "running"
+        assert entry["data_progress"]["scanned_records"] == record["scanned_records"]
+        assert entry["data_progress"]["operation_state"] == "checking_training_holdouts"
+        assert entry["ce_tokens"] == 0 and not entry["main_budget_eligible"]
+        record["driver_sha256"] = "0" * 64
+        write(target / "run.json", record)
+        assert collect(tmp_path)["experiments"][0]["state"] == "unverified_process_identity"
+    finally:
+        process.terminate()
+        process.wait(timeout=5)
+    assert collect(tmp_path)["experiments"][0]["state"] == "interrupted_without_final_status"
+    record.update(state="split_conflicts_require_partition_update", completed_unix=time.time())
+    write(target / "run.json", record)
+    assert (
+        collect(tmp_path)["experiments"][0]["state"] == "split_conflicts_require_partition_update"
+    )
 
 
 def test_stopped_trial_is_not_complete_and_preserves_last_observed_tokens(tmp_path):

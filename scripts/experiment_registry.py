@@ -44,6 +44,41 @@ def allowed_root(path):
     )
 
 
+def data_operation_state(target, run, host):
+    """Audit-only data jobs have run records but need not publish a data directory."""
+    if run.get("state") == "failed" or run.get("completed_unix"):
+        return run.get("state", "unverified")
+    if host != "local":
+        observed = read_json(target / "process-observation.json")
+        fresh = 0 <= time.time() - observed.get("observed_unix", 0) <= 120
+        return (
+            "observed_running"
+            if fresh
+            and observed.get("pid") == run.get("pid")
+            and observed.get("argv_matches") is True
+            else "unverified_remote_process"
+        )
+    try:
+        argv = Path(f"/proc/{int(run['pid'])}/cmdline").read_bytes().split(b"\0")[:-1]
+        expected = [str(arg).encode() for arg in run.get("command", [])]
+        matches = bool(expected) and argv == expected
+        if not expected and run.get("driver_sha256"):
+            for raw in argv[1:]:
+                path = Path(raw.decode())
+                if (
+                    path.is_absolute()
+                    and path.resolve().is_relative_to(target.resolve())
+                    and path.is_file()
+                    and path.stat().st_size <= 1024**2
+                    and hashlib.sha256(path.read_bytes()).hexdigest() == run["driver_sha256"]
+                ):
+                    matches = True
+                    break
+        return "running" if matches else "unverified_process_identity"
+    except (OSError, KeyError, ValueError):
+        return "interrupted_without_final_status"
+
+
 def collect(workspace):
     review = read_json(workspace / "configs/experiments.json")
     outputs = workspace / "outputs"
@@ -169,6 +204,8 @@ def collect(workspace):
                 or parent_case_state
                 or "unverified"
             )
+            if kind == "data_construction" and not data_audit and status == "unverified":
+                status = data_operation_state(target, run, host)
             if kind == "data_construction" and run.get("state") == "failed":
                 # A later retry may publish into a path the failed attempt never created.
                 # Its success and candidate counts do not belong to the failed attempt.
@@ -230,6 +267,8 @@ def collect(workspace):
                 ]
                 if p.exists()
             ]
+            if kind == "data_construction" and (target / "run.json").exists():
+                files.append(target / "run.json")
             newest = max((p.stat().st_mtime for p in files), default=0)
             if data_audit:
                 newest = max(newest, data_audit.get("updated_unix", 0))
@@ -324,6 +363,9 @@ def collect(workspace):
             )
             if kind == "data_construction":
                 entry["data_progress"] = dict(
+                    operation_state=run.get("state"),
+                    scanned_records=run.get("scanned_records"),
+                    matched_pairs=run.get("matched_pairs"),
                     data_kind=data_audit.get("kind", "text_candidate_inventory"),
                     formal_admission=data_audit.get("formal_admission", False),
                     accepted_records=data_audit.get("counts", {}).get(
