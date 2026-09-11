@@ -1,0 +1,44 @@
+{
+  "sequential": {
+    "step_seconds": [
+      3.8681353852152824,
+      3.683363202959299,
+      3.6445870511233807
+    ],
+    "steady_mean_seconds": 3.66397512704134,
+    "peak_allocated_gib": 6.805984020233154
+  },
+  "batched": {
+    "step_seconds": [
+      0.5105080287903547,
+      0.4992469549179077,
+      0.4960094317793846
+    ],
+    "steady_mean_seconds": 0.49762819334864616,
+    "peak_allocated_gib": 6.803995609283447
+  },
+  "comparison": {
+    "max_parameter_absolute_error": 4.470348358154297e-08,
+    "relative_error_to_actual_update": 3.1173447140382465e-06,
+    "optimizer_states_exact": true,
+    "passed": true
+  },
+  "kind": "optimizer_execution_equivalence",
+  "device": "NVIDIA GeForce RTX 3090",
+  "parameters": 513405536,
+  "calculation_unchanged": true,
+  "formal_training_tokens": 0,
+  "checkpoint_step": 200,
+  "iterations": 3,
+  "scope": "Same checkpoint, gradients and optimizer state; optimizer-only comparison.",
+  "schema_version": 1,
+  "gradient_seed": 20260911,
+  "gradient_distribution": "torch.randn_like(parameter), seed incremented by one per update",
+  "dtype": "float32",
+  "source_before": "cb89c05ffd9ab0a77b37c388b6d5451b6898998c",
+  "source_after": "9b1d8fd6f26ab125d3e8d64a0e830a2db3db72fa",
+  "config_file": "configs/strategies/miniqwen4-v2.json",
+  "config_sha256": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
+  "measurement": "Each variant restores the same model and optimizer checkpoint. The first update warms execution; the remaining two are timed.",
+  "artifact_scope": "Numerical and timing record only; the local initialization checkpoint is not redistributed with this archive."
+}
