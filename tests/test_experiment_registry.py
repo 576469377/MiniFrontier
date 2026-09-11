@@ -66,6 +66,45 @@ def test_candidate_data_progress_is_not_training_ce_or_formal_admission(tmp_path
     assert entry["state"] == "interrupted_unadmitted"
 
 
+@pytest.mark.parametrize("bound_arguments", [False, True])
+def test_failed_data_attempt_cannot_inherit_a_later_success_at_the_same_output(
+    tmp_path, bound_arguments
+):
+    parent = tmp_path / "outputs/strategy-pretraining-data-v1"
+    target = (
+        dict(arguments=dict(output="data/candidate"))
+        if bound_arguments
+        else dict(data_output="data/candidate")
+    )
+    write(
+        parent / "first/run.json",
+        dict(
+            kind="data_construction",
+            state="failed",
+            error="bound audit rejected",
+            **target,
+        ),
+    )
+    write(parent / "retry/run.json", dict(kind="data_construction", state="complete", **target))
+    write(
+        tmp_path / "data/candidate/source-audit.json",
+        dict(
+            status="candidate_slice_complete_pending_admission",
+            counts=dict(accepted=17),
+            formal_admission=False,
+        ),
+    )
+    entries = {row["output"].rsplit("/", 1)[-1]: row for row in collect(tmp_path)["experiments"]}
+    failed, retry = entries["first"], entries["retry"]
+    assert (
+        failed["state"] == "failed" and failed["data_progress"]["error"] == "bound audit rejected"
+    )
+    assert failed["data_progress"]["accepted_records"] == 0
+    assert retry["state"] == "candidate_slice_complete_pending_admission"
+    assert retry["data_progress"]["accepted_records"] == 17
+    assert failed["ce_tokens"] == retry["ce_tokens"] == 0
+
+
 def test_performance_updates_stay_outside_the_formal_training_budget(tmp_path):
     run = tmp_path / "outputs/strategy-mf1-qualification/p0"
     write(run / "run.json", dict(kind="performance", model_name="minifrontier1"))

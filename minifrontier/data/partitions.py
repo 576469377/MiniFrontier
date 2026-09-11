@@ -253,6 +253,15 @@ def create_partition_view(corpus_root, reservation, output):
 
 def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
     """Quarantine train groups linked to holds; preserve original val/test and raw data."""
+    return _create_group_exclusion_view(corpus_root, group_audit, inventory, output, "media")
+
+
+def create_text_exclusion_view(corpus_root, group_audit, inventory, output):
+    """Quarantine checked text groups without moving or rewriting existing holdouts."""
+    return _create_group_exclusion_view(corpus_root, group_audit, inventory, output, "text")
+
+
+def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, kind):
     from minifrontier.data.minifrontier1 import write_json
 
     source, report_path, root = (
@@ -261,13 +270,13 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
         Path(output).resolve(),
     )
     if root.exists():
-        raise FileExistsError("media exclusion views require a new output")
+        raise FileExistsError("group exclusion views require a new output")
     report = json.loads(report_path.read_text())
     manifest = json.loads((source / "corpus-manifest.json").read_text())
     audit = json.loads((source / "source-audit.json").read_text())
     binding = report["inputs"][inventory]
     if (
-        report["kind"] != "cross_corpus_media_group_audit"
+        report["kind"] != f"cross_corpus_{kind}_group_audit"
         or binding["corpus_manifest_sha256"] != sha256(source / "corpus-manifest.json")
         or binding["database_sha256"] != manifest["database_sha256"]
         or audit.get("formal_admission")
@@ -334,10 +343,12 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
             tokens.setdefault(split, {})[name] = count
         for split, payload in db.execute("SELECT split,payload FROM samples ORDER BY id"):
             row = json.loads(payload)
-            images.setdefault(split, set()).update(m["rgb_sha256"] for m in row["media"])
-            answers.setdefault(split, {})[row["task"]] = (
-                answers.setdefault(split, {}).get(row["task"], 0) + row["answer_reference_tokens"]
-            )
+            if kind == "media":
+                images.setdefault(split, set()).update(m["rgb_sha256"] for m in row["media"])
+                answers.setdefault(split, {})[row["task"]] = (
+                    answers.setdefault(split, {}).get(row["task"], 0)
+                    + row["answer_reference_tokens"]
+                )
             key = row["source"] + ":" + row["task"]
             if split == "train" and review_counts.get(key, 0) < 100:
                 review.append(dict(split=split, record=row))
@@ -378,7 +389,7 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
         source_splits=statistics,
         formal_admission=False,
         split_rule=manifest["split_rule"]
-        + "; exclude entire train groups linked to held-out media across corpora",
+        + f"; exclude entire train groups linked to held-out {kind} across corpora",
         excluded_training_groups=len(exclusions),
         newly_excluded_records=sum(selected.values()),
         grouping_audit_sha256=sha256(report_path),

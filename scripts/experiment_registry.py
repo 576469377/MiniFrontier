@@ -169,6 +169,12 @@ def collect(workspace):
                 or parent_case_state
                 or "unverified"
             )
+            if kind == "data_construction" and run.get("state") == "failed":
+                # A later retry may publish into a path the failed attempt never created.
+                # Its success and candidate counts do not belong to the failed attempt.
+                data_audit = dict(
+                    status="failed", error=run.get("error"), counts=run.get("counts", {})
+                )
             if data_audit:
                 status = data_audit.get("status", "unverified")
                 if status == "building" and host != "local":

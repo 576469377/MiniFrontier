@@ -16,7 +16,11 @@ from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokenizer
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS as MF1_SPECIAL_TOKENS
 from minifrontier.data.native import encode_native
-from minifrontier.data.partitions import create_partition_view, open_corpus
+from minifrontier.data.partitions import (
+    create_partition_view,
+    create_text_exclusion_view,
+    open_corpus,
+)
 
 
 @pytest.fixture
@@ -155,6 +159,67 @@ def test_reader_rejects_changed_partition_or_original_database(corpus, tmp_path,
         stream.write(b"\n")
     with pytest.raises(ValueError, match=r"changed|differs"):
         open_corpus(view)
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_text_exclusion_preserves_originals_and_all_holdouts(corpus, tmp_path, nested):
+    original, reservation = corpus
+    source = original
+    if nested:
+        source = tmp_path / "prior-view"
+        create_partition_view(original, reservation, source)
+    manifest = json.loads((source / "corpus-manifest.json").read_text())
+    before = sha256(original / "corpus.sqlite")
+    with contextlib.closing(open_corpus(source)) as db:
+        holds = list(db.execute("SELECT id,split FROM samples WHERE split!='train' ORDER BY id"))
+        group = db.execute("SELECT group_root FROM samples WHERE split='train' LIMIT 1").fetchone()[
+            0
+        ]
+        count = db.execute("SELECT COUNT(*) FROM samples WHERE group_root=?", (group,)).fetchone()[
+            0
+        ]
+    evidence = tmp_path / "text-grouping.json"
+    evidence.write_text(
+        json.dumps(
+            dict(
+                kind="cross_corpus_text_group_audit",
+                inputs=dict(
+                    text=dict(
+                        corpus_manifest_sha256=sha256(source / "corpus-manifest.json"),
+                        database_sha256=manifest["database_sha256"],
+                    )
+                ),
+                split_conflicts=[
+                    dict(
+                        required_split="test",
+                        members=[
+                            dict(
+                                inventory="text",
+                                group=group,
+                                split="train",
+                                records=count,
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+    )
+    out = tmp_path / "text-excluded"
+    result = create_text_exclusion_view(source, evidence, "text", out)
+    assert result["newly_excluded_records"] == count
+    assert not result["formal_admission"] and sha256(original / "corpus.sqlite") == before
+    assert not (out / "corpus.sqlite").exists()
+    with contextlib.closing(open_corpus(out)) as db:
+        assert db.execute(
+            "SELECT COUNT(*) FROM samples WHERE group_root=?", (group,)
+        ).fetchone() == (0,)
+        assert (
+            list(db.execute("SELECT id,split FROM samples WHERE split!='train' ORDER BY id"))
+            == holds
+        )
+    report = json.loads((out / "source-audit.json").read_text())
+    assert report["excluded_training_groups"] == {group: count}
 
 
 def test_tokenizer_consumer_can_move_between_worker_threads(corpus, tmp_path, monkeypatch):
