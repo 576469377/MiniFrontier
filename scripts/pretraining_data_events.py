@@ -212,7 +212,15 @@ def observe(plan_path, heartbeat=60):
                     raise ValueError("event file exceeds byte bound")
                 files[name] = base64.b64encode(raw).decode()
         item = dict(id=key, record=record, alive=alive, files=files, observed_unix=time.time())
-        signature = digest({k: v for k, v in item.items() if k != "observed_unix"})
+        # Some producers rewrite only their heartbeat timestamp while waiting.
+        # Forward actual state/progress changes, not those periodic rewrites.
+        signature = digest(
+            dict(
+                record={k: v for k, v in record.items() if k != "observed_unix"},
+                alive=alive,
+                files={k: v for k, v in files.items() if k != task["run"]},
+            )
+        )
         if signature != last.get(key):
             last[key] = signature
             emit(dict(kind="task", notification_backend=notifications.backend, **item))

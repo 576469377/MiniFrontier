@@ -40,6 +40,10 @@ def test_observer_reports_atomic_records_and_process_exit_without_a_final_record
         first = message(observer)
         assert first["record"] == record and first["alive"]
         assert json.loads(base64.b64decode(first["files"][str(run)])) == record
+        write(run, dict(record, observed_unix=time.time()))
+        with selectors.DefaultSelector() as selector:
+            selector.register(observer.stdout, selectors.EVENT_READ)
+            assert not selector.select(0.15), "producer heartbeat became a data event"
         changed = dict(record, state="encoding")
         write(run, changed)
         event = message(observer)
