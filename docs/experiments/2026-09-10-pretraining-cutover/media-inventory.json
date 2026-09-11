@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789082085.8096046,
+  "observed_unix": 1789086170.8266354,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -1053,7 +1053,7 @@
     "revision": "3c380a731a3429c1d04693d6ec16d7e683def84c",
     "output": "data/pretraining-media-natural-extension-v1",
     "state": "building",
-    "observed_unix": 1789082028.354385,
+    "observed_unix": 1789086069.129785,
     "process_identity_verified": true,
     "source_commit": "c96973035a22c983b8ec6c705ca7f29908d43d57",
     "source_archive_sha256": "6132b492456fe6aa0657ddb694e01a596420675b885b58b50e6b7b74c336255a",
@@ -1063,7 +1063,7 @@
     "source_row_offset": 23790,
     "prior_pixels_excluded": 23260,
     "target_additional_images": 36740,
-    "observed_additional_images": 15250,
+    "observed_additional_images": 26000,
     "max_examined_new_rows": 146960,
     "storage": {
       "new_slice_max_gib": 40,
@@ -1071,7 +1071,7 @@
       "existing_data_allocated_bytes": 18725085184,
       "existing_encoder_reservation_gib": 1,
       "remote_combined_data_cap_gib": 60,
-      "observed_free_gib": 1023.5522193908691,
+      "observed_free_gib": 1015.7643394470215,
       "required_free_reserve_gib": 80,
       "local_raw_copy_bytes": 0,
       "latest_free_gib": 1026.8850784301758
@@ -1089,8 +1089,8 @@
       "candidate supply is not human quality or phase exposure admission",
       "first-slice native encoders are still active; no new token encodings or formal CE claimed"
     ],
-    "observed_additional_qa_records": 28581,
-    "observed_media_bytes": 11820289788,
+    "observed_additional_qa_records": 48653,
+    "observed_media_bytes": 20016432593,
     "requires_task_classification_correction": true
   },
   "cross_pool_grouping": {
@@ -2145,5 +2145,900 @@
       }
     },
     "document_supply_note": "CoSyn document subset has 71,282 source training images before our filtering, and its short document QA is not full-page OCR transcription. Do not budget 200K CoSyn document images or infer full OCR coverage from the combined ocr_document label."
+  },
+  "basic_ocr_p0": {
+    "observed_unix": 1789084666.956776,
+    "status": "raw_and_all_model_encodings_complete_visual_candidate_review_incomplete",
+    "source_commits": {
+      "producer": "366822bc585fbc40f956229598be30526c521d49",
+      "consumers": "d63f55d0d02fef6b22fa07a0b0d6182190b1e7be"
+    },
+    "source_archive_sha256": {
+      "producer": "b14cdb013788953be234a24097a874b16ae5fc17bd07a6e50464fc35450e927d",
+      "consumers": "04ad35545e039cd230339b5614bc4e6558dd0a825a53305ae6f926182833d978"
+    },
+    "scope": "P0 short, fully visible bilingual OCR; 224x224 pixels, font sizes 18/20/22; not a high-resolution full-page OCR dataset",
+    "label_method": "deterministic complete lines drawn from immutable normalized source passages; unsupported or clipped glyphs rejected; no model-generated answers",
+    "seed": 20260912,
+    "source_id_ranges": [
+      [
+        "0",
+        "1"
+      ],
+      [
+        "1",
+        "2"
+      ],
+      [
+        "2",
+        "3"
+      ],
+      [
+        "3",
+        "4"
+      ]
+    ],
+    "source_manifest_sha256": "b7df9509c5c71c380da9029ee1d735c6fc32ce2f92a13c04818cbb85f55f27ab",
+    "font_manifest_sha256": "d19b11677b4b7202b33eabe6c9835560515c37be19f8c568663f8f308966cfa3",
+    "font_assets": {
+      "sans": {
+        "sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+        "bytes": 16437364,
+        "url": "https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
+        "revision": "f8d157532fbfaeda587e826d4cd5b21a49186f7c",
+        "file": "NotoSansCJKsc-Regular.otf",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      },
+      "sans_bold": {
+        "sha256": "b5f0d1a190a7f9b43c310a8850630af12553df32c4c050543f9059732d9b4c0a",
+        "bytes": 17002248,
+        "url": "https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Bold.otf",
+        "revision": "f8d157532fbfaeda587e826d4cd5b21a49186f7c",
+        "file": "NotoSansCJKsc-Bold.otf",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      },
+      "serif": {
+        "sha256": "2a2eae2628df83556c54018c41e20fa532c1b862c5256ae8b3f23feb918d12ca",
+        "bytes": 24543080,
+        "url": "https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Serif/OTF/SimplifiedChinese/NotoSerifCJKsc-Regular.otf",
+        "revision": "f8d157532fbfaeda587e826d4cd5b21a49186f7c",
+        "file": "NotoSerifCJKsc-Regular.otf",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      },
+      "sans_license": {
+        "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+        "bytes": 4301,
+        "url": "https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/LICENSE",
+        "revision": "f8d157532fbfaeda587e826d4cd5b21a49186f7c",
+        "file": "sans_license.txt",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      },
+      "serif_license": {
+        "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+        "bytes": 4301,
+        "url": "https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Serif/LICENSE",
+        "revision": "f8d157532fbfaeda587e826d4cd5b21a49186f7c",
+        "file": "serif_license.txt",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      },
+      "droid": {
+        "sha256": "acb6440a713d880a13a21b468ba7cd43f5a2b2934972e51be791c880730777b8",
+        "bytes": 4033420,
+        "file": "droid.ttf",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      },
+      "latin": {
+        "sha256": "690243adfefe0ce154b547db6205794bd30ac4277275179517a90994f4980648",
+        "bytes": 757076,
+        "file": "latin.ttf",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      },
+      "droid_license": {
+        "sha256": "f44dda1cd553ac22e7020b016dcce8a521b56de0995dc63c9eff746d9121f64f",
+        "bytes": 1250,
+        "file": "droid_license",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      },
+      "latin_license": {
+        "sha256": "63d3ba759d12804c5b31a9d5940d855c1820d1f5999e6b0872eb1c7ff045fbc9",
+        "bytes": 3859,
+        "file": "latin_license",
+        "distribution": "shared runtime data asset; excluded from source and wheel"
+      }
+    },
+    "split_fonts": {
+      "train": [
+        [
+          "sans"
+        ],
+        [
+          "sans_bold"
+        ]
+      ],
+      "val": [
+        [
+          "droid",
+          "latin"
+        ]
+      ],
+      "test": [
+        [
+          "serif"
+        ]
+      ]
+    },
+    "font_license_map": {
+      "sans": "sans_license",
+      "sans_bold": "sans_license",
+      "serif": "serif_license",
+      "droid": "droid_license",
+      "latin": "latin_license"
+    },
+    "sources": {
+      "HuggingFaceFW/fineweb-edu": {
+        "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+        "license": "odc-by; original CommonCrawl page rights retained"
+      },
+      "opencsg/Fineweb-Edu-Chinese-V2.1": {
+        "revision": "a5b574efa48beb3a8f6887ef0b093becf004328b",
+        "license": "apache-2.0; retain original CCI subsource"
+      }
+    },
+    "shards": [
+      {
+        "id": "00",
+        "data_output": "data/pretraining-ocr-p0-shard-00-v1",
+        "state": "candidate_slice_complete_pending_admission",
+        "started_unix": 1789083091.0767324,
+        "completed_unix": 1789083892.8223467,
+        "counts": {
+          "examined": 20002,
+          "accepted": 19535,
+          "word_exceeds_line": 96,
+          "unsupported_glyph": 30,
+          "would_create_text_training_ocr_holdout": 285,
+          "cross_split_visual_neighbor": 56
+        },
+        "splits": {
+          "test.en": {
+            "records": 93,
+            "answer_reference_tokens": 2499
+          },
+          "test.zh": {
+            "records": 96,
+            "answer_reference_tokens": 3698
+          },
+          "val.en": {
+            "records": 70,
+            "answer_reference_tokens": 2030
+          },
+          "val.zh": {
+            "records": 71,
+            "answer_reference_tokens": 3036
+          },
+          "train.en": {
+            "records": 8883,
+            "answer_reference_tokens": 243518
+          },
+          "train.zh": {
+            "records": 10322,
+            "answer_reference_tokens": 393497
+          }
+        },
+        "database_splits": {
+          "train": 19205,
+          "test": 189,
+          "val": 141
+        },
+        "statistics": {
+          "records": 19535,
+          "unique_rgb_images": 19535,
+          "unique_parent_documents": 19535,
+          "split_origin_mismatches": 0
+        },
+        "media_bytes": 330840248,
+        "output_bytes": 453324681,
+        "hashes": {
+          "corpus-manifest.json": "4b810934db0c2d91fa2881c431b27c5506cba3a8e2184870caa3c62fff1e4a28",
+          "source-audit.json": "3815ff42addf1b508e5e95fede335ef52d5842f659cba64307149ca5538445da",
+          "review-samples.jsonl": "53eca62df2d4373ce664021295ef18e6c511fff2f7f8d978637c2d82df6f1dc5"
+        },
+        "database_sha256": "ba97d7fef89025d1e649a79fb98465948f5b4a36bbb51eadd099e05819b2f1bd"
+      },
+      {
+        "id": "01",
+        "data_output": "data/pretraining-ocr-p0-shard-01-v1",
+        "state": "candidate_slice_complete_pending_admission",
+        "started_unix": 1789083323.8100386,
+        "completed_unix": 1789084107.7061486,
+        "counts": {
+          "examined": 19621,
+          "accepted": 19112,
+          "word_exceeds_line": 94,
+          "unsupported_glyph": 30,
+          "would_create_text_training_ocr_holdout": 295,
+          "cross_split_visual_neighbor": 90
+        },
+        "splits": {
+          "test.zh": {
+            "records": 110,
+            "answer_reference_tokens": 3987
+          },
+          "test.en": {
+            "records": 87,
+            "answer_reference_tokens": 2405
+          },
+          "val.zh": {
+            "records": 110,
+            "answer_reference_tokens": 4781
+          },
+          "val.en": {
+            "records": 95,
+            "answer_reference_tokens": 2776
+          },
+          "train.en": {
+            "records": 8717,
+            "answer_reference_tokens": 237841
+          },
+          "train.zh": {
+            "records": 9993,
+            "answer_reference_tokens": 381217
+          }
+        },
+        "database_splits": {
+          "train": 18710,
+          "test": 197,
+          "val": 205
+        },
+        "statistics": {
+          "records": 19112,
+          "unique_rgb_images": 19112,
+          "unique_parent_documents": 19112,
+          "split_origin_mismatches": 0
+        },
+        "media_bytes": 322708446,
+        "output_bytes": 442619845,
+        "hashes": {
+          "corpus-manifest.json": "bcc4f71cee30f79c49287507cf44917552132f180c4fea9054991dd35d4ae591",
+          "source-audit.json": "d9d335a234f98ce98aa87ed0bfb2388453e41b1482b8e426cb10ada1fefc9a01",
+          "review-samples.jsonl": "369b98e014cab931a0023a88815975ac441b197109faf280ee993d2f4752bde5"
+        },
+        "database_sha256": "cbd2d92fa3be3f4a1e63c0bc8cfe0eee19419eecf1e848f7dd57bd50a7cc6564"
+      },
+      {
+        "id": "02",
+        "data_output": "data/pretraining-ocr-p0-shard-02-v1",
+        "state": "candidate_slice_complete_pending_admission",
+        "started_unix": 1789083323.742344,
+        "completed_unix": 1789084097.5028684,
+        "counts": {
+          "examined": 19575,
+          "accepted": 19054,
+          "word_exceeds_line": 101,
+          "unsupported_glyph": 38,
+          "would_create_text_training_ocr_holdout": 301,
+          "cross_split_visual_neighbor": 81
+        },
+        "splits": {
+          "test.zh": {
+            "records": 102,
+            "answer_reference_tokens": 3811
+          },
+          "test.en": {
+            "records": 93,
+            "answer_reference_tokens": 2492
+          },
+          "val.en": {
+            "records": 81,
+            "answer_reference_tokens": 2476
+          },
+          "val.zh": {
+            "records": 97,
+            "answer_reference_tokens": 4156
+          },
+          "train.zh": {
+            "records": 9872,
+            "answer_reference_tokens": 375372
+          },
+          "train.en": {
+            "records": 8809,
+            "answer_reference_tokens": 240182
+          }
+        },
+        "database_splits": {
+          "train": 18681,
+          "test": 195,
+          "val": 178
+        },
+        "statistics": {
+          "records": 19054,
+          "unique_rgb_images": 19054,
+          "unique_parent_documents": 19054,
+          "split_origin_mismatches": 0
+        },
+        "media_bytes": 319526955,
+        "output_bytes": 439107982,
+        "hashes": {
+          "corpus-manifest.json": "1ca82e8cf26487c858732c754a126b365f051c991ee2117334b3a5aed7abb7e4",
+          "source-audit.json": "6f1323272e88057d95c9a70cb6757d2878e533e2f5ad87984f7667e4faa492d2",
+          "review-samples.jsonl": "7a78dbb869e4fbedac7e728111863abf899b2aca7f8a7ad9495cd05349241f01"
+        },
+        "database_sha256": "0678c5bc9ebcaa0200721f47e98275047f55fd4663fe633fdf5801dde7f369b3"
+      },
+      {
+        "id": "03",
+        "data_output": "data/pretraining-ocr-p0-shard-03-v1",
+        "state": "candidate_slice_complete_pending_admission",
+        "started_unix": 1789083323.6567504,
+        "completed_unix": 1789084091.2706776,
+        "counts": {
+          "examined": 19496,
+          "accepted": 18975,
+          "word_exceeds_line": 85,
+          "unsupported_glyph": 23,
+          "would_create_text_training_ocr_holdout": 293,
+          "cross_split_visual_neighbor": 120
+        },
+        "splits": {
+          "test.en": {
+            "records": 93,
+            "answer_reference_tokens": 2529
+          },
+          "test.zh": {
+            "records": 117,
+            "answer_reference_tokens": 4323
+          },
+          "val.en": {
+            "records": 95,
+            "answer_reference_tokens": 2834
+          },
+          "val.zh": {
+            "records": 93,
+            "answer_reference_tokens": 3986
+          },
+          "train.zh": {
+            "records": 9939,
+            "answer_reference_tokens": 377780
+          },
+          "train.en": {
+            "records": 8638,
+            "answer_reference_tokens": 236341
+          }
+        },
+        "database_splits": {
+          "train": 18577,
+          "test": 210,
+          "val": 188
+        },
+        "statistics": {
+          "records": 18975,
+          "unique_rgb_images": 18975,
+          "unique_parent_documents": 18975,
+          "split_origin_mismatches": 0
+        },
+        "media_bytes": 319929252,
+        "output_bytes": 438890904,
+        "hashes": {
+          "corpus-manifest.json": "8ab02a4e4c1910b7f3b0f5af7b56751147451495a0028e8a8e31fd0cf9a7ce28",
+          "source-audit.json": "caca330e0df6ff61fa211201b8e517a96dd0cbc4de48f626891ebb73be9b978d",
+          "review-samples.jsonl": "1a1f5c7cc6b20ea24031aa3ce01bd3db24a6bf3eef0f0c861e3977ee54ffcd19"
+        },
+        "database_sha256": "e1993ac9b9c47d44deeb3fdd37c937ffa6d4383569c51b02b95fa39003be9815"
+      }
+    ],
+    "loss_accounting": {
+      "mf1": "assistant-answer CE under the existing MF1 supervision contract",
+      "minikimik3_and_miniqwen4": "pretraining text CE includes serialized question and answer; media feature positions are masked",
+      "cross_model_ce_comparison": "different tokenizers and loss masks; raw CE quantities are inventory counts, not a quality ranking"
+    },
+    "original_text_reused_across_modalities": true,
+    "independent_text_supply_added": 0,
+    "total_records": 76676,
+    "total_raw_image_bytes": 1293004901,
+    "total_output_bytes": 1773943412,
+    "budget": {
+      "max_raw_and_metadata_gib_per_shard": 4,
+      "metadata_gib_per_shard": 2,
+      "max_parallel_cpu_generators": 4,
+      "max_initial_wave_output_gib": 16,
+      "minimum_free_gib": 80,
+      "max_encoding_gib_per_model_shard": 1
+    },
+    "quality": {
+      "human_review_completed": false,
+      "prepared_review_records_per_shard": 200,
+      "prepared_review_records_per_language_per_shard": 100,
+      "engineering_render_inspection_records": 24,
+      "inspection_limit": "model-assisted readability inspection is not the required human review",
+      "source_to_image_split_mismatches": 0
+    },
+    "validation": {
+      "mypy_source_files_passed": 185,
+      "ruff": "passed",
+      "format": "passed",
+      "complete_cpu_suite_after_ocr_change": {
+        "source_commit": "f9dac4d381ba0cd367c6b67999a338522b192c26",
+        "passed": 493,
+        "skipped": 1,
+        "cuda_deselected": 54,
+        "duration_seconds": 155.04
+      },
+      "static_and_format_checks": "full repository passed; 332 Python files already formatted",
+      "targeted_checks": [
+        {
+          "source_commit": "d63f55d",
+          "passed": 50
+        },
+        {
+          "source_commit": "f9dac4d",
+          "passed": 30,
+          "duration_seconds": 6.07
+        }
+      ]
+    },
+    "generator_command": "python -m minifrontier.data.ocr --corpus data/pretraining-text-partition-v2 --font-manifest data/pretraining-ocr-fonts-v1/manifest.json --reference-tokenizer data/pretraining-text-partition-v2/reference-tokenizer.json --output data/pretraining-ocr-p0-shard-00-v1 --id-start 0 --id-stop 1 --max-gib 4 --metadata-gib 2 --seed 20260912",
+    "related_primary_source": "https://github.com/clovaai/donut/tree/master/synthdog",
+    "formal_admission": false,
+    "main_budget_eligible": false,
+    "current_mf1_composition_includes_new_ocr": false,
+    "remaining": [
+      "finish 420 same-split OCR-to-external visual candidate decisions and record grouped repeated-text exposure",
+      "finalize retained components after group candidate disposition; rebuild only if an effective partition changes",
+      "human source/rendered-image quality review",
+      "external visual benchmark identity exclusion",
+      "per-stage domain supply and exposure admission"
+    ],
+    "cross_pool_grouping": {
+      "prior_phash_only": {
+        "state": "split_conflicts_require_partition_update",
+        "source_commit": "d63f55d",
+        "source_archive_sha256": "04ad35545e039cd230339b5614bc4e6558dd0a825a53305ae6f926182833d978",
+        "group_audit_sha256": "8e7e4b8fd71b97184a0d766f4ad3ee97ebc16a67c049dc369489e41d704eeba8",
+        "started_unix": 1789084576.3871744,
+        "completed_unix": 1789084849.7562203,
+        "result": {
+          "input_images": 139926,
+          "unique_rgb_images": 139926,
+          "input_groups": 110979,
+          "connected_groups": 91613,
+          "link_counts": {
+            "phash_hamming_le_6": 31009
+          },
+          "cross_inventory_link_counts": {
+            "phash_hamming_le_6": 31009
+          }
+        },
+        "split_conflict_components": 38
+      },
+      "inspection": {
+        "method": "inspect eight two-group rendered OCR pHash conflicts; train/heldout pairs from distinct text sources",
+        "pairs": 8,
+        "phash_distances": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          4
+        ],
+        "printed_5gram_jaccard": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "visual_inspection": "model-assisted; different printed content observed; raw pairs are not distributed",
+        "scope_limit": "does not establish that all prior candidates are false matches"
+      },
+      "correction": {
+        "source_commit": "f9dac4d381ba0cd367c6b67999a338522b192c26",
+        "rule": "origin and exact RGB grouping retained; known rendered targets use casefolded normalized 5-gram Jaccard >=0.85 independently of pHash; generated OCR-to-external pHash pairs require separate verification",
+        "metadata_format": "media-group-identities-v2; old non-OCR v1 inventories remain readable; old OCR exports must be regenerated",
+        "text_join": "prefix-filter candidates followed by exact Jaccard; maximum 5000000 comparisons, no approximate sampling",
+        "group_and_candidate_cap": 500000,
+        "source_archive_sha256": "6ba77ece3f07cd8653d6cc49f9fedc701e21f8aed43c5406641795787b4b7988",
+        "state_at_observation": "rendered_visual_candidates_require_verification"
+      },
+      "reference": "https://github.com/JohannesBuchner/imagehash",
+      "formal_admission": false,
+      "corrected_audit": {
+        "source_commit": "f9dac4d381ba0cd367c6b67999a338522b192c26",
+        "started_unix": 1789085417.4693995,
+        "completed_unix": 1789085606.747911,
+        "group_audit_sha256": "f565bdd41719fc5f4baa30b7422f919cf4f0ff877a99c7d714e6c1e99dd67c70",
+        "result": {
+          "input_images": 139926,
+          "unique_rgb_images": 139926,
+          "input_groups": 110979,
+          "connected_groups": 110898,
+          "link_counts": {
+            "phash_hamming_le_6": 78,
+            "rendered_text_jaccard_ge_0.85": 4
+          },
+          "cross_inventory_link_counts": {
+            "phash_hamming_le_6": 78,
+            "rendered_text_jaccard_ge_0.85": 3
+          },
+          "rendered_images": 76676
+        },
+        "split_conflict_components": 0,
+        "unresolved_rendered_visual_candidates": 455,
+        "candidate_split_pairs": {
+          "train-train": 420,
+          "train-test": 27,
+          "train-val": 3,
+          "test-train": 2,
+          "val-train": 3
+        }
+      },
+      "candidate_review": {
+        "status": "cross_split_visual_pairs_reviewed_same_split_pending",
+        "reviewer_type": "model-assisted image inspection; not human quality review",
+        "reviewed_pairs": 35,
+        "unique_external_images": 10,
+        "decisions": {
+          "not_visual_duplicate": 35
+        },
+        "remaining_pairs": 420,
+        "decision_record_sha256": "c40d85ac2ff9dbecb7b2cefb754036f500037a821f43e156f07c31af1de30829",
+        "bound_source_audit_sha256": "f565bdd41719fc5f4baa30b7422f919cf4f0ff877a99c7d714e6c1e99dd67c70",
+        "scope": "visible image duplication for the 35 cross-split pHash candidate pairs; no external benchmark or semantic paraphrase exclusion claim",
+        "formal_admission": false
+      }
+    },
+    "model_encoding_wave": {
+      "observed_unix": 1789086170.8266258,
+      "models": {
+        "mf1": {
+          "shards": [
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "0781a30085d2fc708954b595592c6f8dcddb846e9af9540f2c59930fe03bccf7",
+              "source_audit_sha256": "30cf6c975dfb2390e6a5321a9730ffe50f294fc864c3c7a5e8afd94df0ef9f50",
+              "encoding_audit_sha256": "3670fe7835568f41b82dfb40c259be80bfa507f9af6a1008ff8b52e3a51b2e98",
+              "output_bytes": 44034592,
+              "shard": "00",
+              "split_counts": {
+                "train": {
+                  "records": 19205,
+                  "input_tokens": 2104169,
+                  "ce_tokens": 711087
+                },
+                "val": {
+                  "records": 141,
+                  "input_tokens": 15878,
+                  "ce_tokens": 5655
+                },
+                "test": {
+                  "records": 189,
+                  "input_tokens": 20627,
+                  "ce_tokens": 6923
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "463d05153781c2b690c5574240d9f78964f436b61cbdfabd5e14ea25bace1bd6",
+              "source_audit_sha256": "b82dec38d4d0debe19d6ce9aeb30bd3e7e21b76bca1bde038061b85398b0b157",
+              "encoding_audit_sha256": "6cc341b71f48df5e566e1681f2a141fa3f51f0fdebf3ac2aee2856429ba1336f",
+              "output_bytes": 43136742,
+              "shard": "01",
+              "split_counts": {
+                "train": {
+                  "records": 18710,
+                  "input_tokens": 2049824,
+                  "ce_tokens": 692711
+                },
+                "val": {
+                  "records": 205,
+                  "input_tokens": 23281,
+                  "ce_tokens": 8411
+                },
+                "test": {
+                  "records": 197,
+                  "input_tokens": 21440,
+                  "ce_tokens": 7146
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "13b295bd0fc8ac40d7f12d4f39459818a3f221d58dd708d9089e82585d51d962",
+              "source_audit_sha256": "3288815c6b4dfc111d1c8e65f34a56d055fdcf88ecfb25002b552af077d7e813",
+              "encoding_audit_sha256": "a9d150250962d098e13f358ea53d9a5a4563baab90d05bbc87bbde874506869f",
+              "output_bytes": 43008894,
+              "shard": "02",
+              "split_counts": {
+                "train": {
+                  "records": 18681,
+                  "input_tokens": 2043577,
+                  "ce_tokens": 688673
+                },
+                "val": {
+                  "records": 178,
+                  "input_tokens": 20273,
+                  "ce_tokens": 7360
+                },
+                "test": {
+                  "records": 195,
+                  "input_tokens": 21236,
+                  "ce_tokens": 7094
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "ce4357d91de80ffe98f01877f502b14fb4db12a3e9983ae51a1d261c9620e062",
+              "source_audit_sha256": "b2f9d9202b38d64c717594f89b283c1b3ead8e180084fb31d2ba9492ffe988f8",
+              "encoding_audit_sha256": "663bc9ce13460e323917be8ff2ee51608ae59d0ff10b93f8f37977451ef544aa",
+              "output_bytes": 42843326,
+              "shard": "03",
+              "split_counts": {
+                "train": {
+                  "records": 18577,
+                  "input_tokens": 2034640,
+                  "ce_tokens": 687157
+                },
+                "val": {
+                  "records": 188,
+                  "input_tokens": 21215,
+                  "ce_tokens": 7586
+                },
+                "test": {
+                  "records": 210,
+                  "input_tokens": 22914,
+                  "ce_tokens": 7677
+                }
+              }
+            }
+          ],
+          "completed_shards": 4,
+          "total_train_counts": {
+            "records": 75173,
+            "input_tokens": 8232210,
+            "ce_tokens": 2779628,
+            "media_exposures": 75173,
+            "vision_tokens": 3683477
+          }
+        },
+        "minikimik3": {
+          "shards": [
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "b249519b3cff65cb0c7d9cb0d7f1283a95a9780aa06107c305b6360498aff642",
+              "source_audit_sha256": "d2054a4952b89692d0fca22e4bc4f32b65d94f5cf28fc9ccffc80f9b796c3929",
+              "encoding_audit_sha256": "a665ecf1eba1aadb7933c683ba069fe5ae28a762774f0d243bcd29c0046f40a3",
+              "output_bytes": 85215806,
+              "shard": "00",
+              "split_counts": {
+                "train": {
+                  "records": 19205,
+                  "input_tokens": 2480382,
+                  "ce_tokens": 1097622
+                },
+                "val": {
+                  "records": 141,
+                  "input_tokens": 18593,
+                  "ce_tokens": 8441
+                },
+                "test": {
+                  "records": 189,
+                  "input_tokens": 24321,
+                  "ce_tokens": 10713
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "dfc6b8accce6d6306bab5929bdeab4bef84e429f5a71d43380dd63e67a9a2f86",
+              "source_audit_sha256": "820d4acab0bc636ab9b9859a80f5acefa4214b16a625223e9d22862210e0f8ae",
+              "encoding_audit_sha256": "3c4b54ec1695427f0ae8b6db96737bfc0e4ed8d1e9866ad4729578a3881a0526",
+              "output_bytes": 83486245,
+              "shard": "01",
+              "split_counts": {
+                "train": {
+                  "records": 18710,
+                  "input_tokens": 2416950,
+                  "ce_tokens": 1069830
+                },
+                "val": {
+                  "records": 205,
+                  "input_tokens": 27227,
+                  "ce_tokens": 12467
+                },
+                "test": {
+                  "records": 197,
+                  "input_tokens": 25366,
+                  "ce_tokens": 11182
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "87642d26cad32ac7974b9a070f775fc77a12e3dbd8c321a54e48486a94a8998f",
+              "source_audit_sha256": "1a64479042a10559cce5256c0725f93e4913c92a78c4be525a1d287ac7e3e946",
+              "encoding_audit_sha256": "d9409883caa86d2514ab541fbdcd42471bfeb3ab963633d9446c14b4694e91f4",
+              "output_bytes": 83179653,
+              "shard": "02",
+              "split_counts": {
+                "train": {
+                  "records": 18681,
+                  "input_tokens": 2409862,
+                  "ce_tokens": 1064830
+                },
+                "val": {
+                  "records": 178,
+                  "input_tokens": 23710,
+                  "ce_tokens": 10894
+                },
+                "test": {
+                  "records": 195,
+                  "input_tokens": 25053,
+                  "ce_tokens": 11013
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "196cee2eccb8561b33d63e53d57afce3713a7ef64a79464acb2c625426a72ae2",
+              "source_audit_sha256": "3128854c2c2baf148af515756474329e862c662c5d5f285df34a176893cedafd",
+              "encoding_audit_sha256": "007aa12c2311b4187b1882286f3c134b669045232c33fca00ca5d2103538efb1",
+              "output_bytes": 82906478,
+              "shard": "03",
+              "split_counts": {
+                "train": {
+                  "records": 18577,
+                  "input_tokens": 2399383,
+                  "ce_tokens": 1061839
+                },
+                "val": {
+                  "records": 188,
+                  "input_tokens": 24861,
+                  "ce_tokens": 11325
+                },
+                "test": {
+                  "records": 210,
+                  "input_tokens": 27020,
+                  "ce_tokens": 11900
+                }
+              }
+            }
+          ],
+          "completed_shards": 4,
+          "total_train_counts": {
+            "source_media_records": 75173,
+            "records": 75173,
+            "input_tokens": 9706577,
+            "ce_tokens": 4294121,
+            "image_occurrences": 75173,
+            "image_features": 4811072
+          }
+        },
+        "miniqwen4": {
+          "shards": [
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "5a664ca018988c1f39a927c5e4cff58c40bc3597309361882b49d3571d2cc4d5",
+              "source_audit_sha256": "75a536f02a20099ff2b1efe04df2d104d63fb9b30a28e1a4a2a7a08a961d06e1",
+              "encoding_audit_sha256": "10581aa64d41760ca9a924438fb5887e1e523d26766f2a58ba4817677f9c58dd",
+              "output_bytes": 81426009,
+              "shard": "00",
+              "split_counts": {
+                "train": {
+                  "records": 19205,
+                  "input_tokens": 2096282,
+                  "ce_tokens": 1097622
+                },
+                "val": {
+                  "records": 141,
+                  "input_tokens": 15773,
+                  "ce_tokens": 8441
+                },
+                "test": {
+                  "records": 189,
+                  "input_tokens": 20541,
+                  "ce_tokens": 10713
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "985be901b4265c4ddd0ad340ef587d31894c817baf3edc0cc01f6acf3f597b25",
+              "source_audit_sha256": "2082c39fd58f23244c18212b7bb81645d0f11b92ad36a06fb91b8954aa962923",
+              "encoding_audit_sha256": "ba6ee03783b2636cfbdf44cc018cd73b05df49b1848c16f7f429dd5bb025e9a3",
+              "output_bytes": 79778510,
+              "shard": "01",
+              "split_counts": {
+                "train": {
+                  "records": 18710,
+                  "input_tokens": 2042750,
+                  "ce_tokens": 1069830
+                },
+                "val": {
+                  "records": 205,
+                  "input_tokens": 23127,
+                  "ce_tokens": 12467
+                },
+                "test": {
+                  "records": 197,
+                  "input_tokens": 21426,
+                  "ce_tokens": 11182
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "d13c483da2bb259b4da350d9ead6650412759490da2a8ad9a8ca38e3b0c3dbcc",
+              "source_audit_sha256": "b517bb3829d225e8ec4b35ffe65e923a8671a1857690d4f3708e9b2dfcdc6f25",
+              "encoding_audit_sha256": "f79ec3274a0a9bea9e12854cbc0451c61428e7758c712285667423a3ba3b97dc",
+              "output_bytes": 79483168,
+              "shard": "02",
+              "split_counts": {
+                "train": {
+                  "records": 18681,
+                  "input_tokens": 2036242,
+                  "ce_tokens": 1064830
+                },
+                "val": {
+                  "records": 178,
+                  "input_tokens": 20150,
+                  "ce_tokens": 10894
+                },
+                "test": {
+                  "records": 195,
+                  "input_tokens": 21153,
+                  "ce_tokens": 11013
+                }
+              }
+            },
+            {
+              "state": "mechanical_checks_passed_pending_quality_admission",
+              "manifest_sha256": "c9a84c67a49e7602a27e64920053d92c538d5854eeae2c0f502320c11442df2b",
+              "source_audit_sha256": "b7f1159a719cefaa08f9c27fb85197c0c44318b99acf3618ac4d98e2f5131c57",
+              "encoding_audit_sha256": "2d60736d64acdd729b80ed763cca616b7c252f7f31b3fec368909ac23e634b80",
+              "output_bytes": 79225321,
+              "shard": "03",
+              "split_counts": {
+                "train": {
+                  "records": 18577,
+                  "input_tokens": 2027843,
+                  "ce_tokens": 1061839
+                },
+                "val": {
+                  "records": 188,
+                  "input_tokens": 21101,
+                  "ce_tokens": 11325
+                },
+                "test": {
+                  "records": 210,
+                  "input_tokens": 22820,
+                  "ce_tokens": 11900
+                }
+              }
+            }
+          ],
+          "completed_shards": 4,
+          "total_train_counts": {
+            "source_media_records": 75173,
+            "records": 75173,
+            "input_tokens": 8203117,
+            "ce_tokens": 4294121,
+            "image_occurrences": 75173,
+            "image_features": 3683477
+          }
+        }
+      },
+      "pending_final_group_disposition_and_quality": true,
+      "maximum_parallel_cpu_encoders": 3,
+      "total_max_output_gib": 9,
+      "no_automatic_training": true
+    },
+    "free_gib_at_observation": 137.58459091186523
   }
 }
