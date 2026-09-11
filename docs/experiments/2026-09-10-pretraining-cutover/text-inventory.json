@@ -1529,8 +1529,8 @@
     "formal_admission": false
   },
   "shared_text_near_duplicate_blocker": {
-    "observed_unix": 1789091143.9885912,
-    "status": "known_parent_and_derivative_quarantined_pending_full_audit_and_encoded_refresh",
+    "observed_unix": 1789092789.8728194,
+    "status": "full_text_cross_split_audit_in_progress_known_quarantine_not_encoded",
     "formal_admission": false,
     "main_budget_eligible": false,
     "text_conflict_report_sha256": "33ef671beda2b54395642d882123d1cd6b68d640d6a8de7e25bdd3352f90b074",
@@ -1579,7 +1579,7 @@
     "formal_training_ce": 0,
     "old_encoded_inventory_is_pre_quarantine": true,
     "tokenizer_training_membership_recheck_required": true,
-    "full_shared_text_holdout_audit_state": "required_not_started",
+    "full_shared_text_holdout_audit_state": "checking_training_holdouts",
     "review_reuse": {
       "prior_reviewed_pairs": 455,
       "identical_candidates_still_present": 455,
@@ -1630,6 +1630,138 @@
       "mypy_source_files": 186,
       "ruff": "passed",
       "formatted_files": 333
+    },
+    "full_audit": {
+      "method": "exact normalized whitespace-free casefold five-character Jaccard >=85/100; lossless prefix candidates, bijective string ranks, exact overlap; no Simhash gate",
+      "method_reference": "https://www.cse.unsw.edu.au/~lxue/WWW08.pdf",
+      "scope": "all effective train/val, train/test and val/test pairs; no within-split dedup or paraphrase guarantee",
+      "attempts": [
+        {
+          "attempt": "full-audit-v1",
+          "source_commit": "36a40a842f48d047b68c3314c6f67796114db9a7",
+          "source_archive_sha256": "2a62e5103c5c0ccbfd82912f652f2c4b105198970b71dbb51d805cb163d1f803",
+          "arguments_sha256": "6c5ec236b22a63e69eeae2776eb6c9415e5489450334e2ce9012c6c0aead7ddb",
+          "driver_sha256": "7841e8fbf106ef26a589d92e7ac0cdd48a194118ed7cf4af2f298b1151ea6506",
+          "state": "failed",
+          "scope": "Does any effective train/val, train/test or val/test full-document pair reach exact normalized whitespace-free 5-character Jaccard >=0.85, without the Simhash candidate gate?",
+          "input_manifest_sha256": "724b67f6760f67822d9321cbea9a18b175b1354dec3f77dc40d1995aadd4374c",
+          "budget": {
+            "wall_seconds": 3600,
+            "max_resident_gib": 24,
+            "max_virtual_gib": 32,
+            "max_control_mib": 64,
+            "source_bundle_mib": 256,
+            "minimum_free_gib": 80,
+            "gpu_hours": 0,
+            "training_tokens": 0,
+            "max_reference_shingles": 60000000,
+            "max_candidates": 20000000,
+            "max_comparisons": 5000000,
+            "max_matches": 10000,
+            "max_seconds": 3600,
+            "max_bytes": 16777216
+          },
+          "formal_admission": false,
+          "started_unix": 1789092268.8722932,
+          "observed_unix": 1789092510.294317,
+          "completed_unix": 1789092511.0261989,
+          "elapsed_seconds": 241.4211746752262,
+          "scanned_records": {
+            "test": 4392,
+            "val": 3735,
+            "train": 18000
+          },
+          "reference_shingles": 20872897,
+          "candidates": 3445422,
+          "comparisons": 486276,
+          "matched_pairs": 10,
+          "peak_resident_bytes": 4988891136,
+          "error": "KeyboardInterrupt()",
+          "full_shared_text_cross_split_audit_complete": false,
+          "explicit_stop_decision": {
+            "observed_unix": 1789092511.0253391,
+            "observed_training_records": 18000,
+            "observed_candidates": 3445422,
+            "observed_comparisons": 486276,
+            "projected_candidates": 76336387.00733334,
+            "projected_comparisons": 10773877.025333334,
+            "original_max_candidates": 20000000,
+            "original_max_comparisons": 5000000,
+            "decision": "stop early and retry once with the same exact algorithm and input; observed candidate density exceeds the original counting caps; one-hour wall, 24 GiB RSS and 16 MiB output caps retained",
+            "replacement_max_candidates": 100000000,
+            "replacement_max_comparisons": 18000000
+          }
+        },
+        {
+          "attempt": "full-audit-retry1",
+          "source_commit": "36a40a842f48d047b68c3314c6f67796114db9a7",
+          "source_archive_sha256": "2a62e5103c5c0ccbfd82912f652f2c4b105198970b71dbb51d805cb163d1f803",
+          "arguments_sha256": "f22b52557fb3012a3236429f31ffccef03555b566326c6232e8629284d8d27c6",
+          "driver_sha256": "7841e8fbf106ef26a589d92e7ac0cdd48a194118ed7cf4af2f298b1151ea6506",
+          "state": "checking_training_holdouts",
+          "scope": "Does any effective train/val, train/test or val/test full-document pair reach exact normalized whitespace-free 5-character Jaccard >=0.85, without the Simhash candidate gate?",
+          "input_manifest_sha256": "724b67f6760f67822d9321cbea9a18b175b1354dec3f77dc40d1995aadd4374c",
+          "budget": {
+            "wall_seconds": 3600,
+            "max_resident_gib": 24,
+            "max_virtual_gib": 32,
+            "max_control_mib": 64,
+            "source_bundle_mib": 256,
+            "minimum_free_gib": 80,
+            "gpu_hours": 0,
+            "training_tokens": 0,
+            "max_reference_shingles": 60000000,
+            "max_candidates": 100000000,
+            "max_comparisons": 18000000,
+            "max_matches": 10000,
+            "max_seconds": 3600,
+            "max_bytes": 16777216
+          },
+          "formal_admission": false,
+          "started_unix": 1789092511.3152444,
+          "observed_unix": 1789092789.022145,
+          "elapsed_seconds": 277.70589416846633,
+          "scanned_records": {
+            "test": 4392,
+            "val": 3735,
+            "train": 24000
+          },
+          "reference_shingles": 20872897,
+          "candidates": 4549656,
+          "comparisons": 641530,
+          "matched_pairs": 12,
+          "peak_resident_bytes": 4988456960,
+          "retry_of": "full-audit-v1",
+          "retry_reason": "measured candidate density exceeds initial counting caps before the one-hour wall bound; same input and exact algorithm; one explicit retry"
+        }
+      ]
+    },
+    "exact_audit_validation": {
+      "source_commit": "36a40a842f48d047b68c3314c6f67796114db9a7",
+      "targeted_text_and_partition_tests_passed": 20,
+      "full_cpu_passed": 513,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "full_cpu_seconds": 184.17,
+      "full_cpu_log_sha256": "d284c6eeb43ef8fd2c5b6806bb0224feff5f9e86880f6f43b58b6a4c1431b006",
+      "mypy_source_files": 187,
+      "ruff": "passed",
+      "formatted_files": 335
+    },
+    "tokenizer_membership": {
+      "report_sha256": "123d8f358ef540dbf35221391c6edb6ab26484eb541ecb6d09773b9f68087aca",
+      "source_manifest_sha256": "b7df9509c5c71c380da9029ee1d735c6fc32ce2f92a13c04818cbb85f55f27ab",
+      "processor_sha256": "f1246657470b5f0216157210ec120c8873d5cd2a9010706b3f63d46255a581ea",
+      "training_byte_budget": 67108864,
+      "training_bytes": 67107100,
+      "training_byte_sha256": "73e751f8d57e811b2d29e16ddb18a7fdeeaaf8c22ebe9a84d672ecb25dcea8a1",
+      "training_records": 10880,
+      "known_quarantined_parent_in_training": false,
+      "full_audit_exclusions_not_yet_checked": true,
+      "tokenizer_retrained": false,
+      "mapping_frozen": false,
+      "formal_admission": false,
+      "observed_unix": 1789092577.539974
     }
   }
 }
