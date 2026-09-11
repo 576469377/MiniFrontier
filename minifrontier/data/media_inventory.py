@@ -151,6 +151,7 @@ def audit_media_identities(
     max_edges=100_000,
     max_bytes=64 * 1024**2,
     max_text_comparisons=5_000_000,
+    progress=None,
 ):
     """Group source/pixel identities, natural pHash and known printed OCR content.
 
@@ -188,6 +189,8 @@ def audit_media_identities(
             corpus_manifest_sha256=item["corpus_manifest_sha256"],
             database_sha256=item["database_sha256"],
         )
+        if progress:
+            progress(dict(state="loading_media_identities", loaded_inventories=len(data)))
     parents = {node: node for node in nodes}
 
     def find(node):
@@ -262,36 +265,57 @@ def audit_media_identities(
                     connect(node, other, "phash_hamming_le_6")
             for band, (offset, width) in enumerate(PHASH_BANDS):
                 bands[(band, (code >> offset) & ((1 << width) - 1))].add((code, node, identity))
+        if progress:
+            progress(dict(state="building_media_group_index", indexed_images=len(image_nodes)))
+    if progress:
+        progress(dict(state="matching_rendered_text", rendered_images=len(rendered)))
     for left, right in _text_neighbors(rendered, max_comparisons=max_text_comparisons):
         connect(image_nodes[left], image_nodes[right], "rendered_text_jaccard_ge_0.85")
-    for name, identity in rendered:
+    if progress:
+        progress(dict(state="matching_rendered_external_images", checked_rendered_images=0))
+    for checked, (name, identity) in enumerate(rendered, 1):
         node = image_nodes[(name, identity)]
         code = int(data[name]["images"][identity]["phash"], 16)
         candidates = set()
         for band, (offset, width) in enumerate(PHASH_BANDS):
             candidates.update(bands[(band, (code >> offset) & ((1 << width) - 1))])
-        for other_code, other, rgb in sorted(candidates):
-            distance = (code ^ other_code).bit_count()
-            if distance <= 6 and rgb != identity and node != other:
-                unresolved.append(
-                    dict(
-                        rendered=dict(
-                            inventory=name,
-                            group=node[1],
-                            rgb_sha256=identity,
-                            split=nodes[node]["split"],
-                        ),
-                        external=dict(
-                            inventory=other[0],
-                            group=other[1],
-                            rgb_sha256=rgb,
-                            split=nodes[other]["split"],
-                        ),
-                        phash_distance=distance,
-                    )
+        # Most shared-band candidates exceed the Hamming threshold. Sorting only
+        # qualifying neighbors preserves the original order of emitted records.
+        neighbors = [
+            (other_code, other, rgb, distance)
+            for other_code, other, rgb in candidates
+            if (distance := (code ^ other_code).bit_count()) <= 6
+            and rgb != identity
+            and node != other
+        ]
+        for _other_code, other, rgb, distance in sorted(neighbors):
+            unresolved.append(
+                dict(
+                    rendered=dict(
+                        inventory=name,
+                        group=node[1],
+                        rgb_sha256=identity,
+                        split=nodes[node]["split"],
+                    ),
+                    external=dict(
+                        inventory=other[0],
+                        group=other[1],
+                        rgb_sha256=rgb,
+                        split=nodes[other]["split"],
+                    ),
+                    phash_distance=distance,
                 )
-                if len(unresolved) + len(edges) > max_edges:
-                    raise ValueError("media candidate/edge budget exceeded; no pass published")
+            )
+            if len(unresolved) + len(edges) > max_edges:
+                raise ValueError("media candidate/edge budget exceeded; no pass published")
+        if progress and checked % 10_000 == 0:
+            progress(
+                dict(
+                    state="matching_rendered_external_images",
+                    checked_rendered_images=checked,
+                    visual_candidates=len(unresolved),
+                )
+            )
     components = defaultdict(list)
     for node in nodes:
         components[find(node)].append(node)

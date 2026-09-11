@@ -200,6 +200,51 @@ def test_text_prefix_join_matches_brute_force_including_threshold_and_budget():
         list(_text_neighbors({i: set(range(20)) for i in range(5)}, max_comparisons=1))
 
 
+def test_visual_candidates_match_brute_force_with_stable_order_after_filtering(tmp_path):
+    from minifrontier.data.media_inventory import _rendered_signature
+
+    signature = _rendered_signature(
+        dict(
+            source="MiniFrontier/source-grounded-ocr",
+            visual_answer="A complete printed sentence with distinct words.",
+            rendering={"font": "fixture"},
+            text_origin={"sample_id": "parent"},
+        )
+    )
+    # Input order differs from hash order. Seven-bit neighbors share bands but
+    # must not be emitted; exact RGB aliases must not become review candidates.
+    hashes = [127, 63, 15, 31, 0, 0xAAAAAAAAAAAAAAAA]
+    external = inventory(
+        tmp_path / "external.json",
+        {str(i): node("train") for i in range(len(hashes))},
+        {f"{i:064x}": dict(group=str(i), phash=f"{code:016x}") for i, code in enumerate(hashes)},
+    )
+    rendered = inventory(
+        tmp_path / "ocr.json",
+        {"ocr": node("train")},
+        {f"{4:064x}": dict(group="ocr", phash="0" * 16, rendered_text=signature)},
+    )
+    value = json.loads(rendered.read_text())
+    value["format"] = TEXT_FORMAT
+    rendered.write_text(json.dumps(value))
+    events = []
+    result = audit_media_identities(
+        dict(external=external, ocr=rendered), tmp_path / "audit.json", progress=events.append
+    )
+    actual = [
+        (x["external"]["rgb_sha256"], x["phash_distance"])
+        for x in result["unresolved_rendered_visual_candidates"]
+    ]
+    expected = [
+        (f"{i:064x}", code.bit_count())
+        for code, i in sorted((code, i) for i, code in enumerate(hashes))
+        if code.bit_count() <= 6 and i != 4
+    ]
+    assert actual == expected
+    assert any(x["state"] == "matching_rendered_text" for x in events)
+    assert any(x["state"] == "matching_rendered_external_images" for x in events)
+
+
 def test_review_closure_requires_complete_bound_decisions_without_claiming_human_quality(tmp_path):
     import hashlib
 
