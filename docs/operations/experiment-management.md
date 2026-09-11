@@ -7,7 +7,7 @@
 ```bash
 # 输出 outputs/experiment-registry/current.json 和 current.md
 python -m scripts.experiment_registry
-# 每 30 秒刷新，同时将状态变化追加到 events.jsonl
+# 可选的传统轮询模式；本轮数据准备已使用下文的事件接续
 python -m scripts.experiment_registry --watch 30
 # 导出一次不可覆盖的公开台账快照（只含元数据）
 python -m scripts.export_experiments --workspace "$PWD" \
@@ -81,3 +81,21 @@ uv run tensorboard --logdir outputs/tensorboard-pretraining-v1 \
 - `experiment_registry.py` 负责观测与用途核对；`export_experiments.py` 保留历史数值导出职责。台账不隐式修改运行配方。
 - `docs/experiments/current-plan.md` 解释当前选择，日期目录保存不可覆盖的快照，`docs/operations/` 解释如何执行和管理。历史策略/复盘不混入入门指南。
 - 台账中的 `audit_findings` 如实列出旧记录缺少来源/数据身份和实际 batch 越界等问题。缺少的历史 hash 不补造，未知记录不能作为正式准入证据。
+
+
+## 数据准备的事件接续
+
+`scripts/pretraining_data_events.py` 监听已声明任务的原始 `run.json` 与进程退出，复用现有实验台账。Linux 优先使用 inotify；同用户监听额度不足时使用 dnotify，不调整系统额度。pidfd 跟踪生产进程退出；每 60 秒的心跳仅确认事件连接存活，不定时扫描生产任务。生产任务只更新时间戳时，不派发重复完成回调。
+
+```bash
+# observer.json: tasks 列出 id、run，以及可选的小型 files；全部为本机绝对路径
+python scripts/pretraining_data_events.py observe --plan /absolute/path/observer.json
+# plan.json: 声明本机/SSH observer 命令、元数据路径映射和有界完成回调
+python scripts/pretraining_data_events.py run --plan /absolute/path/plan.json
+```
+
+控制计划包含 `control`、`workspace`、`wall_seconds`、`observers` 和可选 `hooks` / `on_event`。每个 observer 指定 `id`、`command`、`tasks`；任务指定 `id`、`local_run` 和来源路径到本地路径的 `files` 映射。`mirror: true` 仅用于声明的远端小型元数据。`hooks` 按任务 id 索引，回调声明 `id`、`command`、`cwd`、`timeout_seconds` 和 `input_sha256`，并接收 `--event <path>`。回调返回 0 表示完成，2 表示需要处理，其他值为失败。`on_event` 用于刷新已有台账，不在心跳时执行。
+
+服务状态记录在控制目录的 `run.json`；`actions/` 先保存执行意图再运行回调，同一个完成事件不会因重连或重启而重复启动任务。中断时留下的执行意图需要核对，不能直接删除后重跑。`completion-results/` 是当前部署回调的结果，`needs_attention` 汇总待处理项。连接中断或监听失败会停止控制服务并记录原因，生产任务继续保留自己的记录；脚本不重试生产任务、不分配 GPU、不自动授予数据准入。停止服务只终止它启动的监听器。
+
+本轮本机和辅助主机已部署该入口，取代原每 30 秒刷新台账的常驻观察进程。已有文档编码与过滤任务继续运行；自然图片补充完成后自动校验导出哈希并接续身份/固定 benchmark 检查。新 OCR 的划分冲突和视觉候选进入待处理清单。部署计划、主机地址、原始样本和回调实例保存在被忽略的 `outputs/`；公开仓库保留通用入口与回归测试。

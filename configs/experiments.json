@@ -1217,7 +1217,7 @@
       "raw_media_shared": true
     },
     "storage": {
-      "observed_free_gib": 136.63,
+      "observed_free_gib": 119.25,
       "retirement_candidate_count": 20,
       "retirement_candidate_gib": 51.58,
       "candidates_executed": true,
@@ -1235,7 +1235,13 @@
       "existing_hard_floor_gib": 50,
       "require_live_dependency_and_retained_model_verification": true,
       "retired_bytes": 55381305536,
-      "retirement_receipt": "docs/experiments/2026-09-10-pretraining-cutover/checkpoint-retirement.json"
+      "retirement_receipt": "docs/experiments/2026-09-10-pretraining-cutover/checkpoint-retirement.json",
+      "observed_unix": 1789114951.3631415,
+      "encoded_cache_retirement": {
+        "bytes": 8841651207,
+        "remaining_text_encoded_cache_bytes": 8769396904,
+        "receipt": "docs/experiments/2026-09-10-pretraining-cutover/encoded-cache-retirement.json"
+      }
     },
     "production_blockers": [
       "training_loss_mask_causality_media_gradient_errors",
@@ -1344,7 +1350,22 @@
           "visual_capability": "black-media NLL is a diagnostic; separate 1000-group normal/mismatch/blackout/temporal evaluation still required"
         },
         "capability_status": "unassessed"
+      },
+      "data_events": {
+        "entry": "scripts/pretraining_data_events.py",
+        "control": "outputs/strategy-pretraining-data-events-v1",
+        "mode": "filesystem notifications and pidfd exits; transport heartbeat only",
+        "completion_hooks": "declared bounded data checks; persisted intent prevents duplicate launches",
+        "registry": "existing experiment_registry on events",
+        "automatic_training_or_admission": false
       }
+    },
+    "readiness_priority": {
+      "first": "minideepseekv4",
+      "scope": "finish fixed text quality review, admission/freeze and one production qualification; independent of other models media",
+      "other_models": "follow their own admitted data readiness",
+      "new_parameter_grids": false,
+      "additional_first_stage_text_expansion": false
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789111752.566478,
+  "observed_unix": 1789115400.7234623,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -6267,7 +6267,7 @@
     "formal_admission": false,
     "main_budget_eligible": false,
     "inventory_count": 19,
-    "snapshot_unix": 1789111752.1770618,
+    "snapshot_unix": 1789115400.3305562,
     "previous_attempt": {
       "state": "failed",
       "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
@@ -6293,7 +6293,7 @@
       "formal_admission": false,
       "main_budget_eligible": false,
       "inventory_count": 19,
-      "snapshot_unix": 1789111752.1771646
+      "snapshot_unix": 1789115400.33066
     },
     "candidate_filter_validation": {
       "kind": "bounded_cpu_candidate_filter_equivalence",
@@ -6337,8 +6337,8 @@
       "formal_admission": false
     },
     "local_storage": {
-      "observed_unix": 1789111752.5465617,
-      "free_gib": 111.78176498413086,
+      "observed_unix": 1789115400.7014725,
+      "free_gib": 119.24874496459961,
       "minimum_free_gib": 80
     },
     "visual_review_plan": {
@@ -7219,9 +7219,9 @@
       }
     },
     "auxiliary_storage": {
-      "free_gib": 997.3253631591797,
+      "free_gib": 995.5679473876953,
       "minimum_free_gib": 80,
-      "observed_unix": 1789111718.1165252
+      "observed_unix": 1789115309.1224203
     },
     "corrected_native_media_encoding": {
       "minikimik3": {
@@ -7378,7 +7378,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789111718.113022,
+            "observed_unix": 1789115309.1201863,
             "state": "encoding_candidate_component",
             "process_identity_verified": true
           },
@@ -7413,7 +7413,7 @@
             "formal_admission": false,
             "main_budget_eligible": false,
             "process_observation": {
-              "observed_unix": 1789111718.1121032,
+              "observed_unix": 1789115309.1195335,
               "state": "stopped_to_correct_wall_budget_with_prefix_preserved",
               "process_identity_verified": false
             },
@@ -7567,7 +7567,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789111718.107427,
+            "observed_unix": 1789115309.1184218,
             "state": "mechanical_checks_passed_pending_quality_admission",
             "process_identity_verified": false
           },
@@ -7719,13 +7719,13 @@
           "reason": "Completed derivative removes the TextVQA-linked group; historical parent inventory is not the final consumer."
         },
         "documents-charts": {
-          "state": "encoding_candidate_component",
+          "state": "checking_every_encoded_media_record",
           "source_commit": "64ce579d72713fe5129e7dc1869d4454717e5f75",
           "source_archive_sha256": "0c2821d2fdc77adcbaf80e54fe10b88537590b7ae3511a280338e111ff8bd53b",
           "driver_sha256": "98f63b1dd242d99e68828d35cb5426b9b254ff33a4ca8264c5e1edb02d51ab1e",
           "arguments_sha256": "f08f195d02522dbd1df1321721bb782698170e14dc591c0e789f17174e729f0c",
           "started_unix": 1789104415.8120506,
-          "observed_unix": 1789104417.0344276,
+          "observed_unix": 1789115308.7777822,
           "budget": {
             "wall_seconds": 36000,
             "max_virtual_gib": 32,
@@ -7734,12 +7734,12 @@
             "training_tokens": 0,
             "max_prefix_gib": 0.25
           },
-          "report_sha256": "dac7fa6e26b97758dd203355e452f2133ca82a7ab662fa61eafbfa769fde6a81",
+          "report_sha256": "9992107683671746b94f803cc584888e9ef3de8a79c599897114c0d24d089988",
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789111718.1161628,
-            "state": "encoding_candidate_component",
+            "observed_unix": 1789115309.1220973,
+            "state": "checking_every_encoded_media_record",
             "process_identity_verified": true
           },
           "corpus": "data/pretraining-doc-chart-partition-v4",
@@ -7773,7 +7773,7 @@
             "formal_admission": false,
             "main_budget_eligible": false,
             "process_observation": {
-              "observed_unix": 1789111718.1152992,
+              "observed_unix": 1789115309.1213489,
               "state": "stopped_to_correct_wall_budget_with_prefix_preserved",
               "process_identity_verified": false
             },
@@ -7800,7 +7800,9 @@
           },
           "serialized_prefix_reuse": {
             "cached_prefix_records_available": 21726,
+            "cached_prefix_records_reused": 21726,
             "ignored_trailing_bytes": 0,
+            "prefix_reuse_sha256": "de430ecd42cf3656f33813d447c2d98a5c4a4ceef09b61709f443fb5cc394922",
             "prefix_sha256": "d69b5376fb275609464e3d411e3653cb4b8dc92bd0793a51d13638d8343e1ab7",
             "reuses": "previously serialized IDs and labels after exact canonical-record and input-identity checks; no neural features are cached",
             "full_original_processor_audit_required": true,
@@ -7927,7 +7929,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789111718.1142635,
+            "observed_unix": 1789115309.1206405,
             "state": "mechanical_checks_passed_pending_quality_admission",
             "process_identity_verified": false
           },
@@ -8553,7 +8555,7 @@
         "source_archive_sha256": "fdbfb103a9820aa96e4b726ab7a4dfad82087d60bc0ec4645ba23a2ba28d5e5b",
         "driver_sha256": "8282ff6939b4af11ea14c17755fc362652b53783d58bfe06f46c1debc3ac1cfa",
         "started_unix": 1789108319.4663,
-        "observed_unix": 1789111705.1283915,
+        "observed_unix": 1789115305.3869033,
         "budget": {
           "wall_seconds": 39600,
           "max_virtual_gib": 32,
@@ -8566,7 +8568,7 @@
           "minikimik3",
           "miniqwen4"
         ],
-        "report_sha256": "d2b837dca950735c0372b5212de0a983a6d7b468c9593176679279285e773bf8",
+        "report_sha256": "8fbc78a661c395607867b9038a300f479e6f319fdfcc6754aeb1b6ae6244e4a2",
         "formal_admission": false,
         "main_budget_eligible": false,
         "completed_components": [
@@ -8626,8 +8628,8 @@
           "argv_matches": true,
           "state": "waiting_for_existing_parent_encodings",
           "process_identity_verified": true,
-          "observed_unix": 1789111718.2736897,
-          "free_gib": 997.3253593444824,
+          "observed_unix": 1789115309.4892457,
+          "free_gib": 995.5679321289062,
           "minimum_free_gib": 80
         }
       },
@@ -8703,7 +8705,7 @@
         "record_sha256": "4a967e0da99f553deac5fb34e124b33b993fe0a4d3be2a2851a250c027823a0a",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789111752.5616379
+        "snapshot_unix": 1789115400.7167222
       },
       "first_attempt": {
         "state": "failed",
@@ -8728,7 +8730,7 @@
         "record_sha256": "5dd75a745441e5d30af4576b405e7601a752c0d57cfc69bcfa25221d8f23674d",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789111752.5617304
+        "snapshot_unix": 1789115400.7168195
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8756,7 +8758,7 @@
         "record_sha256": "bad4bc7dfed043e0b5735b5d97c6fc7b461752b8bb36269e294920225501b8a4",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789111752.561836
+        "snapshot_unix": 1789115400.7169032
       },
       "matching_validation": {
         "ordered_result_sha256": "db77f1bc02a8567fc0ce7eb80c06c728d4203e13cd94241d9dcd01779c6a6ec1",
@@ -8820,7 +8822,7 @@
         "record_sha256": "9582bff720de38ee69ee01b5ab9e628f58f9e326e63f81ef303c7b2ed6a27a12",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789111752.5622916
+        "snapshot_unix": 1789115400.717326
       },
       "first_attempt": {
         "state": "failed",
@@ -8845,7 +8847,7 @@
         "record_sha256": "b48fe5e775f7d080401674326b263245070c2900b71f17882f0f2b9a25991a7f",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789111752.5623796
+        "snapshot_unix": 1789115400.7174153
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8873,7 +8875,7 @@
         "record_sha256": "71b5633369c727306eee5fe8a41c23e318e89cb3e689cf0108ad50cb8e173189",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789111752.562464
+        "snapshot_unix": 1789115400.717504
       },
       "matching_validation": {
         "ordered_result_sha256": "f99edfcb887e825c753f5abd6604c33de91f208779a521b5118301bb77f0d531",
@@ -9095,7 +9097,7 @@
     ]
   },
   "next_natural_candidate_slice": {
-    "state": "resuming_next_natural_image_slice",
+    "state": "failed",
     "run_id": "strategy-pretraining-natural-topup-v1/retry1",
     "registry_id": "exp-06db9c5a6d61",
     "output": "data/pretraining-natural-topup-v1",
@@ -9105,8 +9107,8 @@
     "source_archive_sha256": "4cf0f2218152d3922b60a0dcd9fb03146ecdfb14287a287497f1551093315943",
     "driver_sha256": "3ca793dcb30c6ac8943ae40345bab768196d465cd6e1f7f335dc806e3402c378",
     "arguments_sha256": "b3dce83b32fc50d152e96a433c9830572f463ca14ae5123007c800a6ae47bbb2",
-    "record_sha256": "3a154230663a71f0d47ba783f294f8bca63a3dd81a50b7c1850228e47bf70386",
-    "data_audit_sha256": "448dcdc4f2d957f3c226078f58a6cc3a07bfd63591968a59229681701a46feee",
+    "record_sha256": "05fc4da36025b3c2726fe7dad81e2686a69e57a3dd0881ac9371640d2f53907b",
+    "data_audit_sha256": "dc50c5295ad22fd934801b11ba08a2c921a12b5e4ada56dcc4b863f232a89735",
     "target_independent_images": 12000,
     "source_start_row": 61420,
     "prior_exact_images_excluded": 60000,
@@ -9128,21 +9130,21 @@
     "stop_rule": "Stop at target, 48000 new source rows, fixed storage/wall bound or source error; below-target results remain explicit and no repeated images count as new inventory",
     "next_decision": "Match new identities against all effective pools and sealed visual benchmarks, review newly introduced groups, encode with fixed v2 tokenizers and measure actual per-domain CE before admission",
     "observation": {
-      "argv_matches": true,
-      "state": "resuming_next_natural_image_slice",
-      "process_identity_verified": true,
-      "observed_unix": 1789111718.0967908,
+      "argv_matches": false,
+      "state": "failed",
+      "process_identity_verified": false,
+      "observed_unix": 1789115309.855792,
       "source_start_row": 61420,
       "previous_exact_image_identities": 60000,
       "resume_skip_rows": 61630,
-      "error": null,
+      "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'huggingface.co\\', port=443): Max retries exceeded with url: /datasets/HuggingFaceM4/FineVision/resolve/3c380a731a3429c1d04693d6ec16d7e683def84c/allava_laion/train-00550-of-00734.parquet (Caused by ReadTimeoutError(\"HTTPSConnectionPool(host=\\'huggingface.co\\', port=443): Read timed out. (read timeout=60)\"))'))",
       "attempt": "retry1",
       "control": "outputs/strategy-pretraining-natural-topup-v1/retry1",
-      "read_rows": 777,
-      "unique_images": 750,
-      "accepted_records": 1383,
-      "media_bytes": 467884700,
-      "free_gib": 997.325366973877,
+      "read_rows": 2825,
+      "unique_images": 2752,
+      "accepted_records": 5150,
+      "media_bytes": 2064472343,
+      "free_gib": 995.5679168701172,
       "minimum_free_gib": 80
     },
     "formal_admission": false,
@@ -9183,13 +9185,13 @@
   "next_ocr_candidate_slice": {
     "run_id": "strategy-pretraining-ocr-topup-v1",
     "registry_id": "exp-75951d45a0ee",
-    "state": "constructing_new_source_grounded_ocr_candidate",
+    "state": "candidate_slice_complete_pending_admission",
     "source": "MiniFrontier/source-grounded-ocr",
     "source_commit": "3d23841d24bb34bdf8b4fa3e537825fb21673dd7",
     "source_archive_sha256": "e1c14df78512736ab82e1ca10b7a7a18dcff3a47c8f97dd48bc5de27b5c31d50",
     "driver_sha256": "5f178f57ff2688b753ed723176f984ac43ed29e080b2c92eda70491321e93e25",
     "arguments_sha256": "51ae2480f9beedffa128573d7aba4bb61bdecaaf1dd38e98a6768cdfb077a603",
-    "record_sha256": "b428eb743a87d87af39ab37c300ad703eb378c4bfa0dddbabf9f68ff7b8e1448",
+    "record_sha256": "62b99f2abb81b3a4f7b8b47fef16310f4038a860fe03d9790ef3d6891792adcb",
     "corpus": "data/pretraining-text-partition-v5",
     "corpus_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
     "output": "data/pretraining-ocr-topup-v1",
@@ -9238,18 +9240,18 @@
     "main_budget_eligible": false,
     "included_in_current_effective_pool": false,
     "observation": {
-      "observed_unix": 1789111752.566046,
-      "process_identity_verified": true,
-      "state": "constructing_new_source_grounded_ocr_candidate",
-      "data_state": "building",
+      "observed_unix": 1789115400.7211344,
+      "process_identity_verified": false,
+      "state": "candidate_slice_complete_pending_admission",
+      "data_state": "candidate_slice_complete_pending_admission",
       "counts": {
-        "examined": 26500,
-        "accepted": 22500,
-        "word_exceeds_line": 2825,
-        "unsupported_glyph": 75,
-        "duplicate_transcription": 777,
-        "would_create_text_training_ocr_holdout": 320,
-        "builder_rejected": 3
+        "examined": 71420,
+        "accepted": 60000,
+        "word_exceeds_line": 7427,
+        "unsupported_glyph": 182,
+        "duplicate_transcription": 2854,
+        "would_create_text_training_ocr_holdout": 953,
+        "builder_rejected": 4
       },
       "splits": {
         "test.en": {
@@ -9261,13 +9263,13 @@
           "answer_reference_tokens": 25483
         },
         "train.en": {
-          "records": 20718,
-          "answer_reference_tokens": 655533
+          "records": 58218,
+          "answer_reference_tokens": 1838455
         }
       },
-      "media_bytes": 228047792
+      "media_bytes": 607368762
     },
-    "data_audit_sha256": "e446e51b8d62a793e78dc918b6f1e44beb22ecf587305341a353c59b4d94aafa",
+    "data_audit_sha256": "1be3455312dd51f1f230baaf4fb7192439034ee8e8574776f7acaec0d5385324",
     "source_task_inventory": {
       "corpus_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
       "rows": [
@@ -9358,6 +9360,234 @@
       ],
       "human_source_quality_review": false,
       "formal_admission": false
+    },
+    "completed_inventory": {
+      "completed_unix": 1789112539.0956106,
+      "counts": {
+        "examined": 71420,
+        "accepted": 60000,
+        "word_exceeds_line": 7427,
+        "unsupported_glyph": 182,
+        "duplicate_transcription": 2854,
+        "would_create_text_training_ocr_holdout": 953,
+        "builder_rejected": 4
+      },
+      "splits": {
+        "test.en": {
+          "records": 1036,
+          "answer_reference_tokens": 32817
+        },
+        "val.en": {
+          "records": 746,
+          "answer_reference_tokens": 25483
+        },
+        "train.en": {
+          "records": 58218,
+          "answer_reference_tokens": 1838455
+        }
+      },
+      "media_bytes": 607368762,
+      "stop_reason": "accepted_record_limit",
+      "manifest_sha256": "42017a59c65cc369fac0613aceab1dfc3567ab7e8b1c39018fcd70542568d905",
+      "source_audit_sha256": "1be3455312dd51f1f230baaf4fb7192439034ee8e8574776f7acaec0d5385324",
+      "media_identities_sha256": "713017881a080c12499549d2dd7466d78434db2b2ddbf488344568ec953dc110",
+      "split_origin_mismatches": 0,
+      "independent_text_supply_added": 0,
+      "peak_resident_bytes": 1225248768
+    },
+    "incremental_identity_audit": {
+      "state": "candidate_identity_checks_complete_pending_resolution_and_admission",
+      "source_commit": "cc192f1a76902bea0866694c8acca56da08ebd8e",
+      "source_archive_sha256": "177a23e284d1c3bc5846d035931e27749f23f62391e81da7a4c812b516d404d8",
+      "driver_sha256": "9dbee450bedf8ff13bea88b3fca412f5e84593126bacfc453e9bfe758f981fa4",
+      "arguments_sha256": "8a777c39dd0a607bde70beb97c9c5c22eadd53b0bb788240ff91fe488bb88965",
+      "started_unix": 1789112677.1226294,
+      "observed_unix": 1789112843.7464275,
+      "completed_unix": 1789112843.7463982,
+      "budget": {
+        "wall_seconds": 3600,
+        "max_virtual_gib": 32,
+        "max_output_gib": 0.5,
+        "max_bytes_per_inventory": 134217728,
+        "max_edges": 500000,
+        "max_text_comparisons": 5000000,
+        "max_benchmark_pairs_each": 50000,
+        "minimum_free_gib": 80,
+        "training_tokens": 0,
+        "gpu_hours": 0
+      },
+      "question": "Check only new OCR-related identity pairs, inheriting exactly bound closed decisions for the effective 399490-image pool; compare added images with fixed sealed visual benchmarks.",
+      "stop_rule": "Stop on changed bindings, retained-inventory mismatch, unresolved parent failure, absent parent process, timeout, candidate/memory/storage bound; report conflicts and candidates without changing partitions or admitting data.",
+      "next_decision": "Resolve actual newly introduced group conflicts and review new visual candidates before encoding/admission; retain prior quality and benchmark exclusions.",
+      "validation": {
+        "targeted_tests_passed": 21,
+        "test_log_sha256": "4b4cc27f464b9da168bd3638bcb04bbe485875be7a721beb61069c30943ba365",
+        "mypy_log_sha256": "5d4b6d285b77932e3d08212c3b4974d0a803f98ec60408ac6ccf6a063fa6c19e",
+        "ruff": "passed",
+        "scope": "Incremental-versus-full graph and candidate equivalence, mixed old/new input order, exact pixels, origin aliases, text joins, changed-parent rejection, source partitions and actual native/MF1 OCR encoding."
+      },
+      "previous_effective_audit_sha256": "55037c96d319ddcc34c8044569b125590cd8df53214d193ecda6831aca9d06ca",
+      "parent_completed_run_sha256": "62b99f2abb81b3a4f7b8b47fef16310f4038a860fe03d9790ef3d6891792adcb",
+      "added_inventory_sha256": "713017881a080c12499549d2dd7466d78434db2b2ddbf488344568ec953dc110",
+      "group_audit_sha256": "08aa0dede45c0f01856e1aa26acb51157d74ca6cbb050df63cb21cbbb94ca445",
+      "group_split_conflicts": 12,
+      "new_visual_group_candidates": 550,
+      "input_images": 459490,
+      "inherited_input_images": 399490,
+      "added_images": 60000,
+      "peak_resident_bytes": 6385766400,
+      "run_id": "strategy-pretraining-ocr-topup-v1/identity-audit-v1",
+      "registry_id": "exp-e05c3a041622",
+      "record_sha256": "bcbc84cf6d8d26e0a1c41d535dba92eb254ac2fd942e63dd1d295287f2196f90",
+      "process_observation": {
+        "observed_unix": 1789115400.7217076,
+        "process_identity_verified": false
+      },
+      "formal_admission": false,
+      "main_budget_eligible": false,
+      "old_pairwise_comparisons_repeated": false,
+      "progress": {
+        "loaded_inventories": 20,
+        "indexed_images": 459490,
+        "rendered_images": 359555,
+        "checked_rendered_images": 350000,
+        "visual_candidates": 479,
+        "cursor_scope": "Index and rendered-image cursors include inherited images; only pairs touching an added inventory are compared."
+      },
+      "benchmarks": {
+        "ChartQA": {
+          "status": "candidate_matches_require_visual_review",
+          "benchmark_images": 2565,
+          "added_project_images": 60000,
+          "exact_rgb_pairs": 0,
+          "visual_candidates": 96,
+          "report_sha256": "a308f9fa2036c3b38f4cf10cb125e02595468d6166069f159bf61d8d3f653e74"
+        },
+        "TextVQA": {
+          "status": "candidate_matches_require_visual_review",
+          "benchmark_images": 6455,
+          "added_project_images": 60000,
+          "exact_rgb_pairs": 0,
+          "visual_candidates": 1,
+          "report_sha256": "3b015a2ae7dd09cb8ec3c6059c7ca74486fc0432e68311a4ef95ae45aeacaf89"
+        }
+      },
+      "inherited_effective_pool": {
+        "report_sha256": "55037c96d319ddcc34c8044569b125590cd8df53214d193ecda6831aca9d06ca",
+        "input_images": 399490,
+        "reviewed_candidates": 2129,
+        "subset_derivation": {
+          "root_reviewed_audit_sha256": "6cc4b1b9438db4eea989c1defd5550b68c883b86e2b260fe736268d0df75f7ff",
+          "effective_subset_proof_sha256": "d975feafed5911a66b1b9aca6e9faf5d951564ceb772bdbf214ac3abb401585d",
+          "subset_chain_sha256": [
+            "824dc1ecd465a461e3f23ab0a34a372365a4f4d540e7bf6f3a404504c78d0bf4",
+            "81b585a05c2499f33325f4f1f867a550d560f2da20bfb71902bef8f50e193025",
+            "d975feafed5911a66b1b9aca6e9faf5d951564ceb772bdbf214ac3abb401585d"
+          ],
+          "export_comparisons": {
+            "natural": {
+              "retained_groups": 23165,
+              "retained_images": 23242,
+              "removed_groups": 1,
+              "removed_images": 1,
+              "all_retained_export_records_identical": true
+            },
+            "documents-charts": {
+              "retained_groups": 33638,
+              "retained_images": 39979,
+              "removed_groups": 3,
+              "removed_images": 3,
+              "all_retained_export_records_identical": true
+            }
+          },
+          "removed_groups": [
+            [
+              "documents-charts",
+              "04c251c696ec72a9dd895b22d752b66d33b073cc0db156822e87cb77ce211b48"
+            ],
+            [
+              "documents-charts",
+              "30277fa5720e4bbaa53f0639a08fa382f251fc969dbd86e592f5927bc687469a"
+            ],
+            [
+              "documents-charts",
+              "84a5dd8eff9146da94737aa83f66069d40bdb85c34e47bf53522b59e8f624230"
+            ],
+            [
+              "natural",
+              "2e552ea48393dd4932ef88580211f6814aef9dfbe9fefe422efde7e91ae59abd"
+            ]
+          ],
+          "retained_reviewed_candidate_contents_sha256": "f2a0007b6b8c5a5d04f8862f888f1259b632eea40dceb8b30f6c84a64f047b8c",
+          "driver_sha256": "9dbee450bedf8ff13bea88b3fca412f5e84593126bacfc453e9bfe758f981fa4",
+          "new_pairwise_comparisons": false,
+          "human_source_quality_review": false
+        },
+        "formal_admission": false
+      }
     }
+  },
+  "superseded_text_cache_retirement": {
+    "state": "complete",
+    "completed_unix": 1789114951.3631415,
+    "payload_bytes_deleted": 8841651207,
+    "current_text_encoded_cache_bytes": 8769396904,
+    "public_receipt": "encoded-cache-retirement.json",
+    "scope": "Historical compositions that bind evicted text/tokenizer versions require rebuilding; their original manifests and audit evidence remain retained."
+  },
+  "data_event_followups": {
+    "state": "watching_data_events",
+    "observed_unix": 1789115396.819576,
+    "source_commit": "b212cd37cb4e75bc51ac0703e4286ab2855b937a",
+    "tasks": {
+      "ocr-build": {
+        "state": "candidate_slice_complete_pending_admission",
+        "alive": false,
+        "observed_unix": 1789114728.7515955,
+        "completed_unix": 1789112539.0956106
+      },
+      "kimi-docs": {
+        "state": "encoding_candidate_component",
+        "alive": true,
+        "observed_unix": 1789115389.229605,
+        "completed_unix": null
+      },
+      "qwen-docs": {
+        "state": "checking_every_encoded_media_record",
+        "alive": true,
+        "observed_unix": 1789115389.229605,
+        "completed_unix": null
+      },
+      "ocr-identity": {
+        "state": "candidate_identity_checks_complete_pending_resolution_and_admission",
+        "alive": false,
+        "observed_unix": 1789114728.7520654,
+        "completed_unix": 1789112843.7463982
+      },
+      "natural-identity": {
+        "state": "waiting_for_record",
+        "alive": false,
+        "observed_unix": 1789114736.187515,
+        "completed_unix": null
+      },
+      "doc-refinement": {
+        "state": "waiting_for_existing_parent_encodings",
+        "alive": true,
+        "observed_unix": 1789115389.229605,
+        "completed_unix": null
+      },
+      "natural-build": {
+        "state": "failed",
+        "alive": false,
+        "observed_unix": 1789115007.9824767,
+        "completed_unix": 1789115007.971151
+      }
+    },
+    "needs_attention": {
+      "ocr-identity": "needs_attention",
+      "natural-build": "needs_attention"
+    },
+    "original_registry_polling_watcher_stopped": true,
+    "formal_admission": false
   }
 }
