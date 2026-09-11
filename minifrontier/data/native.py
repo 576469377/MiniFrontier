@@ -4,7 +4,9 @@ import contextlib
 import importlib
 import json
 import os
+from bisect import bisect_right
 from collections import Counter
+from itertools import accumulate
 from pathlib import Path
 from typing import Any
 
@@ -259,6 +261,8 @@ def audit_native_encoding(corpus_root, encoded, output):
     """Check every canonical media record, immutable pixel input and complete text target."""
     corpus_root, encoded, output = Path(corpus_root), Path(encoded), Path(output)
     manifest = json.loads((encoded / "manifest.json").read_text())
+    if manifest.get("kind") == "canonical_native_composition":
+        raise ValueError("audit native media components individually before composition")
     report: dict[str, Any] = dict(
         kind="canonical_native_encoding_audit",
         formal_admission=False,
@@ -446,8 +450,6 @@ class NativeDataset:
             manifest["native_processor_sha256"] != processor_identity(self.family)
         ):
             raise ValueError("native processor sources changed since encoding")
-        self.media_root, self.vocab = manifest["media_root"], manifest["model_vocab_size"]
-        self.min_pixels = manifest.get("min_pixels")
         if sha256(self.root / "tokenizer.json") != manifest["tokenizer"]["sha256"]:
             raise ValueError("native tokenizer checksum differs")
         self.tokenizer = Tokenizer.from_file(str(self.root / "tokenizer.json"))
@@ -460,7 +462,61 @@ class NativeDataset:
             if record["text"] not in source["stages"][stage].values():
                 raise ValueError("native text split differs from the shared manifest")
         self.text = DocumentDataset(text_root, record["text"], stage, length)
-        media = record["media"]
+        if manifest.get("kind") == "canonical_native_composition":
+            from minifrontier.data.native_components import read_components
+
+            sources = read_components(self.root, manifest)
+            selections = record["media_sources"]
+            if [s["component"] for s in selections] != list(range(len(sources))):
+                raise ValueError("native composition media sources are missing or repeated")
+            parts = []
+            for selection, (path, child) in zip(selections, sources, strict=True):
+                child_record = child["stages"][stage][selection["split"]]
+                if child_record["text"] != record["text"]:
+                    raise ValueError("native composition media/text split differs")
+                parts.append((path, child_record["media"], child))
+        else:
+            parts = [(self.root, record["media"], manifest)]
+        self.media = [
+            _NativeMediaDataset(path, media, child, length, self.tokenizer)
+            for path, media, child in parts
+        ]
+        self.ends = list(accumulate(len(d) for d in self.media))
+        self.domains = list(self.text.domains)
+        self.ce_counts = list(self.text.ce_counts)
+        self.input_counts = list(self.text.input_counts)
+        self.image_counts = [0] * len(self.text)
+        self.video_counts = [0] * len(self.text)
+        for dataset in self.media:
+            for name in ("domains", "ce_counts", "input_counts", "image_counts", "video_counts"):
+                getattr(self, name).extend(getattr(dataset, name))
+
+    def __len__(self):
+        return len(self.text) + (self.ends[-1] if self.ends else 0)
+
+    def __getitem__(self, index):
+        if index < 0:
+            index += len(self)
+        if not 0 <= index < len(self):
+            raise IndexError(index)
+        if index < len(self.text):
+            from minifrontier.multimodal import TrainingBatch
+
+            x, y = self.text[index]
+            return TrainingBatch(x[None], y[None])
+        index -= len(self.text)
+        part = bisect_right(self.ends, index)
+        return self.media[part][index - (self.ends[part - 1] if part else 0)]
+
+
+class _NativeMediaDataset:
+    """Read one existing media shard without reopening or resampling shared text."""
+
+    def __init__(self, root, media, manifest, length, tokenizer):
+        self.root, self.tokenizer = Path(root), tokenizer
+        self.family, self.max_features = manifest["family"], manifest["max_features"]
+        self.media_root, self.vocab = manifest["media_root"], manifest["model_vocab_size"]
+        self.min_pixels = manifest.get("min_pixels")
         for path, digest in (
             (media["file"], media["sha256"]),
             (media["index_file"], media["index_sha256"]),
@@ -470,11 +526,8 @@ class NativeDataset:
         self.path = self.root / media["file"]
         index = np.load(self.root / media["index_file"], mmap_mode="r")
         self.index = index[index[:, 2] <= length]
-        self.domains = list(self.text.domains)
-        self.ce_counts = list(self.text.ce_counts)
-        self.input_counts = list(self.text.input_counts)
-        self.image_counts = [0] * len(self.text)
-        self.video_counts = [0] * len(self.text)
+        self.domains, self.ce_counts, self.input_counts = [], [], []
+        self.image_counts, self.video_counts = [], []
         with self.path.open("rb") as source:
             for offset, size, positions in self.index:
                 source.seek(int(offset))
@@ -487,15 +540,10 @@ class NativeDataset:
                 self.video_counts.append(sum(m.get("kind") == "video" for m in resources))
 
     def __len__(self):
-        return len(self.text) + len(self.index)
+        return len(self.index)
 
     def __getitem__(self, index):
-        if index < len(self.text):
-            from minifrontier.multimodal import TrainingBatch
-
-            x, y = self.text[index]
-            return TrainingBatch(x[None], y[None])
-        offset, size, _ = self.index[index - len(self.text)]
+        offset, size, _ = self.index[index]
         with self.path.open("rb") as stream:
             stream.seek(int(offset))
             row = json.loads(stream.read(int(size)))

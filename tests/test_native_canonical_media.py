@@ -1,5 +1,6 @@
 """Canonical visual PT preserves literal text and shares audited text storage."""
 
+import copy
 import json
 import random
 import shutil
@@ -19,12 +20,14 @@ from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokeniz
 from minifrontier.data.encoding_filters import filter_media_encoding
 from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.data.native import audit_native_encoding, encode_native
+from minifrontier.data.native_components import assemble_native_components
 from minifrontier.data.partitions import create_media_exclusion_view, create_partition_view
 from minifrontier.models.minikimik3 import MiniKimiK3ForCausalLM
 from minifrontier.models.minikimik3.vision import KimiVisionConfig
 from minifrontier.models.miniqwen4 import MiniQwen4ForCausalLM
 from minifrontier.models.miniqwen4.vision import QwenVisionConfig
 from minifrontier.multimodal import collate, prepare_record, pretraining_tokens
+from minifrontier.training.media_mixture import MediaMixtureCursor
 
 
 @pytest.fixture
@@ -393,3 +396,208 @@ def test_native_exclusions_preserve_kept_bytes_shared_text_and_overflow_accounti
         final = filter_media_encoding(next_view, output, twice)
         assert final["stages"]["pretrain"]["train"]["media"]["examples"] == 0
         audit_native_encoding(next_view, twice, tmp_path / "second-independent-audit.json")
+
+
+def _audited_native(root, tokenizer, shared, output, family):
+    encode_native(
+        root,
+        tokenizer,
+        output,
+        family,
+        text_encoding=shared,
+        max_length=512,
+        max_features=4,
+        min_pixels=1024 if family == "miniqwen4" else None,
+    )
+    audit_native_encoding(root, output, output / "encoding-audit.json")
+    (output / "source-audit.json").write_text(
+        json.dumps(
+            dict(
+                status="mechanical_checks_passed_pending_quality_admission",
+                producer_finished=True,
+                manifest_sha256=sha256(output / "manifest.json"),
+                integrity_report="encoding-audit.json",
+                integrity_report_sha256=sha256(output / "encoding-audit.json"),
+            )
+        )
+    )
+    return output
+
+
+def _second_native_corpus(tmp_path, *, conflicting_image=None):
+    builder = CorpusBuilder(tmp_path / "second-corpus")
+    for i, task in enumerate(("caption", "ocr_document", "chart_table")):
+        image = (
+            Image.open(conflicting_image).copy()
+            if conflicting_image is not None and i == 1
+            else Image.frombytes("RGB", (32, 24), random.Random(100 + i).randbytes(32 * 24 * 3))
+        )
+        path = builder.root / f"{i}.png"
+        image.save(path)
+        question = f"Read the number {i} shown on the diagram."
+        answer = f"The displayed figure contains marker {i} and a rectangular outline."
+        assert builder.add(
+            dict(
+                source="second-fixture",
+                revision="fixed",
+                item_id=str(i),
+                group_id=str(i),
+                license="CC0-1.0",
+                lang="en",
+                stage="pretrain",
+                task=task,
+                text=question + " " + answer,
+                visual_question=question,
+                visual_answer=answer,
+                media=[
+                    dict(kind="image", path=path.name, sha256=sha256(path), **decoded_hashes(image))
+                ],
+            )
+        )
+    builder.finalize(
+        split_locks={
+            "source-group:second-fixture:1": "val",
+            "source-group:second-fixture:2": "test",
+        }
+    )
+    builder.db.close()
+    return builder.root
+
+
+def _assert_native_tree_equal(actual, expected):
+    if isinstance(expected, torch.Tensor):
+        assert torch.equal(actual, expected)
+    elif isinstance(expected, dict):
+        assert actual.keys() == expected.keys()
+        for key in expected:
+            _assert_native_tree_equal(actual[key], expected[key])
+    elif isinstance(expected, (tuple, list)):
+        assert type(actual) is type(expected)
+        for a, b in zip(actual, expected, strict=True):
+            _assert_native_tree_equal(a, b)
+    else:
+        assert actual == expected
+
+
+@pytest.mark.parametrize("family", ["minikimik3", "miniqwen4"])
+def test_native_composition_reads_each_media_root_and_shared_text_once(
+    inputs, tmp_path, family, monkeypatch
+):
+    from minifrontier.data import native
+
+    root, tokenizer, _, shared = inputs
+    second = _second_native_corpus(tmp_path)
+    children = [
+        _audited_native(c, tokenizer, shared, tmp_path / f"encoded-{i}", family)
+        for i, c in enumerate((root, second))
+    ]
+    output = tmp_path / "composed"
+    manifest = assemble_native_components(children, output)
+    assert not manifest["formal_admission"] and not manifest["main_budget_eligible"]
+    assert sorted(p.name for p in output.iterdir()) == ["manifest.json", "tokenizer.json"]
+    original = native.DocumentDataset
+    calls = []
+
+    def counted(*args, **kwargs):
+        calls.append(args[0])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(native, "DocumentDataset", counted)
+    for split in ("train", "val", "test"):
+        before = len(calls)
+        data = StageDataset(output, "pretrain", split, 512)
+        assert len(calls) == before + 1 and calls[-1] == shared
+        text = StageDataset(shared, "pretrain", split, 512)
+        expected = []
+        for child in children:
+            source = StageDataset(child, "pretrain", split, 512)
+            expected.extend(source[i] for i in range(len(text), len(source)))
+        assert len(data) == len(text) + len(expected)
+        assert torch.equal(data[0].input_ids[0], text[0][0])
+        for i, item in enumerate(expected, len(text)):
+            current = data[i]
+            torch.testing.assert_close(current.input_ids, item.input_ids)
+            torch.testing.assert_close(current.labels, item.labels)
+            _assert_native_tree_equal(current.extras, item.extras)
+        batch = collate([data[i] for i in range(len(data))], "cpu")
+        assert int(batch.labels[:, 1:].ne(-100).sum()) == sum(data.documents.ce_counts)
+        assert (
+            sum(data.documents.ce_counts)
+            == manifest["stages"]["pretrain"][split]["supervised_tokens"]
+        )
+        assert batch.image_count == sum(data.documents.image_counts) == len(expected)
+        torch.testing.assert_close(data[-1].input_ids, data[len(data) - 1].input_ids)
+        with pytest.raises(IndexError):
+            data[len(data)]
+    # Existing sampler resumes over the same combined index and separate media counters.
+    data = StageDataset(output, "pretrain", "train", 512)
+    domains = set(
+        d for d, n in zip(data.documents.domains, data.documents.image_counts, strict=True) if n
+    )
+    recipe = dict(
+        schema_version=1,
+        ce_token_budget=1000,
+        image_occurrences=50,
+        text_mixture_tokens={"en_edu": 1.0},
+        image_mixture_samples={d: 1 / len(domains) for d in domains},
+    )
+    cursor = MediaMixtureCursor(data, recipe, batch_size=2)
+    for _ in range(5):
+        cursor.next()
+    saved = copy.deepcopy(cursor.state_dict())
+    expected = [cursor.next() for _ in range(8)]
+    restored = MediaMixtureCursor(
+        StageDataset(output, "pretrain", "train", 512), recipe, batch_size=2
+    )
+    restored.load_state_dict(saved)
+    assert [restored.next() for _ in range(8)] == expected
+    assert restored.state_dict() == cursor.state_dict()
+    # The composition cannot silently accept changed component bytes on reload.
+    p = children[1] / "pretrain.train.media.jsonl"
+    p.write_bytes(p.read_bytes() + b"\n")
+    with pytest.raises(ValueError, match="hash mismatch"):
+        StageDataset(output, "pretrain", "train", 512)
+
+
+def test_native_composition_rejects_duplicate_samples_and_metadata_overflow(inputs, tmp_path):
+    root, tokenizer, _, shared = inputs
+    child = _audited_native(root, tokenizer, shared, tmp_path / "encoded", "minikimik3")
+    copied = tmp_path / "copied"
+    shutil.copytree(child, copied)
+    with pytest.raises(ValueError, match="duplicate sample"):
+        assemble_native_components([child, copied], tmp_path / "duplicates")
+    with pytest.raises(ValueError, match="disk budget"):
+        assemble_native_components([child], tmp_path / "overflow", max_bytes=1)
+    assert not (tmp_path / "duplicates").exists() and not (tmp_path / "overflow").exists()
+
+
+def test_native_composition_rejects_individually_valid_cross_split_pixels(inputs, tmp_path):
+    root, tokenizer, rows, shared = inputs
+    training = next(row for split, row, _ in rows if split == "train")
+    second = _second_native_corpus(tmp_path, conflicting_image=root / training["media"][0]["path"])
+    children = [
+        _audited_native(c, tokenizer, shared, tmp_path / f"encoded-{i}", "minikimik3")
+        for i, c in enumerate((root, second))
+    ]
+    with pytest.raises(ValueError, match="media identity crosses splits"):
+        assemble_native_components(children, tmp_path / "cross-split")
+
+
+@pytest.mark.parametrize("mutation", ["family", "shared-text"])
+def test_native_composition_rejects_mismatched_model_or_shared_text(inputs, tmp_path, mutation):
+    root, tokenizer, _, shared = inputs
+    child = _audited_native(root, tokenizer, shared, tmp_path / "encoded", "minikimik3")
+    copied = tmp_path / "copied"
+    shutil.copytree(child, copied)
+    manifest = json.loads((copied / "manifest.json").read_text())
+    if mutation == "family":
+        manifest["max_features"] += 1
+        match = "component model"
+    else:
+        alternate = tmp_path / "alternate-text"
+        shutil.copytree(shared, alternate)
+        manifest["text_source"]["path"] = "../alternate-text"
+        match = "one shared text directory"
+    (copied / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match=match):
+        assemble_native_components([child, copied], tmp_path / "invalid")

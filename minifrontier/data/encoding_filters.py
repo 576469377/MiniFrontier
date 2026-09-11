@@ -32,6 +32,8 @@ def _inputs(corpus, encoded, *, reclassify=False):
     canonical = json.loads((corpus / "corpus-manifest.json").read_text())
     source_audit = json.loads((corpus / "source-audit.json").read_text())
     manifest = json.loads((encoded / "manifest.json").read_text())
+    if manifest.get("kind") == "canonical_native_composition":
+        raise ValueError("filter native media components individually, then reassemble")
     parent = json.loads((encoded / "source-audit.json").read_text())
     # Earlier canonical image producers bind the same fixed report by this key.
     # Both layouts require a recorded hash; an unbound file is never sufficient.
