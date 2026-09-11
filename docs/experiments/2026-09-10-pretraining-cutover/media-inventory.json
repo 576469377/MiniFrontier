@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789118453.469493,
+  "observed_unix": 1789119723.0767949,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -6267,7 +6267,7 @@
     "formal_admission": false,
     "main_budget_eligible": false,
     "inventory_count": 19,
-    "snapshot_unix": 1789118453.0430858,
+    "snapshot_unix": 1789119722.6500888,
     "previous_attempt": {
       "state": "failed",
       "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
@@ -6293,7 +6293,7 @@
       "formal_admission": false,
       "main_budget_eligible": false,
       "inventory_count": 19,
-      "snapshot_unix": 1789118453.0431857
+      "snapshot_unix": 1789119722.6501935
     },
     "candidate_filter_validation": {
       "kind": "bounded_cpu_candidate_filter_equivalence",
@@ -6337,8 +6337,8 @@
       "formal_admission": false
     },
     "local_storage": {
-      "observed_unix": 1789118453.437552,
-      "free_gib": 119.02479934692383,
+      "observed_unix": 1789119723.044663,
+      "free_gib": 118.59929275512695,
       "minimum_free_gib": 80
     },
     "visual_review_plan": {
@@ -8707,7 +8707,7 @@
         "record_sha256": "4a967e0da99f553deac5fb34e124b33b993fe0a4d3be2a2851a250c027823a0a",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789118453.4539783
+        "snapshot_unix": 1789119723.060187
       },
       "first_attempt": {
         "state": "failed",
@@ -8732,7 +8732,7 @@
         "record_sha256": "5dd75a745441e5d30af4576b405e7601a752c0d57cfc69bcfa25221d8f23674d",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789118453.454076
+        "snapshot_unix": 1789119723.060278
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8760,7 +8760,7 @@
         "record_sha256": "bad4bc7dfed043e0b5735b5d97c6fc7b461752b8bb36269e294920225501b8a4",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789118453.4541671
+        "snapshot_unix": 1789119723.060368
       },
       "matching_validation": {
         "ordered_result_sha256": "db77f1bc02a8567fc0ce7eb80c06c728d4203e13cd94241d9dcd01779c6a6ec1",
@@ -8824,7 +8824,7 @@
         "record_sha256": "9582bff720de38ee69ee01b5ab9e628f58f9e326e63f81ef303c7b2ed6a27a12",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789118453.454623
+        "snapshot_unix": 1789119723.060805
       },
       "first_attempt": {
         "state": "failed",
@@ -8849,7 +8849,7 @@
         "record_sha256": "b48fe5e775f7d080401674326b263245070c2900b71f17882f0f2b9a25991a7f",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789118453.4547153
+        "snapshot_unix": 1789119723.060891
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8877,7 +8877,7 @@
         "record_sha256": "71b5633369c727306eee5fe8a41c23e318e89cb3e689cf0108ad50cb8e173189",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789118453.4548066
+        "snapshot_unix": 1789119723.0609741
       },
       "matching_validation": {
         "ordered_result_sha256": "f99edfcb887e825c753f5abd6604c33de91f208779a521b5118301bb77f0d531",
@@ -9242,7 +9242,7 @@
     "main_budget_eligible": false,
     "included_in_current_effective_pool": false,
     "observation": {
-      "observed_unix": 1789118453.4586582,
+      "observed_unix": 1789119723.0647178,
       "process_identity_verified": false,
       "state": "candidate_slice_complete_pending_admission",
       "data_state": "candidate_slice_complete_pending_admission",
@@ -9442,7 +9442,7 @@
       "registry_id": "exp-e05c3a041622",
       "record_sha256": "bcbc84cf6d8d26e0a1c41d535dba92eb254ac2fd942e63dd1d295287f2196f90",
       "process_observation": {
-        "observed_unix": 1789118453.4592855,
+        "observed_unix": 1789119723.0652966,
         "process_identity_verified": false
       },
       "formal_admission": false,
@@ -9615,6 +9615,94 @@
         "quality_candidates": 6,
         "quality_candidate_group_records": 71
       }
+    },
+    "refined_candidate": {
+      "state": "identity_closed_encoding_mf1_candidate",
+      "phase": "quarantine_and_encode_ocr_supplement",
+      "source_commit": "cc192f1a76902bea0866694c8acca56da08ebd8e",
+      "source_archive_sha256": "177a23e284d1c3bc5846d035931e27749f23f62391e81da7a4c812b516d404d8",
+      "driver_sha256": "14cacc9e5aac3f4b6ce286acfd69189f8e35867cec613655e677ddc9fccf8609",
+      "arguments_sha256": "c57a2ac87ed4bbe5e8480b4eebf973f4b6500123105649c765cc4111960a0ac4",
+      "started_unix": 1789119512.7709184,
+      "observed_unix": 1789119703.6969662,
+      "budget": {
+        "wall_seconds": 10800,
+        "address_space_gib": 32,
+        "metadata_gib": 2,
+        "encoding_gib": 1,
+        "reserve_gib": 80,
+        "max_text_comparisons": 5000000,
+        "max_edges": 500000
+      },
+      "splits": {
+        "train": 52882,
+        "val": 667,
+        "test": 759
+      },
+      "input_images": 453798,
+      "split_conflicts": 0,
+      "reused_internal_visual_decisions": 495,
+      "benchmarks": {
+        "chartqa": {
+          "report_sha256": "30ee3b89f405c9727de7811b03e45422dc3d2e97b289574a1df11a229b5dab2f",
+          "reviewed_candidates": 86,
+          "status": "mechanical_checks_passed_with_reused_model_assisted_review"
+        },
+        "textvqa": {
+          "report_sha256": "d237904bb5a84567a0be7dbac0d8823fa74d59f15df72456e81195bbeca41292",
+          "reviewed_candidates": 1,
+          "status": "mechanical_checks_passed_with_reused_model_assisted_review"
+        }
+      },
+      "run_id": "strategy-pretraining-ocr-topup-v1/refinement-v1",
+      "output": "data/pretraining-ocr-topup-partition-v2",
+      "encoded_output": "data/pretraining-mf1-ocr-topup-p0-v1",
+      "record_sha256": "a89a4e6cad37223f9b0452e7b0e33997e7dafbf012f9a453eef0d8bdd92d3ed0",
+      "formal_admission": false,
+      "human_source_quality_review_completed": false,
+      "main_budget_eligible": false,
+      "process_identity_verified": true,
+      "exact_retained_corpus_subset": {
+        "kind": "exact_corpus_subset_proof",
+        "status": "all_retained_contents_splits_and_raw_bytes_unchanged",
+        "original_corpus_manifest_sha256": "42017a59c65cc369fac0613aceab1dfc3567ab7e8b1c39018fcd70542568d905",
+        "corpus_manifest_sha256": "307b5d33e0dea2a3a2d7852bdad5a8e5a2ab42940e220378954ad8e74e6db55b",
+        "source_audit_sha256": "0463df68781c891ac8e9b6463063ed3d123a7ca2b75f104c5fdaa326ca18ae99",
+        "excluded_record_sha256": "f1a511a701433e47fba78f684fe8f29e12924dad9676729a81d66df397c76d61",
+        "records": 54308,
+        "splits": {
+          "train": 52882,
+          "val": 667,
+          "test": 759
+        },
+        "excluded_records": 5692,
+        "excluded_groups": 1271,
+        "excluded_splits": {
+          "train": 5336,
+          "test": 277,
+          "val": 79
+        },
+        "all_retained_database_rows_identical": true,
+        "all_retained_raw_hashes_verified": true,
+        "raw_binding_sha256": "f94580ac6191f54ff7c2b2d66880bc16bcbeb7d535b6ae007ab4d87215e46669",
+        "retained_hardlinked_images": 54308,
+        "shared_raw_bytes": 550337375,
+        "additional_raw_media_bytes": 0,
+        "old_holdouts_retained_or_quarantined_never_reassigned": true,
+        "parent_text_corpus_modified": false,
+        "formal_admission": false,
+        "report_sha256": "45d8786bc5e6f1d2626b32811a9605d3391ad3e8ae51b102bfd29cc49ca6c012"
+      },
+      "effective_identity_closure": {
+        "status": "mechanical_group_checks_passed_with_model_assisted_review",
+        "report_sha256": "f94e045a08ae2feb0a99bad9b3b55243325b5a59f8611e967b6b90bcfd2b78b0",
+        "input_images": 453798,
+        "split_conflicts": 0,
+        "unresolved_visual_candidates": 0,
+        "reviewed_visual_candidates": 495,
+        "formal_admission": false
+      },
+      "source_license_summary": "Counts retain each source revision/license combination from the retained parent records; aggregation no longer overwrites multiple code licenses."
     }
   },
   "superseded_text_cache_retirement": {
@@ -9627,7 +9715,7 @@
   },
   "data_event_followups": {
     "state": "watching_data_events",
-    "observed_unix": 1789118450.4085894,
+    "observed_unix": 1789119720.62943,
     "source_commit": "b212cd37cb4e75bc51ac0703e4286ab2855b937a",
     "tasks": {
       "ocr-build": {
@@ -9639,13 +9727,13 @@
       "kimi-docs": {
         "state": "checking_every_encoded_media_record",
         "alive": true,
-        "observed_unix": 1789118450.4232423,
+        "observed_unix": 1789119710.8940253,
         "completed_unix": null
       },
       "qwen-docs": {
         "state": "checking_every_encoded_media_record",
         "alive": true,
-        "observed_unix": 1789118450.4232423,
+        "observed_unix": 1789119710.8940253,
         "completed_unix": null
       },
       "ocr-identity": {
@@ -9663,7 +9751,7 @@
       "doc-refinement": {
         "state": "waiting_for_existing_parent_encodings",
         "alive": true,
-        "observed_unix": 1789118450.4232423,
+        "observed_unix": 1789119710.8940253,
         "completed_unix": null
       },
       "natural-build": {
