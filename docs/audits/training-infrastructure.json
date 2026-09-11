@@ -40,5 +40,678 @@
   "config_file": "configs/strategies/miniqwen4-v2.json",
   "config_sha256": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
   "measurement": "Each variant restores the same model and optimizer checkpoint. The first update warms execution; the remaining two are timed.",
-  "artifact_scope": "Numerical and timing record only; the local initialization checkpoint is not redistributed with this archive."
+  "artifact_scope": "Numerical and timing record only; the local initialization checkpoint is not redistributed with this archive.",
+  "formal_observations": {
+    "observed_utc": "2026-09-11T18:50:53.339409+00:00",
+    "scope": "Different real training windows before/after cutover, not a controlled end-to-end benchmark. Data time with prefetch is foreground waiting, not total background preprocessing cost.",
+    "models": {
+      "minikimik3": {
+        "phase": "K1",
+        "latest_step": 430,
+        "main_ce_tokens": 13302680,
+        "observed_log_rows": 6,
+        "step_range": [
+          405,
+          430
+        ],
+        "sampled_ce_tps": 3755.6445593802273,
+        "mean_data_wait_seconds": 0.005854996852576733,
+        "source_commit": "4ba895565d053334afa8bffa3a5278a8accd0167",
+        "mean_optimizer_seconds": 0.31961375288665295,
+        "updates": [
+          {
+            "step": 405,
+            "main_ce_tokens": 12529786,
+            "step_seconds": 8.45570638589561,
+            "data_preparation_seconds": 0.005435088649392128,
+            "optimizer_seconds": 0.32134563103318214,
+            "tokens_per_second": 3616.256123912378,
+            "input_batch_actual": 32834,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              64,
+              1
+            ]
+          },
+          {
+            "step": 410,
+            "main_ce_tokens": 12684589,
+            "step_seconds": 8.62297211959958,
+            "data_preparation_seconds": 0.005851833149790764,
+            "optimizer_seconds": 0.31588815338909626,
+            "tokens_per_second": 3558.6337952145605,
+            "input_batch_actual": 33007,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              64,
+              6
+            ]
+          },
+          {
+            "step": 415,
+            "main_ce_tokens": 12839021,
+            "step_seconds": 8.344119545072317,
+            "data_preparation_seconds": 0.005839841440320015,
+            "optimizer_seconds": 0.31779516488313675,
+            "tokens_per_second": 3737.722096565396,
+            "input_batch_actual": 33357,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              64,
+              3
+            ]
+          },
+          {
+            "step": 420,
+            "main_ce_tokens": 12993984,
+            "step_seconds": 6.929384030401707,
+            "data_preparation_seconds": 0.0058765411376953125,
+            "optimizer_seconds": 0.3201281074434519,
+            "tokens_per_second": 4439.499941846436,
+            "input_batch_actual": 32937,
+            "micro_batches": 1,
+            "microbatch_samples": [
+              64
+            ]
+          },
+          {
+            "step": 425,
+            "main_ce_tokens": 13148656,
+            "step_seconds": 8.607747822999954,
+            "data_preparation_seconds": 0.00613204762339592,
+            "optimizer_seconds": 0.31968227215111256,
+            "tokens_per_second": 3635.794245316632,
+            "input_batch_actual": 33511,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              64,
+              1
+            ]
+          },
+          {
+            "step": 430,
+            "main_ce_tokens": 13302680,
+            "step_seconds": 8.392450777813792,
+            "data_preparation_seconds": 0.005994629114866257,
+            "optimizer_seconds": 0.3228431884199381,
+            "tokens_per_second": 3674.6119597776737,
+            "input_batch_actual": 33085,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              64,
+              4
+            ]
+          }
+        ],
+        "seed": 42,
+        "global_input_tokens": 32768,
+        "microbatch_ceiling": 64,
+        "data_manifest_sha256": "a81dabbdc785daa77bb9afd69123e10fffbde2528370ee80b1279d83119e6ed8",
+        "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+        "model_config_sha256": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+        "token_denominator": "main cross-entropy targets"
+      },
+      "miniqwen4": {
+        "phase": "Q1",
+        "latest_step": 365,
+        "main_ce_tokens": 5836442,
+        "observed_log_rows": 13,
+        "step_range": [
+          305,
+          365
+        ],
+        "sampled_ce_tps": 1455.91033204584,
+        "mean_data_wait_seconds": 0.002077231040367713,
+        "source_commit": "9b1d8fd6f26ab125d3e8d64a0e830a2db3db72fa",
+        "mean_optimizer_seconds": 0.53881909010502,
+        "updates": [
+          {
+            "step": 305,
+            "main_ce_tokens": 4875704,
+            "step_seconds": 9.176464980468154,
+            "data_preparation_seconds": 0.0027400124818086624,
+            "optimizer_seconds": 0.557895427569747,
+            "tokens_per_second": 1755.6869703411726,
+            "input_batch_actual": 16894,
+            "micro_batches": 1,
+            "microbatch_samples": [
+              32
+            ]
+          },
+          {
+            "step": 310,
+            "main_ce_tokens": 4954962,
+            "step_seconds": 9.030177593231201,
+            "data_preparation_seconds": 0.0017953813076019287,
+            "optimizer_seconds": 0.5370980761945248,
+            "tokens_per_second": 1738.2825351924512,
+            "input_batch_actual": 16475,
+            "micro_batches": 1,
+            "microbatch_samples": [
+              32
+            ]
+          },
+          {
+            "step": 315,
+            "main_ce_tokens": 5034643,
+            "step_seconds": 12.498768156394362,
+            "data_preparation_seconds": 0.002188844606280327,
+            "optimizer_seconds": 0.5353758968412876,
+            "tokens_per_second": 1261.9643634185295,
+            "input_batch_actual": 16506,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              32,
+              2
+            ]
+          },
+          {
+            "step": 320,
+            "main_ce_tokens": 5114219,
+            "step_seconds": 12.20391846448183,
+            "data_preparation_seconds": 0.0021051075309515,
+            "optimizer_seconds": 0.5392772722989321,
+            "tokens_per_second": 1281.227832315241,
+            "input_batch_actual": 16435,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              32,
+              2
+            ]
+          },
+          {
+            "step": 325,
+            "main_ce_tokens": 5194785,
+            "step_seconds": 12.533718343824148,
+            "data_preparation_seconds": 0.0018806997686624527,
+            "optimizer_seconds": 0.5382089111953974,
+            "tokens_per_second": 1322.1934261962788,
+            "input_batch_actual": 17349,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              32,
+              4
+            ]
+          },
+          {
+            "step": 330,
+            "main_ce_tokens": 5275648,
+            "step_seconds": 12.299714235588908,
+            "data_preparation_seconds": 0.0018252097070217133,
+            "optimizer_seconds": 0.5378156155347824,
+            "tokens_per_second": 1301.0058358671963,
+            "input_batch_actual": 16800,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              32,
+              1
+            ]
+          },
+          {
+            "step": 335,
+            "main_ce_tokens": 5355359,
+            "step_seconds": 12.078950688242912,
+            "data_preparation_seconds": 0.0017485115677118301,
+            "optimizer_seconds": 0.5380912590771914,
+            "tokens_per_second": 1353.4288219184784,
+            "input_batch_actual": 17125,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              32,
+              1
+            ]
+          },
+          {
+            "step": 340,
+            "main_ce_tokens": 5435321,
+            "step_seconds": 8.478538816794753,
+            "data_preparation_seconds": 0.0018235016614198685,
+            "optimizer_seconds": 0.537910595536232,
+            "tokens_per_second": 1852.0879999858748,
+            "input_batch_actual": 16423,
+            "micro_batches": 1,
+            "microbatch_samples": [
+              31
+            ]
+          },
+          {
+            "step": 345,
+            "main_ce_tokens": 5515495,
+            "step_seconds": 9.07151315920055,
+            "data_preparation_seconds": 0.002380361780524254,
+            "optimizer_seconds": 0.5333670228719711,
+            "tokens_per_second": 1742.928629714228,
+            "input_batch_actual": 16617,
+            "micro_batches": 1,
+            "microbatch_samples": [
+              32
+            ]
+          },
+          {
+            "step": 350,
+            "main_ce_tokens": 5596668,
+            "step_seconds": 8.483869476243854,
+            "data_preparation_seconds": 0.0020935293287038803,
+            "optimizer_seconds": 0.5362680573016405,
+            "tokens_per_second": 1893.4756180516076,
+            "input_batch_actual": 16808,
+            "micro_batches": 1,
+            "microbatch_samples": [
+              31
+            ]
+          },
+          {
+            "step": 355,
+            "main_ce_tokens": 5676991,
+            "step_seconds": 12.342352211475372,
+            "data_preparation_seconds": 0.002477511763572693,
+            "optimizer_seconds": 0.5384484324604273,
+            "tokens_per_second": 1308.0974941704462,
+            "input_batch_actual": 16923,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              32,
+              1
+            ]
+          },
+          {
+            "step": 360,
+            "main_ce_tokens": 5756383,
+            "step_seconds": 12.330357320606709,
+            "data_preparation_seconds": 0.0020469408482313156,
+            "optimizer_seconds": 0.5381222423166037,
+            "tokens_per_second": 1335.9710162227038,
+            "input_batch_actual": 17263,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              32,
+              4
+            ]
+          },
+          {
+            "step": 365,
+            "main_ce_tokens": 5836442,
+            "step_seconds": 12.371253747493029,
+            "data_preparation_seconds": 0.0018983911722898483,
+            "optimizer_seconds": 0.5367693621665239,
+            "tokens_per_second": 1270.2027070768281,
+            "input_batch_actual": 16510,
+            "micro_batches": 2,
+            "microbatch_samples": [
+              32,
+              2
+            ]
+          }
+        ],
+        "seed": 42,
+        "global_input_tokens": 16384,
+        "microbatch_ceiling": 32,
+        "data_manifest_sha256": "c475eaa3fb9ffe1f0a3b855def363e8cf99d0239ec674ef83b1f83b17ef182f3",
+        "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+        "model_config_sha256": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
+        "token_denominator": "main cross-entropy targets"
+      },
+      "minifrontier1": {
+        "phase": "P0",
+        "latest_step": 671,
+        "main_ce_tokens": 9193740,
+        "observed_log_rows": 20,
+        "step_range": [
+          652,
+          671
+        ],
+        "sampled_ce_tps": 1806.5186242839768,
+        "mean_data_wait_seconds": 0.034962713811546565,
+        "source_commit": "9b1d8fd6f26ab125d3e8d64a0e830a2db3db72fa",
+        "updates": [
+          {
+            "step": 652,
+            "main_ce_tokens": 8932911,
+            "step_seconds": 7.845787134021521,
+            "data_preparation_seconds": 0.03223180025815964,
+            "ce_per_second": 1747.6895263371275,
+            "input_batch_actual": 16705,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              2
+            ]
+          },
+          {
+            "step": 653,
+            "main_ce_tokens": 8946272,
+            "step_seconds": 8.030856624245644,
+            "data_preparation_seconds": 0.03848003223538399,
+            "ce_per_second": 1663.7079486218606,
+            "input_batch_actual": 16572,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              4
+            ]
+          },
+          {
+            "step": 654,
+            "main_ce_tokens": 8960208,
+            "step_seconds": 7.860980104655027,
+            "data_preparation_seconds": 0.03419770672917366,
+            "ce_per_second": 1772.8069292208913,
+            "input_batch_actual": 16803,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              4
+            ]
+          },
+          {
+            "step": 655,
+            "main_ce_tokens": 8973716,
+            "step_seconds": 7.845965005457401,
+            "data_preparation_seconds": 0.031146276742219925,
+            "ce_per_second": 1721.6492796748735,
+            "input_batch_actual": 16441,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              3
+            ]
+          },
+          {
+            "step": 656,
+            "main_ce_tokens": 8987441,
+            "step_seconds": 6.995990177616477,
+            "data_preparation_seconds": 0.036133769899606705,
+            "ce_per_second": 1961.838088897387,
+            "input_batch_actual": 16490,
+            "micro_batches": 5,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8
+            ]
+          },
+          {
+            "step": 657,
+            "main_ce_tokens": 9001459,
+            "step_seconds": 7.790320731699467,
+            "data_preparation_seconds": 0.029666800051927567,
+            "ce_per_second": 1799.4124353519344,
+            "input_batch_actual": 16819,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ]
+          },
+          {
+            "step": 658,
+            "main_ce_tokens": 9015116,
+            "step_seconds": 8.055889204144478,
+            "data_preparation_seconds": 0.03576976619660854,
+            "ce_per_second": 1695.2815082131397,
+            "input_batch_actual": 16457,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              2
+            ]
+          },
+          {
+            "step": 659,
+            "main_ce_tokens": 9028759,
+            "step_seconds": 7.812274867668748,
+            "data_preparation_seconds": 0.036308810114860535,
+            "ce_per_second": 1746.3543245849967,
+            "input_batch_actual": 16491,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              4
+            ]
+          },
+          {
+            "step": 660,
+            "main_ce_tokens": 9042093,
+            "step_seconds": 7.621837479993701,
+            "data_preparation_seconds": 0.031717121601104736,
+            "ce_per_second": 1749.4469063398371,
+            "input_batch_actual": 16410,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              4
+            ]
+          },
+          {
+            "step": 661,
+            "main_ce_tokens": 9055647,
+            "step_seconds": 7.696587527170777,
+            "data_preparation_seconds": 0.02884744293987751,
+            "ce_per_second": 1761.040195041136,
+            "input_batch_actual": 16520,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              2
+            ]
+          },
+          {
+            "step": 662,
+            "main_ce_tokens": 9069770,
+            "step_seconds": 7.990672139450908,
+            "data_preparation_seconds": 0.0370380412787199,
+            "ce_per_second": 1767.4357993332067,
+            "input_batch_actual": 16876,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              5
+            ]
+          },
+          {
+            "step": 663,
+            "main_ce_tokens": 9083218,
+            "step_seconds": 7.762068931013346,
+            "data_preparation_seconds": 0.03630878962576389,
+            "ce_per_second": 1732.5277731390038,
+            "input_batch_actual": 16392,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              3
+            ]
+          },
+          {
+            "step": 664,
+            "main_ce_tokens": 9097390,
+            "step_seconds": 6.239841599017382,
+            "data_preparation_seconds": 0.035622021183371544,
+            "ce_per_second": 2271.211500341889,
+            "input_batch_actual": 16701,
+            "micro_batches": 3,
+            "microbatch_samples": [
+              8,
+              8,
+              6
+            ]
+          },
+          {
+            "step": 665,
+            "main_ce_tokens": 9110740,
+            "step_seconds": 8.02016125805676,
+            "data_preparation_seconds": 0.04354127123951912,
+            "ce_per_second": 1664.5550594869997,
+            "input_batch_actual": 16457,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              3
+            ]
+          },
+          {
+            "step": 666,
+            "main_ce_tokens": 9124455,
+            "step_seconds": 7.6756205055862665,
+            "data_preparation_seconds": 0.03877650387585163,
+            "ce_per_second": 1786.8262233676498,
+            "input_batch_actual": 16451,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              1
+            ]
+          },
+          {
+            "step": 667,
+            "main_ce_tokens": 9138300,
+            "step_seconds": 7.735821783542633,
+            "data_preparation_seconds": 0.038370830938220024,
+            "ce_per_second": 1789.725821948765,
+            "input_batch_actual": 16775,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              1
+            ]
+          },
+          {
+            "step": 668,
+            "main_ce_tokens": 9152120,
+            "step_seconds": 6.84044804610312,
+            "data_preparation_seconds": 0.032444849610328674,
+            "ce_per_second": 2020.335496572188,
+            "input_batch_actual": 16602,
+            "micro_batches": 5,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              7
+            ]
+          },
+          {
+            "step": 669,
+            "main_ce_tokens": 9166490,
+            "step_seconds": 6.039982415735722,
+            "data_preparation_seconds": 0.04057161696255207,
+            "ce_per_second": 2379.1459992602663,
+            "input_batch_actual": 17022,
+            "micro_batches": 3,
+            "microbatch_samples": [
+              8,
+              8,
+              5
+            ]
+          },
+          {
+            "step": 670,
+            "main_ce_tokens": 9179923,
+            "step_seconds": 8.260757898911834,
+            "data_preparation_seconds": 0.028013627976179123,
+            "ce_per_second": 1626.1219811041176,
+            "input_batch_actual": 16463,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              2
+            ]
+          },
+          {
+            "step": 671,
+            "main_ce_tokens": 9193740,
+            "step_seconds": 7.850552631542087,
+            "data_preparation_seconds": 0.034067196771502495,
+            "ce_per_second": 1760.0034861859046,
+            "input_batch_actual": 16882,
+            "micro_batches": 6,
+            "microbatch_samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              2
+            ]
+          }
+        ],
+        "seed": 42,
+        "global_input_tokens": 16384,
+        "microbatch_ceiling": 8,
+        "data_manifest_sha256": "2a024d4fedd3e11568bdc9d4bf047e061f1dc463042f3cfdba4c23b65c3b72d2",
+        "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
+        "model_config_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8",
+        "token_denominator": "main cross-entropy targets"
+      }
+    },
+    "kimi_recovery": {
+      "first_protected_exit_step": 401,
+      "second_protected_exit_step": 402,
+      "all_completed_updates_retained": true,
+      "allocator_threshold_alone_sufficient": false,
+      "resolution": "Release unused CUDA cache after validation and, if necessary, before enforcing the unchanged 2 GiB free-device floor. Preserve peak counters and all computation/batch settings."
+    }
+  }
 }
