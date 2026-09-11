@@ -388,15 +388,18 @@ def _create_group_exclusion_view(
             raise ValueError("media exclusion source database changed")
         prior_holdouts = holdout_hash(db)
         expected_holdouts = holdout_hash(db, promotions)
+        checked_groups = set(selected) | set(promotions) | set(test_anchors)
+        actual_membership: dict[str, list[tuple[str, int]]] = {}
+        # A partition view need not have a group index. Count all groups once;
+        # one filtered query per conflict would rescan the corpus repeatedly.
+        for group, split, count in db.execute(
+            "SELECT group_root,split,COUNT(*) FROM samples GROUP BY group_root,split"
+        ):
+            if group in checked_groups:
+                actual_membership.setdefault(group, []).append((split, count))
         for expected, changed in (("train", selected), ("val", promotions), ("test", test_anchors)):
             for group, count in changed.items():
-                actual = list(
-                    db.execute(
-                        "SELECT split,COUNT(*) FROM samples WHERE group_root=? GROUP BY split",
-                        (group,),
-                    )
-                )
-                if actual != [(expected, count)]:
+                if actual_membership.get(group) != [(expected, count)]:
                     raise ValueError("conflicting group membership differs from the audit")
     exclusions = sorted(set(overrides.get("excluded_groups", [])) | set(selected))
     test_groups = sorted(set(overrides.get("test_groups", [])) | set(promotions))
