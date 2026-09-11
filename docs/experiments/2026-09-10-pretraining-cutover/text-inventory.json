@@ -1529,8 +1529,8 @@
     "formal_admission": false
   },
   "shared_text_near_duplicate_blocker": {
-    "observed_unix": 1789096052.08094,
-    "status": "text_conflicts_resolved_pending_derivative_and_encoding_refresh",
+    "observed_unix": 1789097547.646442,
+    "status": "corrected_views_pending_complete_encoding_and_media_checks",
     "formal_admission": false,
     "main_budget_eligible": false,
     "text_conflict_report_sha256": "33ef671beda2b54395642d882123d1cd6b68d640d6a8de7e25bdd3352f90b074",
@@ -2189,9 +2189,158 @@
         }
       },
       "output": "data/pretraining-tokenizers-v2",
-      "observed_unix": 1789096052.096328,
+      "observed_unix": 1789097547.6619434,
       "mapping_frozen": false,
       "formal_admission": false
+    },
+    "validation_delta_audit": {
+      "state": "isolated_validation_groups_selected",
+      "source_commit": "29d3f0de76f87408dd4c8db3ce8d83401ba03580",
+      "source_archive_sha256": "8f5e4f11f5481f3b4f62c194606ad0050cddf88d9b2806bd8972f8b3436e368f",
+      "driver_sha256": "0a0760952c5951e7aed2d6698cbcb387d00fcda6a91c0b944517f4316b563a29",
+      "arguments_sha256": "6e972d09ff97172a2e65ccba7c860d9bb32b74d3af2a72b0f1d3f9b05daaf246",
+      "started_unix": 1789096605.4051604,
+      "completed_unix": 1789097222.1121569,
+      "corpus_manifest_sha256": "c97873bb89ffd86b35d64d6cfe3cea8a639d81ec3b00a3735d2409ee39bb46f7",
+      "tokenizer_preparation_sha256": "bb5862ea8690eb9ae53c2d63335d04ac6c84ffdeef67c31f9e06ca65d3343319",
+      "candidate_documents": 64,
+      "candidate_ce": 379138,
+      "scanned_records": {
+        "train": 396884,
+        "test": 4432,
+        "val": 3695
+      },
+      "candidates": 23570,
+      "comparisons": 104,
+      "matched_pairs": 1,
+      "rejected_candidates": 1,
+      "selected_groups": 42,
+      "selection_sha256": "f4f8474b417767f6e51eb43f71a3f7dde757a81f8a615d1a39a38b812ec5fea4",
+      "before_validation_ce": {
+        "source_ce": 4870281,
+        "mf1_ce": 5213309
+      },
+      "after_validation_ce": {
+        "source_ce": 5104105,
+        "mf1_ce": 5459526
+      },
+      "peak_resident_bytes": 786698240,
+      "budget": {
+        "candidate_ce": 400000,
+        "max_candidate_documents": 64,
+        "target_validation_ce": 5100000,
+        "max_candidates": 20000000,
+        "max_comparisons": 5000000,
+        "max_matches": 10000,
+        "max_virtual_gib": 16,
+        "max_resident_gib": 8,
+        "max_output_mib": 16,
+        "minimum_free_gib": 80,
+        "wall_seconds": 1200,
+        "training_tokens": 0,
+        "gpu_hours": 0
+      }
+    },
+    "current_effective_text_partition": {
+      "state": "fixed_phase_end_validation_restored_pending_encoding",
+      "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
+      "source_archive_sha256": "57d97379b81b70dfd5ff6285431b41af02f0688f6aad41b771bc55bdf8ea2db8",
+      "driver_sha256": "14b5acedf1d7df7ac1eebe99246016482de5e3e6783a39dcdd3b3a6db079901e",
+      "arguments_sha256": "a397285e31f8782bccde393dde3af3d1e91edf0248bed2648963bc1dc416f750",
+      "started_unix": 1789097236.318156,
+      "completed_unix": 1789097319.0791519,
+      "manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+      "source_audit_sha256": "ff38d11c0e34b27ddc07224259172cd326bf85c47fee0cd37fdc07af430a4bd9",
+      "delta_selection_sha256": "f4f8474b417767f6e51eb43f71a3f7dde757a81f8a615d1a39a38b812ec5fea4",
+      "reservation_sha256": "3b7c0b5fdafdd65d2241a8c27a50773acc06eba051067da3bc8be5d48e52ad58",
+      "splits": {
+        "test": 4432,
+        "train": 396842,
+        "val": 3737
+      },
+      "new_reserved_groups": 42,
+      "new_reserved_records": 42,
+      "before_validation_ce": {
+        "source_ce": 4870281,
+        "mf1_ce": 5213309
+      },
+      "after_validation_ce": {
+        "source_ce": 5104105,
+        "mf1_ce": 5459526
+      },
+      "tokenizer_training_members_unchanged": true,
+      "tokenizer_training_byte_sha256": "f778da290a5f671699de6016008f818831c1dddb54f832a77a186de668a470d9",
+      "output_bytes": 9945542,
+      "holdout_membership_sha256": "1020719c1f46d5a89cc097a03aeb927c37be25a3bb23609cb018dc674ed6c605",
+      "prior_holdout_membership_sha256": "97c33a432bff73c91cb0f95189ced87f9583e315112eea9a57ff508169d1d19c",
+      "output": "data/pretraining-text-partition-v5"
+    },
+    "encoding_refresh": {
+      "source": {
+        "state": "encoding_corrected_partition",
+        "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
+        "source_archive_sha256": "57d97379b81b70dfd5ff6285431b41af02f0688f6aad41b771bc55bdf8ea2db8",
+        "driver_sha256": "7758168c5ffd1989311e352c9ca4c26d4d8f7f5199e3f05f020e9d4d929f320a",
+        "arguments_sha256": "ab8a27e244227303b75516517dc2c834e5281c2c4290d8e45473fd0ec2813e37",
+        "started_unix": 1789097365.9062796,
+        "corpus_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+        "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+        "expected_validation_ce": 5104105,
+        "budget": {
+          "max_output_gib": 11,
+          "minimum_free_gib": 80,
+          "wall_seconds": 7200,
+          "max_virtual_gib": 32,
+          "rayon_threads": 4,
+          "training_tokens": 0,
+          "gpu_hours": 0
+        },
+        "output": "data/pretraining-text-64k-v4",
+        "formal_admission": false,
+        "observed_unix": 1789097547.662199,
+        "process_identity_verified": true,
+        "partial_output_bytes": 1043922568,
+        "partial_output_is_usable": false
+      },
+      "mf1": {
+        "state": "encoding_corrected_partition",
+        "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
+        "source_archive_sha256": "57d97379b81b70dfd5ff6285431b41af02f0688f6aad41b771bc55bdf8ea2db8",
+        "driver_sha256": "7758168c5ffd1989311e352c9ca4c26d4d8f7f5199e3f05f020e9d4d929f320a",
+        "arguments_sha256": "b6fed637c057fc41effa3d3528c67c9606454c571e5370512457c6d9064c93c2",
+        "started_unix": 1789097365.9240634,
+        "corpus_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+        "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
+        "expected_validation_ce": 5459526,
+        "budget": {
+          "max_output_gib": 3,
+          "minimum_free_gib": 80,
+          "wall_seconds": 7200,
+          "max_virtual_gib": 32,
+          "rayon_threads": 4,
+          "training_tokens": 0,
+          "gpu_hours": 0
+        },
+        "output": "data/pretraining-mf1-text-v3",
+        "formal_admission": false,
+        "observed_unix": 1789097547.6625664,
+        "process_identity_verified": true,
+        "partial_output_bytes": 207308495,
+        "partial_output_is_usable": false
+      }
+    },
+    "latest_validation": {
+      "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
+      "full_cpu_passed": 537,
+      "skipped": 1,
+      "cuda_deselected": 54,
+      "full_cpu_seconds": 184.03,
+      "full_cpu_log_sha256": "bbe9bac914d2b1481f1df71e7f67ef06aec25bf0fc22a342712fc049ede15d07",
+      "targeted_partition_tests_passed": 46,
+      "registry_tests_passed": 17,
+      "mypy_source_files": 187,
+      "ruff": "passed",
+      "formatted_files": 335
     }
   }
 }
