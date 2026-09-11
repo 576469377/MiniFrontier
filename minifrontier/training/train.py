@@ -22,6 +22,7 @@ from minifrontier.data import StageDataset, sha256
 from minifrontier.models.factory import build_model, configure_posttraining
 from minifrontier.training.batching import input_target, microbatch_count, parse_schedule
 from minifrontier.training.budgets import TokenLedger, scaled_ce, window_counts
+from minifrontier.training.metrics import training_scalars
 from minifrontier.training.posttrain import dpo_loss
 from minifrontier.training.runtime import (
     BatchCursor,
@@ -818,9 +819,8 @@ def run(args, rank, world, device):
             with (output / "metrics.jsonl").open("a") as f:
                 f.write(json.dumps(value) + "\n")
             if writer:
-                for key, v in value.items():
-                    if key not in {"step", "event"} and isinstance(v, (int, float)):
-                        writer.add_scalar(f"{value['event']}/{key}", v, value["step"])
+                for tag, scalar in training_scalars(value).items():
+                    writer.add_scalar(tag, scalar, value["step"])
                 writer.flush()
 
     best_path = output / "best-validation.json"

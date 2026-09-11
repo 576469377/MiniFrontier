@@ -47,3 +47,13 @@
 启用预取后，`data_preparation_seconds` 表示前台等待数据及尚未前移的元数据准备，不再包含与 GPU 计算重叠的全部后台准备时间。数值下降不等于图片预处理本身按相同比例变快。[数值档案](training-infrastructure.json)保留逐条记录、seed、配置/数据/tokenizer 校验值与实际源码版本。
 
 Kimi 两次在恢复后的第 401、402 步触发 2 GiB 空闲显存保护，完成的更新均先保存了检查点。仅设置分配器自动回收阈值没有解决；后续版本在验证结束以及必要的预留检查前显式释放闲置 CUDA 缓存，恢复后已继续更新。该操作不会释放仍由张量占用的显存，见 [PyTorch 内存管理说明](https://docs.pytorch.org/docs/2.14/notes/cuda.html#memory-management)。microbatch、全局 batch、计算公式与 2 GiB 预留均保持原值，峰值计数也未被重置来掩盖使用量。Qwen/MF1 使用 `9b1d8fd`，Kimi 使用包含此修正的 `4ba8955`。
+
+## TensorBoard 展示
+
+四个模型共用 `train / eval / perf` 分类。`train` 展示训练损失、梯度、学习率与进度；`eval` 保留总体验证损失、分域损失和对应 token 分母，阶段末验证使用 `phase_end_` 前缀；`perf` 展示吞吐、步耗时、数据等待、优化器耗时和显存。各训练器已有的吞吐名称保留，因为不同训练阶段的计数分母可能不同；显存统一使用 GiB。
+
+启动、QK 裁剪和缓存回收等运行事件完整保留在 `metrics.jsonl`，不再将这些事件附带的累计 token 数重复画成学习曲线。旧版 Kimi 的 `qk_clip/main_ce_tokens` 只是累计计数，不是 QK 裁剪幅度；逐层诊断一直保存在 JSONL 的 `layers` 中。预训练验证中的 reward 占位值、布尔状态也不再生成图表。
+
+正在运行的冻结训练器保持原样。使用 [展示同步脚本](../../scripts/sync_mf1_tensorboard.py) 从原日志构建独立 event 目录，并保留原 step 和 wall time，再切换 TensorBoard 展示目录。脚本名称为兼容已有服务保留，现支持全部训练器；`--watch --event-driven` 在 Linux 上由文件写入事件唤醒，`--interval` 控制更新合并间隔。源日志目录需已存在，每次启动使用新的展示目录。源日志被替换或截断时明确报错，须重建展示，避免悄悄拼接恢复前后的历史。
+
+5 项 CPU 展示检查通过，覆盖分类、原生与 MF1 分域指标、原始时间戳、半行写入、增量同步及展示链接保护。本次只更换展示服务，正式训练进程未重启。
