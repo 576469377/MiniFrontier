@@ -2585,5 +2585,33 @@
       "reason": "Metadata checker used text_mix instead of the actual text_ce_mix key; corrected before any dataset selection or training.",
       "report_sha256": "1da59aada1c6410bd6ad4575e75aed9895e675c4c01bc2f05239d8f023886e1a"
     }
+  },
+  "deepseek_tokenizer_evidence_carry_forward": {
+    "kind": "current_text_tokenizer_evidence_carry_forward",
+    "status": "mechanical_evidence_bound_pending_quality_admission",
+    "selected": 65536,
+    "frozen": false,
+    "formal_admission": false,
+    "canonical_manifest_sha256": "541867bed1600423a14beedd0335678f356c78b3b5754816f6ce63de107ff11b",
+    "encoded_manifest_sha256": "f972b1fe1620befc1a7a90f6fb55f370a03672a4f427bb71639acaae373e4f95",
+    "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+    "training_bytes": 67088944,
+    "training_byte_sha256": "f778da290a5f671699de6016008f818831c1dddb54f832a77a186de668a470d9",
+    "current_review_samples_sha256": "094afb2d7e9e5d268ffbf41df0b4e584eab3be1c1650ec6dc274d4e8efd3a184",
+    "current_corpus_to_preparation_binding": {
+      "tokenizer_preparation_sha256": "bb5862ea8690eb9ae53c2d63335d04ac6c84ffdeef67c31f9e06ca65d3343319",
+      "preparation_source_manifest_sha256": "c97873bb89ffd86b35d64d6cfe3cea8a639d81ec3b00a3735d2409ee39bb46f7",
+      "current_source_audit_sha256": "ff38d11c0e34b27ddc07224259172cd326bf85c47fee0cd37fdc07af430a4bd9",
+      "bound_application_record_sha256": "4a41a1d7593f62daa04073ce7c2a824bcafa60e68a1d435712e6a64911391da7",
+      "training_members_and_bytes_unchanged": true,
+      "training_repeated": false
+    },
+    "human_source_quality_review_completed": false,
+    "limitations": [
+      "This carries forward prior completed tokenizer and full-corpus encoding checks after verifying current artifact bindings. It does not grant quality admission or freeze the mapping.",
+      "Vocab capacity remains the prescribed 64K; no new vocabulary-size search or tokenizer training occurred."
+    ],
+    "created_unix": 1789116068.3325372,
+    "report_sha256": "18c0cdc87d58bff64188fccbc7e8dc41c45b3cbd6b73b4ec9b3f856e1cdd19e2"
   }
 }
