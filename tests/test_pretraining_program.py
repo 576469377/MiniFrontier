@@ -347,3 +347,74 @@ def test_formal_recipe_requires_actual_bindings_and_matching_profile(corpus, tmp
         strategy_gate.validate_arguments(args)
     args.pretraining_eval = True
     strategy_gate.validate_arguments(args)
+    recipe["bindings"][phases[1]["id"]] = dict(data_sha256="new future inventory")
+    path.write_text(json.dumps(document))
+    # A later data assignment must not invalidate the measured first-phase profile.
+    strategy_gate.validate_arguments(args)
+    recipe["bindings"][phases[0]["id"]]["data_sha256"] = "different current inventory"
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="bindings differ"):
+        PretrainingProgram(args)
+
+
+@pytest.mark.parametrize("name", ["minikimik3", "miniqwen4", "minideepseekv4"])
+def test_future_data_binding_preserves_real_resume_and_phase_transition(name, corpus, tmp_path):
+    config = config_for(name, tmp_path)
+    program, phases = program_file(tmp_path, name, config, with_indexer=False)
+    document = json.loads(program.read_text())
+    recipe = document["execution_program"]["models"][name]["training_recipe"]
+    recipe["bindings"] = {phases[0]["id"]: dict(data_sha256="first phase fixed")}
+    program.write_text(json.dumps(document))
+    reference, interrupted, second = [tmp_path / p for p in ("reference", "interrupted", "second")]
+    train.main(phase_args(name, config, corpus, reference, program, phases[0]))
+    args = phase_args(name, config, corpus, interrupted, program, phases[0])
+    train.main([*args, "--stop-after-updates", "1"])
+    recipe["bindings"][phases[1]["id"]] = dict(data_sha256="later data now available")
+    program.write_text(json.dumps(document))
+    train.main([*args, "--resume", str(interrupted / "checkpoint.pt")])
+    actual, expected = load(interrupted), load(reference)
+    for key in ("model", "optimizer", "rng", "token_ledger", "run_spec", "pretraining_state"):
+        assert_tree_equal(actual[key], expected[key])
+    train.main(
+        phase_args(name, config, corpus, second, program, phases[1], interrupted / "checkpoint.pt")
+    )
+    assert load(second)["pretraining_state"]["main_ce_tokens"] == 508
+    # Future binding freedom must not permit rewriting a completed phase.
+    recipe["bindings"][phases[0]["id"]]["data_sha256"] = "changed previous data"
+    program.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="predecessor/recipe"):
+        train.main(
+            phase_args(
+                name,
+                config,
+                corpus,
+                tmp_path / "bad",
+                program,
+                phases[1],
+                interrupted / "checkpoint.pt",
+            )
+        )
+    with pytest.raises(ValueError, match="same pretraining program"):
+        train.main([*args, "--resume", str(interrupted / "checkpoint.pt")])
+
+
+def test_binding_projection_keeps_all_schedules_and_current_data_strict(corpus, tmp_path):
+    name = "minideepseekv4"
+    config = config_for(name, tmp_path)
+    path, phases = program_file(tmp_path, name, config, with_indexer=False)
+    args = train.parser().parse_args(
+        phase_args(name, config, corpus, tmp_path / "out", path, phases[0])
+    )
+    original = PretrainingProgram(args).binding
+    document = json.loads(path.read_text())
+    recipe = document["execution_program"]["models"][name]["training_recipe"]
+    recipe["bindings"] = {phases[1]["id"]: {"data_sha256": "future"}}
+    path.write_text(json.dumps(document))
+    assert PretrainingProgram(args).binding == original
+    recipe["phases"][1]["schedule"]["final_factor"] = 0.2
+    path.write_text(json.dumps(document))
+    assert PretrainingProgram(args).binding != original
+    recipe["bindings"]["typo"] = {}
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="unknown pretraining phase"):
+        PretrainingProgram(args)

@@ -115,14 +115,10 @@ class PretrainingProgram:
             raise ValueError("unknown pretraining program phase")
         self.phase: dict[str, Any] = selected
         self.number = self.phases.index(self.phase)
-        self.binding = dict(
-            program_id=document["id"],
-            model=args.model,
-            recipe=self.recipe,
-            recipe_sha256=_digest(self.recipe),
-            phase=self.phase["id"],
-            execution_kind=args.run_kind,
-        )
+        self.program_id, self.model, self.execution_kind = document["id"], args.model, args.run_kind
+        if self.recipe.get("bindings", {}).keys() - {p["id"] for p in self.phases}:
+            raise ValueError("data binding refers to an unknown pretraining phase")
+        self.binding = self.binding_through(self.number)
         self.main_base = 0
         self.dormant = {}
         self.lineage = []
@@ -194,6 +190,28 @@ class PretrainingProgram:
                     "formal data/config/tokenizer/microbatch bindings differ from recipe"
                 )
 
+    def binding_through(self, number):
+        """Keep the full schedule fixed while later phases acquire their data.
+
+        A checkpoint binds every data/config/tokenizer/microbatch assignment up
+        to its own phase. Future assignments cannot invalidate it or qualify the
+        next phase; that phase must independently pass its formal bindings gate.
+        """
+        recipe = dict(self.recipe)
+        through = {p["id"] for p in self.phases[: number + 1]}
+        recipe["bindings"] = {
+            key: value for key, value in recipe.get("bindings", {}).items() if key in through
+        }
+        return dict(
+            program_id=self.program_id,
+            model=self.model,
+            recipe=recipe,
+            recipe_sha256=_digest(recipe),
+            binding_scope="data_through_checkpoint_phase_v1",
+            phase=self.phases[number]["id"],
+            execution_kind=self.execution_kind,
+        )
+
     def validate_parent(self, args, saved):
         if args.resume:
             if not saved or saved.get("run_spec", {}).get("pretraining_program") != self.binding:
@@ -208,7 +226,7 @@ class PretrainingProgram:
         if not saved or "pretraining_state" not in saved:
             raise ValueError("phase transition requires a full preceding program checkpoint")
         previous = saved["run_spec"].get("pretraining_program", {})
-        expected = dict(self.binding, phase=self.phases[self.number - 1]["id"])
+        expected = self.binding_through(self.number - 1)
         if previous != expected or not saved["pretraining_state"].get("phase_complete"):
             raise ValueError("program predecessor/recipe/kind is different or incomplete")
         prior_phase = self.phases[self.number - 1]
