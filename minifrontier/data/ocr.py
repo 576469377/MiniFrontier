@@ -27,6 +27,7 @@ from minifrontier.data.partitions import open_corpus
 from minifrontier.storage import GIB, require_space, reserve_write
 
 SOURCE = "MiniFrontier/source-grounded-ocr"
+SOURCE_TASKS = ("zh_edu", "en_edu", "verified_math_science", "code", "dialogue")
 LAYOUTS = {"train": ("plain", "ruled", "note"), "val": ("border",), "test": ("side_rule",)}
 QUESTIONS = {
     "zh": "请逐行转写图片中的全部文字，保留标点和换行。",  # noqa: RUF001
@@ -190,9 +191,20 @@ def generate_ocr(
     max_gib=4,
     metadata_gib=2,
     seed=20260912,
+    source_tasks=("zh_edu", "en_edu"),
+    max_records=None,
 ):
     """Build one disjoint source-ID slice; never assign a text-training source to OCR holdout."""
     source, root = Path(corpus).resolve(), Path(output).resolve()
+    if (
+        not isinstance(source_tasks, (tuple, list))
+        or not source_tasks
+        or any(task not in SOURCE_TASKS for task in source_tasks)
+        or len(set(source_tasks)) != len(source_tasks)
+    ):
+        raise ValueError("OCR source tasks must be an explicit unique selection of supported tasks")
+    if max_records is not None and (type(max_records) is not int or max_records <= 0):
+        raise ValueError("OCR max_records must be a positive integer or None")
     if (
         root.exists()
         or not (0 < metadata_gib < max_gib)
@@ -240,6 +252,8 @@ def generate_ocr(
         font_assets=font_binding,
         reference_tokenizer_sha256=sha256(reference_tokenizer),
         source_id_range=[id_start, id_stop],
+        source_tasks=list(source_tasks),
+        max_records=max_records,
         max_gib=max_gib,
         metadata_gib=metadata_gib,
         media_bytes=0,
@@ -275,11 +289,21 @@ def generate_ocr(
             # Seal test first. Similar page layouts are not printed-text identities;
             # the cross-corpus text-aware audit resolves visual candidates later.
             for split in ("test", "val", "train"):
-                query = "SELECT payload,group_root FROM samples WHERE stage='pretrain' AND task IN ('zh_edu','en_edu') AND split=? AND id>=? AND id<? ORDER BY id"
-                for payload, group in db.execute(query, (split, id_start, id_stop)):
+                if max_records is not None and counts["accepted"] >= max_records:
+                    break
+                placeholders = ",".join("?" for _ in source_tasks)
+                query = f"SELECT payload,group_root FROM samples WHERE stage='pretrain' AND task IN ({placeholders}) AND split=? AND id>=? AND id<? ORDER BY id"
+                for payload, group in db.execute(query, (*source_tasks, split, id_start, id_stop)):
                     original = json.loads(payload)
-                    lang = "zh" if original["task"] == "zh_edu" else "en"
+                    # Code sources use lang="code"; use the English transcription
+                    # instruction while retaining their original language below.
+                    lang = {"zh_edu": "zh", "en_edu": "en", "code": "en"}.get(
+                        original["task"], original.get("lang")
+                    )
                     counts["examined"] += 1
+                    if lang not in QUESTIONS:
+                        counts["unsupported_source_language"] += 1
+                        continue
                     try:
                         image, answer, layout = renderer.render(
                             original["text"], original["sample_id"], split, lang, seed
@@ -319,7 +343,9 @@ def generate_ocr(
                             "content_hash",
                         )
                     }
-                    origin.update(split=split, group_root=group)
+                    origin.update(
+                        split=split, group_root=group, task=original["task"], lang=original["lang"]
+                    )
                     record = dict(
                         source=SOURCE,
                         revision=sha256(__file__),
@@ -372,6 +398,8 @@ def generate_ocr(
                         )
                     if counts["accepted"] % 250 == 0:
                         progress()
+                    if max_records is not None and counts["accepted"] >= max_records:
+                        break
         manifest = builder.finalize(split_locks=locks)
         mismatches = builder.db.execute(
             "SELECT count(*) FROM samples WHERE split!=json_extract(payload,'$.text_origin.split')"
@@ -384,6 +412,11 @@ def generate_ocr(
             split_origin_mismatches=0,
             original_text_reused_across_modalities=True,
             independent_text_supply_added=0,
+            stop_reason=(
+                "accepted_record_limit"
+                if max_records is not None and counts["accepted"] >= max_records
+                else "source_selection_exhausted"
+            ),
             completed_unix=time.time(),
         )
         (root / "review-samples.jsonl").write_text(
@@ -421,6 +454,10 @@ def main():
     parser.add_argument("--max-gib", type=float, default=4)
     parser.add_argument("--metadata-gib", type=float, default=2)
     parser.add_argument("--seed", type=int, default=20260912)
+    parser.add_argument(
+        "--source-tasks", nargs="+", choices=SOURCE_TASKS, default=["zh_edu", "en_edu"]
+    )
+    parser.add_argument("--max-records", type=int)
     print(json.dumps(generate_ocr(**vars(parser.parse_args())), ensure_ascii=False))
 
 

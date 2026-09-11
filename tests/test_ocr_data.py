@@ -221,3 +221,96 @@ def test_source_partition_and_pixels_survive_generation_and_actual_mf1_encoding(
         assemble_components([text, encoded], tmp_path / "leaking-joint", config)
     with pytest.raises(ValueError, match="new OCR shard"):
         generate_ocr(root, fonts, token, out, id_stop="g")
+
+
+@pytest.mark.parametrize("tasks", [[], ["code", "code"], ["unknown"], "code"])
+def test_ocr_rejects_ambiguous_source_task_selection(tmp_path, tasks):
+    with pytest.raises(ValueError, match="source tasks"):
+        generate_ocr("missing", "missing", "missing", tmp_path / "ocr", source_tasks=tasks)
+    assert not (tmp_path / "ocr").exists()
+
+
+@pytest.mark.parametrize("limit", [0, -1, True, 1.5])
+def test_ocr_rejects_invalid_record_budget_before_writing(tmp_path, limit):
+    with pytest.raises(ValueError, match="max_records"):
+        generate_ocr("missing", "missing", "missing", tmp_path / "ocr", max_records=limit)
+    assert not (tmp_path / "ocr").exists()
+
+
+def test_ocr_can_use_new_source_tasks_with_a_total_record_bound(fonts, tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "minifrontier.storage.shutil.disk_usage", lambda _: SimpleNamespace(free=900 * 1024**3)
+    )
+    root = tmp_path / "text"
+    builder = CorpusBuilder(root)
+    tasks = ("en_edu", "code", "verified_math_science", "dialogue")
+    origins = {}
+    for i in range(40):
+        rng = random.Random(i + 100)
+        text = " ".join("".join(rng.choices("abcdefghijklmnopqrstuvwxyz", k=5)) for _ in range(120))
+        assert builder.add(
+            dict(
+                source="fixture",
+                revision="pinned",
+                item_id=str(i),
+                group_id=str(i),
+                license="fixture",
+                lang="code" if tasks[i % 4] == "code" else "en",
+                task=tasks[i % 4],
+                stage="pretrain",
+                text=text,
+            )
+        )
+        origins[str(i)] = text
+    builder.finalize(
+        split_locks={f"source-group:fixture:{i}": "test" if i < 4 else "val" for i in range(8)}
+    )
+    builder.db.close()
+    (root / "source-audit.json").write_text(
+        json.dumps(
+            dict(status="candidate_slice_complete_pending_admission", formal_admission=False)
+        )
+    )
+    token = tmp_path / "tokenizer.json"
+    train_tokenizer(root, token, 400, special_tokens=SPECIAL_TOKENS)
+    out = tmp_path / "ocr"
+    audit = generate_ocr(
+        root,
+        fonts,
+        token,
+        out,
+        id_stop="g",
+        source_tasks=["code", "verified_math_science"],
+        max_records=10,
+        max_gib=0.04,
+        metadata_gib=0.02,
+    )
+    assert audit["counts"]["accepted"] == 10
+    assert audit["max_records"] == 10 and audit["stop_reason"] == "accepted_record_limit"
+    assert audit["source_tasks"] == ["code", "verified_math_science"]
+    assert audit["independent_text_supply_added"] == audit["split_origin_mismatches"] == 0
+    assert not audit["formal_admission"]
+    with contextlib.closing(open_corpus(out)) as db:
+        rows = db.execute("SELECT payload,split FROM samples").fetchall()
+    assert len(rows) == len(list((out / "images").glob("*.png"))) == 10
+    assert {split for _, split in rows} == {"train", "val", "test"}
+    seen = set()
+    for payload, split in rows:
+        row = json.loads(payload)
+        origin = row["text_origin"]
+        assert origin["task"] in {"code", "verified_math_science"}
+        assert origin["lang"] == ("code" if origin["task"] == "code" else "en")
+        assert row["lang"] == "en"
+        assert origin["split"] == split and origin["sample_id"] not in seen
+        seen.add(origin["sample_id"])
+        assert "".join(row["visual_answer"].split()) in "".join(origins[origin["item_id"]].split())
+    # Without a record limit, the default still selects only the education sources.
+    default = tmp_path / "default-ocr"
+    full = generate_ocr(root, fonts, token, default, id_stop="g", max_gib=0.04, metadata_gib=0.02)
+    assert full["source_tasks"] == ["zh_edu", "en_edu"] and full["max_records"] is None
+    assert full["stop_reason"] == "source_selection_exhausted"
+    with contextlib.closing(open_corpus(default)) as db:
+        assert {
+            json.loads(p)["text_origin"]["task"]
+            for (p,) in db.execute("SELECT payload FROM samples")
+        } == {"en_edu"}
