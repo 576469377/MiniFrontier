@@ -392,6 +392,28 @@ def collect(workspace):
                     media_bytes=data_audit.get("media_bytes", 0),
                     error=data_audit.get("error"),
                 )
+                effective = data_audit.get("corpus", {})
+                if effective.get("format") in {
+                    "corpus-partition-view-v1",
+                    "corpus-partition-view-v2",
+                    "corpus-partition-view-v3",
+                }:
+                    progress = entry["data_progress"]
+                    progress["raw_construction_records"] = progress["accepted_records"]
+                    progress["accepted_records"] = sum(effective["splits"].values())
+                    progress["effective_split_records"] = effective["splits"]
+                    progress["candidate_reference_tokens"] = sum(
+                        sum(values.values())
+                        for values in data_audit.get("split_reference_tokens", {}).values()
+                    )
+                    progress["unique_images"] = sum(
+                        data_audit.get("split_independent_images", {}).values()
+                    )
+                    if data_audit.get("split_answer_reference_tokens"):
+                        progress["candidate_answer_reference_tokens"] = sum(
+                            sum(values.values())
+                            for values in data_audit["split_answer_reference_tokens"].values()
+                        )
             families = [
                 family
                 for family in review.get("families", [])

@@ -159,6 +159,46 @@ def test_performance_updates_stay_outside_the_formal_training_budget(tmp_path):
     assert entry["state"] == "measurement_complete_unqualified"
 
 
+@pytest.mark.parametrize("remote", [False, True])
+def test_partition_inventory_reports_retained_members_not_raw_construction_counts(tmp_path, remote):
+    base = tmp_path / ("outputs/remote-test/outputs" if remote else "outputs")
+    target = base / "strategy-pretraining-data-v1"
+    output = tmp_path / "data/refined"
+    write(
+        target / "run.json",
+        dict(kind="data_construction", state="complete", data_output=str(output)),
+    )
+    audit = dict(
+        status="candidate_slice_complete_pending_admission",
+        counts=dict(accepted=100),
+        sources={"source": dict(accepted_reference_tokens=10000)},
+        unique_images=50,
+        corpus=dict(format="corpus-partition-view-v3", splits=dict(train=70, val=5, test=10)),
+        split_reference_tokens=dict(
+            train={"source": 700}, val={"source": 50}, test={"source": 100}
+        ),
+        split_independent_images=dict(train=35, val=2, test=5),
+        split_answer_reference_tokens=dict(train={"vqa": 350}, val={"vqa": 20}, test={"vqa": 50}),
+    )
+    write(target / "data-audit.json" if remote else output / "source-audit.json", audit)
+    entry = collect(tmp_path)["experiments"][0]
+    progress = entry["data_progress"]
+    assert progress["accepted_records"] == 85
+    assert progress["raw_construction_records"] == 100
+    assert progress["effective_split_records"] == dict(train=70, val=5, test=10)
+    assert progress["candidate_reference_tokens"] == 850
+    assert progress["unique_images"] == 42
+    assert progress["candidate_answer_reference_tokens"] == 420
+    assert entry["ce_tokens"] == 0 and not entry["main_budget_eligible"]
+    write(
+        target / "run.json",
+        dict(kind="data_construction", state="failed", data_output=str(output)),
+    )
+    failed = collect(tmp_path)["experiments"][0]
+    assert failed["data_progress"]["accepted_records"] == 0
+    assert "effective_split_records" not in failed["data_progress"]
+
+
 def test_supervisor_resumed_training_overrides_old_paused_checkpoint(tmp_path):
     trial = tmp_path / "outputs/mf1-language-instructions-v1/trial"
     write(trial / "run.json", dict(model_name="minifrontier1", kind="acceptance"))
