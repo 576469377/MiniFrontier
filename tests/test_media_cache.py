@@ -3,6 +3,7 @@ import hashlib
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 import pytest
 
@@ -46,6 +47,19 @@ def origin(tmp_path):
 def put(source, name, data):
     (source / name).write_bytes(data)
     return "media/" + name, hashlib.sha256(data).hexdigest()
+
+
+@pytest.mark.skipif(not Path("/proc/self/fd").is_dir(), reason="Linux native processor adapter")
+def test_processor_path_survives_cache_eviction_and_closes(origin):
+    source, _requests, policy = origin
+    cache = MediaCache(policy)
+    a, b, c = [put(source, name, name.encode() * 4) for name in ("a", "b", "c")]
+    with cache.local_path(*a) as path:
+        cache.read(*b)
+        cache.read(*c)
+        assert not (cache.root / a[1]).exists()
+        assert path.read_bytes() == b"aaaa"
+    assert not path.exists()
 
 
 def test_lru_keeps_validation_pins_across_consumers_and_restart(origin):

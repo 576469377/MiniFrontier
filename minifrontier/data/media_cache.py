@@ -4,8 +4,10 @@ import contextlib
 import fcntl
 import hashlib
 import json
+import os
 import re
 import sqlite3
+import tempfile
 import time
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urlsplit
@@ -228,6 +230,41 @@ class MediaCache:
             finally:
                 temporary.unlink(missing_ok=True)
             return data
+
+    @contextlib.contextmanager
+    def local_path(self, uri, expected):
+        """Expose verified bytes to a path-only processor through a scoped file.
+
+        Linux anonymous files live only until the processor returns. Cache eviction
+        cannot invalidate them, and original processor/tokenization identities stay
+        unchanged. Each file is bounded by the cache's existing per-file limit.
+        """
+        if not Path("/proc/self/fd").is_dir():
+            raise ValueError("native remote media paths require Linux anonymous files")
+        data = self.read(uri, expected)
+        anonymous_memory = hasattr(os, "memfd_create")
+        with (
+            os.fdopen(os.memfd_create("minifrontier-media", os.MFD_CLOEXEC), "w+b")
+            if anonymous_memory
+            else tempfile.TemporaryFile(dir=self.root.parent)
+        ) as handle:
+            # Some Python builds omit memfd_create. The fallback is unlinked,
+            # bounded and on the data filesystem; release the storage lock before
+            # yielding, since a multi-frame processor may open another file.
+            reservation = (
+                contextlib.nullcontext()
+                if anonymous_memory
+                else reserve_write(
+                    self.root / "processor-staging",
+                    len(data),
+                    reserve_bytes=self.policy["reserve_bytes"],
+                )
+            )
+            with reservation:
+                handle.write(data)
+                handle.flush()
+            del data
+            yield Path(f"/proc/self/fd/{handle.fileno()}")
 
     def accounting(self):
         with self._locked() as db:

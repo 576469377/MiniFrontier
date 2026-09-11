@@ -103,6 +103,14 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
     if evidence.get("source_commit") != identity["commit"]:
         errors.append("evidence belongs to a different source commit")
     manifest = json.loads((data / "manifest.json").read_text())
+    direct_start = initial_start_authorized(
+        evidence,
+        model=plan["model"],
+        phase=phase_id,
+        data_sha256=sha256(data / "manifest.json"),
+        config_sha256=sha256(config),
+        source_commit=identity["commit"],
+    )
     if evidence.get("data_sha256") != sha256(data / "manifest.json"):
         errors.append("audited data manifest is missing or different")
     if evidence.get("config_sha256") != sha256(config):
@@ -117,7 +125,7 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
         or tokenizer.get("selected") != manifest["tokenizer"]["vocab_size"]
     ):
         errors.append("frozen tokenizer evidence is missing or incompatible")
-    for dependency in phase["depends_on"]:
+    for dependency in [] if direct_start else phase["depends_on"]:
         completed = evidence.get("completed_phases", {}).get(dependency, {})
         path = completed.get("checkpoint")
         if (
@@ -132,7 +140,7 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
             errors.append(
                 f"{dependency} has no quality pass; token completion alone is insufficient"
             )
-    for gate in phase["required_evidence"]:
+    for gate in [] if direct_start else phase["required_evidence"]:
         path = evidence.get("reports", {}).get(gate)
         report = json.loads(Path(path).read_text()) if path and Path(path).is_file() else {}
         if report.get("source_commit") != identity["commit"] or not report.get("passed"):
@@ -175,31 +183,35 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
             or json.loads(Path(config).read_text()).get("vision_config")
         ) and audit.get("vision_unique_validation_groups", 0) < 1000:
             errors.append("vision validation needs 1000 independent media groups")
-        profile_path = evidence.get("performance")
-        profile = (
-            json.loads(Path(profile_path).read_text())
-            if profile_path and Path(profile_path).is_file()
-            else {}
-        )
-        if profile.get("measured_updates", 0) < 200:
-            errors.append("missing 200 real updates after profile warmup")
-        if profile.get("recipe", {}).get("performance_profile", {}).get("warmup", 0) < 50:
-            errors.append("performance profile has fewer than 50 warmup updates")
-        measured = profile.get("recipe", {})
-        if measured.get("data_sha256") != sha256(data / "manifest.json"):
-            errors.append("performance profile uses a different corpus")
-        if measured.get("phase") != phase["attention_phase"]:
-            errors.append("performance profile uses a different attention phase")
-        if measured.get("source", {}).get("commit") != identity["commit"]:
-            errors.append("performance profile uses a different implementation")
-        requested_config = json.loads(Path(config).read_text())
-        if any(
-            measured.get("config", {}).get(key) != value for key, value in requested_config.items()
-        ):
-            errors.append("performance profile uses a different model configuration")
+        if not direct_start:
+            profile_path = evidence.get("performance")
+            profile = (
+                json.loads(Path(profile_path).read_text())
+                if profile_path and Path(profile_path).is_file()
+                else {}
+            )
+            if profile.get("measured_updates", 0) < 200:
+                errors.append("missing 200 real updates after profile warmup")
+            if profile.get("recipe", {}).get("performance_profile", {}).get("warmup", 0) < 50:
+                errors.append("performance profile has fewer than 50 warmup updates")
+            measured = profile.get("recipe", {})
+            if measured.get("data_sha256") != sha256(data / "manifest.json"):
+                errors.append("performance profile uses a different corpus")
+            if measured.get("phase") != phase["attention_phase"]:
+                errors.append("performance profile uses a different attention phase")
+            if measured.get("source", {}).get("commit") != identity["commit"]:
+                errors.append("performance profile uses a different implementation")
+            requested_config = json.loads(Path(config).read_text())
+            if any(
+                measured.get("config", {}).get(key) != value
+                for key, value in requested_config.items()
+            ):
+                errors.append("performance profile uses a different model configuration")
     require_space(output, 0, reserve_bytes=plan["min_disk_free_gib"] * GIB)
     return dict(
         allowed=not errors,
+        initial_start_authorized=direct_start,
+        independent_production_qualification_passed=not direct_start and not errors,
         errors=errors,
         model=plan["model"],
         phase=phase,
@@ -250,45 +262,48 @@ def validate_arguments(args):
     ):
         report["errors"].append("formal SFT needs a resumable sampler with at most two data epochs")
     if phase["budget_scope"] not in {"diagnostic", "recipe_pilot", "vision_diagnostic"}:
-        evidence = json.loads(Path(args.strategy_evidence).read_text())
-        profile_path = Path(evidence.get("performance", ""))
-        measured = (
-            json.loads(profile_path.read_text()).get("recipe", {}) if profile_path.is_file() else {}
-        )
-        if getattr(args, "pretraining_program", None):
-            from .pretraining import PretrainingProgram
+        if not report["initial_start_authorized"]:
+            evidence = json.loads(Path(args.strategy_evidence).read_text())
+            profile_path = Path(evidence.get("performance", ""))
+            measured = (
+                json.loads(profile_path.read_text()).get("recipe", {})
+                if profile_path.is_file()
+                else {}
+            )
+            if getattr(args, "pretraining_program", None):
+                from .pretraining import PretrainingProgram
 
-            binding = PretrainingProgram(args).binding
-            qualified = measured.get("pretraining_program", {})
-            if any(
-                qualified.get(k) != binding[k]
-                for k in ("program_id", "model", "recipe_sha256", "phase")
+                binding = PretrainingProgram(args).binding
+                qualified = measured.get("pretraining_program", {})
+                if any(
+                    qualified.get(k) != binding[k]
+                    for k in ("program_id", "model", "recipe_sha256", "phase")
+                ):
+                    report["errors"].append(
+                        "performance profile does not measure this frozen pretraining program"
+                    )
+            for key in (
+                "sequence_length",
+                "batch_size",
+                "grad_accum",
+                "input_batch_tokens",
+                "input_batch_policy",
+                "input_batch_schedule",
+                "visual_warmup",
+                "vision_lr",
+                "projector_lr",
             ):
-                report["errors"].append(
-                    "performance profile does not measure this frozen pretraining program"
-                )
-        for key in (
-            "sequence_length",
-            "batch_size",
-            "grad_accum",
-            "input_batch_tokens",
-            "input_batch_policy",
-            "input_batch_schedule",
-            "visual_warmup",
-            "vision_lr",
-            "projector_lr",
-        ):
-            if measured.get(key) != getattr(args, key):
-                report["errors"].append(f"performance profile does not measure this {key}")
-        plan = json.loads(Path(args.strategy_plan).read_text())
-        if measured.get("world_size") != len(plan["gpu_ids"]):
-            report["errors"].append("performance profile has a different device count")
-        for key in ("token_mixture", "media_mixture"):
-            path = getattr(args, key)
-            if measured.get(key) != (json.loads(Path(path).read_text()) if path else None):
-                report["errors"].append(
-                    "performance profile uses a different modality/domain mixture"
-                )
+                if measured.get(key) != getattr(args, key):
+                    report["errors"].append(f"performance profile does not measure this {key}")
+            plan = json.loads(Path(args.strategy_plan).read_text())
+            if measured.get("world_size") != len(plan["gpu_ids"]):
+                report["errors"].append("performance profile has a different device count")
+            for key in ("token_mixture", "media_mixture"):
+                path = getattr(args, key)
+                if measured.get(key) != (json.loads(Path(path).read_text()) if path else None):
+                    report["errors"].append(
+                        "performance profile uses a different modality/domain mixture"
+                    )
         if phase["image_occurrences"] or phase["video_examples"]:
             mixture = json.loads(Path(args.media_mixture).read_text()) if args.media_mixture else {}
             if (
@@ -298,6 +313,8 @@ def validate_arguments(args):
                 report["errors"].append(
                     "formal media phase requires the planned image/video occurrence quotas"
                 )
+    if report["initial_start_authorized"] and getattr(args, "init", None):
+        report["errors"].append("direct initial pretraining starts require random initialization")
     if objective == "response_tokens" and args.stage not in {"grpo", "mopd", "opd"}:
         report["errors"].append("response-token phase requires its on-policy objective")
     if objective not in {"ce_tokens", "input_tokens", "assistant_tokens", "response_tokens"}:

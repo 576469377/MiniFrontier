@@ -1,6 +1,7 @@
 """Immutable native-media records alongside shared memory-mapped text documents."""
 
 import contextlib
+import copy
 import importlib
 import json
 import os
@@ -16,6 +17,7 @@ from tokenizers import Tokenizer
 from minifrontier.chat_controls import record_template, update_manifest
 from minifrontier.data import sha256
 from minifrontier.data.corpus import DocumentDataset, encode_corpus
+from minifrontier.data.media_cache import MediaCache
 from minifrontier.data.partitions import corpus_storage_root, open_corpus
 from minifrontier.multimodal import prepare_record
 from minifrontier.storage import GIB, require_space, reserve_write
@@ -474,12 +476,14 @@ class NativeDataset:
                 child_record = child["stages"][stage][selection["split"]]
                 if child_record["text"] != record["text"]:
                     raise ValueError("native composition media/text split differs")
-                parts.append((path, child_record["media"], child))
+                parts.append((path, child_record["media"], child, selection["split"] != "train"))
         else:
-            parts = [(self.root, record["media"], manifest)]
+            parts = [
+                (self.root, record["media"], manifest, record != manifest["stages"][stage]["train"])
+            ]
         self.media = [
-            _NativeMediaDataset(path, media, child, length, self.tokenizer)
-            for path, media, child in parts
+            _NativeMediaDataset(path, media, child, length, self.tokenizer, pin=pin)
+            for path, media, child, pin in parts
         ]
         self.ends = list(accumulate(len(d) for d in self.media))
         self.domains = list(self.text.domains)
@@ -512,11 +516,16 @@ class NativeDataset:
 class _NativeMediaDataset:
     """Read one existing media shard without reopening or resampling shared text."""
 
-    def __init__(self, root, media, manifest, length, tokenizer):
+    def __init__(self, root, media, manifest, length, tokenizer, *, pin=False):
         self.root, self.tokenizer = Path(root), tokenizer
         self.family, self.max_features = manifest["family"], manifest["max_features"]
         self.media_root, self.vocab = manifest["media_root"], manifest["model_vocab_size"]
         self.min_pixels = manifest.get("min_pixels")
+        self.media_cache = (
+            MediaCache(manifest["media_access"], pin=pin, base=self.root)
+            if manifest.get("media_access") is not None
+            else None
+        )
         for path, digest in (
             (media["file"], media["sha256"]),
             (media["index_file"], media["index_sha256"]),
@@ -547,15 +556,30 @@ class _NativeMediaDataset:
         with self.path.open("rb") as stream:
             stream.seek(int(offset))
             row = json.loads(stream.read(int(size)))
-        prepared = prepare_record(
-            row["record"],
-            self.tokenizer,
-            self.family,
-            root=self.media_root,
-            max_features=self.max_features,
-            model_vocab_size=self.vocab,
-            min_pixels=self.min_pixels,
-        )
+        with contextlib.ExitStack() as files:
+            record = row["record"]
+            if self.media_cache is not None:
+                record = copy.deepcopy(record)
+                for resource in record.get("media", []):
+                    paths = resource.get("frames", [resource.get("path")])
+                    hashes = resource.get("frame_sha256", [resource.get("sha256")] * len(paths))
+                    local = [
+                        str(files.enter_context(self.media_cache.local_path(path, expected)))
+                        for path, expected in zip(paths, hashes, strict=True)
+                    ]
+                    if "frames" in resource:
+                        resource["frames"] = local
+                    else:
+                        resource["path"] = local[0]
+            prepared = prepare_record(
+                record,
+                self.tokenizer,
+                self.family,
+                root=self.media_root,
+                max_features=self.max_features,
+                model_vocab_size=self.vocab,
+                min_pixels=self.min_pixels,
+            )
         if (
             prepared.input_ids[0].tolist() != row["expected_ids"]
             or prepared.labels[0].tolist() != row["expected_labels"]

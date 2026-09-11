@@ -12,6 +12,7 @@ import numpy as np
 from minifrontier.chat_controls import update_manifest
 from minifrontier.data import sha256
 from minifrontier.data.encoding_audit import _checked
+from minifrontier.data.media_cache import validate_policy
 from minifrontier.data.native import _check_text_origin, _shared_text_partitions, processor_identity
 from minifrontier.storage import require_space
 
@@ -81,13 +82,19 @@ def read_components(root, manifest):
         child, child_text = _component(path, manifest)
         if child_text != shared:
             raise ValueError("native components must reuse one shared text directory")
+        if "media_access" in ref:
+            policy = validate_policy(ref["media_access"])
+            child = dict(
+                child,
+                media_access=dict(policy, cache_dir=str((root / policy["cache_dir"]).resolve())),
+            )
         components.append((path, child))
     if not components:
         raise ValueError("native composition has no media components")
     return components
 
 
-def assemble_native_components(components, output, *, max_bytes=64 * 1024**2):
+def assemble_native_components(components, output, *, max_bytes=64 * 1024**2, media_access=None):
     """Check source identities and counts; write only a tokenizer and bound manifest.
 
     Child pixel/token audits remain bound. Cross-corpus near-duplicate reviews,
@@ -96,6 +103,9 @@ def assemble_native_components(components, output, *, max_bytes=64 * 1024**2):
     roots, output = [Path(p).resolve() for p in components], Path(output).resolve()
     if not roots or len(set(roots)) != len(roots) or output.exists() or max_bytes <= 0:
         raise ValueError("choose distinct native components and a bounded new output")
+    access = {Path(k).resolve(): validate_policy(v) for k, v in (media_access or {}).items()}
+    if access.keys() - set(roots):
+        raise ValueError("media access names a component outside this composition")
     manifests: list[dict[str, Any]] = []
     references = []
     first_shared = None
@@ -129,6 +139,8 @@ def assemble_native_components(components, output, *, max_bytes=64 * 1024**2):
                 corpus_manifest_sha256=manifest["native_corpus_sha256"],
             )
         )
+        if root in access:
+            references[-1]["media_access"] = access[root]
         manifests.append(manifest)
     baseline = manifests[0]
     partitions = _shared_text_partitions(shared, baseline["text_source"]["manifest_sha256"])
