@@ -554,7 +554,11 @@
       },
       "target_global_input_tokens": "use_each_frozen_formal_recipe",
       "budget_status": "must_reconcile_50_plus_200_updates_with_frozen_batch_before_dispatch; 5M CE is not valid for every 64K recipe",
-      "launch_authorized_by_this_record": false
+      "launch_authorized_by_this_record": false,
+      "current_policy": "formal_first_phase_start_with_runtime_monitoring",
+      "standalone_runs_required_before_first_phase": false,
+      "maintainer_decision": "docs/experiments/2026-09-10-pretraining-cutover/direct-training-start.json",
+      "historical_profile_schedule": "The 50+200 profile remains a recorded measurement protocol; it is no longer a mandatory extra job before the three remaining initial phases."
     },
     "mf1_engineering": {
       "review_timebox_hours": 48,
@@ -1378,6 +1382,18 @@
       "dispatch": "Assign new compute jobs only to eligible primary devices; auxiliary compute is withdrawn from the plan.",
       "running_tasks": "Keep healthy running jobs and their frozen launch identities in place; move only unstarted jobs, or resume at a verified checkpoint with the same scientific recipe.",
       "data_preparation": "Keep immutable original media on auxiliary storage. Store token encodings and run state on primary; fetch raw media through SSH-forwarded loopback file services with content hashes and bounded primary caches.",
+      "file_transfer": {
+        "policy": "direct_private_network_only",
+        "proxy_allowed": false,
+        "ssh_options": [
+          "ProxyCommand=none",
+          "ProxyJump=none"
+        ],
+        "process_environment": "Remove all case variants of HTTP_PROXY, HTTPS_PROXY and ALL_PROXY for file transfers; set NO_PROXY=* and no_proxy=* for those processes only.",
+        "http_clients": "Disable environment proxy discovery explicitly; MediaCache uses ProxyHandler({}).",
+        "failure_behavior": "Stop and report a failed direct connection; do not retry through a proxy or VPN service.",
+        "scope": "Transfers between project compute and storage hosts, including encoded data, raw-media reads and checkpoints."
+      },
       "launch_requirements": [
         "admitted phase data and frozen tokenizer",
         "completed matching production qualification for formal training",

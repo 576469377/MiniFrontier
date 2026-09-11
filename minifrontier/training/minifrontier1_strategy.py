@@ -9,6 +9,7 @@ from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import digest
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, PROCESSOR_VERSION
 from minifrontier.provenance import checkout_root, require_source_checkout, source_identity
+from minifrontier.training.strategy_gate import initial_start_authorized
 
 PLAN_PATH = (
     "docs/training-strategies/2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md"
@@ -187,7 +188,16 @@ def validate_gate(phase, evidence, actual, manifest, saved, *, resume=False):
         "strategy_sha256"
     ):
         raise ValueError("formal MF1 admission requires the bound strategy source document")
-    if evidence.get("stage") != phase or evidence.get("status") != "qualified":
+    direct_start = initial_start_authorized(
+        evidence,
+        model="minifrontier1",
+        phase=phase,
+        data_sha256=actual["dataset_manifest_sha256"],
+        config_sha256=actual["model_config_sha256"],
+        source_commit=actual["source"]["commit"],
+    )
+    expected_status = "maintainer_authorized_start" if direct_start else "qualified"
+    if evidence.get("stage") != phase or evidence.get("status") != expected_status:
         raise ValueError("stage gate must qualify this exact MF1 phase")
     for key, value in actual.items():
         if evidence.get(key) != value:
@@ -200,6 +210,10 @@ def validate_gate(phase, evidence, actual, manifest, saved, *, resume=False):
         raise ValueError("actual initialization checkpoint has the wrong predecessor phase")
     if PHASES[phase]["predecessor"] and saved is None:
         raise ValueError("this formal stage requires an actual predecessor checkpoint")
+    if direct_start:
+        if actual["source"]["dirty"] or actual["actual_init_checkpoint_sha256"] is not None:
+            raise ValueError("direct P0 starts require clean source and random initialization")
+        return evidence
     evaluations = evidence.get("evaluations", [])
     if not evaluations:
         raise ValueError("stage admission requires hashed evaluation artifacts")

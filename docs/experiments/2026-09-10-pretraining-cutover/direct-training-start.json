@@ -1,0 +1,24 @@
+{
+  "kind": "maintainer_training_execution_decision",
+  "date": "2026-09-11",
+  "status": "authorized",
+  "authorization": {
+    "user_statement": "赶紧推进，不要一直 smoke 各种验收",
+    "followup": "搞了几天都没开始正式训练"
+  },
+  "scope": "The initial MF1 P0, Kimi K1 and Qwen Q1 may start formal learning without additional standalone smoke, recipe-pilot or production-profile runs. Bind completed data and the selected recipe; retain prior evidence with its original scope.",
+  "qualification_passed": false,
+  "runtime_checks_retained": true,
+  "monitoring": [
+    "Real-data hash and label checks",
+    "Finite losses and gradients",
+    "Single-device memory and shared-disk limits",
+    "Fixed held-out validation and recoverable checkpoints"
+  ],
+  "unchanged": [
+    "Fresh random initialization and the complete pretraining budgets",
+    "Later-stage predecessor and capability requirements",
+    "Recorded failed and incomplete experiments"
+  ],
+  "runtime_bindings": "Each launch must carry a hashed decision bound to its actual model, first phase, dataset, configuration and source commit. Permission to start is not a passing performance or model-capability result."
+}

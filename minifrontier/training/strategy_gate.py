@@ -15,6 +15,35 @@ def _bound_report(reference):
     return json.loads(path.read_text())
 
 
+def initial_start_authorized(evidence, *, model, phase, data_sha256, config_sha256, source_commit):
+    """A bound maintainer decision defers repeat preflight runs for first phases only.
+
+    This is permission to start learning, not a passing performance or capability
+    result. Runtime correctness, immutable inputs and later phase gates still apply.
+    """
+    first_phases = {"minifrontier1": "p0", "minikimik3": "K1", "miniqwen4": "Q1"}
+    report = _bound_report(evidence.get("initial_training_authorization", {}))
+    expected = dict(
+        model=model,
+        phase=phase,
+        data_sha256=data_sha256,
+        config_sha256=config_sha256,
+        source_commit=source_commit,
+    )
+    return bool(
+        first_phases.get(model) == phase
+        and report.get("kind") == "maintainer_initial_training_authorization"
+        and report.get("status") == "authorized"
+        and report.get("scope") == "first_phase_without_additional_preflight_runs"
+        and report.get("authorization", {}).get("user_statement")
+        and report.get("qualification_passed") is False
+        and report.get("runtime_checks_retained") is True
+        and expected in report.get("bindings", [])
+        and report.get("prior_evidence")
+        and all(_bound_report(ref) for ref in report["prior_evidence"])
+    )
+
+
 def _human_review_waived(evidence, model, phase, data_sha256):
     """A maintainer exception covers manual review only, for named artifacts."""
     report = _bound_report(evidence.get("human_review_waiver", {}))
