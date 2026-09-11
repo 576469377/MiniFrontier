@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "text_candidate_inventory_snapshot",
-  "observed_unix": 1789073100.9910157,
+  "observed_unix": 1789109665.1283116,
   "formal_admission": false,
   "run_id": "strategy-pretraining-data-v3",
   "source_commit": "578b26d32454521cf851f7c137dce00c0f54dc4b",
@@ -2383,6 +2383,207 @@
       "mypy_source_files": 187,
       "ruff": "passed",
       "formatted_files": 335
+    }
+  },
+  "current_first_stage_text_readiness": {
+    "kind": "current_first_stage_text_readiness",
+    "status": "text_supply_and_deepseek_validation_mechanics_passed_pending_quality_admission",
+    "text_manifest_sha256": "f972b1fe1620befc1a7a90f6fb55f370a03672a4f427bb71639acaae373e4f95",
+    "mf1_text_manifest_sha256": "703c38bba6fe0a0171657093428e02796a2344a9b145dbac84291b2b32d69e5a",
+    "source_encoding_audit_sha256": "e01c1d4bb3056df9e43a8c91d423b4bef13408492665f8f2dfcdce2ed43e3555",
+    "mf1_encoding_audit_sha256": "00e657077cead17d816f8a59b010f4ff5c8c662c1a454287a958d6c8d0284236",
+    "first_stage_text_supply": {
+      "minikimik3": {
+        "first_phase": "K1",
+        "main_ce_budget": 200000000,
+        "comparison": "Conservative all-text upper bound; Kimi/Qwen visual CE reduces actual text demand.",
+        "domains": {
+          "zh_edu": {
+            "required_text_ce_upper_bound": 90000000,
+            "available_train_ce": 215951057,
+            "repeated_exposure_required": false
+          },
+          "en_edu": {
+            "required_text_ce_upper_bound": 50000000,
+            "available_train_ce": 148748176,
+            "repeated_exposure_required": false
+          },
+          "code": {
+            "required_text_ce_upper_bound": 30000000,
+            "available_train_ce": 81716992,
+            "repeated_exposure_required": false
+          },
+          "verified_math_science": {
+            "required_text_ce_upper_bound": 20000000,
+            "available_train_ce": 46960397,
+            "repeated_exposure_required": false
+          },
+          "dialogue": {
+            "required_text_ce_upper_bound": 10000000,
+            "available_train_ce": 39539206,
+            "repeated_exposure_required": false
+          }
+        }
+      },
+      "miniqwen4": {
+        "first_phase": "Q1",
+        "main_ce_budget": 300000000,
+        "comparison": "Conservative all-text upper bound; Kimi/Qwen visual CE reduces actual text demand.",
+        "domains": {
+          "zh_edu": {
+            "required_text_ce_upper_bound": 120000000,
+            "available_train_ce": 215951057,
+            "repeated_exposure_required": false
+          },
+          "en_edu": {
+            "required_text_ce_upper_bound": 75000000,
+            "available_train_ce": 148748176,
+            "repeated_exposure_required": false
+          },
+          "code": {
+            "required_text_ce_upper_bound": 60000000,
+            "available_train_ce": 81716992,
+            "repeated_exposure_required": false
+          },
+          "verified_math_science": {
+            "required_text_ce_upper_bound": 30000000,
+            "available_train_ce": 46960397,
+            "repeated_exposure_required": false
+          },
+          "dialogue": {
+            "required_text_ce_upper_bound": 15000000,
+            "available_train_ce": 39539206,
+            "repeated_exposure_required": false
+          }
+        }
+      },
+      "minideepseekv4": {
+        "first_phase": "D1",
+        "main_ce_budget": 250000000,
+        "comparison": "Conservative all-text upper bound; Kimi/Qwen visual CE reduces actual text demand.",
+        "domains": {
+          "zh_edu": {
+            "required_text_ce_upper_bound": 100000000,
+            "available_train_ce": 215951057,
+            "repeated_exposure_required": false
+          },
+          "en_edu": {
+            "required_text_ce_upper_bound": 62500000,
+            "available_train_ce": 148748176,
+            "repeated_exposure_required": false
+          },
+          "code": {
+            "required_text_ce_upper_bound": 50000000,
+            "available_train_ce": 81716992,
+            "repeated_exposure_required": false
+          },
+          "verified_math_science": {
+            "required_text_ce_upper_bound": 25000000,
+            "available_train_ce": 46960397,
+            "repeated_exposure_required": false
+          },
+          "dialogue": {
+            "required_text_ce_upper_bound": 12500000,
+            "available_train_ce": 39539206,
+            "repeated_exposure_required": false
+          }
+        }
+      },
+      "minifrontier1": {
+        "first_phase": "P0",
+        "main_ce_budget": 200000000,
+        "text_ce_budget": 160000000,
+        "domains": {
+          "zh_general": {
+            "required_text_ce": 67200000,
+            "available_train_ce": 235641344,
+            "repeated_exposure_required": false
+          },
+          "en_general": {
+            "required_text_ce": 44800000,
+            "available_train_ce": 158153810,
+            "repeated_exposure_required": false
+          },
+          "code": {
+            "required_text_ce": 19200000,
+            "available_train_ce": 84938806,
+            "repeated_exposure_required": false
+          },
+          "math": {
+            "required_text_ce": 16000000,
+            "available_train_ce": 49344443,
+            "repeated_exposure_required": false
+          },
+          "structured": {
+            "required_text_ce": 12800000,
+            "available_train_ce": 41711919,
+            "repeated_exposure_required": false
+          }
+        }
+      }
+    },
+    "deepseek_d1_validation": {
+      "context_length": 1024,
+      "inventory_ce_tokens": 5104105,
+      "context_windows": 6913,
+      "binding": {
+        "policy": {
+          "periodic_ce_tokens": 1000000,
+          "phase_end_ce_tokens": 5000000,
+          "early_interval_ce": 10000000,
+          "early_until_ce": 100000000,
+          "later_interval_ce": 50000000
+        },
+        "seed": 42,
+        "selection": "fixed_without_replacement",
+        "periodic": {
+          "requested_ce_tokens": 1000000,
+          "actual_ce_tokens": 1000132,
+          "examples": 1317,
+          "domain_ce": {
+            "zh_edu": 416882,
+            "code": 123317,
+            "verified_math_science": 140073,
+            "en_edu": 259049,
+            "dialogue": 60811
+          },
+          "indices_sha256": "45fa9f81fc5eb2e38bb0b02be903ba22146f05aca8ad030c6b2d836bfa295c79",
+          "overshoot_bound_ce": 1023
+        },
+        "phase_end": {
+          "requested_ce_tokens": 5000000,
+          "actual_ce_tokens": 5000587,
+          "examples": 6772,
+          "domain_ce": {
+            "zh_edu": 2013451,
+            "code": 571205,
+            "verified_math_science": 651555,
+            "en_edu": 1404493,
+            "dialogue": 359883
+          },
+          "indices_sha256": "110310cbd5df5cca4ca04eb2df1802c27b6b20dedf6599a21521ff8b31b0b8b4",
+          "overshoot_bound_ce": 1023
+        }
+      },
+      "selection_method_sha256": "e3e21b2b8a8ca21555c1bd350c58bc8f04c2ec056b1850270e0dff3336b275f2"
+    },
+    "source_commit": "44adca629df351d8768454f850a27c75cea5433d",
+    "formal_admission": false,
+    "human_source_quality_review_completed": false,
+    "model_forward_executed": false,
+    "media_processing_executed": false,
+    "limitations": [
+      "This selects current DeepSeek text-only validation; Kimi/Qwen/MF1 require their own complete media compositions before final validation binding.",
+      "Source quality review, tokenizer admission, production recipe binding and C1 remain required; no formal CE was consumed."
+    ],
+    "completed_unix": 1789109108.4555802,
+    "report_sha256": "1fdec8618d4a8ff4ebf772aa13c3404931974720e1ef462542c0e7d9af68bdd3",
+    "run_report_sha256": "4ab651734b9d7f8455cf203a73c52afedd30baf5ba327999a161fdc22da32828",
+    "selection_file_sha256": "f6373565138d6769fa741c253897b275f998cc31d46bd673594f0f4afb8f15ae",
+    "previous_attempt": {
+      "state": "failed",
+      "reason": "Metadata checker used text_mix instead of the actual text_ce_mix key; corrected before any dataset selection or training.",
+      "report_sha256": "1da59aada1c6410bd6ad4575e75aed9895e675c4c01bc2f05239d8f023886e1a"
     }
   }
 }
