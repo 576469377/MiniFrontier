@@ -531,7 +531,7 @@
   ],
   "execution_program": {
     "id": "four-model-base-pretraining-2026-09-10",
-    "status": "working_parameters_selected_data_construction_in_progress_not_launched",
+    "status": "production_qualification_running_other_models_finishing_media",
     "document": "docs/pretraining-plan.md",
     "user_objectives": [
       "record_and_close_experiments",
@@ -1362,10 +1362,32 @@
     },
     "readiness_priority": {
       "first": "minideepseekv4",
-      "scope": "finish fixed text quality review, admission/freeze and one production qualification; independent of other models media",
+      "scope": "text admitted and tokenizer frozen with maintainer source-quality-review waiver; complete the running production qualification, then start fresh D1 independently of other models media",
       "other_models": "follow their own admitted data readiness",
       "new_parameter_grids": false,
       "additional_first_stage_text_expansion": false
+    },
+    "placement": {
+      "policy": "primary_first_available_exclusive_gpu",
+      "status": "dispatch_policy_not_a_training_launch",
+      "host_order": [
+        "primary",
+        "auxiliary"
+      ],
+      "gpus_per_task": 1,
+      "max_project_tasks_per_gpu": 1,
+      "dispatch": "Recheck both hosts at launch; use an eligible primary device immediately when auxiliary devices are occupied. Preferred indices are hints, not reservations.",
+      "running_tasks": "Keep healthy running jobs and their frozen launch identities in place; move only unstarted jobs, or resume at a verified checkpoint with the same scientific recipe.",
+      "data_preparation": "Keep running CPU encoders and audits near their source media. Transfer completed immutable components and verify hashes before local consumption; GPU placement is independent of the producer host.",
+      "launch_requirements": [
+        "admitted phase data and frozen tokenizer",
+        "completed matching production qualification for formal training",
+        "live device ownership, free memory and environment checks",
+        "shared storage reservations with at least 80 GiB retained for new allocations"
+      ],
+      "manual_source_quality_review": "waived_by_maintainer; bind the waiver to each actual dataset without marking individual samples reviewed",
+      "machine_assignments": "Record current host addresses, paths, GPU UUIDs and tentative assignments only in ignored runtime records; public policy uses primary/auxiliary roles.",
+      "automatic_training": "Only an already frozen, artifact-bound dispatcher can launch its declared training. This policy does not launch incomplete jobs or add parameter trials."
     }
   }
 }
