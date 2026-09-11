@@ -1,6 +1,6 @@
 {
   "kind": "deepseek_first_formal_phase_cutover",
-  "observed_unix": 1789140583.9884245,
+  "observed_unix": 1789143972.425881,
   "source_commit": "6c2e37be4a88ca6cdedd062d0fde5e1d249ac81f",
   "model": "MiniDeepSeek-V4",
   "parameters": 243983472,
@@ -60,50 +60,50 @@
   },
   "formal": {
     "state": "running",
-    "main_ce_tokens": 41608900,
+    "main_ce_tokens": 55028003,
     "random_init": true,
     "automatic_start": "C1 and strategy gate passed; dispatcher started fresh formal D1",
     "planned_observation_pause_updates": 4000,
     "planned_observation_ce_approx": 130000000,
     "phase_budget_unchanged": true,
     "started_unix": 1789129946.1952863,
-    "optimizer_updates": 1255,
+    "optimizer_updates": 1660,
     "skipped_windows": 0,
-    "latest_saved_optimizer_updates": 1200,
-    "latest_saved_ce_tokens": 39782141,
-    "recent_logged_ce_tokens_per_second": 4093.9982265079566,
+    "latest_saved_optimizer_updates": 1600,
+    "latest_saved_ce_tokens": 53041094,
+    "recent_logged_ce_tokens_per_second": 4035.3484714087936,
     "throughput_scope": "mean of last 20 logged train updates; excludes evaluation and checkpoint time",
     "output": "outputs/strategy-base-pretraining-v1/minideepseekv4/D1",
     "run_sha256": "ec5f3f8e20149ed602b28d4ae9d6c12c92accf3f885af8c0b9c8f528b2bf18b6",
-    "metrics_prefix_bytes": 182382,
-    "metrics_prefix_sha256": "87dcc3775c1c9fbc20ebead2667dc3ab7177f5ff0823d262c547596e20d52e43",
+    "metrics_prefix_bytes": 239257,
+    "metrics_prefix_sha256": "67ad852af79361c8d5085b7633151d3b545b9e31f9d1188be8677a861b3d261f",
     "tensorboard_run": "MiniDeepSeek-V4/D1",
     "tensorboard_port": 6008,
     "validation": {
       "selection_sha256": "45fa9f81fc5eb2e38bb0b02be903ba22146f05aca8ad030c6b2d836bfa295c79",
       "fixed_ce_tokens": 1000132,
       "initial_lm_nll": 11.203361061613304,
-      "latest_lm_nll": 5.6251236428588305,
-      "at_main_ce_tokens": 40014007,
+      "latest_lm_nll": 5.310729628220325,
+      "at_main_ce_tokens": 50027693,
       "per_domain": {
         "code": {
-          "lm_loss": 3.734252641629398,
+          "lm_loss": 3.3504066089580107,
           "ce_tokens": 123317
         },
         "dialogue": {
-          "lm_loss": 4.719569489637976,
+          "lm_loss": 4.420929174383541,
           "ce_tokens": 60811
         },
         "en_edu": {
-          "lm_loss": 5.437787183240429,
+          "lm_loss": 5.193238552961988,
           "ce_tokens": 259049
         },
         "verified_math_science": {
-          "lm_loss": 5.214746451403911,
+          "lm_loss": 4.923469474120191,
           "ce_tokens": 140073
         },
         "zh_edu": {
-          "lm_loss": 6.570849962864192,
+          "lm_loss": 6.223533362333346,
           "ce_tokens": 416882
         }
       },
@@ -128,6 +128,10 @@
         {
           "main_ce_tokens": 40014007,
           "lm_nll": 5.6251236428588305
+        },
+        {
+          "main_ce_tokens": 50027693,
+          "lm_nll": 5.310729628220325
         }
       ]
     }
@@ -140,8 +144,8 @@
   "disk": {
     "free_reserve_gib": 80,
     "shared_text_cache_gib": 8.1671,
-    "observed_free_gib": 112.27,
-    "observed_unix": 1789140583.9884245
+    "observed_free_gib": 162.81,
+    "observed_unix": 1789143972.425881
   },
   "limitations": [
     "Snapshot at observed_unix, not a live progress feed.",

@@ -1771,7 +1771,61 @@
       "external visual benchmark identity exclusion",
       "complete per-domain CE/exposure supply and production qualification"
     ],
-    "p0_visual_supply_source_manifest_sha256": "f18024bbe645d02e5b0458f9bb0a36165f51466cad74794418d86c74e20ca268"
+    "p0_visual_supply_source_manifest_sha256": "f18024bbe645d02e5b0458f9bb0a36165f51466cad74794418d86c74e20ca268",
+    "current_storage_split": {
+      "observed_unix": 1789143972.425881,
+      "compute": "primary workstation only",
+      "original_media": "retained auxiliary storage, explicitly authorized by maintainer",
+      "encoded_migration": {
+        "bytes": 1318581935,
+        "components": [
+          {
+            "name": "pretraining-mf1-natural-topup-p0-v1",
+            "verified_files": 16,
+            "verified_bytes": 44635973,
+            "manifest_sha256": "0abb83a1ce1ab394cb274ed0706eae971ddb52631e5a283a0125525433046e86"
+          },
+          {
+            "name": "pretraining-mf1-natural-extension-p0-v2",
+            "verified_files": 16,
+            "verified_bytes": 131448152,
+            "manifest_sha256": "36127ec844e90de743e0fa480d05b6549752aa12f82acd176e2be8df35dfa187"
+          },
+          {
+            "name": "pretraining-mf1-doc-chart-p0-v5",
+            "verified_files": 16,
+            "verified_bytes": 260307394,
+            "manifest_sha256": "5c2ded2ed56df31bed9f9101271572b8815b0498e4c48e3d27d28728cb7fb412"
+          },
+          {
+            "name": "pretraining-minikimik3-natural-extension-p0-v1",
+            "verified_files": 16,
+            "verified_bytes": 449199818,
+            "manifest_sha256": "b7eec13a11918bde476efd8b4092674be92a5be4f67f9c68c89fc8ce3308bcc5"
+          },
+          {
+            "name": "pretraining-miniqwen4-natural-extension-p0-v1",
+            "verified_files": 16,
+            "verified_bytes": 432990598,
+            "manifest_sha256": "c5fb1c891927cc4fefd96141ee92bbb7b3b6a28743c36966cbbfb70480ff9435"
+          }
+        ],
+        "all_files_sha256_verified": true,
+        "raw_pixels_copied": false
+      },
+      "natural_supplement_access": {
+        "status": "bounded_remote_pixels_loaded_by_local_mf1_reader",
+        "checked_records": 4,
+        "cache_max_bytes": 3221225472,
+        "cache_payload_bytes": 2225411,
+        "verification_sha256": "4e32140177ec6a1329cbabcde2dcb12e2722f5bd62b318a47d01bfffd781031b",
+        "model_forward_executed": false,
+        "production_throughput_qualified": false
+      },
+      "whole_media_migration_required": false,
+      "formal_admission": false,
+      "remaining": "Bind final complete composition and fixed validation; qualify production GPU training. Source-model remote image access also needs final consumer integration."
+    }
   },
   "source_task_classification": {
     "status": "canonical_and_all_three_encodings_migrated",
@@ -9287,8 +9341,8 @@
       "process_identity_verified": true
     },
     "refinement": {
-      "observed_unix": 1789140841.4467285,
-      "status": "bounded_cpu_encoding_launched",
+      "observed_unix": 1789143972.425881,
+      "status": "encoding_complete_all_P0_visual_domain_quotas_covered",
       "source_commit": "b813e4f348d93ab07882eeaec382367acf25391c",
       "retained_images": 11956,
       "retained_records": 22508,
@@ -9350,6 +9404,19 @@
         "resolution": "Interrupted only the owned data process, retained the completed subset, checked row/split identity and shared image links, then exported outside the outer reservation.",
         "original_slice_modified": false,
         "corpus_rebuilt": false
+      },
+      "encoded_train_ce": 3829256,
+      "encoded_train_domain_ce": {
+        "vqa": 1404009,
+        "caption": 2425247
+      },
+      "encoded_manifest_sha256": "0abb83a1ce1ab394cb274ed0706eae971ddb52631e5a283a0125525433046e86",
+      "encoding_audit_sha256": "e38dc09b3fa9c0052fe367ab3d628b7dfc8fd10009f63a0602966640686ad2b3",
+      "current_p0_supply": {
+        "total_completed_candidate_visual_ce": 42574415,
+        "mix_usable_candidate_visual_ce": 40000000,
+        "remaining_domain_ce_gap": 0,
+        "record_sha256": "074d1a614637f972ce8071b8cae9161c81c4b46b48f6c41227c57876683426cd"
       }
     }
   },

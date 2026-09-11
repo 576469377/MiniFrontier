@@ -1368,17 +1368,16 @@
       "additional_first_stage_text_expansion": false
     },
     "placement": {
-      "policy": "primary_first_available_exclusive_gpu",
+      "policy": "primary_only_available_exclusive_gpu",
       "status": "dispatch_policy_not_a_training_launch",
       "host_order": [
-        "primary",
-        "auxiliary"
+        "primary"
       ],
       "gpus_per_task": 1,
       "max_project_tasks_per_gpu": 1,
-      "dispatch": "Recheck both hosts at launch; use an eligible primary device immediately when auxiliary devices are occupied. Preferred indices are hints, not reservations.",
+      "dispatch": "Assign new compute jobs only to eligible primary devices; auxiliary compute is withdrawn from the plan.",
       "running_tasks": "Keep healthy running jobs and their frozen launch identities in place; move only unstarted jobs, or resume at a verified checkpoint with the same scientific recipe.",
-      "data_preparation": "Keep running CPU encoders and audits near their source media. Transfer completed immutable components and verify hashes before local consumption; GPU placement is independent of the producer host.",
+      "data_preparation": "Keep immutable original media on auxiliary storage. Store token encodings and run state on primary; fetch raw media through SSH-forwarded loopback file services with content hashes and bounded primary caches.",
       "launch_requirements": [
         "admitted phase data and frozen tokenizer",
         "completed matching production qualification for formal training",
@@ -1387,7 +1386,13 @@
       ],
       "manual_source_quality_review": "waived_by_maintainer; bind the waiver to each actual dataset without marking individual samples reviewed",
       "machine_assignments": "Record current host addresses, paths, GPU UUIDs and tentative assignments only in ignored runtime records; public policy uses primary/auxiliary roles.",
-      "automatic_training": "Only an already frozen, artifact-bound dispatcher can launch its declared training. This policy does not launch incomplete jobs or add parameter trials."
+      "automatic_training": "Only an already frozen, artifact-bound dispatcher can launch its declared training. This policy does not launch incomplete jobs or add parameter trials.",
+      "auxiliary_new_jobs_allowed": false,
+      "auxiliary_retirement": "Auxiliary GPUs are excluded from new training; maintainer explicitly permits continued use of its disk and file access.",
+      "storage_host_policy": "auxiliary_storage_retained_by_maintainer",
+      "auxiliary_storage_io_allowed": true,
+      "auxiliary_training_allowed": false,
+      "auxiliary_new_jobs_scope": "GPU training and heavy data producers; lightweight file-serving processes are storage I/O and permitted."
     }
   }
 }
