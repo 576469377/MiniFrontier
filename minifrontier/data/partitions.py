@@ -22,10 +22,11 @@ from minifrontier.storage import GIB, require_space
 
 FORMAT = "corpus-partition-view-v1"
 TASK_FORMAT = "corpus-partition-view-v2"
-VIEW_FORMATS = {FORMAT, TASK_FORMAT}
+HOLDOUT_FORMAT = "corpus-partition-view-v3"
+VIEW_FORMATS = {FORMAT, TASK_FORMAT, HOLDOUT_FORMAT}
 
 
-def _reserve(db, groups, excluded_groups=(), task_classification=None):
+def _reserve(db, groups, excluded_groups=(), task_classification=None, test_groups=()):
     if not isinstance(groups, dict) or any(
         not isinstance(g, str) or not g or v != "val" for g, v in groups.items()
     ):
@@ -58,12 +59,32 @@ def _reserve(db, groups, excluded_groups=(), task_classification=None):
     )
     if len(excluded) != len(excluded_groups) or any(split != "train" for _, split in excluded):
         raise ValueError("exclusion refers to missing, mixed or held-out groups")
+    if (
+        not isinstance(test_groups, (list, tuple))
+        or any(not isinstance(g, str) or not g or g in excluded_groups for g in test_groups)
+        or len(set(test_groups)) != len(test_groups)
+    ):
+        raise ValueError("test promotions must be distinct and outside training exclusions")
+    db.execute("CREATE TEMP TABLE extra_test(group_root TEXT PRIMARY KEY)")
+    db.executemany("INSERT INTO extra_test VALUES (?)", ((g,) for g in test_groups))
+    promoted = list(
+        db.execute("""
+        SELECT s.group_root,CASE WHEN v.group_root IS NOT NULL THEN 'val' ELSE s.split END
+        FROM main.samples s JOIN extra_test t ON s.group_root=t.group_root
+        LEFT JOIN extra_validation v ON s.group_root=v.group_root
+        GROUP BY s.group_root,2
+    """)
+    )
+    if len(promoted) != len(test_groups) or any(split != "val" for _, split in promoted):
+        raise ValueError("only existing whole validation groups can be promoted to test")
     view = "reserved_samples" if task_classification is not None else "samples"
     db.execute(f"""CREATE TEMP VIEW {view} AS
         SELECT s.id,s.stage,s.source,s.task,s.first_question,s.text,s.payload,
                s.simhash,s.group_root,
-               CASE WHEN v.group_root IS NOT NULL THEN 'val' ELSE s.split END AS split
+               CASE WHEN t.group_root IS NOT NULL THEN 'test'
+                    WHEN v.group_root IS NOT NULL THEN 'val' ELSE s.split END AS split
         FROM main.samples s LEFT JOIN extra_validation v ON s.group_root=v.group_root
+        LEFT JOIN extra_test t ON s.group_root=t.group_root
         LEFT JOIN excluded_training_groups x ON s.group_root=x.group_root
         WHERE x.group_root IS NULL
     """)
@@ -108,11 +129,16 @@ def open_corpus(root):
     try:
         overrides = json.loads(partition.read_text())
         policy = overrides.get("task_policy")
-        if (manifest["format"] == TASK_FORMAT) != (policy is not None):
+        test_groups = overrides.get("test_groups", [])
+        if (manifest["format"] == HOLDOUT_FORMAT) != bool(test_groups):
+            raise ValueError("test promotions require their versioned partition format")
+        if manifest["format"] != HOLDOUT_FORMAT and (
+            (manifest["format"] == TASK_FORMAT) != (policy is not None)
+        ):
             raise ValueError("task-aware partition format and policy disagree")
         if policy is not None and manifest.get("task_policy") != policy:
             raise ValueError("partition task policy differs from its manifest")
-        _reserve(db, overrides["groups"], overrides.get("excluded_groups", []), policy)
+        _reserve(db, overrides["groups"], overrides.get("excluded_groups", []), policy, test_groups)
         return db
     except BaseException:
         db.close()
@@ -256,12 +282,18 @@ def create_media_exclusion_view(corpus_root, group_audit, inventory, output):
     return _create_group_exclusion_view(corpus_root, group_audit, inventory, output, "media")
 
 
-def create_text_exclusion_view(corpus_root, group_audit, inventory, output):
-    """Quarantine checked text groups without moving or rewriting existing holdouts."""
-    return _create_group_exclusion_view(corpus_root, group_audit, inventory, output, "text")
+def create_text_exclusion_view(
+    corpus_root, group_audit, inventory, output, *, resolve_validation_conflicts=False
+):
+    """Exclude train conflicts; optionally apply audited test-over-val precedence."""
+    return _create_group_exclusion_view(
+        corpus_root, group_audit, inventory, output, "text", resolve_validation_conflicts
+    )
 
 
-def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, kind):
+def _create_group_exclusion_view(
+    corpus_root, group_audit, inventory, output, kind, resolve_validation_conflicts=False
+):
     from minifrontier.data.minifrontier1 import write_json
 
     source, report_path, root = (
@@ -275,6 +307,13 @@ def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, ki
     manifest = json.loads((source / "corpus-manifest.json").read_text())
     audit = json.loads((source / "source-audit.json").read_text())
     binding = report["inputs"][inventory]
+    if type(resolve_validation_conflicts) is not bool or (
+        resolve_validation_conflicts
+        and (
+            kind != "text" or report.get("full_shared_text_cross_split_audit_complete") is not True
+        )
+    ):
+        raise ValueError("validation conflicts require an explicit, complete text audit")
     if (
         report["kind"] != f"cross_corpus_{kind}_group_audit"
         or binding["corpus_manifest_sha256"] != sha256(source / "corpus-manifest.json")
@@ -284,26 +323,43 @@ def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, ki
         not in {"candidate_slice_complete_pending_admission", "candidate_inventory_below_target"}
     ):
         raise ValueError("media grouping evidence and unadmitted source differ")
-    selected = {}
+    selected, promotions, test_anchors = {}, {}, {}
     for component in report["split_conflicts"]:
         if component["required_split"] not in {"val", "test"}:
             raise ValueError("exclusion has no held-out component")
         for member in component["members"]:
             if member["inventory"] == inventory and member["split"] == "train":
                 selected[member["group"]] = member["records"]
-    if not selected:
-        raise ValueError("no train groups require exclusion for this inventory")
+            if (
+                resolve_validation_conflicts
+                and component["required_split"] == "test"
+                and member["inventory"] == inventory
+                and member["split"] == "val"
+            ):
+                anchors = {
+                    m["group"]: m["records"]
+                    for m in component["members"]
+                    if m["inventory"] == inventory and m["split"] == "test"
+                }
+                if not anchors:
+                    raise ValueError("validation promotion has no test member in its component")
+                test_anchors.update(anchors)
+                promotions[member["group"]] = member["records"]
+    if not selected and not promotions:
+        raise ValueError("no groups require exclusion or held-out promotion for this inventory")
     overrides: dict[str, Any] = dict(groups={}, excluded_groups=[])
     base = source
     if manifest.get("format") in VIEW_FORMATS:
         base = (source / manifest["base_corpus"]["path"]).resolve()
         overrides = json.loads((source / manifest["partition_file"]).read_text())
 
-    def holdout_hash(db):
+    def holdout_hash(db, promote=()):
         digest = hashlib.sha256()
-        for identity, split in db.execute(
-            "SELECT id,split FROM samples WHERE split!='train' ORDER BY id"
+        for identity, split, group in db.execute(
+            "SELECT id,split,group_root FROM samples WHERE split!='train' ORDER BY id"
         ):
+            if group in promote:
+                split = "test"
             digest.update((identity + ":" + split + "\n").encode())
         return digest.hexdigest()
 
@@ -311,15 +367,19 @@ def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, ki
         if sha256(corpus_storage_root(db) / "corpus.sqlite") != binding["database_sha256"]:
             raise ValueError("media exclusion source database changed")
         prior_holdouts = holdout_hash(db)
-        for group, count in selected.items():
-            actual = list(
-                db.execute(
-                    "SELECT split,COUNT(*) FROM samples WHERE group_root=? GROUP BY split", (group,)
+        expected_holdouts = holdout_hash(db, promotions)
+        for expected, changed in (("train", selected), ("val", promotions), ("test", test_anchors)):
+            for group, count in changed.items():
+                actual = list(
+                    db.execute(
+                        "SELECT split,COUNT(*) FROM samples WHERE group_root=? GROUP BY split",
+                        (group,),
+                    )
                 )
-            )
-            if actual != [("train", count)]:
-                raise ValueError("conflicting group membership differs from the audit")
+                if actual != [(expected, count)]:
+                    raise ValueError("conflicting group membership differs from the audit")
     exclusions = sorted(set(overrides.get("excluded_groups", [])) | set(selected))
+    test_groups = sorted(set(overrides.get("test_groups", [])) | set(promotions))
     statistics: dict[str, dict[str, Any]] = {}
     totals: dict[str, int] = {}
     tokens: dict[str, dict[str, int]] = {}
@@ -330,9 +390,9 @@ def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, ki
     with contextlib.closing(
         sqlite3.connect((base / "corpus.sqlite").as_uri() + "?mode=ro", uri=True)
     ) as db:
-        _reserve(db, overrides["groups"], exclusions, overrides.get("task_policy"))
-        if holdout_hash(db) != prior_holdouts:
-            raise ValueError("exclusion changed an existing validation/test record")
+        _reserve(db, overrides["groups"], exclusions, overrides.get("task_policy"), test_groups)
+        if holdout_hash(db) != expected_holdouts:
+            raise ValueError("refinement changed holdouts outside the audited val-to-test groups")
         for name, split, records, groups, count in db.execute(
             "SELECT source,split,COUNT(*),COUNT(DISTINCT group_root),SUM(json_extract(payload,'$.reference_tokens')) FROM samples GROUP BY source,split"
         ):
@@ -365,6 +425,7 @@ def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, ki
             excluded_groups=exclusions,
             grouping_audit_sha256=sha256(report_path),
             **({"task_policy": overrides["task_policy"]} if "task_policy" in overrides else {}),
+            **({"test_groups": test_groups} if test_groups else {}),
         ),
     )
     for name in ("source_allowlist.json", "reference-tokenizer.json"):
@@ -379,7 +440,9 @@ def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, ki
     current_review = {r["record"]["sample_id"] for r in review}
     result = dict(
         manifest,
-        format=TASK_FORMAT if "task_policy" in overrides else FORMAT,
+        format=HOLDOUT_FORMAT
+        if test_groups
+        else (TASK_FORMAT if "task_policy" in overrides else FORMAT),
         base_corpus=dict(
             path=os.path.relpath(base, root), manifest_sha256=sha256(base / "corpus-manifest.json")
         ),
@@ -389,18 +452,33 @@ def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, ki
         source_splits=statistics,
         formal_admission=False,
         split_rule=manifest["split_rule"]
-        + f"; exclude entire train groups linked to held-out {kind} across corpora",
+        + f"; exclude entire train groups linked to held-out {kind} across corpora"
+        + (
+            "; audited whole validation groups move to test; all original holdouts remain held out"
+            if promotions
+            else ""
+        ),
         excluded_training_groups=len(exclusions),
         newly_excluded_records=sum(selected.values()),
         grouping_audit_sha256=sha256(report_path),
         previous_effective_manifest_sha256=sha256(source / "corpus-manifest.json"),
+        **(
+            dict(
+                validation_groups_promoted_to_test=len(promotions),
+                promoted_validation_records=sum(promotions.values()),
+            )
+            if promotions
+            else {}
+        ),
     )
     write_json(root / "corpus-manifest.json", result)
     write_json(
         root / "source-audit.json",
         dict(
             audit,
-            operation="exclude_cross_pool_train_groups",
+            operation="resolve_text_split_conflicts"
+            if promotions
+            else "exclude_cross_pool_train_groups",
             corpus=result,
             source_data_changed=False,
             formal_admission=False,
@@ -411,7 +489,9 @@ def _create_group_exclusion_view(corpus_root, group_audit, inventory, output, ki
             split_independent_groups=split_groups,
             split_answer_reference_tokens=answers,
             grouping_audit_sha256=sha256(report_path),
-            holdout_membership_sha256=prior_holdouts,
+            holdout_membership_sha256=expected_holdouts,
+            prior_holdout_membership_sha256=prior_holdouts,
+            validation_groups_promoted_to_test=promotions,
             excluded_training_groups=selected,
             updated_unix=time.time(),
             review=dict(
@@ -466,7 +546,13 @@ def create_task_classification_view(corpus_root, output):
     ):
         if sha256(base / "corpus.sqlite") != manifest["database_sha256"]:
             raise ValueError("task correction source database changed")
-        _reserve(after, overrides["groups"], overrides.get("excluded_groups", []), policy)
+        _reserve(
+            after,
+            overrides["groups"],
+            overrides.get("excluded_groups", []),
+            policy,
+            overrides.get("test_groups", []),
+        )
         query = "SELECT id,stage,split,group_root,task,payload FROM samples ORDER BY id"
         for old, new in zip(before.execute(query), after.execute(query), strict=True):
             if old[:4] != new[:4]:
@@ -505,7 +591,7 @@ def create_task_classification_view(corpus_root, output):
     current_review = {r["record"]["sample_id"] for r in reviews}
     result = dict(
         manifest,
-        format=TASK_FORMAT,
+        format=HOLDOUT_FORMAT if overrides.get("test_groups") else TASK_FORMAT,
         base_corpus=dict(
             path=os.path.relpath(base, root), manifest_sha256=sha256(base / "corpus-manifest.json")
         ),

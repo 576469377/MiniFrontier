@@ -13,7 +13,7 @@ import pytest
 
 from minifrontier.data import sha256
 from minifrontier.data.corpus import simhash, text_shingles
-from minifrontier.data.partitions import create_text_exclusion_view, open_corpus
+from minifrontier.data.partitions import HOLDOUT_FORMAT, create_text_exclusion_view, open_corpus
 from minifrontier.data.text_inventory import ExactTextIndex, audit_text_holdouts
 
 
@@ -183,3 +183,60 @@ def test_changed_source_and_existing_output_are_rejected(corpus, tmp_path):
         db.execute("UPDATE samples SET text='changed source' WHERE id='train-near'")
     with pytest.raises(ValueError, match="differs from manifest"):
         audit_text_holdouts(corpus, tmp_path / "new.json")
+
+
+def test_complete_text_conflicts_preserve_test_and_promote_whole_validation_groups(
+    corpus, tmp_path
+):
+    output = tmp_path / "audit.json"
+    audit_text_holdouts(corpus, output)
+    view = tmp_path / "resolved"
+    result = create_text_exclusion_view(
+        corpus, output, "shared-text", view, resolve_validation_conflicts=True
+    )
+    assert result["format"] == HOLDOUT_FORMAT
+    assert result["newly_excluded_records"] == 3
+    assert result["promoted_validation_records"] == 1
+    assert result["splits"] == dict(test=3)
+    with contextlib.closing(open_corpus(view)) as db:
+        assert dict(db.execute("SELECT id,split FROM samples")) == {
+            "test-near": "test",
+            "val-near": "test",
+            "test-code": "test",
+        }
+    closed = audit_text_holdouts(view, tmp_path / "resolved-audit.json")
+    assert closed["status"] == "cross_split_check_passed" and not closed["matches"]
+    assert not closed["formal_admission"]
+
+
+@pytest.mark.parametrize(
+    "fault", ["incomplete", "no_test_member", "wrong_count", "wrong_split", "wrong_anchor"]
+)
+def test_validation_promotion_requires_complete_bound_membership(corpus, tmp_path, fault):
+    output = tmp_path / "audit.json"
+    result = audit_text_holdouts(corpus, output)
+    if fault == "incomplete":
+        result["full_shared_text_cross_split_audit_complete"] = False
+    else:
+        component = next(
+            c for c in result["split_conflicts"] if any(m["split"] == "val" for m in c["members"])
+        )
+        if fault == "no_test_member":
+            component["members"] = [m for m in component["members"] if m["split"] != "test"]
+        elif fault == "wrong_anchor":
+            next(m for m in component["members"] if m["split"] == "test")["group"] = (
+                "missing-test-group"
+            )
+        else:
+            member = next(m for m in component["members"] if m["split"] == "val")
+            if fault == "wrong_count":
+                member["records"] += 1
+            else:
+                member["group"] = "test-group"
+    output.write_text(json.dumps(result))
+    view = tmp_path / "invalid"
+    with pytest.raises(ValueError):
+        create_text_exclusion_view(
+            corpus, output, "shared-text", view, resolve_validation_conflicts=True
+        )
+    assert not view.exists()

@@ -17,6 +17,7 @@ from minifrontier.data.corpus import CorpusBuilder, encode_corpus, train_tokeniz
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS as MF1_SPECIAL_TOKENS
 from minifrontier.data.native import encode_native
 from minifrontier.data.partitions import (
+    HOLDOUT_FORMAT,
     create_partition_view,
     create_text_exclusion_view,
     open_corpus,
@@ -220,6 +221,74 @@ def test_text_exclusion_preserves_originals_and_all_holdouts(corpus, tmp_path, n
         )
     report = json.loads((out / "source-audit.json").read_text())
     assert report["excluded_training_groups"] == {group: count}
+
+
+def test_reserved_validation_group_moves_whole_to_test_and_reaches_text_encoding(corpus, tmp_path):
+    original, reservation = corpus
+    prior = tmp_path / "prior"
+    create_partition_view(original, reservation, prior)
+    group = next(iter(json.loads(reservation.read_text())["groups"]))
+    with contextlib.closing(open_corpus(prior)) as db:
+        before = dict(db.execute("SELECT id,split FROM samples"))
+        promoted = [r[0] for r in db.execute("SELECT id FROM samples WHERE group_root=?", (group,))]
+        test_group = db.execute("SELECT group_root FROM samples WHERE split='test'").fetchone()[0]
+        training_bytes = b"".join(
+            r[0].encode()
+            for r in db.execute("SELECT text FROM samples WHERE split='train' ORDER BY id")
+        )
+    report = tmp_path / "grouping.json"
+    report.write_text(
+        json.dumps(
+            dict(
+                kind="cross_corpus_text_group_audit",
+                full_shared_text_cross_split_audit_complete=True,
+                inputs={
+                    "text": dict(
+                        corpus_manifest_sha256=sha256(prior / "corpus-manifest.json"),
+                        database_sha256=sha256(original / "corpus.sqlite"),
+                    )
+                },
+                split_conflicts=[
+                    dict(
+                        required_split="test",
+                        members=[
+                            dict(inventory="text", group=group, split="val", records=2),
+                            dict(inventory="text", group=test_group, split="test", records=1),
+                        ],
+                    )
+                ],
+            )
+        )
+    )
+    view = tmp_path / "resolved"
+    result = create_text_exclusion_view(
+        prior, report, "text", view, resolve_validation_conflicts=True
+    )
+    assert result["format"] == HOLDOUT_FORMAT
+    assert result["newly_excluded_records"] == 0 and result["promoted_validation_records"] == 2
+    assert result["splits"] == {"train": 1, "val": 1, "test": 3}
+    with contextlib.closing(open_corpus(view)) as db:
+        assert dict(db.execute("SELECT id,split FROM samples")) == {
+            identity: ("test" if identity in promoted else split)
+            for identity, split in before.items()
+        }
+    tokenizer = tmp_path / "tokenizer.json"
+    tokens = train_tokenizer(view, tokenizer, 350)
+    assert tokens["training_byte_sha256"] == hashlib.sha256(training_bytes).hexdigest()
+    encoded = tmp_path / "encoded"
+    manifest = encode_corpus(view, tokenizer, encoded)
+    assert {
+        split: record["examples"] for split, record in manifest["stages"]["pretrain"].items()
+    } == result["splits"]
+    assert {
+        json.loads(line)["sample_id"]
+        for line in (encoded / "pretrain.test.jsonl").read_text().splitlines()
+    } == {identity for identity, split in before.items() if split == "test" or identity in promoted}
+    # A consumer must not silently ignore test promotions as an older format.
+    result["format"] = "corpus-partition-view-v1"
+    (view / "corpus-manifest.json").write_text(json.dumps(result))
+    with pytest.raises(ValueError, match="versioned partition"):
+        open_corpus(view)
 
 
 def test_tokenizer_consumer_can_move_between_worker_threads(corpus, tmp_path, monkeypatch):
