@@ -605,7 +605,9 @@ def run(args, rank, world, device):
     ledger = TokenLedger()
     if args.resume:
         assert saved is not None
-        if saved["run_spec"] != run_spec:
+        from .execution_upgrade import resume_matches
+
+        if not resume_matches(saved["run_spec"], run_spec, args.resume):
             raise ValueError(
                 "resume recipe differs (including schedule, batch, world size or corpus); use --init for a new run"
             )
@@ -755,6 +757,35 @@ def run(args, rank, world, device):
             )
     profile = saved.get("performance_updates", []) if args.resume and saved else []
     del saved
+
+    from .prefetch import OrderedPrefetch, native_window
+    from .prefetch import enabled as prefetch_enabled
+
+    prefetch = None
+    if prefetch_enabled():
+        if not (
+            world == 1
+            and args.stage == "pretrain"
+            and args.input_batch_tokens
+            and args.input_batch_policy == "sample-bounded"
+            and not batch_schedule
+            and (args.media_mixture or args.token_mixture)
+        ):
+            raise ValueError(
+                "prefetch requires single-rank fixed-target pretraining with a resumable mixture"
+            )
+        prefetch = OrderedPrefetch(
+            lambda: native_window(
+                train, cursor, args.batch_size, args.input_batch_tokens, args.sequence_length
+            ),
+            cursor.state_dict(),
+        )
+
+    def consumed_cursor():
+        return prefetch.committed if prefetch is not None else cursor.state_dict()
+
+    def consumed_offset():
+        return prefetch.committed["offset"] if prefetch is not None else cursor.offset
 
     def autocast():
         return torch.autocast(
@@ -1018,10 +1049,8 @@ def run(args, rank, world, device):
                 optimizer=optimizer.state_dict(),
                 optimizer_kind=optimizer_kind,
                 step=step,
-                data_offset=cursor.offset,
-                data_cursor=cursor.state_dict()
-                if args.token_mixture or args.media_mixture
-                else None,
+                data_offset=consumed_offset(),
+                data_cursor=consumed_cursor() if args.token_mixture or args.media_mixture else None,
                 rng=states,
                 run_spec=run_spec,
                 tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
@@ -1081,59 +1110,69 @@ def run(args, rank, world, device):
         pending_rows = []
         accumulated_inputs = 0
         target_inputs = input_target(args.input_batch_tokens, batch_schedule, ledger.ce_tokens)
-        while True:
-            count = args.batch_size
-            if target_inputs is not None and args.input_batch_policy == "sample-bounded":
-                count = microbatch_count(
-                    args.batch_size, target_inputs - accumulated_inputs, args.sequence_length, world
-                )
-            indices = cursor.next(count)
-            if target_inputs is not None and args.input_batch_policy == "sample-bounded":
-                # Select the global sample window first, then collate into full
-                # microbatches. Small sampling groups near the boundary must not
-                # create a separate forward/backward for each tail sample.
-                from minifrontier.multimodal import TrainingBatch, collate
+        if prefetch is not None:
+            window, accumulated_inputs = prefetch.next()
+        else:
+            while True:
+                count = args.batch_size
+                if target_inputs is not None and args.input_batch_policy == "sample-bounded":
+                    count = microbatch_count(
+                        args.batch_size,
+                        target_inputs - accumulated_inputs,
+                        args.sequence_length,
+                        world,
+                    )
+                indices = cursor.next(count)
+                if target_inputs is not None and args.input_batch_policy == "sample-bounded":
+                    # Select the global sample window first, then collate into full
+                    # microbatches. Small sampling groups near the boundary must not
+                    # create a separate forward/backward for each tail sample.
+                    from minifrontier.multimodal import TrainingBatch, collate
 
-                rows = [train[index] for index in indices]
-                tensors = [
-                    row.input_ids if isinstance(row, TrainingBatch) else row[0] for row in rows
-                ]
-                if any(x.shape[-1] > args.sequence_length for x in tensors):
+                    rows = [train[index] for index in indices]
+                    tensors = [
+                        row.input_ids if isinstance(row, TrainingBatch) else row[0] for row in rows
+                    ]
+                    if any(x.shape[-1] > args.sequence_length for x in tensors):
+                        raise ValueError(
+                            "input row exceeds the declared sequence length used for batching"
+                        )
+                    pending_rows.extend(rows)
+                    actual = torch.tensor(sum(int(x.ne(0).sum()) for x in tensors), device=device)
+                    if world > 1:
+                        dist.all_reduce(actual)
+                    accumulated_inputs += int(actual)
+                    if accumulated_inputs >= target_inputs:
+                        window = [
+                            collate(
+                                pending_rows[start : start + args.batch_size], torch.device("cpu")
+                            )
+                            for start in range(0, len(pending_rows), args.batch_size)
+                        ]
+                        break
+                    if len(pending_rows) >= 1024 * args.batch_size:
+                        raise ValueError("global input target needs more than 1024 microbatches")
+                    continue
+                item = batch(train, indices, torch.device("cpu"))
+                if target_inputs is not None and item.input_ids.shape[-1] > args.sequence_length:
                     raise ValueError(
                         "input row exceeds the declared sequence length used for batching"
                     )
-                pending_rows.extend(rows)
-                actual = torch.tensor(sum(int(x.ne(0).sum()) for x in tensors), device=device)
-                if world > 1:
-                    dist.all_reduce(actual)
-                accumulated_inputs += int(actual)
-                if accumulated_inputs >= target_inputs:
-                    window = [
-                        collate(pending_rows[start : start + args.batch_size], torch.device("cpu"))
-                        for start in range(0, len(pending_rows), args.batch_size)
-                    ]
-                    break
-                if len(pending_rows) >= 1024 * args.batch_size:
-                    raise ValueError("global input target needs more than 1024 microbatches")
-                continue
-            item = batch(train, indices, torch.device("cpu"))
-            if target_inputs is not None and item.input_ids.shape[-1] > args.sequence_length:
-                raise ValueError("input row exceeds the declared sequence length used for batching")
-            window.append(item)
-            if target_inputs is None:
-                if len(window) >= args.grad_accum:
-                    break
-            else:
-                actual = item.input_ids.ne(0).sum().to(device)
-                if world > 1:
-                    dist.all_reduce(actual)
-                accumulated_inputs += int(actual)
-                if accumulated_inputs >= target_inputs:
-                    break
-                if len(window) >= 1024:
-                    raise ValueError(
-                        "actual input target needs more than 1024 microbatches; revise the recipe"
-                    )
+                window.append(item)
+                if target_inputs is None:
+                    if len(window) >= args.grad_accum:
+                        break
+                else:
+                    actual = item.input_ids.ne(0).sum().to(device)
+                    if world > 1:
+                        dist.all_reduce(actual)
+                    accumulated_inputs += int(actual)
+                    if accumulated_inputs >= target_inputs:
+                        break
+                    if len(window) >= 1024:
+                        raise ValueError(
+                            "actual input target needs more than 1024 microbatches; revise the recipe"
+                        )
         io_seconds = time.monotonic() - started
         rollout_window = []
         active_responses = torch.zeros((), device=device, dtype=torch.int64)
@@ -1177,7 +1216,7 @@ def run(args, rank, world, device):
         )
         if counts is not None and counts[0] == 0 and args.stage != "dense_distill":
             ledger.skipped_windows += 1
-            record(dict(event="zero_supervision_window", step=step, data_offset=cursor.offset))
+            record(dict(event="zero_supervision_window", step=step, data_offset=consumed_offset()))
             empty_windows += 1
             if empty_windows >= 32:
                 save(step)
@@ -1495,7 +1534,9 @@ def run(args, rank, world, device):
                     else None,
                     tokens_per_second=metrics[2].item() / elapsed,
                     step_seconds=elapsed,
-                    data_offset=cursor.offset,
+                    data_preparation_seconds=io_seconds,
+                    optimizer_seconds=optimizer_seconds,
+                    data_offset=consumed_offset(),
                     micro_batches=len(window),
                     input_batch_target=target_inputs,
                     input_batch_actual=accumulated_inputs if target_inputs is not None else None,
@@ -1518,13 +1559,16 @@ def run(args, rank, world, device):
         )
         if validation_ready or finished(step):
             evaluate(step, final=finished(step))
+        pause_request = output / "pause.request"
         if (
-            args.stop_after_updates is not None
-            and step >= args.stop_after_updates
-            and not finished(step)
-        ):
+            (args.stop_after_updates is not None and step >= args.stop_after_updates)
+            or pause_request.exists()
+        ) and not finished(step):
             record(dict(event="paused", step=step, token_ledger=ledger.state_dict()))
             save(step, paused=True)
+            pause_request.unlink(missing_ok=True)
+            if prefetch is not None:
+                prefetch.close()
             if writer:
                 writer.close()
             return
@@ -1532,6 +1576,8 @@ def run(args, rank, world, device):
             save(step)
         if finished(step):
             break
+    if prefetch is not None:
+        prefetch.close()
     if token_budget is not None and not finished(step):
         save(step)
         raise RuntimeError(

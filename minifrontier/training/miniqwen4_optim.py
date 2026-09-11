@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import weakref
+from collections import defaultdict
 from typing import Any, cast
 
 import torch
@@ -140,10 +141,15 @@ class MiniQwen4Optimizer(torch.optim.Optimizer):
             with torch.enable_grad():
                 loss = closure()
         # Reject nonfinite gradients before modifying any model/optimizer state.
+        finite = []
         for group in self.param_groups:
             p = group["params"][0]
-            if p.grad is not None and (p.grad.is_sparse or not bool(torch.isfinite(p.grad).all())):
-                raise ValueError("source optimizer requires finite dense gradients")
+            if p.grad is not None:
+                if p.grad.is_sparse:
+                    raise ValueError("source optimizer requires finite dense gradients")
+                finite.append(torch.isfinite(p.grad).all())
+        if finite and not bool(torch.stack(finite).all()):
+            raise ValueError("source optimizer requires finite dense gradients")
         for group in self.param_groups:
             p = group["params"][0]
             if p.grad is None:
@@ -174,17 +180,28 @@ class MiniQwen4Optimizer(torch.optim.Optimizer):
                 p.mul_(1 - group["adam_lr"] * group["weight_decay"])
                 p.add_(adam.to(p.dtype), alpha=-group["adam_lr"])
                 continue
+            # Bound live directions to this parameter. Equal-shaped semantic
+            # blocks remain independent; state layout and update formulas stay
+            # compatible with existing sequential optimizer checkpoints.
+            buckets = defaultdict(list)
             for expert, start, end, algorithm in blocks:
                 index = (expert, slice(start, end)) if p.ndim == 3 else (slice(start, end),)
                 part = p[index]
                 if algorithm == "muon":
-                    update = polar_express_orthogonalize(direction[index], steps=8, eps=1e-14)
-                    update = update * (0.2 * math.sqrt(max(update.shape)))
-                    rate = group["lr"]
+                    buckets[part.shape].append((part, direction[index]))
                 else:
                     update, rate = adam[index], group["adam_lr"]
-                part.mul_(1 - rate * group["weight_decay"])
-                part.add_(update.to(part.dtype), alpha=-rate)
+                    part.mul_(1 - rate * group["weight_decay"])
+                    part.add_(update.to(part.dtype), alpha=-rate)
+            for rows in buckets.values():
+                for offset in range(0, len(rows), 32):
+                    chunk = rows[offset : offset + 32]
+                    directions = torch.stack([item[1] for item in chunk])
+                    updates = polar_express_orthogonalize(directions, steps=8, eps=1e-14)
+                    updates = updates * (0.2 * math.sqrt(max(updates.shape[-2:])))
+                    for (part, _), update in zip(chunk, updates, strict=True):
+                        part.mul_(1 - group["lr"] * group["weight_decay"])
+                        part.add_(update.to(part.dtype), alpha=-group["lr"])
         return loss
 
     def load_state_dict(self, state_dict: dict[str, Any]) -> None:

@@ -47,8 +47,9 @@ def assert_tree_equal(a, b):
 
 
 @pytest.mark.parametrize("compact", [False, True])
+@pytest.mark.parametrize("prefetch", [False, True])
 def test_real_pause_resume_matches_uninterrupted_optimizer_router_rng(
-    fixture_data, tmp_path, compact
+    fixture_data, tmp_path, compact, prefetch, monkeypatch
 ):
     c = asdict(MiniFrontier1Config.tiny())
     if compact:
@@ -69,6 +70,7 @@ def test_real_pause_resume_matches_uninterrupted_optimizer_router_rng(
         eval_every=4,
     )
     train(**args, output=tmp_path / "continuous")
+    monkeypatch.setenv("MINIFRONTIER_PREFETCH_WINDOWS", str(int(prefetch)))
     train(**args, output=tmp_path / "resumed", stop_after_updates=2)
     train(**args, output=tmp_path / "resumed", resume=tmp_path / "resumed/checkpoint.pt")
     a, b = [

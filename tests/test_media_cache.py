@@ -153,3 +153,39 @@ def test_cache_origin_and_bounds_cannot_silently_change(origin):
     MediaCache(policy)
     with pytest.raises(ValueError, match="different origin or storage bounds"):
         MediaCache(dict(policy, max_bytes=policy["max_bytes"] + 1))
+
+
+def test_slow_download_does_not_block_unrelated_cache_hit(origin):
+    source, _requests, policy = origin
+    cache = MediaCache(policy)
+    ready, release = threading.Event(), threading.Event()
+    hit = put(source, "hit", b"good")
+    miss = put(source, "miss", b"wait")
+    assert int(hit[1][:2], 16) % 64 != int(miss[1][:2], 16) % 64
+    cache.read(*hit)
+    original = cache.opener.open
+
+    def delayed(*args, **kwargs):
+        ready.set()
+        assert release.wait(5)
+        return original(*args, **kwargs)
+
+    cache.opener.open = delayed
+    with ThreadPoolExecutor(2) as pool:
+        download = pool.submit(cache.read, *miss)
+        try:
+            assert ready.wait(5)
+            assert pool.submit(cache.read, *hit).result(timeout=2) == b"good"
+        finally:
+            release.set()
+        assert download.result() == b"wait"
+
+
+def test_processor_path_disk_fallback_retains_lifetime(origin, monkeypatch):
+    source, _requests, policy = origin
+    monkeypatch.setattr("minifrontier.data.media_cache._memfd", lambda: None)
+    cache = MediaCache(policy)
+    item = put(source, "item", b"same")
+    with cache.local_path(*item) as path:
+        assert path.read_bytes() == b"same"
+    assert not path.exists()

@@ -25,18 +25,20 @@ def polar_express_orthogonalize(matrix: Tensor, steps: int = 8, eps: float = 1e-
     as on the four-3090 training target.
     """
 
-    if matrix.ndim != 2:
-        raise ValueError("Polar Express orthogonalization expects a 2-D matrix")
+    if matrix.ndim not in (2, 3):
+        raise ValueError("Polar Express expects a matrix or a batch of independent matrices")
     if not 1 <= steps <= len(POLAR_EXPRESS_8_COEFFICIENTS):
         raise ValueError(
             f"Polar Express steps must be between 1 and {len(POLAR_EXPRESS_8_COEFFICIENTS)}"
         )
     if eps <= 0:
         raise ValueError("Polar Express normalization epsilon must be positive")
-    transposed = matrix.size(0) > matrix.size(1)
-    update = matrix.float().T if transposed else matrix.float()
-    update = update / (update.norm() + eps)
+    transposed = matrix.size(-2) > matrix.size(-1)
+    update = matrix.float().transpose(-2, -1) if transposed else matrix.float()
+    # Normalize each semantic matrix independently, never across the batch.
+    norm = update.norm() if matrix.ndim == 2 else update.norm(dim=(-2, -1), keepdim=True)
+    update = update / (norm + eps)
     for a, b, c in POLAR_EXPRESS_8_COEFFICIENTS[:steps]:
-        gram = update @ update.T
+        gram = update @ update.transpose(-2, -1)
         update = a * update + (b * gram + c * (gram @ gram)) @ update
-    return update.T if transposed else update
+    return update.transpose(-2, -1) if transposed else update

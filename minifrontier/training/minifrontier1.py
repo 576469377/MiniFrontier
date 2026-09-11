@@ -139,11 +139,11 @@ class Sampler:
             seed=self.seed,
             buckets=self.buckets,
             weights=self.weights,
-            orders=self.orders,
-            offsets=self.offsets,
-            ce=self.ce,
-            examples=self.examples,
-            epochs=self.epochs,
+            orders=self.orders.copy(),
+            offsets=self.offsets.copy(),
+            ce=self.ce.copy(),
+            examples=self.examples.copy(),
+            epochs=self.epochs.copy(),
             rng=self.rng.getstate(),
             document_offsets=copy.deepcopy(self.document_offsets),
         )
@@ -152,7 +152,7 @@ class Sampler:
         if any(state[k] != getattr(self, k) for k in ("seed", "buckets", "weights")):
             raise ValueError("sampler data buckets/seed/mixture changed")
         for key in ("orders", "offsets", "ce", "examples", "epochs"):
-            setattr(self, key, state[key])
+            setattr(self, key, state[key].copy())
         self.document_offsets = copy.deepcopy(state.get("document_offsets", {}))
         for domain, (index, start) in self.document_offsets.items():
             if (
@@ -569,10 +569,12 @@ def train(
             "p2",
         }
         if resume:
+            from .execution_upgrade import resume_matches
+
             previous_run = dict(saved["run_spec"])
             # Resume binds the original initialization artifact, not the resume file as a new init.
             run["actual_init_checkpoint_sha256"] = previous_run["actual_init_checkpoint_sha256"]
-            if run != previous_run or saved["mf1_phase"] != phase:
+            if not resume_matches(previous_run, run, resume) or saved["mf1_phase"] != phase:
                 raise ValueError(
                     "exact resume requires the same data/source/config/optimizer/budget/phase"
                 )
@@ -623,6 +625,51 @@ def train(
         torch.cuda.reset_peak_memory_stats(device)
     started, step_started = time.monotonic(), time.monotonic()
     profile = []
+    from .prefetch import OrderedPrefetch
+    from .prefetch import enabled as prefetch_enabled
+
+    producer_tokens = ledger["phase_tokens"]
+
+    def produce_window():
+        nonlocal producer_tokens
+        window, inputs = [], 0
+        capacity = (
+            context_length(phase, sampler.rng, producer_tokens, c.max_position_embeddings)
+            if production_path
+            else None
+        )
+        packed: list[dict[str, Any]] = []
+        packed_length = 0
+        while inputs < input_batch_tokens:
+            item, domain = sampler.next_item(dataset, capacity)
+            item["bucket"] = domain
+            if capacity is not None and item["input_ids"].shape[1] > capacity:
+                raise ValueError(
+                    "sample exceeds selected curriculum bucket; prepare length-specific native shards instead of silently truncating"
+                )
+            count = int(item["labels"][:, 1:].ne(-100).sum())
+            sampler.ce[domain] += count
+            if capacity is None:
+                window.append(item)
+            else:
+                if packed_length + item["input_ids"].shape[1] > capacity:
+                    window.append(pack_records(packed, capacity))
+                    packed, packed_length = [], 0
+                packed.append(item)
+                packed_length += item["input_ids"].shape[1]
+            inputs += item["input_ids"].numel()
+        if packed:
+            window.append(pack_records(packed, capacity))
+        ce_count = sum(int(item["labels"][:, 1:].ne(-100).sum()) for item in window)
+        producer_tokens += inputs if phase == "indexer" else ce_count
+        return (window, inputs, capacity, ce_count), sampler.state_dict()
+
+    prefetch = None
+    if prefetch_enabled():
+        if phase not in {"pilot", "p0", "p1", "p3"}:
+            raise ValueError("MF1 lookahead is limited to phases with producer-owned sampling RNG")
+        prefetch = OrderedPrefetch(produce_window, sampler.state_dict())
+
     unique_media = set(cast(dict, saved).get("seen_media", [])) if resume else set()
     step = ledger["optimizer_updates"]
 
@@ -673,7 +720,7 @@ def train(
             run_spec=run,
             optimizer=opt.state_dict(),
             continuous_optimizer_states=continuous_states,
-            sampler=sampler.state_dict(),
+            sampler=prefetch.committed if prefetch is not None else sampler.state_dict(),
             router_balance=balance.state_dict(),
             ledger=ledger,
             rng=rng_state(device),
@@ -710,6 +757,7 @@ def train(
         )
 
     last_evaluation = None
+    pause = False
 
     def validate(final=False):
         nonlocal last_evaluation
@@ -739,36 +787,10 @@ def train(
             previous_main_ce = ledger["main_ce_tokens"]
             data_started = time.monotonic()
             window, inputs = [], 0
-            capacity = (
-                context_length(
-                    phase, sampler.rng, ledger["phase_tokens"], c.max_position_embeddings
-                )
-                if production_path
-                else None
-            )
-            packed: list[dict[str, Any]] = []
-            packed_length = 0
-            while inputs < input_batch_tokens:
-                item, domain = sampler.next_item(dataset, capacity)
-                item["bucket"] = domain
-                if capacity is not None and item["input_ids"].shape[1] > capacity:
-                    raise ValueError(
-                        "sample exceeds selected curriculum bucket; prepare length-specific native shards instead of silently truncating"
-                    )
-                count = int(item["labels"][:, 1:].ne(-100).sum())
-                sampler.ce[domain] += count
-                if capacity is None:
-                    window.append(item)
-                else:
-                    if packed_length + item["input_ids"].shape[1] > capacity:
-                        window.append(pack_records(packed, capacity))
-                        packed, packed_length = [], 0
-                    packed.append(item)
-                    packed_length += item["input_ids"].shape[1]
-                inputs += item["input_ids"].numel()
-            if packed:
-                window.append(pack_records(packed, capacity))
-            ce_count = sum(int(item["labels"][:, 1:].ne(-100).sum()) for item in window)
+            if prefetch is not None:
+                window, inputs, capacity, ce_count = prefetch.next()
+            else:
+                (window, inputs, capacity, ce_count), _ = produce_window()
             if (
                 run_kind == "acceptance"
                 and ledger["phase_tokens"] + (inputs if phase == "indexer" else ce_count)
@@ -961,13 +983,17 @@ def train(
             )
             if not performance_only and due:
                 validate()
-            pause = stop_after_updates is not None and step >= stop_after_updates
+            pause_request = output / "pause.request"
+            pause = (
+                stop_after_updates is not None and step >= stop_after_updates
+            ) or pause_request.exists()
             if step % save_every == 0 or pause:
                 save("paused" if pause else "running")
             if pause:
+                pause_request.unlink(missing_ok=True)
                 break
             step_started = time.monotonic()
-        paused = stop_after_updates is not None and step >= stop_after_updates and not finished()
+        paused = pause and not finished()
         if performance_only:
             if (
                 len(profile) != profile_updates
@@ -1032,6 +1058,8 @@ def train(
             )
         raise
     finally:
+        if prefetch is not None:
+            prefetch.close()
         if writer:
             writer.close()
     return dict(
