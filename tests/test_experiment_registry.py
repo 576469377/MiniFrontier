@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import time
@@ -35,6 +36,8 @@ def test_standalone_data_audit_uses_verified_process_and_preserves_scanned_count
         assert entry["data_progress"]["scanned_records"] == record["scanned_records"]
         assert entry["data_progress"]["operation_state"] == "checking_training_holdouts"
         assert entry["ce_tokens"] == 0 and not entry["main_budget_eligible"]
+        os.utime(target / "run.json", (1, 1))
+        assert collect(tmp_path)["experiments"][0]["state"] == "running"
         record["driver_sha256"] = "0" * 64
         write(target / "run.json", record)
         assert collect(tmp_path)["experiments"][0]["state"] == "unverified_process_identity"
@@ -69,6 +72,42 @@ def test_stopped_trial_is_not_complete_and_preserves_last_observed_tokens(tmp_pa
     assert (
         len((tmp_path / "outputs/experiment-registry/events.jsonl").read_text().splitlines()) == 1
     )
+
+
+def test_inference_review_never_inherits_checkpoint_training_tokens(tmp_path):
+    target = tmp_path / "outputs/strategy-pilot-review/minideepseekv4"
+    record = dict(
+        kind="inference_evaluation",
+        model_name="minideepseekv4",
+        state="generation_complete_pending_review",
+        completed_unix=time.time(),
+        checkpoint_sha256="a" * 64,
+        total_generated_tokens=384,
+        ce_token_budget=20_000_000,
+    )
+    write(target / "run.json", record)
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["state"] == record["state"]
+    write(
+        target / "status.json",
+        dict(
+            state="generation_review_failed",
+            capability_status="failed",
+            token_ledger=dict(ce_tokens=20_013_084, optimizer_updates=1195),
+        ),
+    )
+    write(target / "review.json", dict(quality_passed=False))
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["kind"] == "evaluation"
+    assert entry["model"] == "minideepseekv4"
+    assert entry["state"] == "generation_review_failed"
+    assert entry["capability_status"] == "failed"
+    assert entry["main_budget_eligible"] is False
+    assert entry["ce_tokens"] == entry["optimizer_updates"] == 0
+    assert entry["ce_token_budget"] is None
+    assert entry["evaluation"]["generated_tokens"] == 384
+    assert entry["evaluation"]["checkpoint_sha256"] == record["checkpoint_sha256"]
+    assert set(entry["evidence_files"]) >= {"run.json", "review.json", "status.json"}
 
 
 @pytest.mark.parametrize("bound_arguments", [False, True])

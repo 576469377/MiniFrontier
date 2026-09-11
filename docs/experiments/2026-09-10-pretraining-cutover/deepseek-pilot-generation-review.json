@@ -1,0 +1,134 @@
+{
+  "kind": "historical_pilot_generation_review",
+  "status": "review_complete_generation_not_usable",
+  "method": "model_assisted_text_review",
+  "reviewer": "OpenAI Codex",
+  "generation_run_sha256": "16afa059e19ec5f661db42154867ef7b92cb0b5c30a317ac8650c0bcf079c4f3",
+  "arguments_sha256": "21826fa02e0a42174658a6e5e8569a88480d5e379dc4e249b52c04baefc7aca0",
+  "source_commit": "75a3364f586936d764c31376e185747973d2bed6",
+  "source_implementation_sha256": "edba51d6541dee5fe74cc3be36f50470ca718da5402679e0510d4e3096ba93de",
+  "checkpoint_sha256": "26a42b5d6be25cb77d00d5777b02697d7c930f5d8f14405f69c688c184f2f440",
+  "tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+  "checkpoint_metadata": {
+    "model_name": "minideepseekv4",
+    "stage": "pretrain",
+    "step": 1195,
+    "phase": "dense_pretrain"
+  },
+  "historical_training_ce": 20013084,
+  "new_training_tokens": 0,
+  "formal_ce_tokens": 0,
+  "formal_admission": false,
+  "quality_passed": false,
+  "human_source_quality_review_completed": false,
+  "protocol": {
+    "prompt_format": "BOS plus plain completion prefix; no chat template",
+    "source_and_tokenizer_match_original_pilot": true,
+    "use_cache": false,
+    "precision": "BF16 autocast",
+    "temperature": 0,
+    "top_p": 1,
+    "max_new_tokens": 48,
+    "seed": 42
+  },
+  "technical_checks": {
+    "checkpoint_loaded_strictly": true,
+    "finite_next_token_logits_steps": 384,
+    "generated_tokens": 384,
+    "empty_generations": 0,
+    "replacement_characters": 0
+  },
+  "observations": [
+    {
+      "id": "zh_prose",
+      "prompt": "春天来了，公园里的树木开始发芽。清晨，",
+      "text": ",用小气、气、气、气、气、气、气、气、气、气、气、气、气、气、气、气、气、气、气、气、气、气、气",
+      "outcome": "failed",
+      "coherent_language_continuation": false,
+      "severe_repetition": true,
+      "reason": "After a few unrelated characters, repeats 气、 through the output limit."
+    },
+    {
+      "id": "zh_science",
+      "prompt": "植物通过光合作用，把阳光、水和二氧化碳转化为",
+      "text": "水,使水、水、水、水、水、水、水、水、水、水、水、水、水、水、水、水、水、水、水、水、水、水、水",
+      "outcome": "failed",
+      "coherent_language_continuation": false,
+      "severe_repetition": true,
+      "reason": "Repeats 水、 rather than completing the description of photosynthesis."
+    },
+    {
+      "id": "en_prose",
+      "prompt": "The train arrived at the station just before sunrise. Outside the window,",
+      "text": " the city was a great place to the world.\nThe city was a great place in the world, and the world was a great place in the world.\nThe world was a great place in the world, and the world was a",
+      "outcome": "failed",
+      "coherent_language_continuation": false,
+      "severe_repetition": true,
+      "reason": "Starts with a plausible city fragment, then repeatedly calls the city/world a great place without developing the scene."
+    },
+    {
+      "id": "en_science",
+      "prompt": "Water can exist as a solid, a liquid, or a gas. When ice is heated,",
+      "text": " it is a great way to make a more efficient, more than a few days.\nThe most common is that the water is a good one.\nThe water is a good thing to do is to be a good thing.\nThe",
+      "outcome": "failed",
+      "coherent_language_continuation": false,
+      "severe_repetition": false,
+      "reason": "Does not describe ice melting; drifts into generic efficient/good-thing phrases and an incomplete sentence."
+    },
+    {
+      "id": "code_add",
+      "prompt": "def add(a, b):\n    \"\"\"Return the sum of a and b.\"\"\"\n    ",
+      "text": "\n    return a + b\n\ndef sum(a, b):\n    \"\"\"\n    Returns a list of integers, a and b, a, b, a, b, a, b, a, b, a, b, a",
+      "outcome": "correct_initial_function_then_degeneration",
+      "correct_initial_return": true,
+      "severe_repetition": true,
+      "reason": "Starts with return a + b, then invents another function and repeats its argument names inside an unfinished docstring."
+    },
+    {
+      "id": "math_sum",
+      "prompt": "A box contains 2 red balls and 3 blue balls. There are ",
+      "text": "\nThe following two types of water.\nThe following is:\n- The\n- The\n- The\n- The\n- The\n- The\n- The\n- The\n- The\n- The\n- The\n-",
+      "outcome": "failed",
+      "correct_answer": false,
+      "severe_repetition": true,
+      "reason": "Does not complete the count as 5/five; changes topic to water and repeats a bullet containing The."
+    },
+    {
+      "id": "copy_city",
+      "prompt": "Name: River\nCity: Beijing\nName: River\nCity:",
+      "text": " New York:\nThe first time of the world is the first time of the world.\nThe first thing is to do is to be a good thing.\nThe first thing is to do is to be a good thing.\nThe",
+      "outcome": "failed",
+      "correct_copy": false,
+      "severe_repetition": true,
+      "reason": "Produces New York rather than copying Beijing, then repeats generic sentences."
+    },
+    {
+      "id": "json_prefix",
+      "prompt": "The following is a JSON object with a name and an age:\n{\"name\": \"Lin\", \"age\":",
+      "text": " \"w\", \"age\": \"w\", \"age\": \"w\", \"age\": \"w\", \"age\": \"w\", \"age\": \"w\", \"w\", \"w\", \"w\", \"w\", \"w\",",
+      "outcome": "failed",
+      "valid_completed_json": false,
+      "severe_repetition": true,
+      "reason": "Repeats age and string fields and never completes the object within the fixed output limit."
+    }
+  ],
+  "summary": {
+    "language_continuations_reviewed": 4,
+    "coherent_complete_language_continuations": 0,
+    "correct_initial_add_function": true,
+    "arithmetic_copy_and_json_failed": true
+  },
+  "resources": {
+    "elapsed_seconds": 87.80216813087463,
+    "gpu_peak_allocated_bytes": 1395420672,
+    "gpu_peak_reserved_bytes": 1411383296,
+    "cpu_peak_resident_bytes": 2621501440
+  },
+  "conclusions": [
+    "The retained 20M pilot cannot be presented as a usable base/chat model; its lower teacher-forced NLL is not sufficient generation-quality evidence.",
+    "This small fixed greedy check does not isolate whether limited training, data or implementation causes the observed degeneration. No new parameter search is authorized by this result.",
+    "Preserve the old checkpoint as historical recipe evidence only. Formal D1 still starts from random initialization with its own admitted data and recipe.",
+    "Do not set the D-pilot dependency quality_passed from this report. Reconcile the recipe-pilot criteria separately from base/SFT capability before final D1 admission."
+  ],
+  "completed_unix": 1789121324.7795181
+}

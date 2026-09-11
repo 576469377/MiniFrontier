@@ -1196,5 +1196,15 @@
       "Preserved model files are comparison artifacts; formal D1 still starts from random initialization."
     ],
     "formal_admission": false
+  },
+  "deepseek_historical_generation_review": {
+    "report": "deepseek-pilot-generation-review.json",
+    "sha256": "c838b62455fc4ebd7a3d954157b1e4e85c008314ca9e4e5554086b799ab08041",
+    "state": "review_complete_generation_not_usable",
+    "historical_pilot_ce": 20013084,
+    "new_training_tokens": 0,
+    "formal_ce_tokens": 0,
+    "quality_passed": false,
+    "conclusion": "Existing MTP/LR comparisons remain historical recipe evidence; they do not establish usable generation or grant the D-pilot quality pass."
   }
 }

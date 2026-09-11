@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "formal_pretraining_media_candidate_snapshot",
-  "observed_unix": 1789120719.2925007,
+  "observed_unix": 1789121723.9262369,
   "formal_admission": false,
   "natural_images": {
     "output": "data/pretraining-media-v2",
@@ -6267,7 +6267,7 @@
     "formal_admission": false,
     "main_budget_eligible": false,
     "inventory_count": 19,
-    "snapshot_unix": 1789120718.8649032,
+    "snapshot_unix": 1789121723.5213358,
     "previous_attempt": {
       "state": "failed",
       "source_commit": "1cd1de981339a5b145c11ee30b16db8f16d4af39",
@@ -6293,7 +6293,7 @@
       "formal_admission": false,
       "main_budget_eligible": false,
       "inventory_count": 19,
-      "snapshot_unix": 1789120718.8650064
+      "snapshot_unix": 1789121723.5214407
     },
     "candidate_filter_validation": {
       "kind": "bounded_cpu_candidate_filter_equivalence",
@@ -6337,8 +6337,8 @@
       "formal_admission": false
     },
     "local_storage": {
-      "observed_unix": 1789120719.258882,
-      "free_gib": 118.50502014160156,
+      "observed_unix": 1789121723.8928497,
+      "free_gib": 118.50452041625977,
       "minimum_free_gib": 80
     },
     "visual_review_plan": {
@@ -7219,9 +7219,9 @@
       }
     },
     "auxiliary_storage": {
-      "free_gib": 995.3103942871094,
+      "free_gib": 993.0170822143555,
       "minimum_free_gib": 80,
-      "observed_unix": 1789120694.7551308
+      "observed_unix": 1789121702.5158198
     },
     "corrected_native_media_encoding": {
       "minikimik3": {
@@ -7378,7 +7378,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789120694.7531261,
+            "observed_unix": 1789121702.513889,
             "state": "checking_every_encoded_media_record",
             "process_identity_verified": true
           },
@@ -7413,7 +7413,7 @@
             "formal_admission": false,
             "main_budget_eligible": false,
             "process_observation": {
-              "observed_unix": 1789120694.752604,
+              "observed_unix": 1789121702.513385,
               "state": "stopped_to_correct_wall_budget_with_prefix_preserved",
               "process_identity_verified": false
             },
@@ -7569,7 +7569,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789120694.751985,
+            "observed_unix": 1789121702.5128062,
             "state": "mechanical_checks_passed_pending_quality_admission",
             "process_identity_verified": false
           },
@@ -7740,7 +7740,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789120694.7546818,
+            "observed_unix": 1789121702.5153904,
             "state": "checking_every_encoded_media_record",
             "process_identity_verified": true
           },
@@ -7775,7 +7775,7 @@
             "formal_admission": false,
             "main_budget_eligible": false,
             "process_observation": {
-              "observed_unix": 1789120694.7541988,
+              "observed_unix": 1789121702.5149145,
               "state": "stopped_to_correct_wall_budget_with_prefix_preserved",
               "process_identity_verified": false
             },
@@ -7931,7 +7931,7 @@
           "formal_admission": false,
           "main_budget_eligible": false,
           "process_observation": {
-            "observed_unix": 1789120694.7537465,
+            "observed_unix": 1789121702.5144715,
             "state": "mechanical_checks_passed_pending_quality_admission",
             "process_identity_verified": false
           },
@@ -8578,7 +8578,7 @@
         "source_archive_sha256": "fdbfb103a9820aa96e4b726ab7a4dfad82087d60bc0ec4645ba23a2ba28d5e5b",
         "driver_sha256": "8282ff6939b4af11ea14c17755fc362652b53783d58bfe06f46c1debc3ac1cfa",
         "started_unix": 1789108319.4663,
-        "observed_unix": 1789120675.7698755,
+        "observed_unix": 1789121695.8441575,
         "budget": {
           "wall_seconds": 39600,
           "max_virtual_gib": 32,
@@ -8591,7 +8591,7 @@
           "minikimik3",
           "miniqwen4"
         ],
-        "report_sha256": "eb9bc90da4925d95eb0c62f4bb4f5844c2caf8dd385c0933b47b7b54d9d4bcb7",
+        "report_sha256": "3d26f93999769ec301ce087abbf38570f88621bd705e7be2eefc7fe8c1462326",
         "formal_admission": false,
         "main_budget_eligible": false,
         "completed_components": [
@@ -8651,8 +8651,8 @@
           "argv_matches": true,
           "state": "waiting_for_existing_parent_encodings",
           "process_identity_verified": true,
-          "observed_unix": 1789120695.1107576,
-          "free_gib": 995.305362701416,
+          "observed_unix": 1789121702.8819213,
+          "free_gib": 993.0091552734375,
           "minimum_free_gib": 80
         }
       },
@@ -8728,7 +8728,7 @@
         "record_sha256": "4a967e0da99f553deac5fb34e124b33b993fe0a4d3be2a2851a250c027823a0a",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789120719.2745256
+        "snapshot_unix": 1789121723.9083283
       },
       "first_attempt": {
         "state": "failed",
@@ -8753,7 +8753,7 @@
         "record_sha256": "5dd75a745441e5d30af4576b405e7601a752c0d57cfc69bcfa25221d8f23674d",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789120719.2746294
+        "snapshot_unix": 1789121723.9084232
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8781,7 +8781,7 @@
         "record_sha256": "bad4bc7dfed043e0b5735b5d97c6fc7b461752b8bb36269e294920225501b8a4",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789120719.2747185
+        "snapshot_unix": 1789121723.9085062
       },
       "matching_validation": {
         "ordered_result_sha256": "db77f1bc02a8567fc0ce7eb80c06c728d4203e13cd94241d9dcd01779c6a6ec1",
@@ -8845,7 +8845,7 @@
         "record_sha256": "9582bff720de38ee69ee01b5ab9e628f58f9e326e63f81ef303c7b2ed6a27a12",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789120719.2751815
+        "snapshot_unix": 1789121723.9089503
       },
       "first_attempt": {
         "state": "failed",
@@ -8870,7 +8870,7 @@
         "record_sha256": "b48fe5e775f7d080401674326b263245070c2900b71f17882f0f2b9a25991a7f",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789120719.2752707
+        "snapshot_unix": 1789121723.9090474
       },
       "matching": {
         "state": "candidate_matches_require_visual_review",
@@ -8898,7 +8898,7 @@
         "record_sha256": "71b5633369c727306eee5fe8a41c23e318e89cb3e689cf0108ad50cb8e173189",
         "formal_admission": false,
         "main_budget_eligible": false,
-        "snapshot_unix": 1789120719.275357
+        "snapshot_unix": 1789121723.9091315
       },
       "matching_validation": {
         "ordered_result_sha256": "f99edfcb887e825c753f5abd6604c33de91f208779a521b5118301bb77f0d531",
@@ -9131,7 +9131,7 @@
     "driver_sha256": "2241ca56fa74cc2377459a018d4050757535ccc94a39ec2aa862a3a8a23d987f",
     "arguments_sha256": "36219723d3fe367f46162b21c195a5d66e78c650713a6ffce40a2f51a1c8b87a",
     "record_sha256": "f4f2b528eb0ac60cf4fe6636b55715cc41128615e4f833d1123dcdc752b743ae",
-    "data_audit_sha256": "e11ce7763d55ed924ab10a75970a4a27ae924b4ff4d96be714ca06103e6884ee",
+    "data_audit_sha256": "517819b3f1dc5c9135cc63c31f413e8f35285ef873fc897b4ba254d072992b1c",
     "target_independent_images": 12000,
     "source_start_row": 61420,
     "prior_exact_images_excluded": 60000,
@@ -9156,18 +9156,18 @@
       "argv_matches": true,
       "state": "resuming_next_natural_image_slice",
       "process_identity_verified": true,
-      "observed_unix": 1789120695.4823196,
+      "observed_unix": 1789121703.2251067,
       "source_start_row": 61420,
       "previous_exact_image_identities": 60000,
       "resume_skip_rows": 64245,
       "error": null,
       "attempt": "retry2",
       "control": "outputs/strategy-pretraining-natural-topup-v1/retry2",
-      "read_rows": 3077,
-      "unique_images": 3000,
-      "accepted_records": 5622,
-      "media_bytes": 2261460300,
-      "free_gib": 995.2992820739746,
+      "read_rows": 6151,
+      "unique_images": 6000,
+      "accepted_records": 11285,
+      "media_bytes": 4678182169,
+      "free_gib": 993.0036888122559,
       "minimum_free_gib": 80
     },
     "formal_admission": false,
@@ -9324,7 +9324,7 @@
     "main_budget_eligible": false,
     "included_in_current_effective_pool": false,
     "observation": {
-      "observed_unix": 1789120719.2797973,
+      "observed_unix": 1789121723.9135852,
       "process_identity_verified": false,
       "state": "candidate_slice_complete_pending_admission",
       "data_state": "candidate_slice_complete_pending_admission",
@@ -9524,7 +9524,7 @@
       "registry_id": "exp-e05c3a041622",
       "record_sha256": "bcbc84cf6d8d26e0a1c41d535dba92eb254ac2fd942e63dd1d295287f2196f90",
       "process_observation": {
-        "observed_unix": 1789120719.2803981,
+        "observed_unix": 1789121723.914217,
         "process_identity_verified": false
       },
       "formal_admission": false,
@@ -9838,7 +9838,7 @@
   },
   "data_event_followups": {
     "state": "watching_data_events",
-    "observed_unix": 1789120694.3356154,
+    "observed_unix": 1789121704.5951264,
     "source_commit": "b212cd37cb4e75bc51ac0703e4286ab2855b937a",
     "tasks": {
       "ocr-build": {
@@ -9850,13 +9850,13 @@
       "kimi-docs": {
         "state": "checking_every_encoded_media_record",
         "alive": true,
-        "observed_unix": 1789120671.2116213,
+        "observed_unix": 1789121691.5249145,
         "completed_unix": null
       },
       "qwen-docs": {
         "state": "checking_every_encoded_media_record",
         "alive": true,
-        "observed_unix": 1789120671.2116213,
+        "observed_unix": 1789121691.5249145,
         "completed_unix": null
       },
       "ocr-identity": {
@@ -9874,13 +9874,13 @@
       "doc-refinement": {
         "state": "waiting_for_existing_parent_encodings",
         "alive": true,
-        "observed_unix": 1789120671.2116213,
+        "observed_unix": 1789121691.5249145,
         "completed_unix": null
       },
       "natural-build": {
         "state": "failed",
         "alive": false,
-        "observed_unix": 1789120694.2900145,
+        "observed_unix": 1789121702.1351688,
         "completed_unix": 1789115007.971151
       }
     },

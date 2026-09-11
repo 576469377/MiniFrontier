@@ -4,6 +4,8 @@
 
 每次运行以主机标签和相对输出目录生成稳定的 `exp-*` 编号。父试验、实际训练阶段及合成测速分别登记；它们可以属于同一个比较组，台账条数不等于 GPU 任务数。台账自动读取原始运行记录，更新时不会启动训练或修改配方。
 
+纯推理运行以 `inference_evaluation` 登记，台账分类为 `evaluation`，保留检查点、生成 token 数和审核记录的绑定。旧检查点的训练计数不会计入这次评估的 CE、优化器更新或正式训练预算。数据或评估进程的身份在本次读取中已核实存活时，不因其等待事件、长时间未改写记录而标成过期；缺失或不匹配的进程仍明确显示未核实。
+
 ```bash
 # 输出 outputs/experiment-registry/current.json 和 current.md
 python -m scripts.experiment_registry

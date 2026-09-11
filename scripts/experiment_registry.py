@@ -195,6 +195,8 @@ def collect(workspace):
                 kind = "data_construction"
             elif run.get("kind") == "performance":
                 kind = "performance"
+            elif run.get("kind") == "inference_evaluation":
+                kind = "evaluation"
             status = (
                 interruption.get("state")
                 or supervisor.get("state")
@@ -204,8 +206,13 @@ def collect(workspace):
                 or parent_case_state
                 or "unverified"
             )
+            operation_process_verified = False
             if kind == "data_construction" and not data_audit and status == "unverified":
                 status = data_operation_state(target, run, host)
+                operation_process_verified = status == "running"
+            if kind == "evaluation" and status == "unverified":
+                status = data_operation_state(target, run, host)
+                operation_process_verified = status == "running"
             if kind == "data_construction" and run.get("state") == "failed":
                 # A later retry may publish into a path the failed attempt never created.
                 # Its success and candidate counts do not belong to the failed attempt.
@@ -235,6 +242,7 @@ def collect(workspace):
                         )
                     except (OSError, KeyError, ValueError):
                         status = "interrupted_without_final_status"
+                    operation_process_verified = status == "running"
             if binding.get("dispatch_paused") and status.startswith(("waiting", "pending")):
                 status = "paused_for_review"
             if state.get("state") == "complete" and not interruption:
@@ -267,8 +275,10 @@ def collect(workspace):
                 ]
                 if p.exists()
             ]
-            if kind == "data_construction" and (target / "run.json").exists():
+            if kind in {"data_construction", "evaluation"} and (target / "run.json").exists():
                 files.append(target / "run.json")
+            if kind == "evaluation" and (target / "review.json").exists():
+                files.append(target / "review.json")
             newest = max((p.stat().st_mtime for p in files), default=0)
             if data_audit:
                 newest = max(newest, data_audit.get("updated_unix", 0))
@@ -278,6 +288,7 @@ def collect(workspace):
                 )
             if (
                 status == "running"
+                and not operation_process_verified
                 and time.time() - max(newest, binding.get("queue_updated_at", 0)) > 900
             ):
                 status = "unverified_stale"
@@ -336,14 +347,14 @@ def collect(workspace):
                 ),
                 data_sha256=run.get("data_sha256", run.get("dataset_manifest_sha256")),
                 tokenizer_sha256=run.get("tokenizer_sha256"),
-                ce_tokens=ledger.get("ce_tokens", 0),
-                optimizer_updates=ledger.get("optimizer_updates", 0),
-                ce_token_budget=budget,
+                ce_tokens=0 if kind == "evaluation" else ledger.get("ce_tokens", 0),
+                optimizer_updates=0 if kind == "evaluation" else ledger.get("optimizer_updates", 0),
+                ce_token_budget=None if kind == "evaluation" else budget,
                 measured_ce_per_second=profile.get("ce_tokens_per_second"),
                 performance_measured_updates=profile.get("measured_updates"),
                 capability_status=state.get("capability_status", "unassessed"),
                 main_budget_eligible=False
-                if kind in {"synthetic", "sweep", "data_construction", "performance"}
+                if kind in {"synthetic", "sweep", "data_construction", "performance", "evaluation"}
                 or run.get("kind") == "acceptance"
                 else None,
                 retention=experiment.get("retention", "original_run_policy"),
@@ -361,6 +372,12 @@ def collect(workspace):
                     for key in ("synthetic", "real")
                 },
             )
+            if kind == "evaluation":
+                entry["evaluation"] = dict(
+                    checkpoint_sha256=run.get("checkpoint_sha256"),
+                    generated_tokens=run.get("total_generated_tokens", 0),
+                    review_sha256=run.get("quality_review_sha256"),
+                )
             if kind == "data_construction":
                 entry["data_progress"] = dict(
                     operation_state=run.get("state"),
