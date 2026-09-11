@@ -117,7 +117,7 @@ def assemble_native_components(components, output, *, max_bytes=64 * 1024**2):
             or proof["status"] != PASSED
             or proof.get("errors")
             or parent["manifest_sha256"] != checksum
-            or proof.get("manifest_sha256") != checksum
+            or proof.get("encoded_manifest_sha256", proof.get("manifest_sha256")) != checksum
         ):
             raise ValueError("native component needs its completed bound encoding audit")
         references.append(

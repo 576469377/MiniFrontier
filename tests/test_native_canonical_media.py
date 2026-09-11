@@ -361,6 +361,11 @@ def test_native_exclusions_preserve_kept_bytes_shared_text_and_overflow_accounti
         not filtered["formal_admission"]
         and filtered["text_source"]["manifest_sha256"] == manifest["text_source"]["manifest_sha256"]
     )
+    composition = assemble_native_components([output], tmp_path / "filtered-composition")
+    assert (
+        composition["stages"]["pretrain"]["train"]["media"]["examples"]
+        == filtered["stages"]["pretrain"]["train"]["media"]["examples"]
+    )
     for split in ("train", "val", "test"):
         original = manifest["stages"]["pretrain"][split]["media"]
         current = filtered["stages"]["pretrain"][split]["media"]
