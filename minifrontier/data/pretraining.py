@@ -341,7 +341,86 @@ def build_text_slice(
     return audit
 
 
-def merge_text_slices(inputs, output, evaluation, *, seed=20260910, max_gib=12):
+def _prior_partition_controls(path, base, locks):
+    """Read effective holdouts without dropping excluded rows before deduplication."""
+    from minifrontier.data.partitions import VIEW_FORMATS, corpus_storage_root, open_corpus
+
+    root = Path(path).resolve()
+    manifest = json.loads((root / "corpus-manifest.json").read_text())
+    audit = json.loads((root / "source-audit.json").read_text())
+    if manifest.get("format") not in VIEW_FORMATS:
+        raise ValueError("prior partition must be an explicit partition view")
+    if audit.get("formal_admission") or audit["status"] != (
+        "candidate_slice_complete_pending_admission"
+    ):
+        raise ValueError("prior partition must be a completed unadmitted candidate")
+    with contextlib.closing(open_corpus(root)) as db:
+        if corpus_storage_root(db) != base:
+            raise ValueError("prior partition must refer to the first merge input")
+        overlay_path = root / manifest["partition_file"]
+        overlay = json.loads(overlay_path.read_text())
+        if overlay.get("task_policy") is not None:
+            raise ValueError("text merge cannot inherit a media task classification policy")
+        splits = dict(db.execute("SELECT id,split FROM samples"))
+        excluded = {
+            row[0]
+            for row in db.execute("SELECT id FROM main.samples EXCEPT SELECT id FROM temp.samples")
+        }
+        for key, split in db.execute(
+            "SELECT key,split FROM links JOIN samples USING(id) WHERE split IN ('val','test')"
+        ):
+            if locks.get(key) != "test":
+                locks[key] = split
+    binding = dict(
+        root=str(root),
+        corpus_manifest_sha256=sha256(root / "corpus-manifest.json"),
+        source_audit_sha256=sha256(root / "source-audit.json"),
+        partition_sha256=sha256(overlay_path),
+        database_sha256=manifest["database_sha256"],
+        effective_splits=dict(Counter(splits.values())),
+        inherited_excluded_records=len(excluded),
+        inherited_excluded_groups=len(overlay.get("excluded_groups", [])),
+    )
+    return binding, splits, excluded
+
+
+def _write_train_reuse_delta(root, db, prior_splits):
+    """List only membership changes; existing encoded documents stay immutable."""
+    current = dict(db.execute("SELECT id,split FROM samples"))
+    changes: Counter[str] = Counter()
+    path = root / "train-reuse-delta.jsonl"
+    with path.open("w") as stream:
+        for identity in sorted(prior_splits.keys() | current.keys()):
+            old, new = prior_splits.get(identity), current.get(identity)
+            if old in {"val", "test"} and new == "train":
+                raise ValueError("merge released a prior held-out document into training")
+            if old == "test" and new == "val":
+                raise ValueError("merge demoted a sealed test document")
+            if old == new:
+                changes[f"unchanged_{old}"] += 1
+                continue
+            if old == "train" or new == "train":
+                action = "add_train" if new == "train" else "remove_train"
+                stream.write(
+                    json.dumps(
+                        dict(sample_id=identity, action=action, previous_split=old, split=new)
+                    )
+                    + "\n"
+                )
+                changes[action] += 1
+            elif old in {"val", "test"}:
+                changes[f"prior_{old}_to_{new or 'excluded'}"] += 1
+    return dict(
+        file=path.name,
+        sha256=sha256(path),
+        counts=dict(changes),
+        policy="reuse prior train encodings only for IDs remaining in the final train split",
+    )
+
+
+def merge_text_slices(
+    inputs, output, evaluation, *, seed=20260910, max_gib=12, prior_partition=None
+):
     """Merge immutable candidates, preserving prior holdouts and duplicate aliases."""
     from minifrontier.data.evaluation import BenchmarkMatcher
 
@@ -393,6 +472,11 @@ def merge_text_slices(inputs, output, evaluation, *, seed=20260910, max_gib=12):
         manifests.append(manifest)
     if len({a["reference_tokenizer_sha256"] for a in audits}) != 1:
         raise ValueError("candidate inventories use different reference tokenizers")
+    prior_binding, prior_splits, prior_excluded = None, {}, set()
+    if prior_partition is not None:
+        prior_binding, prior_splits, prior_excluded = _prior_partition_controls(
+            prior_partition, roots[0], locks
+        )
     matcher = BenchmarkMatcher(evaluation)
     require_space(root, int(max_gib * GIB), reserve_bytes=80 * GIB)
     root.mkdir(parents=True)
@@ -422,6 +506,7 @@ def merge_text_slices(inputs, output, evaluation, *, seed=20260910, max_gib=12):
         formal_admission=False,
         main_budget_eligible=False,
         inputs=bindings,
+        prior_partition=prior_binding,
         seed=seed,
         max_gib=max_gib,
         reference_tokenizer_sha256=audits[0]["reference_tokenizer_sha256"],
@@ -442,6 +527,7 @@ def merge_text_slices(inputs, output, evaluation, *, seed=20260910, max_gib=12):
                 Path(__file__),
                 Path(__file__).with_name("corpus.py"),
                 Path(__file__).with_name("evaluation.py"),
+                Path(__file__).with_name("partitions.py"),
             )
         },
         unresolved=[
@@ -526,8 +612,12 @@ def merge_text_slices(inputs, output, evaluation, *, seed=20260910, max_gib=12):
             rules=matcher.manifest["rules"],
             limitations=matcher.manifest["limitations"],
         )
-        audit["corpus"] = builder.finalize(split_locks=locks, excluded_ids=matches)
+        # Keep excluded base rows until now: their aliases must also quarantine
+        # duplicates and newly connected repositories from the added slices.
+        audit["corpus"] = builder.finalize(split_locks=locks, excluded_ids=matches | prior_excluded)
         audit["contamination"].update(audit["corpus"]["retained_split_controls"])
+        if prior_partition is not None:
+            audit["train_reuse_delta"] = _write_train_reuse_delta(root, builder.db, prior_splits)
         split_counts: dict[str, Counter] = {}
         strata: Counter[tuple[str, str, str]] = Counter()
         audit["sources"] = {}
@@ -610,6 +700,9 @@ def main(argv=None):
         parser.add_argument("--evaluation", required=True)
         parser.add_argument("--seed", type=int, default=20260910)
         parser.add_argument("--max-gib", type=float, default=12)
+        parser.add_argument(
+            "--prior-partition", help="effective split/exclusion view over the first input"
+        )
         print(json.dumps(merge_text_slices(**vars(parser.parse_args(argv[1:]))), indent=2))
         return
 

@@ -85,6 +85,25 @@ def _pilot_recipe_passed(completed, dependency, phase, phases, commit):
     )
 
 
+def continuous_phase_profile(plan, phase, phases):
+    """Observe performance during continuous main training, keeping stage gates.
+
+    This policy applies only between main CE phases with the same attention
+    regime. Indexer/sparse conversions and posttraining keep their own evidence.
+    The argument validator additionally requires the continuous program path.
+    """
+    dependencies = phase["depends_on"]
+    if len(dependencies) != 1:
+        return False
+    parent = phases[dependencies[0]]
+    return (
+        plan.get("performance", {}).get("continuous_main_phases") == "observe_during_training"
+        and phase["budget_scope"] == parent["budget_scope"] == "main"
+        and phase["objective"] == parent["objective"] == "ce_tokens"
+        and phase["attention_phase"] == parent["attention_phase"]
+    )
+
+
 def check(plan_path, phase_id, evidence_path, *, data, config, output):
     plan_path, data = Path(plan_path).resolve(), Path(data).resolve()
     root = require_source_checkout()
@@ -95,6 +114,7 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
     if phase_id not in phases:
         raise ValueError("unknown strategy phase")
     phase = phases[phase_id]
+    continuous_profile = continuous_phase_profile(plan, phase, phases)
     evidence = json.loads(Path(evidence_path).read_text())
     identity = source_identity()
     errors = []
@@ -184,7 +204,7 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
             or json.loads(Path(config).read_text()).get("vision_config")
         ) and audit.get("vision_unique_validation_groups", 0) < 1000:
             errors.append("vision validation needs 1000 independent media groups")
-        if not direct_start:
+        if not (direct_start or continuous_profile):
             profile_path = evidence.get("performance")
             profile = (
                 json.loads(Path(profile_path).read_text())
@@ -212,7 +232,9 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
     return dict(
         allowed=not errors,
         initial_start_authorized=direct_start,
-        independent_production_qualification_passed=not direct_start and not errors,
+        profile_during_formal_updates=continuous_profile,
+        independent_production_qualification_passed=not (direct_start or continuous_profile)
+        and not errors,
         errors=errors,
         model=plan["model"],
         phase=phase,
@@ -263,7 +285,16 @@ def validate_arguments(args):
     ):
         report["errors"].append("formal SFT needs a resumable sampler with at most two data epochs")
     if phase["budget_scope"] not in {"diagnostic", "recipe_pilot", "vision_diagnostic"}:
-        if not report["initial_start_authorized"]:
+        if report.get("profile_during_formal_updates"):
+            if not getattr(args, "pretraining_program", None) or not (args.init or args.resume):
+                report["errors"].append(
+                    "continuous phase observation requires a program and full parent checkpoint"
+                )
+            else:
+                from .pretraining import PretrainingProgram
+
+                PretrainingProgram(args)  # Validate exact stage data, batch, LR and schedule.
+        elif not report["initial_start_authorized"]:
             evidence = json.loads(Path(args.strategy_evidence).read_text())
             profile_path = Path(evidence.get("performance", ""))
             measured = (

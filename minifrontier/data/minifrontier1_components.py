@@ -40,6 +40,7 @@ def assemble_components(components, output, config, *, media_access=None):
         if manifest.get("format") != FORMAT or manifest.get("kind") not in {
             "canonical_text_component",
             "canonical_image_component",
+            "canonical_video_component",
         }:
             raise ValueError("composition requires completed canonical compact components")
         if (
@@ -57,8 +58,8 @@ def assemble_components(components, output, config, *, media_access=None):
             dict(path=os.path.relpath(root, output), manifest_sha256=sha256(root / "manifest.json"))
         )
         if root in access:
-            if manifest["kind"] != "canonical_image_component":
-                raise ValueError("remote media access is only for canonical image components")
+            if manifest["kind"] not in {"canonical_image_component", "canonical_video_component"}:
+                raise ValueError("remote media access is only for canonical media components")
             references[-1]["media_access"] = access[root]
         manifests.append(manifest)
     samples: set[str] = set()
@@ -104,8 +105,12 @@ def assemble_components(components, output, config, *, media_access=None):
                         for resource in record["resources"]:
                             key = resource.get("rgb_sha256", resource.get("sha256"))
                             if not key:
-                                raise ValueError("canonical image resource has no identity")
-                            if media.setdefault(key, split) != split:
+                                raise ValueError("canonical media resource has no identity")
+                            identities = [key, *resource.get("frame_rgb_sha256", [])]
+                            if any(
+                                media.setdefault(identity, split) != split
+                                for identity in identities
+                            ):
                                 raise ValueError("media identity crosses composition splits")
                             unique_media.add(key)
                         part_records += 1
@@ -121,7 +126,9 @@ def assemble_components(components, output, config, *, media_access=None):
         )
     result = dict(
         format=COMPONENT_FORMAT,
-        kind="canonical_text_image_composition",
+        kind="canonical_text_image_video_composition"
+        if any(m["kind"] == "canonical_video_component" for m in manifests)
+        else "canonical_text_image_composition",
         formal_admission=False,
         main_budget_eligible=False,
         config_sha256=digest(asdict(config)),

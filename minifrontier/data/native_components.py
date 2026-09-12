@@ -3,6 +3,7 @@
 import json
 import os
 import shutil
+import time
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,7 @@ from minifrontier.chat_controls import update_manifest
 from minifrontier.data import sha256
 from minifrontier.data.encoding_audit import _checked
 from minifrontier.data.media_cache import validate_policy
+from minifrontier.data.minifrontier1 import write_json
 from minifrontier.data.native import _check_text_origin, _shared_text_partitions, processor_identity
 from minifrontier.storage import require_space
 
@@ -36,6 +38,256 @@ COUNT_KEYS = (
     "image_features",
 )
 MAP_KEYS = ("domain_ce", "rejected", "chat_template_counts")
+
+
+def _encoding_proof(root):
+    parent = json.loads((root / "source-audit.json").read_text())
+    proof = json.loads(
+        _checked(root, parent["integrity_report"], parent["integrity_report_sha256"]).read_text()
+    )
+    checksum = sha256(root / "manifest.json")
+    if (
+        parent.get("producer_finished") is not True
+        or parent.get("status") != PASSED
+        or proof.get("status") != PASSED
+        or proof.get("errors")
+        or parent.get("manifest_sha256") != checksum
+        or proof.get("encoded_manifest_sha256", proof.get("manifest_sha256")) != checksum
+    ):
+        raise ValueError("rebind requires completed immutable encoding evidence")
+    return parent
+
+
+def rebind_native_components(components, text_encoding, output, *, max_gib=1, media_access=None):
+    """Rebind unchanged media token sequences to a new shared-text inventory.
+
+    Original train groups whose OCR origins are no longer train are excluded,
+    never relabelled as validation. Conflicting old val/test origins stop before
+    creating output. This operation preserves processor/resolution policies and
+    does not qualify the result for a higher-resolution training phase.
+    """
+    roots = [Path(p).resolve() for p in components]
+    shared, output = Path(text_encoding).resolve(), Path(output).resolve()
+    if not roots or len(set(roots)) != len(roots) or output.exists() or max_gib <= 0:
+        raise ValueError("choose distinct components, a new output and a positive write budget")
+    maximum = int(max_gib * 1024**3)
+    text = json.loads((shared / "manifest.json").read_text())
+    if text.get("format") != "document-ragged-v2":
+        raise ValueError("new native text must retain the document encoding format")
+    _encoding_proof(shared)
+    text_hash = sha256(shared / "manifest.json")
+    partitions = _shared_text_partitions(shared, text_hash)
+    manifests: list[dict[str, Any]] = []
+    excluded, conflicts = set(), []
+    access = {Path(p).resolve(): policy for p, policy in (media_access or {}).items()}
+    if access.keys() - set(roots):
+        raise ValueError("media policy names a component outside the rebind")
+
+    def rows(root, child, stage, split):
+        media = child["stages"][stage][split]["media"]
+        path = _checked(root, media["file"], media["sha256"])
+        index = np.load(_checked(root, media["index_file"], media["index_sha256"]))
+        if index.dtype != np.int64 or index.shape != (media["examples"], 3):
+            raise ValueError("native parent media index shape differs")
+        with path.open("rb") as stream:
+            for offset, size, length in index:
+                if stream.tell() != int(offset):
+                    raise ValueError("native parent media index has gaps")
+                raw = stream.read(int(size))
+                row = json.loads(raw)
+                if (
+                    len(raw) != size
+                    or len(row["expected_ids"]) != length
+                    or len(row["expected_labels"]) != length
+                ):
+                    raise ValueError("native parent media/index length differs")
+                yield raw, row, int(length)
+            if stream.read(1):
+                raise ValueError("native parent has unindexed media records")
+
+    for root in roots:
+        child, _ = _component(root, manifests[0] if manifests else None)
+        _encoding_proof(root)
+        if (
+            child["tokenizer"] != text["tokenizer"]
+            or sha256(shared / "tokenizer.json") != child["tokenizer"]["sha256"]
+        ):
+            raise ValueError("shared-text rebind cannot change the frozen tokenizer")
+        for stage in ("pretrain", "sft"):
+            for split in ("train", "val", "test"):
+                for _raw, row, _length in rows(root, child, stage, split):
+                    origin = row["record"].get("text_origin")
+                    if origin and partitions.get(origin.get("sample_id")) != ("pretrain", split):
+                        if split != "train":
+                            conflicts.append(
+                                dict(
+                                    component=str(root),
+                                    sample_id=row["record"]["sample_id"],
+                                    origin=origin,
+                                )
+                            )
+                        else:
+                            excluded.add(row["split_group"])
+        manifests.append(child)
+    if conflicts:
+        raise ValueError(
+            "old validation/test text origins conflict with new text inventory; explicit handling required: "
+            + json.dumps(conflicts[:10])
+        )
+    require_space(output, min(maximum, 16 * 1024**2))
+    output.mkdir(parents=True)
+    selection = dict(
+        new_shared_text_manifest_sha256=text_hash,
+        excluded_train_groups=sorted(excluded),
+        policy="exclude complete old train groups; preserve all old val/test records",
+    )
+    if len(json.dumps(selection).encode()) + 1024**2 > maximum:
+        raise ValueError("text-origin selection exceeds the rebind metadata budget")
+    write_json(output / "selection.json", selection)
+    selection_hash = sha256(output / "selection.json")
+    children, child_access, used, reports = [], {}, 0, []
+    for number, (root, old) in enumerate(zip(roots, manifests, strict=True)):
+        target = output / "components" / f"{number:03d}"
+        target.mkdir(parents=True)
+        os.link(root / "tokenizer.json", target / "tokenizer.json")
+        child = json.loads(json.dumps(old))
+        child.update(
+            formal_admission=False,
+            main_budget_eligible=False,
+            text_source=dict(path=os.path.relpath(shared, target), manifest_sha256=text_hash),
+        )
+        removed = []
+        for stage in ("pretrain", "sft"):
+            for split in ("train", "val", "test"):
+                node = child["stages"][stage][split]
+                media = node["media"]
+                kept: Counter[str] = Counter()
+                domains: Counter[str] = Counter()
+                indexes = []
+                drop = split == "train" and any(
+                    row["split_group"] in excluded
+                    for _raw, row, _n in rows(root, old, stage, split)
+                )
+                target_file = target / media["file"]
+                writer = target_file.open("wb") if drop else None
+                try:
+                    for raw, row, length in rows(root, old, stage, split):
+                        record = row["record"]
+                        if split == "train" and row["split_group"] in excluded:
+                            removed.append(record["sample_id"])
+                            continue
+                        if record.get("text_origin"):
+                            _check_text_origin(record, split, partitions)
+                        if writer is not None:
+                            if used + len(raw) + 24 > maximum:
+                                raise ValueError("rebound native media exceeded new-file budget")
+                            indexes.append((writer.tell(), len(raw), length))
+                            writer.write(raw)
+                            used += len(raw) + 24
+                        resources = record["media"]
+                        videos = [m for m in resources if m.get("kind") == "video"]
+                        ce = sum(t != -100 for t in row["expected_labels"][1:])
+                        kept.update(
+                            examples=1,
+                            supervised_tokens=ce,
+                            image_occurrences=len(resources) - len(videos),
+                            video_examples=len(videos),
+                            frames=sum(len(v["frames"]) for v in videos),
+                            image_features=row["expected_ids"].count(7),
+                        )
+                        domains[record["task"]] += ce
+                finally:
+                    if writer is not None:
+                        writer.close()
+                if drop:
+                    np.save(
+                        target / media["index_file"],
+                        np.asarray(indexes, dtype=np.int64).reshape(-1, 3),
+                    )
+                    dropped = media["examples"] - kept["examples"]
+                    media["rejected"] = dict(media["rejected"], shared_text_origin_conflict=dropped)
+                    media.update(
+                        {key: kept[key] for key in COUNT_KEYS},
+                        domain_ce=dict(domains),
+                        sha256=sha256(target_file),
+                        index_sha256=sha256(target / media["index_file"]),
+                    )
+                else:
+                    if (
+                        any(kept[key] != media[key] for key in COUNT_KEYS)
+                        or domains != media["domain_ce"]
+                    ):
+                        raise ValueError("native media counters differ from encoded parent")
+                    os.link(root / media["file"], target_file)
+                    os.link(root / media["index_file"], target / media["index_file"])
+                node.update(
+                    text=text["stages"][stage][split],
+                    examples=text["stages"][stage][split]["examples"] + media["examples"],
+                    supervised_tokens=text["stages"][stage][split]["supervised_tokens"]
+                    + media["supervised_tokens"],
+                )
+        child["text_binding_derivation"] = dict(
+            parent=os.path.relpath(root, target),
+            parent_manifest_sha256=sha256(root / "manifest.json"),
+            shared_text_manifest_sha256=text_hash,
+            exclusion_selection_file="../../selection.json",
+            exclusion_selection_sha256=selection_hash,
+            removed_media_sample_ids=removed,
+            retained_media_bytes_unchanged=True,
+            processor_and_resolution_unchanged=True,
+        )
+        write_json(target / "manifest.json", child)
+        proof = dict(
+            kind="native_shared_text_binding_derivation",
+            status=PASSED,
+            encoded_manifest_sha256=sha256(target / "manifest.json"),
+            parent_source_audit_sha256=sha256(root / "source-audit.json"),
+            new_text_source_audit_sha256=sha256(shared / "source-audit.json"),
+            source_corpus_manifest_sha256=old["native_corpus_sha256"],
+            **child["text_binding_derivation"],
+            errors=[],
+            formal_admission=False,
+            scope="bound parent file hashes; unchanged retained media bytes and val/test splits; whole train-group exclusions; new shared text identities; no retokenization, pixel processing or training",
+            completed_unix=time.time(),
+        )
+        write_json(target / "encoding-audit.json", proof)
+        write_json(
+            target / "source-audit.json",
+            dict(
+                kind="encoded_media_component",
+                status=PASSED,
+                formal_admission=False,
+                main_budget_eligible=False,
+                producer_finished=True,
+                manifest_sha256=proof["encoded_manifest_sha256"],
+                integrity_report="encoding-audit.json",
+                integrity_report_sha256=sha256(target / "encoding-audit.json"),
+            ),
+        )
+        children.append(target)
+        if root in access:
+            child_access[target] = access[root]
+        reports.append(dict(parent=str(root), output=str(target), removed_records=len(removed)))
+    result = assemble_native_components(children, output / "dataset", media_access=child_access)
+    report = dict(
+        kind="native_media_shared_text_rebind",
+        dataset=str(output / "dataset"),
+        manifest_sha256=sha256(output / "dataset/manifest.json"),
+        components=reports,
+        excluded_train_groups=sorted(excluded),
+        payload_bytes_written=used,
+        full_next_phase_ready=False,
+        processor_and_resolution_unchanged=True,
+        formal_admission=False,
+        status=PASSED,
+    )
+    write_json(output / "rebind-report.json", report)
+    written_bytes = sum(
+        p.stat().st_size for p in output.rglob("*") if p.is_file() and p.stat().st_nlink == 1
+    )
+    if written_bytes > maximum:
+        raise ValueError("rebind payload and metadata exceeded the declared new-file budget")
+    return dict(report, manifest=result)
 
 
 def _component(root, baseline=None):

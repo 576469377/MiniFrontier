@@ -68,11 +68,21 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
         p.add_argument("--max-gib", type=float, help="hard cap for newly written encoded files")
         p.add_argument(
+            "--reuse-encoding", help="reuse verified prior standalone text document spans"
+        )
+        p.add_argument(
+            "--compact-metadata",
+            action="store_true",
+            help="keep text in the canonical corpus; write only text identity and provenance",
+        )
+        p.add_argument(
             "--min-pixels", type=int, help="explicit Qwen/DeepSeek native resize lower bound"
         )
         p.add_argument("--model-vocab-size", type=int, default=65536)
         values = vars(p.parse_args(argv[1:]))
         if values["family"]:
+            if values.pop("reuse_encoding") is not None or values.pop("compact_metadata"):
+                p.error("--reuse-encoding and --compact-metadata require standalone text encoding")
             result = encode_native(**values)
         else:
             if values["text_encoding"] is not None or values["min_pixels"] is not None:

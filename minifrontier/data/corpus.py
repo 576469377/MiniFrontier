@@ -496,13 +496,120 @@ def compare_tokenizers(corpus_root, output, *, byte_budget=64 * 1024**2):
     return result
 
 
-def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_gib=None):
+def _text_encoding_identity(row):
+    fields = (
+        "sample_id",
+        "content_hash",
+        "source",
+        "revision",
+        "item_id",
+        "license",
+        "stage",
+        "task",
+        "group_id",
+        "text_format",
+    )
+    text_hash = (
+        hashlib.sha256(row["text"].encode()).hexdigest()
+        if "text" in row
+        else row.get("encoded_text_sha256")
+    )
+    if not text_hash:
+        raise ValueError("reused text metadata lacks its exact text identity")
+    return hashlib.sha256(
+        json.dumps([text_hash, *[row.get(key) for key in fields]], ensure_ascii=False).encode()
+    ).digest()
+
+
+def _reusable_text_spans(root, tokenizer_path):
+    """Verify a prior standalone encoding and index immutable document spans."""
+    root = Path(root).resolve()
+    manifest = json.loads((root / "manifest.json").read_text())
+    if (
+        manifest.get("format") != "document-ragged-v2"
+        or manifest.get("pretrain_text_encoding")
+        != "literal_text_without_special_token_matching_v1"
+        or any(node["examples"] for node in manifest["stages"]["sft"].values())
+    ):
+        raise ValueError("reuse requires a standalone literal pretraining text encoding")
+    checksum = sha256(tokenizer_path)
+    if sha256(root / "tokenizer.json") != checksum or manifest["tokenizer"]["sha256"] != checksum:
+        raise ValueError("reused encoding tokenizer differs")
+    spans = {}
+    for node in manifest["stages"]["pretrain"].values():
+        if node.get("format") != "document-ragged-v2":
+            raise ValueError("reuse requires complete document spans")
+        paths = {}
+        for key, digest_key in (
+            ("file", "sha256"),
+            ("labels_file", "labels_sha256"),
+            ("index_file", "index_sha256"),
+            ("metadata_file", "metadata_sha256"),
+        ):
+            path = (root / node[key]).resolve()
+            if not path.is_relative_to(root) or sha256(path) != node[digest_key]:
+                raise ValueError("reused encoding file path/hash differs")
+            paths[key] = path
+        positions = node["stored_positions"]
+        if any(paths[key].stat().st_size != positions * 4 for key in ("file", "labels_file")):
+            raise ValueError("reused token storage size differs")
+        indexes = np.load(paths["index_file"], allow_pickle=False)
+        if indexes.dtype != np.dtype("int64") or indexes.shape != (node["examples"], 2):
+            raise ValueError("reused document index shape/type differs")
+        tokens: np.ndarray | list[int] = (
+            np.memmap(paths["file"], mode="r", dtype=np.int32) if positions else []
+        )
+        labels: np.ndarray | list[int] = (
+            np.memmap(paths["labels_file"], mode="r", dtype=np.int32) if positions else []
+        )
+        end = 0
+        with paths["metadata_file"].open() as stream:
+            for (offset, length), line in zip(indexes, stream, strict=True):
+                offset, length = int(offset), int(length)
+                if offset != end or length < 2 or offset + length > positions:
+                    raise ValueError("reused documents have gaps, overlaps or invalid lengths")
+                row = json.loads(line)
+                identity = row["sample_id"]
+                if (
+                    identity in spans
+                    or row["stage"] != "pretrain"
+                    or row.get("media")
+                    or row.get("turns")
+                ):
+                    raise ValueError("reused documents must be distinct pure pretraining text")
+                spans[identity] = (_text_encoding_identity(row), tokens, labels, offset, length)
+                end += length
+        if end != positions:
+            raise ValueError("reused token storage has unindexed positions")
+    return spans, dict(
+        path=str(root),
+        manifest_sha256=sha256(root / "manifest.json"),
+        corpus_sha256=manifest["corpus_sha256"],
+        tokenizer_sha256=checksum,
+    )
+
+
+def encode_corpus(
+    corpus_root,
+    tokenizer_path,
+    output,
+    *,
+    max_length=4096,
+    max_gib=None,
+    reuse_encoding=None,
+    compact_metadata=False,
+):
     """Encode text records once; media records require the native processor path."""
     root, output = Path(corpus_root), Path(output)
     if output.exists():
         raise FileExistsError("encoded corpus is immutable; select a new path")
     if max_gib is not None and max_gib <= 0:
         raise ValueError("encoding disk budget must be positive")
+    reusable, reuse_binding = (
+        ({}, None)
+        if reuse_encoding is None
+        else (_reusable_text_spans(reuse_encoding, tokenizer_path))
+    )
     max_bytes = int(max_gib * GIB) if max_gib is not None else None
     # Include tokenizer, index headers and final manifests in a conservative bound.
     accounted_bytes = Path(tokenizer_path).stat().st_size + 1024**2
@@ -523,6 +630,10 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_g
         stages={},
         tokenizer=dict(vocab_size=tokenizer.get_vocab_size(), sha256=sha256(tokenizer_path)),
     )
+    if reuse_binding is not None:
+        manifest["reused_encoding"] = reuse_binding
+    if compact_metadata:
+        manifest["text_metadata"] = "identity_and_provenance_without_text_v1"
     for stage in ("pretrain", "sft"):
         # Raw documents can quote protocol spellings. Encode their original bytes
         # as ordinary BPE pieces; only this writer inserts document BOS/EOS.
@@ -535,6 +646,7 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_g
             index, token_count, supervised, identity_tokens = [], 0, 0, 0
             rejected: Counter[str] = Counter()
             template_counts: Counter[str] = Counter()
+            reused_documents = encoded_documents = 0
             records = db.execute(
                 "SELECT payload FROM samples WHERE stage=? AND split=? ORDER BY id", (stage, split)
             )
@@ -549,9 +661,30 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_g
                         rejected["requires_native_media_encoder"] += 1
                         continue
                     if stage == "pretrain":
-                        ids = [1, *tokenizer.encode(row["text"], add_special_tokens=False).ids, 2]
-                        targets = ids.copy()
-                        targets[0] = -100
+                        old = reusable.get(row["sample_id"])
+                        if old is not None:
+                            identity, old_tokens, old_labels, offset, length = old
+                            if _text_encoding_identity(row) != identity:
+                                raise ValueError("reused document text or provenance differs")
+                            ids = old_tokens[offset : offset + length]
+                            targets = old_labels[offset : offset + length]
+                            if (
+                                ids[0] != 1
+                                or ids[-1] != 2
+                                or targets[0] != -100
+                                or not np.array_equal(targets[1:], ids[1:])
+                            ):
+                                raise ValueError("reused document boundaries or labels differ")
+                            reused_documents += 1
+                        else:
+                            ids = [
+                                1,
+                                *tokenizer.encode(row["text"], add_special_tokens=False).ids,
+                                2,
+                            ]
+                            targets = ids.copy()
+                            targets[0] = -100
+                            encoded_documents += 1
                     else:
                         ids, targets = chat_tokens(
                             row["turns"], tokenizer, mode=row.get("mode"), effort=row.get("effort")
@@ -559,7 +692,11 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_g
                         if len(ids) > max_length:
                             rejected["complete_answer_exceeds_largest_bucket"] += 1
                             continue
-                    ce = sum(value != -100 for value in targets[1:])
+                    ce = (
+                        int(np.count_nonzero(targets[1:] != -100))
+                        if isinstance(targets, np.ndarray)
+                        else sum(value != -100 for value in targets[1:])
+                    )
                     if stage == "sft" and IDENTITY.search(
                         next((t["content"] for t in row["turns"] if t["role"] == "user"), "")
                     ):
@@ -568,6 +705,16 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_g
                             rejected["identity_token_cap"] += 1
                             continue
                         identity_tokens += ce
+                    if stage == "pretrain" and compact_metadata:
+                        kept = {
+                            key: value
+                            for key, value in row.items()
+                            if key not in {"text", "turns", "source_metadata"}
+                        }
+                        kept["encoded_text_sha256"] = hashlib.sha256(
+                            row["text"].encode()
+                        ).hexdigest()
+                        payload = json.dumps(kept, ensure_ascii=False)
                     incoming = len(ids) * 8 + len(payload.encode()) + 512
                     if max_bytes is not None and accounted_bytes + incoming > max_bytes:
                         db.close()
@@ -601,6 +748,11 @@ def encode_corpus(corpus_root, tokenizer_path, output, *, max_length=4096, max_g
                 metadata_sha256=sha256(output / f"{prefix}.jsonl"),
                 chat_template_counts=dict(template_counts),
             )
+            if reuse_binding is not None and stage == "pretrain":
+                manifest["stages"][stage][split]["document_reuse"] = dict(
+                    copied=reused_documents,
+                    tokenized=encoded_documents,
+                )
     db.close()
     if max_bytes is not None:
         manifest["storage_bound"] = dict(max_bytes=max_bytes, accounted_bytes=accounted_bytes)

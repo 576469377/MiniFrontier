@@ -19,7 +19,8 @@
   "performance": {
     "warmup_updates": 50,
     "measured_updates": 200,
-    "reserved_device_gib": 2
+    "reserved_device_gib": 2,
+    "continuous_main_phases": "observe_during_training"
   },
   "tokenizer": {
     "default_vocab": 65536,

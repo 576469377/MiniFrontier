@@ -11,6 +11,7 @@ from tokenizers import Tokenizer, models
 from minifrontier.data import sha256
 from minifrontier.data.corpus import CorpusBuilder
 from minifrontier.data.evaluation import RULES, BenchmarkMatcher, _download
+from minifrontier.data.partitions import HOLDOUT_FORMAT
 from minifrontier.data.pretraining import merge_text_slices
 
 PROMPT = "A gardener planted seventeen apple trees beside the river and twice as many pear trees. How many trees were planted altogether?"
@@ -166,6 +167,152 @@ def test_merge_rejects_a_mutated_source_before_creating_output(evaluation, tmp_p
     output = tmp_path / "merged"
     with pytest.raises(ValueError, match="database differs"):
         merge_text_slices([source], output, evaluation)
+    assert not output.exists()
+
+
+def prior_view(base, root):
+    """Exercise a v3 view containing both added holdouts and removed train groups."""
+    with sqlite3.connect(base / "corpus.sqlite") as db:
+        rows = {
+            json.loads(payload)["group_id"]: (identity, group, split)
+            for identity, group, split, payload in db.execute(
+                "SELECT id,group_root,split,payload FROM samples"
+            )
+        }
+    assert rows["reserved"][2] == rows["excluded"][2] == "train"
+    root.mkdir()
+    (root / "partition.json").write_text(
+        json.dumps(
+            dict(
+                groups={rows["reserved"][1]: "val"},
+                excluded_groups=[rows["excluded"][1]],
+                test_groups=[rows["promoted"][1]],
+            )
+        )
+    )
+    (root / "corpus-manifest.json").write_text(
+        json.dumps(
+            dict(
+                format=HOLDOUT_FORMAT,
+                base_corpus=dict(
+                    path=str(base), manifest_sha256=sha256(base / "corpus-manifest.json")
+                ),
+                database_sha256=sha256(base / "corpus.sqlite"),
+                partition_file="partition.json",
+                partition_sha256=sha256(root / "partition.json"),
+            )
+        )
+    )
+    shutil.copyfile(base / "source-audit.json", root / "source-audit.json")
+    return rows
+
+
+def test_merge_inherits_partition_holdouts_and_quarantines_cross_slice_aliases(
+    evaluation, tmp_path
+):
+    reserved = "Satellites measure ocean temperatures using infrared sensors above the atmosphere."
+    excluded = "Mountain villages use a cable railway to transport supplies through steep valleys."
+    linked = "Roman engineers designed aqueducts to carry fresh water across the countryside."
+    base = candidate(
+        tmp_path / "base",
+        [
+            ("1", "reserved", reserved, "example/reserved"),
+            ("2", "excluded", excluded, "example/excluded"),
+            (
+                "3",
+                "promoted",
+                "A brass ensemble rehearses ceremonial music in the municipal theatre.",
+                "example/promoted",
+            ),
+            ("4", "linked", linked, "example/linked"),
+        ],
+        locks={"source-group:base:promoted": "val"},
+    )
+    view = tmp_path / "view"
+    old = prior_view(base, view)
+    extra = candidate(
+        tmp_path / "extra",
+        [
+            ("1", "val-alias", reserved, "example/new-val"),
+            (
+                "2",
+                "val-alias",
+                "Botanists classify flowering plants according to their reproductive structures.",
+                "example/new-val",
+            ),
+            ("3", "bad-alias", excluded, "example/new-bad"),
+            ("4", "bad-alias", linked, "example/new-bad"),
+            (
+                "5",
+                "bad-alias",
+                "Deep sea creatures produce light through specialized chemical reactions.",
+                "example/new-bad",
+            ),
+            (
+                "6",
+                "fresh",
+                "A renewable power station stores excess electricity in large battery banks.",
+                "example/fresh",
+            ),
+        ],
+    )
+    watched = [
+        base / "corpus.sqlite",
+        extra / "corpus.sqlite",
+        view / "partition.json",
+        view / "corpus-manifest.json",
+    ]
+    before = [sha256(p) for p in watched]
+    output = tmp_path / "merged"
+    audit = merge_text_slices([base, extra], output, evaluation, prior_partition=view)
+    assert [sha256(p) for p in watched] == before
+    assert audit["prior_partition"]["inherited_excluded_records"] == 1
+    assert audit["prior_partition"]["inherited_excluded_groups"] == 1
+    assert audit["contamination"]["direct_matches"] == 0
+    assert audit["contamination"]["excluded_records"] == 3
+    with sqlite3.connect(output / "corpus.sqlite") as db:
+        splits = dict(db.execute("SELECT id,split FROM samples"))
+        assert splits[old["reserved"][0]] == "val"
+        assert splits[old["promoted"][0]] == "test"
+        assert old["excluded"][0] not in splits
+        assert old["linked"][0] not in splits
+        assert db.execute("SELECT COUNT(*) FROM samples WHERE split='val'").fetchone()[0] == 2
+    changes = [
+        json.loads(line) for line in (output / "train-reuse-delta.jsonl").read_text().splitlines()
+    ]
+    assert {r["sample_id"] for r in changes if r["action"] == "remove_train"} == {old["linked"][0]}
+    assert sum(r["action"] == "add_train" for r in changes) == 1
+    assert audit["train_reuse_delta"]["sha256"] == sha256(output / "train-reuse-delta.jsonl")
+
+
+def test_merge_rejects_partition_of_another_base(evaluation, tmp_path):
+    rows = [
+        (
+            "1",
+            "reserved",
+            "Librarians catalogue historical manuscripts using consistent indexing rules.",
+            "example/r",
+        ),
+        (
+            "2",
+            "excluded",
+            "Monsoon winds bring heavy rainfall to coastal farming communities.",
+            "example/e",
+        ),
+        (
+            "3",
+            "promoted",
+            "Clockmakers assemble delicate gears inside an intricate mechanical movement.",
+            "example/p",
+        ),
+    ]
+    base = candidate(tmp_path / "base", rows, locks={"source-group:base:promoted": "val"})
+    other = candidate(tmp_path / "other", rows)
+    view = tmp_path / "view"
+    prior_view(base, view)
+    output = tmp_path / "merged"
+    with pytest.raises(ValueError, match="first merge input"):
+        merge_text_slices([other, base], output, evaluation, prior_partition=view)
     assert not output.exists()
 
 

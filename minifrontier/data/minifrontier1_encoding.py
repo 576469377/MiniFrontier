@@ -2,6 +2,7 @@
 
 import contextlib
 import json
+import os
 import shutil
 from bisect import bisect_right
 from collections import Counter
@@ -12,10 +13,12 @@ from typing import Any, BinaryIO
 
 import numpy as np
 import torch
+from PIL import Image
 from tokenizers import Tokenizer
 
 from minifrontier.data import sha256
 from minifrontier.data.media_cache import MediaCache
+from minifrontier.data.media_hash import decoded_hashes
 from minifrontier.data.minifrontier1 import (
     SPECIAL_TOKENS,
     RecordDataset,
@@ -278,6 +281,246 @@ def encode_canonical_text(
         )
 
 
+def extend_canonical_text(corpus, parent, output, config, *, max_gib=3, shard_tokens=64_000_000):
+    """Reuse audited old document IDs while encoding only newly retained documents.
+
+    Complete old parts share token/mask files through hard links. Parts whose
+    membership changed are compacted from their stored tokens. The resulting
+    ordinary compact component follows the new corpus partition, including any
+    newly excluded or held-out old documents; no live parent file is modified.
+    ``max_gib`` bounds newly written files, excluding linked parent payloads.
+    """
+    corpus, parent, output = (Path(p).resolve() for p in (corpus, parent, output))
+    if output.exists() or max_gib <= 0:
+        raise ValueError("text extension requires a new output and a positive write budget")
+    original = json.loads((parent / "manifest.json").read_text())
+    parent_audit = json.loads((parent / "source-audit.json").read_text())
+    proof_path = parent / parent_audit["integrity_report"]
+    proof = json.loads(proof_path.read_text())
+    parent_hash = sha256(parent / "manifest.json")
+    passed = "mechanical_checks_passed_pending_quality_admission"
+    if (
+        original.get("kind") != "canonical_text_component"
+        or parent_audit.get("producer_finished") is not True
+        or parent_audit.get("manifest_sha256") != parent_hash
+        or parent_audit.get("status") != passed
+        or sha256(proof_path) != parent_audit["integrity_report_sha256"]
+        or proof.get("status") != passed
+        or proof.get("errors")
+    ):
+        raise ValueError("text extension needs an unchanged audited canonical parent")
+    source_audit = json.loads((corpus / "source-audit.json").read_text())
+    if not source_audit.get("formal_admission") and source_audit.get("status") != (
+        "candidate_slice_complete_pending_admission"
+    ):
+        raise ValueError("new canonical corpus construction must finish before encoding")
+    manifest = json.loads((corpus / "corpus-manifest.json").read_text())
+    domain_map = dict(
+        zh_edu="zh_general",
+        en_edu="en_general",
+        code="code",
+        verified_math_science="math",
+        dialogue="structured",
+    )
+    provenance = ("source", "revision", "item_id", "license", "content_hash")
+    with contextlib.closing(open_corpus(corpus)) as db:
+        if sha256(corpus_storage_root(db) / "corpus.sqlite") != manifest["database_sha256"]:
+            raise ValueError("new canonical text database checksum differs")
+        remaining = {}
+        for identity, stage, task, split, group, payload in db.execute(
+            "SELECT id,stage,task,split,group_root,payload FROM samples"
+        ):
+            row = json.loads(payload)
+            if stage != "pretrain" or row.get("media") or row.get("turns"):
+                raise ValueError("text extension only accepts pure pretraining documents")
+            remaining[identity] = (split, group, domain_map[task], {k: row[k] for k in provenance})
+        require_space(output, min(int(max_gib * 1024**3), 16 * 1024**2))
+        output.mkdir(parents=True)
+        os.link(parent / "tokenizer.json", output / "tokenizer.json")
+        tokenizer = Tokenizer.from_file(str(output / "tokenizer.json"))
+        reused_parts: dict[str, list[dict[str, Any]]] = {
+            split: [] for split in ("train", "val", "test")
+        }
+        reused_domains: dict[str, Counter[str]] = {split: Counter() for split in reused_parts}
+        rebuild: dict[str, list[tuple[str, int, dict[str, Any]]]] = {
+            split: [] for split in reused_parts
+        }
+        parents = {}
+        stats: Counter[str] = Counter()
+        seen = set()
+        written = 0
+        for previous_split in reused_parts:
+            dataset = parents[previous_split] = CompactDataset(parent, previous_split, config)
+            first = 0
+            for number, part in enumerate(dataset.parts):
+                paths = {key: dataset._validated_file(number, key) for key in part["files"]}
+                indexes = np.memmap(paths["index.bin"], mode="r", dtype=INDEX)
+                selected = []
+                with paths["metadata.jsonl"].open() as stream:
+                    for local_index, line in enumerate(stream):
+                        old = json.loads(line)
+                        identity = old["sample_id"]
+                        if identity in seen:
+                            raise ValueError("duplicate sample in parent text encoding")
+                        seen.add(identity)
+                        target = remaining.pop(identity, None)
+                        if target is None:
+                            stats["old_documents_excluded"] += 1
+                            continue
+                        split, group, domain, origin = target
+                        if any(old["origin"][k] != origin[k] for k in provenance):
+                            raise ValueError("retained document source/content changed")
+                        if original["domains"][int(indexes[local_index]["domain"])] != domain:
+                            raise ValueError("retained document domain changed")
+                        if (previous_split == "test" and split != "test") or (
+                            previous_split == "val" and split == "train"
+                        ):
+                            raise ValueError(
+                                "old held-out document moved into a less restricted split"
+                            )
+                        selected.append((local_index, split, dict(old, split_group=group)))
+                        stats["old_documents_reused"] += 1
+                if len(indexes) != part["counts"]["records"] or first + len(indexes) > len(dataset):
+                    raise ValueError("parent text part record count differs")
+                if len(selected) == len(indexes) and len({x[1] for x in selected}) == 1:
+                    split = selected[0][1]
+                    prefix = f"{split}-reused-{len(reused_parts[split]):05d}"
+                    new_paths = {key: output / f"{prefix}.{key}" for key in paths}
+                    for key in ("tokens.bin", "mask.bin"):
+                        os.link(paths[key], new_paths[key])
+                    changed_index = np.asarray(indexes).copy()
+                    with new_paths["metadata.jsonl"].open("wb") as stream:
+                        for local_index, _, metadata in selected:
+                            raw = (
+                                json.dumps(metadata, ensure_ascii=False, separators=(",", ":"))
+                                + "\n"
+                            ).encode()
+                            changed_index[local_index]["metadata_offset"] = stream.tell()
+                            changed_index[local_index]["metadata_bytes"] = len(raw)
+                            if written + len(raw) > max_gib * 1024**3:
+                                raise ValueError("text extension write budget reached")
+                            stream.write(raw)
+                            written += len(raw)
+                            index = indexes[local_index]
+                            reused_domains[split][original["domains"][int(index["domain"])]] += (
+                                int(index["length"]) - 1
+                            )
+                    if written + changed_index.nbytes > max_gib * 1024**3:
+                        raise ValueError("text extension write budget reached")
+                    changed_index.tofile(new_paths["index.bin"])
+                    written += changed_index.nbytes
+                    reused_parts[split].append(
+                        dict(
+                            counts=part["counts"],
+                            files={
+                                key: dict(
+                                    name=p.name,
+                                    bytes=p.stat().st_size,
+                                    sha256=part["files"][key]["sha256"]
+                                    if key in {"tokens.bin", "mask.bin"}
+                                    else sha256(p),
+                                )
+                                for key, p in new_paths.items()
+                            },
+                        )
+                    )
+                    stats["parts_with_linked_tokens"] += 1
+                else:
+                    for local_index, split, metadata in selected:
+                        rebuild[split].append((previous_split, first + local_index, metadata))
+                    stats["parts_requiring_compaction"] += 1
+                first += len(indexes)
+
+        def records(split):
+            for previous_split, index, metadata in rebuild[split]:
+                item = parents[previous_split][index]
+                item.update(split_group=metadata["split_group"], text_document=True)
+                yield dict(origin=metadata["origin"]), item
+            for identity, payload, group in db.execute(
+                "SELECT id,payload,group_root FROM samples WHERE split=? ORDER BY id", (split,)
+            ):
+                if identity not in remaining:
+                    continue
+                row = json.loads(payload)
+                _, expected_group, domain, origin = remaining.pop(identity)
+                if group != expected_group:
+                    raise ValueError("new corpus group changed during encoding")
+                ids = torch.tensor([[1, *safe_text(tokenizer, row["text"]), 2]])
+                labels = ids.clone()
+                labels[:, 0] = -100
+                stats["new_documents_tokenized"] += 1
+                yield (
+                    dict(origin=origin),
+                    dict(
+                        input_ids=ids,
+                        labels=labels,
+                        sample_id=identity,
+                        split_group=group,
+                        domain=domain,
+                        media=[],
+                        media_exposures=0,
+                        text_document=True,
+                    ),
+                )
+
+        new = _encode_compact_items(
+            ((split, records(split)) for split in reused_parts),
+            output / "new",
+            config,
+            output / "tokenizer.json",
+            dict(kind="canonical_text_delta_fragment"),
+            source_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
+            media_root=corpus,
+            max_gib=max_gib - written / 1024**3,
+            shard_tokens=shard_tokens,
+            domain_order=original["domains"],
+        )
+        if remaining:
+            raise ValueError("new corpus contains unencoded documents")
+        splits = {}
+        for split, retained in reused_parts.items():
+            parts = list(retained)
+            for part in new["splits"][split]["parts"]:
+                parts.append(
+                    dict(
+                        part,
+                        files={
+                            k: dict(v, name="new/" + v["name"]) for k, v in part["files"].items()
+                        },
+                    )
+                )
+            domains = reused_domains[split] + Counter(new["splits"][split]["domain_ce"])
+            splits[split] = dict(
+                parts=parts,
+                counts=dict(sum((Counter(p["counts"]) for p in parts), Counter())),
+                domain_ce=dict(domains),
+            )
+        result = dict(
+            new,
+            kind="canonical_text_component",
+            splits=splits,
+            source_corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
+            source_audit_sha256=sha256(corpus / "source-audit.json"),
+            boundary_protocol=original["boundary_protocol"],
+            raw_text_copied=False,
+            parent_encoding_manifest_sha256=parent_hash,
+            incremental_reuse=dict(
+                stats,
+                new_file_bytes=written + new["bytes"],
+                max_new_file_bytes=int(max_gib * 1024**3),
+            ),
+            bytes=sum(
+                v["bytes"]
+                for split in splits.values()
+                for part in split["parts"]
+                for v in part["files"].values()
+            ),
+            sample_order="retained parent parts, compacted parent documents, then new documents by canonical ID",
+        )
+        write_json(output / "manifest.json", result)
+        return result
+
+
 def canonical_image_record(row, group, *, max_features, document_tiles=False):
     """Adapt a complete canonical image QA without rebuilding text or source pixels."""
     if (
@@ -335,6 +578,74 @@ def canonical_image_record(row, group, *, max_features, document_tiles=False):
     )
 
 
+def canonical_video_record(row, group, *, max_features):
+    """Adapt a complete caption/QA over hashed source frames and their timestamps."""
+    turns, media = row.get("turns", []), row.get("media", [])
+    if (
+        row.get("stage") != "pretrain"
+        or row.get("task") != "video"
+        or len(media) != 1
+        or media[0].get("kind") != "video"
+        or len(turns) != 2
+        or [turn.get("role") for turn in turns] != ["user", "assistant"]
+        or any(not isinstance(t.get("content"), str) or not t["content"].strip() for t in turns)
+        or max_features < 1
+    ):
+        raise ValueError("canonical video encoding needs one video and a complete two-turn QA")
+    original = media[0]
+    frames = original.get("frames", [])
+    if (
+        not original.get("video_id")
+        or len(frames) < 2
+        or any(
+            len(original.get(key, [])) != len(frames)
+            for key in ("frame_sha256", "frame_rgb_sha256", "timestamps")
+        )
+        or any(
+            not isinstance(value, str) or len(value) != 64 for value in original["frame_rgb_sha256"]
+        )
+    ):
+        raise ValueError("canonical video requires source identity and hashes for every frame")
+    resource = dict(
+        media_id=original["video_id"],
+        video_id=original["video_id"],
+        frames=list(frames),
+        frame_sha256=list(original["frame_sha256"]),
+        frame_rgb_sha256=list(original["frame_rgb_sha256"]),
+        timestamps=list(original["timestamps"]),
+        sha256=original["sha256"],
+        rgb_sha256=original["rgb_sha256"],
+        width=original["width"],
+        height=original["height"],
+        max_features=max_features,
+    )
+    return dict(
+        sample_id=row["sample_id"],
+        split_group=group,
+        language=row["lang"],
+        domain="video",
+        source=dict(dataset=row["source"], revision=row["revision"], record_id=row["item_id"]),
+        provenance=dict(license_record=row["license"], transform="canonical-video-qa-to-mf1-v1"),
+        origin={k: row[k] for k in ("source", "revision", "item_id", "license", "content_hash")},
+        supervision=dict(type="answer_ce"),
+        media=[resource],
+        messages=[
+            dict(
+                role="user",
+                content=[
+                    dict(type="video", media_id=resource["media_id"]),
+                    dict(type="text", text=turns[0]["content"]),
+                ],
+            ),
+            dict(
+                role="assistant",
+                channel="final",
+                content=[dict(type="text", text=turns[1]["content"])],
+            ),
+        ],
+    )
+
+
 def encode_canonical_images(
     corpus,
     tokenizer_path,
@@ -352,6 +663,50 @@ def encode_canonical_images(
     document tiles; later stages explicitly rebuild their media spans at higher
     resolution. Context overflow is an error, never silent answer truncation.
     """
+    return _encode_canonical_media(
+        corpus,
+        tokenizer_path,
+        output,
+        config,
+        max_features=max_features,
+        document_tiles=document_tiles,
+        max_gib=max_gib,
+        shard_tokens=shard_tokens,
+    )
+
+
+def encode_canonical_videos(
+    corpus, tokenizer_path, output, config, *, max_features, max_gib=1, shard_tokens=64_000_000
+):
+    """Encode real video records through the existing deterministic frame processor.
+
+    The feature budget applies to the complete clip. Source frames stay shared;
+    their original timestamps and per-frame hashes remain in each compact record.
+    """
+    return _encode_canonical_media(
+        corpus,
+        tokenizer_path,
+        output,
+        config,
+        max_features=max_features,
+        video=True,
+        max_gib=max_gib,
+        shard_tokens=shard_tokens,
+    )
+
+
+def _encode_canonical_media(
+    corpus,
+    tokenizer_path,
+    output,
+    config,
+    *,
+    max_features,
+    document_tiles=False,
+    video=False,
+    max_gib=1,
+    shard_tokens=64_000_000,
+):
     corpus, tokenizer_path = Path(corpus).resolve(), Path(tokenizer_path).resolve()
     audit = json.loads((corpus / "source-audit.json").read_text())
     if audit.get("status") not in {
@@ -366,17 +721,21 @@ def encode_canonical_images(
     ):
         raise ValueError("canonical media needs the MF1 control mapping and fitting vocabulary")
     if not 1 <= max_features <= config.protected_media_tokens:
-        raise ValueError("image feature limit exceeds the model media budget")
+        raise ValueError("media feature limit exceeds the model media budget")
     source_manifest = dict(
-        kind="canonical_image_component",
+        kind="canonical_video_component" if video else "canonical_image_component",
         formal_admission=False,
         source_corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
         source_audit_sha256=sha256(corpus / "source-audit.json"),
         raw_media_copied=False,
         raw_text_copied=False,
-        image_transform=dict(max_features=max_features, document_tiles=document_tiles),
         encoding_processor_sha256=sha256(__file__),
         complete_record_length_buckets={},
+    )
+    source_manifest["video_transform" if video else "image_transform"] = (
+        dict(max_features=max_features, timestamps="source_seconds")
+        if video
+        else dict(max_features=max_features, document_tiles=document_tiles)
     )
 
     def records(db, split):
@@ -385,10 +744,25 @@ def encode_canonical_images(
         for payload, group in db.execute(
             "SELECT payload,group_root FROM samples WHERE split=? ORDER BY id", (split,)
         ):
-            record = canonical_image_record(
-                json.loads(payload), group, max_features=max_features, document_tiles=document_tiles
+            record = (
+                canonical_video_record(json.loads(payload), group, max_features=max_features)
+                if video
+                else canonical_image_record(
+                    json.loads(payload),
+                    group,
+                    max_features=max_features,
+                    document_tiles=document_tiles,
+                )
             )
             validate_record(record, media_root)
+            if video:
+                resource = record["media"][0]
+                for uri, expected in zip(
+                    resource["frames"], resource["frame_rgb_sha256"], strict=True
+                ):
+                    with Image.open(media_root / uri) as frame:
+                        if decoded_hashes(frame)["rgb_sha256"] != expected:
+                            raise ValueError("decoded video frame identity differs")
             item = encode_record(record, tokenizer, config, media_root)
             length = item["input_ids"].shape[1]
             bucket = str(
@@ -522,6 +896,11 @@ def _encode_compact_items(
                     media_exposures=item["media_exposures"],
                     vision_tokens=sum(s["feature_count"] for s in spans),
                 )
+                videos = [resource for resource in record.get("media", []) if "frames" in resource]
+                if videos:
+                    counts.update(
+                        video_examples=len(videos), frames=sum(len(v["frames"]) for v in videos)
+                    )
                 if text_document:
                     counts["text_documents"] += 1
                 domain_ce[domain] += int((labels[1:] != -100).sum())
