@@ -4,11 +4,11 @@
 
 ## CPU
 
-在 Git checkout 中使用 Python 3.11+：
+在 Linux 的 Git checkout 中使用 Python 3.11+（Windows 请使用 Linux/WSL2 环境）：
 
 ```bash
 uv sync --locked --extra dev
-CUDA_VISIBLE_DEVICES='' MINIFRONTIER_MIN_FREE_GIB=1 uv run minifrontier quickstart \
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MINIFRONTIER_MIN_FREE_GIB=1 uv run minifrontier quickstart \
   --model all --device cpu --output outputs/quickstart-cpu
 uv run minifrontier generate \
   --checkpoint outputs/quickstart-cpu/minideepseekv4/sft/model.pt \
@@ -27,7 +27,7 @@ CUDA_VISIBLE_DEVICES=0 MINIFRONTIER_MIN_FREE_GIB=1 uv run minifrontier quickstar
   --model all --device cuda:0 --output outputs/quickstart-cuda
 ```
 
-这里将极小示例的磁盘保留量设为 1 GiB；正式数据和训练继续默认保留 50 GiB。示例使用真正的三个模型构造入口、数据编码器和训练器，单进程依次执行三组，不需要第二张卡。
+这里只将微型示例的磁盘保留量设为 1 GiB；训练器默认保留 50 GiB，正式运行按[存储计划](../pretraining-plan.md#resources)设置更高余量。示例使用真正的三个模型构造入口、数据编码器和训练器，单进程依次执行三组，不需要第二张卡。
 
 ## 实际执行与预期结果
 
@@ -37,15 +37,17 @@ PT 总预算 8 次更新，在第 4 次暂停并保存优化器、游标和 RNG�
 
 预期文件为各模型目录中的 `config.json`、`data/`、`pretrain/checkpoint.pt`、`pretrain/model.pt`、`sft/model.pt`、`report.json`。报告应显示 `resume_executed: true`、`pause_step: 4`，两个最终阶段均为 `complete`。训练器测试另外比较暂停恢复与连续训练的参数、token 账本和游标。
 
-**生成可能为空、错误数字或乱码。** 如本次 CPU 测试的 DeepSeek/Kimi 输出为空，Qwen 输出 `8`；这不证明模型学会加法或语言。本示例不启用视觉和 MTP，64-token 序列也不覆盖全部长压缩块路径。它不计正式预算、不通过能力门槛、不出现在浏览器默认模型列表。
+**生成可能为空、错误数字或乱码。** 下方 2026-09-09 的 CPU 记录中，DeepSeek/Kimi 输出为空，Qwen 输出 `8`；这些输出不表示模型学会加法或语言。本示例不启用视觉和 MTP，64-token 序列也不覆盖全部长压缩块路径。示例单独记账，不出现在浏览器默认的能力合格模型列表。
 
 ## 2026-09-09 实测
 
-| 模型 | 参数 | CPU，2 线程 | 单张 RTX 3090 |
+| 模型 | 参数项计数（报告口径） | CPU，2 线程 | 单张 RTX 3090 |
 |---|---:|---:|---:|
 | MiniDeepSeek-V4 | 79,255 | 5.68 秒 | 10.62 秒 |
 | MiniKimi-K3 | 74,066 | 7.79 秒 | 108.17 秒 |
 | MiniQwen4 | 32,596 | 3.72 秒 | 9.29 秒 |
+
+这里沿用当时 `report.json` 对全部 Parameter 元素求和的记录，DeepSeek 的计数包含固定整数 hash 路由项；首页的研究配置表则只统计浮点参数。两处容量与统计范围均不同。
 
 测量为 PyTorch 2.13 环境中每模型的数据生成到生成结束，不含安装、命令进程导入时间；GPU 测量与既有训练共享一张 3090，并包括当次内核初始化/编译影响。它是端到端可执行性记录，不是独占 GPU 吞吐基准；尤其不能据此推断正式容量的 CPU/GPU 速度关系。完整数值报告位于[预览验收档案](../experiments/preview-quickstart)。
 

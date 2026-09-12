@@ -1,10 +1,12 @@
 # 2026-09-10：单卡 microbatch 测速与配方复验
 
+> 后续状态：旧 batch16 队列已结束，首版工作参数已选择；MF1 后来完成合批注意力与 KDA 执行优化。见[工作配方](../2026-09-10-pretraining-cutover/working-recipes.md)与[MF1 性能报告](../../audits/minifrontier1-execution-performance.md)。
+
 > 后续复核见[当前计划](../current-plan.md)：本页 microbatch 对照包含实际全局 batch 越界差异；DeepSeek 的有效 Muon LR 实际与 `--lr` 相同，命令中的 `--muon-lr 0.01` 未用于该路由。原始命令和数值保留以便追溯。
 
-三条复现架构原来的单卡 microbatch 2 留有较大计算余量。固定每次更新的合成输入后，调到 16 明显提高吞吐；三组真实数据短训也完成了更新和评估。因此，后续新建 recipe pilot 默认使用 microbatch 16，并启动三组 20M CE tokens 的复验。当前结果支持这个执行配置进入进一步验证，尚不能证明完整训练质量。
+三条复现架构原来的单卡 microbatch 2 留有较大计算余量。固定每次更新的合成输入后，调到 16 明显提高吞吐；三组真实数据短训也完成了更新和评估。因此，当时将新建配方试验的默认 microbatch 调为 16，并启动三组 20M CE tokens 的复验。当前结果支持这个执行配置进入进一步验证，尚不能证明完整训练质量。
 
-测试设备为单张 RTX 3090 24 GiB，每张卡同时运行一个测试。PyTorch 为 `2.13.0+cu130`，CUDA 为 `13.0`。三模型固定训练源码 `75a3364f586936d764c31376e185747973d2bed6`；MF1 使用 `d77c51c4ba074ba2d325f0b52e2ecceca392972e`。配置、源码身份、runner 校验值及逐步数据保存在本目录 JSON 中。
+测试设备为单张 RTX 3090 24 GiB，每张卡同时运行一个测试。PyTorch 为 `2.13.0+cu130`，CUDA 为 `13.0`。各项对照使用固定的代码版本。模型配置、代码版本、执行脚本校验值和逐步数据见下文链接的原始报告。
 
 ## 固定输入的短测速
 
@@ -32,7 +34,7 @@
 
 性能统计为预热 1 次后的 3 次更新，包含数据、前后向、优化器和路由均衡，不包含独立验证及权重保存。CE 总量超过 80K 是因为训练器完成整个累积窗口后才停止。真实样本长度不同，`input_batch_tokens=16384` 是累积窗口的目标下限；加大 microbatch 会改变跨过该下限的位置，不能声称实际每次更新的 token 完全相同。表中统计窗口均为每次更新 3 个 microbatches，完整复验中也可能出现 4 个。
 
-三组都完成了 5 次更新，梯度及验证损失为有限值；仅评估了 8 个样本。这验证了实际训练链路，未验证模型说话能力或长程收敛。Qwen 短训使用 Muon LR 0.003，Kimi 使用 0.005，DeepSeek 使用 Adam 分支 LR 0.0003 / Muon LR 0.01。
+三组都完成了 5 次更新，梯度及验证损失为有限值；仅评估了 8 个样本。这验证了实际训练链路，未验证模型说话能力或长程收敛。Qwen 短训使用 Muon LR 0.003，Kimi 使用 0.005，DeepSeek 的 Muon 与 Adam 分支实际共用 LR 0.0003；旧命令的 `--muon-lr 0.01` 未被该优化器读取。
 
 逐更新性能：[Qwen](miniqwen4-mb16-real.json)、[Kimi](minikimik3-mb16-real.json)、[DeepSeek](minideepseekv4-mb16-real.json)。对应 `*-mb16-run.json` 保存命令、数据/tokenizer 校验值和完成状态，`*-mb16-metrics.jsonl` 保存训练与验证曲线。[汇总数据](real-summary.json)还包括 IO 和优化器耗时。
 
@@ -42,7 +44,7 @@
 
 [MF1 profiler 记录](minifrontier1-synthetic.json)包含一次预热、一次带 profiler 的更新以及一次不带 profiler 的测量。最后一次以 microbatch 1 处理 512 个输入位置，耗时 10.66 秒、47.94 CE/s；这里的更新预算不同于上表。
 
-带 profiler 的算子表累计 Self CPU 为 12.927 秒、Self CUDA 为 736.210 毫秒，出现大量小型 `bmm`、索引、`nonzero` 和复制操作。这是算子累计时间，不能直接换算成墙钟 GPU 利用率。结合 `csa.py`、`qsa_mla.py` 中逐 query 的 Python 循环，下一步应检查批量注意力、索引与专家执行方式。当前尚未完成这部分模型优化，单纯加 batch 不能视为已解决 MF1 的性能问题。
+带 profiler 的算子表累计 Self CPU 为 12.927 秒、Self CUDA 为 736.210 毫秒，出现大量小型 `bmm`、索引、`nonzero` 和复制操作。这是算子累计时间，不能直接换算成墙钟 GPU 利用率。结合 `csa.py`、`qsa_mla.py` 中逐 query 的 Python 循环，下一步应检查批量注意力、索引与专家执行方式。当时尚未完成这部分模型优化；后来修复结果见页首的 MF1 性能报告。
 
 ## 已启动的 20M CE 复验
 
@@ -50,7 +52,7 @@
 | --- | --- | ---: | ---: | ---: | --- |
 | MiniQwen4 | Muon 0.01 / Adam 分支 0.0003 | 42 | 16 | 20M CE | 已开始权重更新 |
 | MiniKimi-K3 | Muon 0.005 / Adam 分支 0.0003 | 42 | 16 | 20M CE | 已开始权重更新 |
-| MiniDeepSeek-V4 | Muon 0.01 / Adam 分支 0.0003 | 42 | 16 | 20M CE | 已开始权重更新 |
+| MiniDeepSeek-V4 | Muon / Adam 分支共用 0.0003 | 42 | 16 | 20M CE | 已开始权重更新 |
 
 这三项与各自先前的候选配方比较 microbatch 变更。保留相同的源码、数据、tokenizer、学习率候选、seed、总 CE 预算、400K warmup、WSD 和 MTP；按实际 token 账本记录累积窗口差异。Qwen 的 20M 复验采用原 reference 学习率，区别于上面的低学习率短测速。性能档案恢复为 50 次预热、200 次测量，保留完整验证集评估。
 
@@ -58,10 +60,10 @@
 
 ## 复现与档案范围
 
-通用测速入口为 [`scripts/benchmark_training_batch.py`](../../../scripts/benchmark_training_batch.py)。本轮执行时的原始脚本副本保存在 [runner 快照](benchmark_training_batch.py.txt)，其 SHA-256 与三模型合成报告的 `runner_sha256` 一致；通用入口后来仅补充了优化器类型注解。MF1 runner 可从上述 MF1 源码版本的 `scripts/benchmark_mf1.py` 获取。
+通用测速入口为 [`scripts/benchmark_training_batch.py`](../../../scripts/benchmark_training_batch.py)。本轮执行时的原始脚本副本保存在 [runner 快照](benchmark_training_batch.py.txt)，其 SHA-256 与三模型合成报告的 `runner_sha256` 一致；通用入口后来仅补充了优化器类型注解。MF1 执行脚本可从 [MF1 合成报告](minifrontier1-synthetic.json)记录的代码版本中获取，路径为 `scripts/benchmark_mf1.py`。
 
 队列命令与输入校验值分别保存在 [三模型/MF1 首批测速](strategy-performance-gpu-v1-plan.json)、[DeepSeek 测速](strategy-performance-gpu-v2-plan.json)、[Qwen/Kimi 真实数据短训](strategy-real-batch-gpu-v2-plan.json)、[DeepSeek 真实数据短训](strategy-real-batch-gpu-v3-plan.json)及 [20M 复验](strategy-batch16-gpu-v1-plan.json)。这些是本次执行记录，引用的前置实验和数据需自行准备，不能当作下载后即用的最小示例。公开副本将工作目录替换为 `${WORKSPACE}` 并去除设备唯一标识。
 
 首次真实数据预检使用了冻结训练器不支持的 `--stop-after-updates`，在参数解析处退出，累计更新及 CE 都为 0。随后改用受支持的 CE 预算入口并建立新输出目录；[失败记录](preflight-failures.json)保留这个过程。
 
-本目录只包含配置、数值指标与执行记录，不包含数据样本、tokenizer 文件或模型权重。20M 试验的最终曲线和结论待完成后追加。
+本目录只包含配置、数值指标与执行记录，不包含数据样本、tokenizer 文件或模型权重。20M 试验当时的启动状态保留；后续结论见[工作参数与选择依据](../2026-09-10-pretraining-cutover/working-recipes.md)。

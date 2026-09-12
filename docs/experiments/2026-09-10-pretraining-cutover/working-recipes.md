@@ -1,16 +1,16 @@
-# 首版 base 工作参数与阶段继承
+# 首版预训练配方与阶段继承
 
-依据[主计划](../../pretraining-plan.md)及现有试验选择一套工作参数。机器记录在 `configs/experiments.json` 的 `execution_program.models.*.training_recipe`，这里保存通用工作配方；实际阶段使用独立冻结的运行快照。DeepSeek D1 的文本和 tokenizer 已准入，当前以 microbatch 16 做生产资格复验，见[首阶段快照](deepseek-first-stage.json)；其余模型仍需完成各自媒体组合与资格。
+2026-09-10 依据既有实验选定首版参数，四模型于 2026-09-11 进入正式首阶段。本文解释选择依据和阶段状态继承；当前进度集中维护在[主计划](../../pretraining-plan.md)。机器可读模板为 `configs/experiments.json`，实际执行以每次运行的冻结快照为准。
 
 ## 已选工作参数
 
-所有模型使用 seed=42、BF16 计算、FP32 优化状态与梯度裁剪 1.0。首阶段从随机初始化开始；旧试验及性能验收权重不作为初始化。下表的 microbatch 是待真实首阶段最大长度/媒体配置确认的上限候选，不是已经通过的容量。
+所有模型使用 seed=42、BF16 计算、FP32 优化状态与梯度裁剪 1.0。首阶段从随机初始化开始；旧试验及性能验收权重不作为初始化。下表为已进入正式首阶段的 microbatch 上限；实际微批受完整样本窗口和长度约束。后续长上下文与媒体配置不能直接套用首阶段容量。
 
-| 模型 | 全局非 padding input 目标 | microbatch 候选 | 峰值 LR | 主日程 |
+| 模型 | 全局非 padding input 目标 | 首阶段 microbatch | 峰值 LR | 主日程 |
 |---|---:|---:|---|---|
 | Kimi | 32,768 | 64 | Muon 0.005，Adam 3e-4；视觉 1e-4，projector 3e-4 | 累计主 CE：前 20M warmup，随后 cosine，2B 时降至 0.1 peak |
 | Qwen | 16,384 | 32 | Q1/Q2 Muon 0.01、Adam 3e-4；视觉 1e-4，projector 3e-4 | Q1/Q2 共 1.5B，前 15M warmup，其后保持 peak；Q4/Q5 另见下文 |
-| DeepSeek | 32,768 | 16（生产资格复验） | 主干 Muon/Adam 共用 3e-4 | 前 25M 主 CE warmup，保持到累计 2B，最后 500M cosine 至 0.1 peak；固定 batch |
+| DeepSeek | 32,768 | 16 | 主干 Muon/Adam 共用 3e-4 | 前 25M 主 CE warmup，保持到累计 2B，最后 500M cosine 至 0.1 peak；固定 batch |
 | MF1 | 16,384 | 8 | 主干 3e-4，视觉/标量 1e-4 | 沿用前 2M warmup、保持至 2.4B、最后 600M cosine 至 0.1 peak |
 
 前三个来源模型保留 WD=0.1，标量及各自规定的特殊参数继续使用原分组，Adam eps=1e-8、betas=(0.9,0.95)。DeepSeek 的 eps 是本项目的 FP32 稳定性适配，不声称复刻官方全部数值。MF1 保留矩阵/视觉 WD=0.1、embedding/head/lookup WD=0.01、标量 WD=0，以及原参数分组。
@@ -27,9 +27,11 @@
 
 这些旧对照采用 WSD 与 400K warmup。Kimi 正式的 cosine 与整条 2B 的 1% warmup 来自主计划/专项方案，不能把旧曲线当新日程的实测结果。
 
-[固定窗口执行矩阵](../2026-09-10-batch-frontier/README.md)已证明扩大微批可减少执行开销；它没有选出最优全局 batch。Kimi/DeepSeek 的 32K 是原候选中的中间工作档：减少小窗口的更新开销，同时保留比 64K 更多的更新。没有把 16K/64K 的结果插值成一次不存在的 32K 质量试验。Qwen 保留 16K，控制较大模型和随机视觉的首阶段容量；MF1 沿用既定 16K。DeepSeek 首版暂用固定 batch，官方增长设计保留为后续研究，未伪造正式 ramp 节点。
+[固定窗口执行矩阵](../2026-09-10-batch-frontier/README.md)已证明扩大微批可减少执行开销；它没有选出最优全局 batch。Kimi/DeepSeek 的 32K 是原候选中的中间工作档：减少小窗口的更新开销，同时保留比 64K 更多的更新。32K 尚无同配置的独立质量对照。Qwen 保留 16K，控制较大模型和随机视觉的首阶段容量；MF1 沿用既定 16K。DeepSeek 首版暂用固定 batch，官方的 batch 增长设计保留为后续研究。
 
-不恢复 batch×LR 网格。固定正式数据后，每模型完成一次规定的 50+200 验收，具体失败只允许已登记的一次修复复验。1024 最大单样本、单 rank 的输入上界分别为 Kimi/DeepSeek 8,447,750，Qwen/MF1 4,351,750；实际 CE、媒体曝光另记。MF1 仍需独立共享生产代码的性能入口，不能绕过既有 2M acceptance 上限。
+不再扩大 batch×LR 网格。DeepSeek 完成工程修复和既有生产检查后开训；Kimi、Qwen、MF1 直接在正式运行中检查数值、固定验证、显存、磁盘和恢复点。2026-09-11 的[执行调整](direct-training-start.json)取消了这三个模型额外的独立 smoke、20M pilot 和 50＋200 性能检查。该调整保留学习率日程、数据身份和后续阶段要求。
+
+历史 250 次更新的输入上界为 Kimi/DeepSeek 8,447,750、Qwen/MF1 4,351,750；这些是当时的检查预算，不是新开训前置任务。失败尝试和实际使用的配置见[启动记录](execution.md)与[正式运行快照](formal-starts.json)。
 
 ## Qwen 与 DeepSeek 的索引器和后续阶段
 
@@ -42,7 +44,7 @@
 
 ## 显式阶段状态
 
-来源模型入口新增 `--pretraining-program configs/experiments.json --pretraining-phase <phase> --schedule program`。它依旧受原 `--run-kind strategy` 准入约束；工作参数状态不能通过正式入口。普通 `--init` 的既有行为保留，只有显式 program 才执行下列状态继承。
+来源模型入口新增 `--pretraining-program configs/experiments.json --pretraining-phase <phase> --schedule program`。该入口要求 `--run-kind strategy` 与当前阶段的数据/执行证据；模板中的候选状态不能代替实际运行绑定。普通 `--init` 的既有行为保留，只有显式 program 才执行下列状态继承。
 
 | 状态 | 同阶段恢复 | 后续 program 阶段 |
 |---|---|---|
@@ -58,8 +60,7 @@ CPU 回归比较 Kimi 的连续训练与两个阶段的模型、优化器、路�
 
 program 与既有策略准入的定向回归共 8 项通过；合并 MF1 位置修复后的完整 CPU 回归为 379 passed / 1 skipped，Ruff、格式与项目 CI 的 174 源文件 mypy 检查通过。
 
-DeepSeek D1 已绑定现有文本、64K tokenizer、固定 1M/5M 验证及 32K 全局输入目标；人工审核按维护者授权豁免。microbatch 32 在首次反向中 OOM，已记录 0 个完成更新，改为 16 的复验也在反向阶段 OOM，仍为 0 个完成更新。停止 batch 尝试后，对 dense attention 加入 128-query 分块重算；CPU 数值/机制检查已通过，等待同一 microbatch 16 的 GPU 工程复验。其他模型的媒体组合、资源资格及后续阶段父权重质量仍分别验收；实际训练进度以带时间的阶段快照和训练账本为准。
-
+DeepSeek D1 的初次 microbatch 32 和 16 尝试都在首次反向时 OOM，完成更新数为零。后来以 128-query 分块重算控制 dense attention 的中间张量，在相同 microbatch 16 和 32K 全局输入目标下开训。两次失败及修复保留在[启动档案](execution.md)，不再列为当前待办。
 
 ## 分阶段绑定数据
 
@@ -68,7 +69,6 @@ DeepSeek D1 已绑定现有文本、64K tokenizer、固定 1M/5M 验证及 32K �
 正式训练固定源码 checkout。执行配方从配置复制到 `outputs/` 的运行快照，通过 `--pretraining-program` 指定；新增后续阶段绑定写入新的执行快照，并保留原快照。运行期间不要修改冻结 checkout 中的 `configs/`，因为它也是源码身份的一部分。单独补数据不需要改变训练源码或重新跑前一阶段。
 
 三条来源模型均已用真实 CPU 保存/恢复与阶段切换验证：补入后续数据后，恢复结果与连续训练的模型参数、优化器、RNG 和 token 账本一致；已训练阶段的数据改动会被拒绝。来源模型共 11 项 program 测试通过，属于工程回归，不计正式训练 token。
-
 
 ## DeepSeek 既有 MTP 对照的复用
 

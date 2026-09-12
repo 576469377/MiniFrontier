@@ -1,12 +1,14 @@
 # MF1 语言诊断与单卡性能对照
 
+> 历史快照：本页记录语言诊断启动及早期性能结果。两项后续指令扩展曾启动后停止，见[停止记录](../2026-09-10-batch-frontier/README.md#处理决定)；后续执行优化见[性能报告](../../audits/minifrontier1-execution-performance.md)。
+
 2026-09-10 开始。本轮针对两个实际问题：500K CE 后，MF1 已能利用简单色块媒体，但仍不能正常回答基础文字问题；单卡训练的显存和算力也未充分使用。这里记录学习证据、实现检查和性能测量，各项按自己的完成状态解释。
 
 后续进展见 [2026-09-10 07:51 UTC 更新](../2026-09-10-mf1-update/README.md)，本页的早期运行快照继续保留。
 
 ## 已完成的 500K CE 实验
 
-两组均完成 477 次更新、500,853 CE；参数量为 228,235,809，seed 42。冻结源码为 `f2e96ca22fa5122d6520d932a1e70e2eee00fef6`。完整配置、初始化和产物校验值见 [完成记录](completed-500k.json)，逐步曲线见 [LR 1.5e-4](adamw-lr1.5e-4.completed.metrics.jsonl)、[LR 3e-4](adamw-lr3e-4.completed.metrics.jsonl)。
+两组均完成 477 次更新、500,853 CE；参数量为 228,235,809，seed 42。实验所用代码版本、完整配置、初始化和产物校验值见 [完成记录](completed-500k.json)，逐步曲线见 [LR 1.5e-4](adamw-lr1.5e-4.completed.metrics.jsonl)、[LR 3e-4](adamw-lr3e-4.completed.metrics.jsonl)。
 
 | 项目 | LR 1.5e-4 | LR 3e-4 |
 |---|---:|---:|
@@ -19,13 +21,13 @@
 
 视觉报告见 [1.5e-4](adamw-lr1.5e-4.visual.json)、[3e-4](adamw-lr3e-4.visual.json)。低学习率组换入不同答案的媒体后，32 个输出全部跟随替换媒体的颜色。这支持模型确实使用了色块媒体；不能据此推断通用视觉、视频理解或对话能力。
 
-原 NLL 仅覆盖验证集前 12 条，含 4 条英文、2 条中文、2 条数学、2 张图片、2 段视频；图片和视频子集分别只有一种答案。该 NLL 不足以完成配方选择。本轮改为默认遍历完整验证集，同时把 TensorBoard 验证分母放入 `validation/` 命名空间，避免与累计训练 CE 混淆。新的诊断验证集与旧语料不同，两个 NLL 不能直接比较。
+原 NLL 仅覆盖验证集前 12 条，含 4 条英文、2 条中文、2 条数学、2 张图片、2 段视频；图片和视频子集分别只有一种答案。该 NLL 不足以完成配方选择。本轮改为默认遍历完整验证集，同时把当时 TensorBoard 验证分母放入 `validation/` 命名空间（现统一为 `eval/`），避免与累计训练 CE 混淆。新的诊断验证集与旧语料不同，两个 NLL 不能直接比较。
 
-## 语言学习实验：运行中
+## 语言学习实验：快照时仍在运行
 
 两组均已完成第 2 次更新后的 checkpoint 重载，并在新的 CUDA 进程从第 3 步继续；[运行快照](sft-running-snapshot.json)及 [2e-5 曲线](adamw-lr2e-5.running.metrics.jsonl)、[1e-4 曲线](adamw-lr1e-4.running.metrics.jsonl)保留当时进度。
 
-新运行冻结源码为 `d77c51c4ba074ba2d325f0b52e2ecceca392972e`。两组从上述 LR 1.5e-4 的完整检查点初始化，使用同一候选 32K tokenizer、数据和 seed，仅改变主干及标量参数的学习率。视觉学习率均为 5e-6。
+两组使用相同代码版本，从上述 LR 1.5e-4 的完整检查点初始化，使用同一候选 32K tokenizer、数据和 seed，仅改变主干及标量参数的学习率。视觉学习率均为 5e-6。
 
 | 控制项 | 设置 |
 |---|---|
@@ -44,6 +46,11 @@
 
 数据生成不下载额外语料，不读取封存测试集；复制、加法的全部语言和改写形式按同一题目分组切分。tokenizer 按字节复制，媒体复用已有带校验值的生成资源。见 [控制集清单](control-data.json)和[扩展指令集清单](instruction-data.json)。后者已有 886 条训练记录，尚未开始。条件队列已就绪：每组须在 32 条训练问答中精确匹配至少 29 条、至少 30 条正常输出 EOS，且 32 条视觉留出样本至少答对 28 条，才从该组完成权重继续 100K CE 扩展指令诊断。未满足则停止扩展，保留结果。阈值是本轮操作条件，不能作为通用能力准入；见[续训条件](continuation-policy.json)。
 
+<details>
+<summary>复现说明与命令（需要已有数据和检查点）</summary>
+
+代码版本和文件校验值记录在上面的 JSON 报告中，用于核对实验输入。以下工作树命令创建独立的代码目录，使实验不受开发目录后续修改影响。
+
 ```bash
 # 已准备原机制数据，并有其 LR 1.5e-4 的完成检查点。
 uv run python scripts/prepare_mf1_language_data.py \
@@ -61,6 +68,8 @@ uv run python scripts/run_mf1_trial.py \
 
 设备编号为复现示例，运行前按实际空闲设备选择。完整流程要求 Git checkout 和相应的本地产物；离线首次体验见[微型示例](../../guides/minifrontier1.md)。
 
+</details>
+
 ## 缓存与 lookup 检查
 
 同一 14-token 输入，关闭 TF32，对比完整前向和“7-token 前缀 + 逐 token 解码”：[原始数值](cache-checks.json)。
@@ -76,7 +85,7 @@ lookup 预填充原本逐 token 执行投影和卷积，现改为批量投影与
 
 实现提交前，全量 CPU 检查为 302 passed、1 skipped；后续定向回归 53 passed，包含共享显存准入与 lookup autocast 状态修正。Ruff、格式和 mypy 通过。41 项既有 CUDA 测试未计入该全量 CPU 检查；这里的 CUDA 证据来自实际运行的专项对照。
 
-## 性能：短筛完成基线，优化版正在测量
+## 性能：基线短测与优化版早期结果
 
 原实现的 [算子表](baseline-profile.json)有大量小算子调用。下面是独占单张 3090、完整配置、纯文本 512、每次实际输入 4096 token 的短筛。各组使用相同随机输入、seed、AdamW 和辅助目标，预热 1 次后测量 2 次；这些数字只用于筛选。
 
@@ -98,4 +107,4 @@ CUDA_VISIBLE_DEVICES=0 uv run python scripts/benchmark_mf1.py \
 # 按短筛结果设置 --batches，并改用 --warmup 20 --updates 100 进行持续测量。
 ```
 
-原始数据、完整检查点与设备身份信息不随本档案发布。运行中的学习曲线见本地 TensorBoard `mf1-language/`；性能、缓存和正确性检查不添加到学习曲线。
+本档案提供可下载的指标和曲线文件；原始数据和完整检查点不随档案发布。TensorBoard 的配置方法见[操作说明](../../operations/mf1-language-performance.md#tensorboard-分组)。

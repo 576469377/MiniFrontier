@@ -1,0 +1,69 @@
+{
+  "extracted_on": "2026-09-10",
+  "purpose": "Attributed architecture figure excerpts for explanatory comparison; original rights retained, not relicensed as Apache-2.0.",
+  "figures": [
+    {
+      "file": "kimi-k3-architecture.png",
+      "source_url": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/3cb39dfd32e51c3328e2e4b4af21341247d06c43/k3_tech_report.pdf",
+      "pdf_page": 3,
+      "figure": 2,
+      "pdf_sha256": "86fb82a63ced501f0c3f4f404c0c6fa88a7a6cfac17aae81fd1a8f455998067c",
+      "renderer": "pdftoppm",
+      "scale_to": 3300,
+      "crop_xywh": [
+        432,
+        210,
+        1770,
+        1617
+      ],
+      "image_sha256": "e3fb175f22acba74d2d682a1eb690d6b5c4907eff09147c260aeac5573249e31",
+      "image_size": [
+        1770,
+        1617
+      ],
+      "modifications": "Cropped to the architecture figure; original labels and diagram unchanged."
+    },
+    {
+      "file": "qwen3.8-next-architecture.png",
+      "source_url": "https://raw.githubusercontent.com/QwenLM/Qwen3.8-Flash-Next/69885871a64393807d988b27b1b5e380e8f28526/tech_report.pdf",
+      "pdf_page": 2,
+      "figure": 1,
+      "pdf_sha256": "04f263446d74a35cb7cea368574e0c561f3b05c133be2c777ac884404063655d",
+      "renderer": "pdftoppm",
+      "scale_to": 3300,
+      "crop_xywh": [
+        438,
+        204,
+        1446,
+        1485
+      ],
+      "image_sha256": "2c41a7bcf87c4b7c5e2b065d33dcca61f2fdf61b4c6c9723f5f5916578b100fb",
+      "image_size": [
+        1446,
+        1485
+      ],
+      "modifications": "Cropped to the architecture figure; original labels and diagram unchanged."
+    },
+    {
+      "file": "deepseek-v4-architecture.png",
+      "source_url": "https://arxiv.org/pdf/2606.19348v1",
+      "pdf_page": 6,
+      "figure": 2,
+      "pdf_sha256": "55b2d72f772ac00de2e470b3ee08443c648d971c7f57c52d6202895665e5978d",
+      "renderer": "pdftoppm",
+      "scale_to": 3300,
+      "crop_xywh": [
+        630,
+        312,
+        1071,
+        1194
+      ],
+      "image_sha256": "0c70216d4156e071402c7078338c999d07669624dcf4ed48d121d0ab51ad21fd",
+      "image_size": [
+        1071,
+        1194
+      ],
+      "modifications": "Cropped to the architecture figure; original labels and diagram unchanged."
+    }
+  ]
+}

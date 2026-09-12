@@ -1,3 +1,3 @@
-# 文档入口已整理
+# MiniFrontier1.0 指南
 
-请阅读 [操作指南](guides/minifrontier1.md)。此入口保留旧链接兼容。
+内容已迁至[操作指南](guides/minifrontier1.md)。本页保留旧链接。

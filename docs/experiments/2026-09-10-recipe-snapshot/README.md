@@ -1,6 +1,8 @@
 # 三个来源模型的配方实验快照
 
-Captured: 2026-09-10T07:51:38.902936+00:00
+> 历史快照：本页的“运行中”和候选判断对应下方采集时间。后续已选定[首版工作参数](../2026-09-10-pretraining-cutover/working-recipes.md)；当前不再自动启动联合网格或补种子试验。
+
+采集时间：2026-09-10 07:51:38 UTC。
 
 本快照包含 16 个已启动的 20M CE 配方实验及 4 个早期诊断记录。配方实验中，13 个已完成、3 个仍运行；另有 Qwen 两个学习率实验待启动。原始 JSON/CSV 保留配置、命令、seed、来源校验值、token 账本和曲线。全部属于 acceptance，不计正式主训练预算。
 
@@ -29,11 +31,9 @@ Captured: 2026-09-10T07:51:38.902936+00:00
 | [strategy-single-gpu-v2--minikimik3--lower-lr](strategy-single-gpu-v2--minikimik3--lower-lr.json) ([CSV](strategy-single-gpu-v2--minikimik3--lower-lr.csv)) | complete | 20010912 | 5.080175087209892 | 528.1002065176235 |
 | [strategy-single-gpu-v2--minikimik3--reference](strategy-single-gpu-v2--minikimik3--reference.json) ([CSV](strategy-single-gpu-v2--minikimik3--reference.csv)) | complete | 20010912 | 5.256071488071545 | 531.151021157216 |
 
-Commands retain `${WORKSPACE}` as an explicit binding. Use the recorded source commit and data/tokenizer hashes.
-A matching dataset must be reconstructed from its pinned preparation recipe; this snapshot does not redistribute the dataset.
-See the project experiment guide for failure reports, limitations and reconstruction instructions.
+命令中的 `${WORKSPACE}` 需绑定自己的目录；源码、数据与 tokenizer 按记录的版本和校验值核对。数据需按对应配方准备，本快照只分发数值与元数据。复现说明见[实验索引](../../experiments.md)。
 
-## 当前能支持的选择
+## 当时的选择依据
 
 | 对照 | 已观察到的结果 | 对配方的含义 |
 |---|---|---|
@@ -45,7 +45,7 @@ See the project experiment guide for failure reports, limitations and reconstruc
 | DeepSeek MTP | 系数 0 为 5.3342，0.1 为 5.3308 | 差异很小，尚不足以作稳定收益结论 |
 | Qwen 优化器 | 同第 1000 步：Muon 5.2306，AdamW 5.8484；AdamW 尚未完成预算 | 有候选倾向，等待完整结果 |
 
-同一模型内比较验证 LM NLL，不能横向把四种模型排成能力榜。数据、单/双卡、批次与共卡时段均在每组记录中注明，吞吐不能直接当作独占显卡速度。低学习率和较高 MTP 各自有效，也不等于把两者组合就一定最好；最终配方还需联合验证、补种子和正式数据/词表准入。
+同一模型内比较验证 LM NLL，不能横向把四种模型排成能力榜。数据、单/双卡、批次与共卡时段均在每组记录中注明，吞吐不能直接当作独占显卡速度。低学习率和较高 MTP 各自有效，也不等于把两者组合就一定最好；这是当时的研究建议；首版后续采用已选工作参数并开始预训练，未完成的联合对照与补种子保留为局限。
 
 ## 可重画曲线
 

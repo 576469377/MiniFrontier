@@ -4,9 +4,9 @@
 
 ## 审查结论
 
-原有工作最扎实的部分是 MiniQwen4：已经从固定 Transformers revision 提取文本计算，保留 PLE、GDN、MoE、gated residual 和 QSA，拥有源码 oracle、梯度、缓存、优化器和双 rank 恢复测试。应继续建立在这些实现之上。
+当时 MiniQwen4 的实现范围最完整：已经从固定 Transformers revision 提取文本计算，保留 PLE、GDN、MoE、gated residual 和 QSA，拥有源码 oracle、梯度、缓存、优化器和双 rank 恢复测试。应继续建立在这些实现之上。
 
-原有 MiniKimiK3 只有 AttnRes，MiniDeepSeekV4 只有非量化专家。项目没有数据构建器、连续训练循环、可恢复数据位置、完整阶段命令或可体验 demo。初始 CPU 基线为 87 项通过。这些缺口使模型名称和目录看上去比实际实现更完整。
+原有 MiniKimiK3 只有 AttnRes，MiniDeepSeekV4 只有非量化专家。项目没有数据构建器、连续训练循环、可恢复数据位置、完整阶段命令或可体验 demo。初始 CPU 基线为 87 项通过。当时的目录与命名未清楚区分完整模型和已实现模块。
 
 ## 命名
 

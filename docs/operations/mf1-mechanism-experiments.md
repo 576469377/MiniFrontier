@@ -1,6 +1,6 @@
 # MF1 共卡机制实验
 
-> 历史执行记录：此页保留当时的设备安排和候选值。当前配方、暂停/停止决定与新任务顺序以[实验总计划](../experiments/current-plan.md)为准。
+> 2026-09-09 的历史共卡试验，已由单卡独占调度替代。两组结果见[语言诊断档案](../experiments/mf1-language-performance-v1/README.md)，当前安排见[预训练主计划](../pretraining-plan.md)。
 
 2026-09-09 的本机调度记录。完整配置为 228,235,809 参数，主干、随机视觉塔、lookup 和 MTP 均保留。先进行资源探测，再在 GPU 4、5 各增加一组独立的短程学习实验。实验结果与可复现命令见[公开档案](../experiments/mf1-gpu-mechanism-v1/README.md)。
 

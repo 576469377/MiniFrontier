@@ -1,6 +1,6 @@
 # Model card: `<checkpoint-name>`
 
-> Replace every angle-bracket field before publishing weights. A smoke/toy checkpoint must be
+> Replace every angle-bracket field before publishing weights. A diagnostic checkpoint must be
 > labelled as such and must not be described as reproducing an upstream model's capabilities.
 
 ## Identity and provenance
@@ -14,7 +14,7 @@
 ## Training
 
 - Stages completed: `<pretrain, ...>`
-- Tokens/samples per stage: `<counts>`
+- Tokens/samples per stage: `<main CE, input, auxiliary targets, independent samples and repeated exposures>`
 - Hardware, precision and software: `<GPU/count, driver, CUDA, PyTorch>`
 - Peak memory, throughput and wall time: `<measured values>`
 - Random seeds and determinism settings: `<values>`
@@ -29,8 +29,7 @@
 ## Evaluation
 
 Report versioned benchmark code, prompts, decoding parameters, sample counts and uncertainty.
-Separate text, vision, reasoning, safety and contamination checks. Toy loss or successful smoke
-generation is engineering evidence, not a capability score.
+Separate text, vision, reasoning, safety and contamination checks. Loss measurements and short generation checks are engineering evidence; report independent capability results separately.
 
 ## Intended use and limitations
 

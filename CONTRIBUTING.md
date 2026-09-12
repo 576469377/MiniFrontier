@@ -1,20 +1,28 @@
 # Contributing
 
-MiniFrontier develops the MiniFrontier1.0 native fusion model and three source-aligned baselines. Contributions must distinguish implemented, verified, inferred and undisclosed behavior. Start with the [documentation index](docs/README.md) and [code layout](docs/architecture.md).
+MiniFrontier develops a small multimodal fusion model and three source-derived reference architectures. Start with the [documentation index](docs/README.md) and [code layout](docs/architecture.md).
 
-1. Pin an authoritative upstream revision and retain its license.
-2. Scale capacity explicitly; do not silently replace algorithmic modules.
-3. Add independent same-weight forward/gradient tests against the upstream source.
-4. Update the model catalog and per-model documentation without overstating training readiness.
-5. Keep raw datasets, weights, credentials and full local outputs out of commits and distributions. Small, reviewed numeric records and plots belong in `docs/experiments/`; remove machine identifiers and sample contents.
-6. Put reusable instructions in `docs/guides/` and machine-specific scheduling notes in `docs/operations/`. Preserve dated evidence and SHA-bound strategy originals; create a new version for a changed strategy. Do not move active run directories or edit their frozen source copies.
-7. Organize Python code by responsibility: `models/`, `data/`, `training/`, `evaluation/`, `inference/` and `commands/`. Keep model-specific behavior in explicitly named modules under those directories. Reuse shared runtime utilities and keep training algorithms out of command/browser modules; follow the [extension and migration rules](docs/architecture.md#扩展与迁移约定).
-8. Review public documentation for someone using a fresh clone. Explain internal experiment names, label plans and dated results, and link numerical/capability claims to evidence. Keep installation examples independent of the maintainer's GPU numbering and local paths. State data and component licenses separately, and remove private identifiers or unreviewed samples before publishing reports. Preserve historical metrics when producing a sanitized public copy.
+## Changes and evidence
 
-Local checks:
+Describe the problem, the resulting behavior and how you checked it. Link performance and model-quality claims to a specific configuration, source revision and measurement. Distinguish implementation checks from trained capability.
+
+For source-derived computation, pin the upstream revision, preserve attribution and state any capacity or algorithm changes. Compare forward values and gradients against the original implementation where possible. Update the model page and source mapping when the architecture changes.
+
+Documentation should work for someone using a fresh clone. Use concise explanations, runnable examples and relative links. Keep hardware identifiers, local paths and discussion history out of general guides; date experiment results and retain their limitations.
+
+## Repository layout
+
+- Put model structures in `models/<model>/` and their data, training, evaluation or inference logic in the corresponding functional directories. Commands and browser handlers call those modules.
+- Put reusable instructions in `docs/guides/`, model explanations in `docs/models/`, and dated numeric results in `docs/experiments/`. See the [extension rules](docs/architecture.md#扩展与迁移约定).
+- Preserve frozen strategy documents and historical measurements. Amend a plan through a new version; do not modify source checkouts or directories used by active training jobs.
+- Keep raw datasets, weights, credentials and complete runtime outputs out of commits and packages. Review public experiment excerpts for sample content and machine identifiers.
+
+## Checks
+
+Run the checks relevant to the change. Documentation-only edits need link, example and layout checks; training changes need corresponding state or numerical tests.
 
 ```bash
-uv sync --locked --extra dev
+uv sync --locked --extra dev --extra monitoring --extra data
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy minifrontier scripts --ignore-missing-imports
@@ -23,6 +31,8 @@ uv run python -m build --no-isolation
 uv run twine check dist/*
 ```
 
-Original contributions use Apache-2.0; source-derived changes retain their upstream terms and update THIRD_PARTY_NOTICES.md and LICENSES.
+Use available GPUs for bounded tests when required; include hardware, precision and known limitations in the report. A long training run is not a prerequisite for an unrelated engineering change.
 
-GPU tests require explicitly available devices. Never start a long training run or publish results as formal training merely to satisfy an engineering test. Include hardware, precision, source revision and known limitations with numerical claims.
+## Licensing
+
+Original contributions use Apache-2.0. Source-derived changes retain their applicable upstream terms; update [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `LICENSES/` when adding a component. Dataset, tokenizer and checkpoint licenses are separate from the code license.

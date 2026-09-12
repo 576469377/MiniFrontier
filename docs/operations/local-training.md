@@ -17,10 +17,10 @@ uv run python scripts/training_status.py
 ```
 
 最初双卡分配为 Kimi GPU 0–1、Qwen 2–3、DeepSeek 4–5。
-按 2026-09-09 用户调整，后续每个 run 使用一张卡，首先安排 GPU 0–5 并发六组；
+2026-09-09 起，后续每个 run 使用一张卡，首先安排 GPU 0–5 并发六组；
 6、7 上的既有任务不动。正式计划的默认 GPU 为 Kimi 0、Qwen 2、DeepSeek 4，
 对应 `experiment_gpu_ids` 提供每个模型的两张独立试验卡。
-真实训练从 `outputs/strategy-source-pilot-v2` 冻结源码运行，开发根目录可以继续迭代。
+训练使用独立的代码目录 `outputs/strategy-source-pilot-v2`，避免开发目录的后续修改影响运行。
 `outputs/strategy-source-posttraining-v2` 是后训练接口的独立验证快照，尚未用于正式 RL。
 新版配方曲线在 `http://127.0.0.1:6007`；6006 保留旧 educational-v1 对照。
 
@@ -71,7 +71,7 @@ TensorBoard，不需要重启训练。
 算术模板都不能代表完整正式数据。许可、自然科学、OCR/图表/视频、独立验证规模
 和唯一图像数量仍未通过正式准入。
 
-## 当前自动执行范围
+## 当时的自动执行范围
 
 K0/Q0/D0 在方案允许的 0.5–2M CE 范围内验证可学习性。Kimi 和 DeepSeek 的
 训练内算术 16/16 通过，留出 0/9；这只证明记忆能力。Qwen 首轮 14/16 未通过，
@@ -89,7 +89,7 @@ Kimi/Qwen 配方试验只使用小型 caption 图池，另设 1,000 次图像暴
 `best-model.pt`、完成后的 `model.pt` 和 `performance.json`。父目录 `pilot.json`
 记录诊断结果及两次独立试验状态。低 NLL 只用于同一验证集选权重，不能自动晋级。
 
-## 后续单卡六组试验
+## 当时的单卡六组计划
 
 `scripts/run_single_gpu_queue.py` 等待对应模型原有 Muon/AdamW 两组均结束，
 并确认目标卡没有计算进程后启动；用 GPU UUID 隔离、每卡锁防止队列重复占用。
@@ -102,7 +102,7 @@ Kimi/Qwen 配方试验只使用小型 caption 图池，另设 1,000 次图像暴
 | 4 / 5 | DeepSeek | 主 LR 3e-4 / 1e-4，按其独立 Muon 缩放实现 |
 
 每组从随机初始化开始，20M CE、seed42、seq512、microbatch2，按实际输入累积到
-至少16,384；64K tokenizer、数据、MTP 权重、模态配额与冻结训练源码均与前一轮相同。
+至少16,384；64K tokenizer、数据、MTP 权重、模态配额与固定版本的训练代码均与前一轮相同。
 单卡每次取两条样本，对应原双卡每 rank 一条的全局采样顺序。
 这是 Muon 学习率筛选，最终优化器仍需结合 AdamW 完整对照决定。
 
@@ -111,7 +111,7 @@ S/D 衡量单个 run 的速度，2S/D 估算同样两张卡并行独立试验的
 不同时间的共享主机负载会影响测量，不能只凭 GPU 利用率断言通信瓶颈。
 长上下文和正式图文分布需重新测量；单卡数据吞吐记录不能替代后续阶段的显存验收。
 
-原始方案正文和在跑冻结源码保持原样，硬件安排调整记录在机器计划中。
+原始方案正文和正在运行的实验代码副本保持原样，硬件安排调整记录在机器计划中。
 六组仍是试验，不自动启动正式预算或替换 demo。新队列不直接恢复双卡优化器/采样器，
 从而避免将跨卡数恢复误称为精确续训。磁盘继续保留50 GiB，检查点沿用原子写入保护。
 
@@ -125,7 +125,7 @@ DeepSeek：Text-v2 2.5B CE → 冻结文本接视觉 → Vision CPT 300M CE → 
 
 正式入口 `--run-kind strategy` 需要 `--strategy-plan`、`--strategy-phase`、
 `--strategy-evidence`，验证来源、配置、前驱证据和对应长度/模态/卡数 profile。
-学习率、MTP、tokenizer 质量及补种子对照未完成前，不能将两组 20M 试验直接晋级。
+当时要求继续学习率、MTP 和补种子对照；后来已停止扩大筛选，以既有结果选择首版工作参数。当前正式入口和阶段继承见[训练指南](../guides/training.md)。
 
 同一阶段使用相同配方和 `--resume <run>/checkpoint.pt` 恢复优化器/数据/RNG；
 阶段迁移使用 `--init`，记录新优化器与新预算。需要结构或精度变更时显式使用

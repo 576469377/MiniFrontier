@@ -4,6 +4,9 @@
 
 ## 阅读入口
 
+- [文档核对记录](documentation-review.md)：本轮逐页范围、修正项与验证边界。
+- [正式训练执行优化](training-infrastructure.md)：数据预取、Qwen 优化器、Kimi 缓存恢复及统一 TensorBoard。
+- [MF1 执行性能与正确性修复](minifrontier1-execution-performance.md)。
 - [MiniFrontier1.0 实现检查](minifrontier1-implementation.md)与[验证清单](minifrontier1-validation.json)。
 - [三个来源模型的方案执行记录](strategy-implementation-v2.md)。
 - [早期训练失败复盘](../training-failure-v1.md)。

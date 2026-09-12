@@ -32,7 +32,7 @@
 | `training/rollouts.py`、`tool_environment.py`、`trajectory_log.py` | 原生媒体与工具轨迹、教师路由、行为概率和审计 |
 | `scripts/run_recipe_pilot.py` | 诊断通过后执行独立 20M Muon/AdamW 比较；完成不自动晋级 |
 | `scripts/training_status.py` | 读取实际在跑阶段、token 和该阶段实测 ETA |
-| `outputs/strategy-source-*` | 每批真实训练使用的冻结源码；开发不修改在跑实现 |
+| `outputs/strategy-source-*` | 每批真实训练使用的实验代码副本；开发不修改在跑实现 |
 | `docs/audits` | 失败复盘、数值对照、代码验证与运行快照；不能混为能力报告 |
 
 ## 已处理的训练问题

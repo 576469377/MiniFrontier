@@ -1,123 +1,80 @@
-# 实验记录
+# 实验档案
 
-**当前决策入口：[实验计划与技术报告复核](experiments/current-plan.md)。** 全部实验的用途核对、batch 128 分析和中断情况见[2026-09-10 审计档案](experiments/2026-09-10-batch-frontier/README.md)，实时执行状态见[台账说明](operations/experiment-management.md)。下方带日期的内容是历史快照，不作为当前派发计划。
+四个模型已于 2026-09-11 开始正式预训练。当前阶段、预算与执行安排见[预训练主计划](pretraining-plan.md)；本页索引历史实验、数值记录和复现方法。带日期的快照保留采集时状态，实时进度从本地训练日志读取。
 
-探测实验用于确认可学习性、筛选优化器/学习率/MTP/词表，并测量硬件效率。
-仓库保存配置、数值曲线、结果摘要和失败复盘，帮助读者理解实验选择。
-原始数据、完整日志与权重保存在本地，公开档案记录其版本和校验值。
+## 阅读顺序
 
-最新公开快照：2026-09-10 07:51 UTC。
+| 内容 | 入口 |
+| --- | --- |
+| 首版配方及选择依据 | [工作参数](experiments/2026-09-10-pretraining-cutover/working-recipes.md) |
+| 四模型正式训练进度与可重画曲线 | [2026-09-12 数值快照](experiments/2026-09-10-pretraining-cutover/formal-progress.json)；固定验证全部保留，训练曲线按 50 步抽样 |
+| 正式数据、失败修复与开训记录 | [2026-09-10—11 启动档案](experiments/2026-09-10-pretraining-cutover/execution.md) |
+| 正式训练中的数据预取、优化器与显存处理 | [2026-09-11 执行优化](audits/training-infrastructure.md) |
+| MF1 注意力、KDA、专家和数据加载优化 | [MF1 性能报告](audits/minifrontier1-execution-performance.md) |
+| microbatch、实际全局 batch 与 128 档位分析 | [batch 边界与复核](experiments/2026-09-10-batch-frontier/README.md) |
+| Muon、AdamW、学习率与 MTP 对照 | [2026-09-10 配方快照](experiments/2026-09-10-recipe-snapshot/README.md) |
+| MF1 小配置学习与完整配置语言诊断 | [CPU 小配置](experiments/mf1-reference-v2/README.md)、[228M GPU 实验](experiments/mf1-gpu-mechanism-v1/README.md)、[语言诊断](experiments/mf1-language-performance-v1/README.md)、[后续快照](experiments/2026-09-10-mf1-update/README.md) |
+| 早期实验与安装示例 | [2026-09-09 快照](experiments/2026-09-09-preview/README.md)、[离线示例实测](experiments/preview-quickstart/README.md) |
+| 调度、TensorBoard 与产物保留 | [实验管理](operations/experiment-management.md)、[清理记录](operations/artifact-retention.md) |
 
-- [三个来源模型：配方结果、当前判断与完整曲线](experiments/2026-09-10-recipe-snapshot/README.md)。
-- [MF1：SFT 最新验证、已完成性能短筛与持续测量进度](experiments/2026-09-10-mf1-update/README.md)。
+旧数据上的对照用于选择首版工作参数；新数据上的正式训练单独计数。当前不再自动派发 batch×LR 网格或补种子试验。源码与轻量报告已公开，训练权重尚未发布。
 
-本地 JSONL/TensorBoard 连续更新；公开仓库按时间生成快照。前一份快照保留原始时间边界。
+## 如何读结果
 
-MiniFrontier1.0 新增独立的[融合实现与 CPU 学习档案](experiments/mf1-reference-v2/README.md)，包含完整 228M 前后向、小配置学习曲线、媒体对照和已知局限；不与原三模型的配方筛选合并。
+- **预算完成**：实际训练消耗达到该次运行声明的预算。测试、测速和旧配方试验不计入正式预训练。
+- **损失下降**：在相同验证成员、分词器与监督规则下比较学习进度。不同模型的 NLL 不作能力排名。
+- **生成能力**：检查完整输出及独立任务。训练题记忆、有限梯度和低 NLL 都不能单独证明模型能正常对话。
+- **吞吐**：先核对 CE/input 分母、全局 batch、模态、精度、测量窗口及共卡时段。合成计算速度与实际训练端到端速度分别报告。
 
-2026-09-10：[MF1 语言诊断与性能对照](experiments/mf1-language-performance-v1/README.md)补齐两组 500K CE 的完成曲线、全部 32 个留出媒体的对照检查、缓存数值检查及 microbatch 基线；两组 30K CE SFT 和优化版性能测量正在运行。
+例如，Qwen 首轮 Q0 训练内算术为 14/16；重置优化器、降低 LR 后追加 500,450 CE 达到 16/16，留出题仍为 0/9。该结果证明训练题可以被记住，不能用于证明泛化。原命令和额外预算单列保存。旧 educational-v1 的[语言失败复盘](training-failure-v1.md)继续保留。
 
-2026-09-09 另启动 [MF1 完整 228M GPU 机制实验](experiments/mf1-gpu-mechanism-v1/README.md)：已完成共享 3090 的短程资源探测，两组各 500K CE 的 AdamW 学习率对照开始执行。使用独立 32K 候选词表及教育文本、生成数学和媒体，尚未进入正式主预训练。
+## 运行产物
 
-[2026-09-09 实验快照](experiments/2026-09-09-preview/)含 9 次已启动试验的 JSON、CSV、完整配置/命令/seed/源码与数据 hash、token 账本、性能采样及六组待启动单卡计划。[离线示例实测](experiments/preview-quickstart/)另存 CPU/3090 的六份报告。
+来源模型使用 `minifrontier train`，MF1 使用 `minifrontier mf1 train`。两类训练器的状态格式不同，读取时应按实际阶段解释。
 
-## 实验文件
+| 文件 | 用途 |
+| --- | --- |
+| `run.json` | 配置、命令、seed、batch、预算、源码及数据/tokenizer 身份 |
+| `metrics.jsonl` | 训练、验证和运行事件；记录频率以该次命令为准 |
+| `status.json` | 保存检查点时的步数、token 账本与阶段状态；运行进度可能更新得更快 |
+| `checkpoint.pt` | 模型、优化器、数据位置和随机状态，用于恢复 |
+| `tensorboard/` | 训练器原始事件；正式看板从原日志生成独立的 `train / eval / perf` 视图 |
+| 数据 manifest、来源审计 | 来源版本、采样、清洗、分组、编码和文件校验值 |
 
-### 三个来源模型
+来源模型还会保存 `best-validation.json`、`best-model.pt` 和阶段导出的 `model.pt`。历史 `performance.json` 的测量窗口以该文件为准，不能把旧的 50＋200 设置理解为每次开训要求。
 
-下表适用于 `minifrontier train` 的文本／多模态配方试验。MF1 使用自己的阶段状态和产物格式，见下一节。
+MF1 另有 `resolved_config.json`、`optimizer_groups.json`、`router_metrics.jsonl` 和 `checkpoint_manifest.json`。其 `budget_complete_unqualified` 表示该次预算完成，能力尚未通过；推理用 `model.pt` 由 `mf1 export` 显式导出。
 
-| 文件 | 内容 | 记录粒度或限制 |
-|---|---|---|
-| `run.json` | 模型配置、优化器、学习率、seed、batch、精度、预算、源码 commit/内容 hash、数据和 tokenizer hash | 对应一次实际运行 |
-| `metrics.jsonl` | 训练损失、验证 LM NLL、学习率、梯度范数、有效 token/媒体计数、耗时及部分稳定性事件 | 当前配方通常每10次更新记录训练指标，每200次更新验证；并非每一步都保存全部内部统计 |
-| `performance.json` | 50次预热后200次真实更新的时间、数据处理时间、优化器时间、显存和吞吐 | 只适用于所测卡数、长度、batch、模态和实现；不直接外推全部正式阶段 |
-| `best-validation.json` | 最佳本地验证结果和对应权重 | 低 NLL 不等于正常对话或视觉泛化能力通过 |
-| `status.json` | 已完成步数、实际 CE/input/response/媒体预算与阶段状态 | 运行中周期保存；进度结合最新训练日志读取 |
-| `pilot.json`、`queue-plan.json`、`queue.json` | 启动命令、试验依赖、设备安排、失败原因和队列状态 | 区分等待、正在运行、失败与完成 |
-| `checkpoint.pt` | 模型、优化器、数据游标、随机状态等恢复信息 | 相同配方下恢复；跨卡数切换不自动视为精确续训 |
-| `tensorboard/`、运行日志 | 曲线和执行诊断 | 与 JSONL 并存；单卡新队列有各自的日志目录 |
-| 数据 manifest 与来源审计 | 上游版本、采样读取位置、seed、清洗拒绝数、分组切分、tokenizer 和编码校验 | 来源/质量与正式准入仍存在待完成项 |
+## 本地状态与公开快照
 
-### MiniFrontier1.0
-
-| 文件 | 内容与读取方式 |
-|---|---|
-| `run.json`、`resolved_config.json`、`optimizer_groups.json` | 实际阶段、配置、源码／数据绑定、优化器分组和预算 |
-| `metrics.jsonl`、`router_metrics.jsonl` | 训练／验证事件及路由统计；字段和记录频率以对应训练器、运行命令为准 |
-| `checkpoint.pt`、`checkpoint_manifest.json`、`status.json` | 滚动恢复点、权重校验值、保存时步数与 `ledger`；`budget_complete_unqualified` 仅表示该次预算结束 |
-| 显式导出的 `model.pt` | 由 `mf1 export` 产生；MF1 训练结束不会自动生成来源模型格式的 `best-model.pt` 或 `model.pt` |
-| quickstart 的 `report.json` | 各阶段执行结果、最终检查点位置和未完成正式训练的标记 |
-| 独立性能实验的 `report.json` | `benchmark_mf1.py` 的输入形状、实际测量与预热次数；不能套用来源模型固定的 50/200 窗口 |
-
-四模型的训练完成状态、验证 NLL 和公开能力验收互相独立。比较日志前，先确认模型、训练器、字段含义和采集时刻一致。
-
-### 本地目录与历史证据
-
-维护环境使用以下本地目录；克隆仓库不会获得其中的运行产物：
-
-- `outputs/strategy-diagnostics-v2`：小样本可学习性和原生视觉诊断。
-- `outputs/strategy-recipe-pilots-v2`：双卡 Muon/AdamW 对照及启动记录。
-- `outputs/strategy-single-gpu-v2`：每模型两组单卡学习率试验；排队不等于已经开训。
-- `outputs/strategy-source-*`、`outputs/strategy-controllers-v2`：实际训练源码快照和控制器。
-- `data/strategy-*`：来源审计、数据构造与编码记录。
-
-这些目录被 `.gitignore` 排除，直接推送代码仓库不会上传其中的日志、数据和权重。
-已纳入 Git 的小型诊断与审计材料在 [audits](audits/)，例如：
-
-- [旧训练失败复盘](training-failure-v1.md)。
-- [Qwen 首轮算术诊断](audits/qwen-q0-arithmetic-500k.json)及[续诊断](audits/qwen-q0-arithmetic-1m.json)。
-- [完整网络 BF16 批量专家梯度对照](audits/grouped-experts-bf16-v2.json)。
-- [单卡调度检查和排队快照](audits/single-gpu-scheduling-v2.json)。
-
-审计快照有时间边界，不代替实时进度。实时查看：
+正式产物位于 `outputs/strategy-base-pretraining-v1/<model>/<phase>/`。`outputs/` 与 `data/` 被 Git 忽略；克隆仓库不会获得原始语料、完整日志或权重。训练时保留实际使用的独立源码目录，避免开发改动影响进程。
 
 ```bash
-python scripts/training_status.py
+python -m scripts.training_status --run formal
+python -m scripts.experiment_registry
 ```
 
-## 档案内容
+台账包含父任务、数据准备、评估与训练阶段，记录条数不等于独立实验数。具体状态语义、事件接续和 TensorBoard 操作见[实验管理](operations/experiment-management.md)。
 
-1. **实现与执行配方**：固定源码版本、依赖锁、模型配置、实际命令、训练/评估脚本。
-2. **数据构造说明**：来源版本、下载/生成入口、采样种子、清洗规则、配比、分组切分和校验值。
-3. **轻量实验档案**：每个试验的目标、改变的变量、预算、原始数值指标、可重画的曲线数据和结果摘要。
-4. **选择依据与失败复盘**：同时保留有效、无效、失败及未完成的结果；注明训练内记忆与独立泛化评测的区别。
-5. **独立模型产物**：验收后的 tokenizer、配置、权重、模型卡和推理示例；大型权重与完整日志单独托管，记录文件 hash 和下载位置。
-
-数据和上游组件按各自条款整理，项目代码许可证不自动覆盖原始数据、图片和模型产物。
-许可或来源尚未核清的语料不直接打包；可以先公开构造脚本、来源清单和待解决事项。
-来源范围见 [第三方说明](../THIRD_PARTY_NOTICES.md)。发布前需要检查日志中的本机路径、
-访问凭据和训练样本内容；实验元数据不能替代原始数据的再分发许可。
-
-## 尚未完成
-
-轻量档案已提供自动导出、汇总与重画入口；完整数据池的独立外部重建、全部消融和补种子试验尚未完成。
-现有来源 hash 和执行记录提供追溯依据，不单独证明外部读者已经能够完整复现。
-进行中的试验应标为进行中；配方冻结和模型能力验收以后再写最终结论。
-
-已公开的源码与轻量报告可直接查看；训练权重尚未发布。
-
-## 读取、重画与补充快照
+公开档案至少保留目的与变量、配置和命令、seed、源码版本、数据/tokenizer 校验值、实际 token 预算、验证指标、吞吐和显存，以及可重画曲线。失败和主动停止的结果保留原状态；缺失的历史校验值明确标记，不补造。
 
 ```bash
-# 在有本地实验记录的 checkout 中，输出到新的带时间目录，避免覆盖旧快照
+# 从本地记录导出到新的日期目录，保留旧快照
 uv run python scripts/export_experiments.py --workspace "$PWD" \
   --output docs/experiments/YYYY-MM-DD-snapshot
-# 绘图依赖独立安装，不加入训练运行时；本次使用 matplotlib 3.10.7
+# 绘图依赖无需加入训练环境
 uv run --with matplotlib==3.10.7 python scripts/plot_experiments.py \
   docs/experiments/2026-09-09-preview
 ```
 
-![验证曲线](experiments/2026-09-09-preview/validation.svg)
+![2026-09-09 验证曲线](experiments/2026-09-09-preview/validation.svg)
 
-横轴为 optimizer updates，纵轴为同一模型本地验证集 LM NLL；不同模型的图不作能力排名。运行中的 AdamW/Qwen Muon 曲线保留为 partial，不能拿未完成预算与完成预算直接下结论。CSV 可重画每次 train/validation 记录；JSON 另外保留实际 token 账本和性能采样中的显存、时间。快照时间之后的进展需另导出，不修改旧快照。
+上图横轴为优化器更新次数，纵轴为同一模型本地验证集的 LM NLL。曲线对应 2026-09-09 采集时刻；部分运行当时尚未完成，后续结果见配方快照。CSV 保留逐条曲线，JSON 补充 token 账本、性能和运行身份。
 
-Kimi/DeepSeek 的第一组 Muon 已完成 20M CE，对应 AdamW 在该快照时仍运行。Qwen 首轮 Q0 训练内只答对 14/16，续诊断重置优化器并降低 LR 后到 16/16，留出仍为 0/9；因此记录为可学习性通过、泛化未通过。该续诊断的命令和额外 500,450 CE 单独保存，不合并为新一次从零训练。旧 educational-v1 的语言失败继续保留复盘。
+## 复现与分发范围
 
-以上曲线和运行状态对应 2026-09-09 快照。后续优化器、LR 和 MTP 结果见[2026-09-10 配方快照](experiments/2026-09-10-recipe-snapshot/README.md)。本轮已依据现有证据选择[首版工作参数](experiments/2026-09-10-pretraining-cutover/working-recipes.md)，继续完成正式数据、tokenizer 与资源绑定；按[预训练主计划](pretraining-plan.md)执行，不再自动派发联合网格或补种子。工作参数选择不等于正式训练已经通过准入。
+复现历史实验时，将 `${WORKSPACE}` 绑定到自己的工作目录，检出报告所记录的源码，并核对数据、tokenizer 和配置。校验值用于核对文件身份；大数据流程尚未完成外部逐字节重建验证，重新下载和训练词表不保证生成相同文件。首次体验使用[离线示例](guides/quickstart.md)。
 
-档案里的 `${WORKSPACE}` 需要绑定到自己的目录，训练应使用记录的 source commit；命令中的冻结源码目录需要 checkout 对应版本。数据源 revision、采样位置、清洗/切分计数和配方审计随快照提供，原始训练行、图像与权重不随档案发布。既有大试验尚未完成外部逐字节重建验收，hash 是核对依据，不能保证重新下载/训练 tokenizer 必然产生同一文件。无网络、可直接运行的复现范围由最小示例提供。
+公开副本归一化工作路径，移除访问凭据、设备和容器标识。数值与处理规则保留；少量项目生成的诊断题用于解释失败，外部原文、图片和完整训练日志不随档案分发。原始策略与历史快照按记录时刻解释，阅读背景见[研究方案索引](training-strategies/README.md)。
 
-新快照将工作目录统一为变量，并排除进程、容器和设备 UUID；历史复盘/审计及原始策略保留当时的执行背景，其中的本机目录是历史记录。原始策略正文受 hash 绑定，本次不改写。旧诊断的算术样例来自项目生成器；外部语料样本与媒体不加入新实验档案。
-
-2026-09-09 又增加六组 MTP 共卡对照，具体分配、allocator 上限和原队列接管方式见[共卡实验记录](operations/shared-gpu-experiments.md)。自动导出同时收集原单卡与共卡队列，按输出目录去重，并保留 `co_residency.json` 中的共卡时段；旧快照的时间边界保持不变。
+数据、图片、上游代码和模型产物各自适用来源条款；项目代码许可证不覆盖它们。来源及分发说明见[第三方说明](../THIRD_PARTY_NOTICES.md)。

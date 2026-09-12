@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "verified_obsolete_encoding_cache_archive",
+  "completed_at_utc": "2026-09-12T06:43:30.409119+00:00",
+  "status": "complete",
+  "scope": {
+    "obsolete_ocr_encodings": 48,
+    "obsolete_natural_image_encodings": 12,
+    "obsolete_diagnostic_and_recipe_encodings": 9,
+    "current_encoding_dependencies_preserved": 64,
+    "source_mismatch_encoding_preserved": 1
+  },
+  "verification": {
+    "archived_files": 1292,
+    "archived_bytes": 9039603484,
+    "independent_sha256_readback_passed": true,
+    "sha256_mismatches": 0,
+    "live_process_and_control_reference_rechecks": 2,
+    "current_manifest_binding_errors": 0,
+    "retained_metadata_errors": 0,
+    "inventory_sha256": "8760c176f1adeaa9ebf7c9cd3e8104ee2317954e48b29075f1801a2b075e0057"
+  },
+  "retirement": {
+    "local_payload_files_removed": 996,
+    "allocated_bytes_released": 8739098624,
+    "allocated_gib_released": 8.13892,
+    "metadata_and_tokenizers_retained": true,
+    "verified_archive_retained": true
+  },
+  "encoding_cache_after": {
+    "active_allocated_bytes": 15272194048,
+    "retained_historical_allocated_bytes": 611319808,
+    "total_allocated_bytes": 15883513856,
+    "budget_bytes": 16106127360
+  },
+  "limitations": [
+    "No current file-descriptor reference alone was treated as proof that deletion was safe; full archive verification preceded payload retirement.",
+    "The old document/chart encoding with unresolved source identity was retained.",
+    "The restore command has syntax and help checks; a full restore exercise was not performed.",
+    "Raw media, candidate corpora and model checkpoints are separate from the encoding-cache figures."
+  ]
+}

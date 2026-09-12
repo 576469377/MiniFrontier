@@ -1,10 +1,10 @@
-> 历史文本版本说明，保留早期容量、测试与未实现项的时间背景。当前状态见[模型页](../models/minideepseekv4.md)。
+> 2026-09-07 文本版本档案。下文容量、接口、训练状态和未实现项仅适用于该版本。当前状态见[模型页](../models/minideepseekv4.md)。
 
 # MiniDeepSeek-V4
 
 具体来源为 [DeepSeek-V4-Flash 固定 revision 60d8d70](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/tree/60d8d70770c6776ff598c94bb586a859a38244f1/inference)。原始 model.py、kernel.py 及 MIT 许可位于[源码快照](../../third_party/upstream/deepseek-v4-60d8d70)。
 
-## 当前容量
+## 当时容量
 
 12 层、hidden 512、65,536 词表、8 attention heads；head_dim 64、RoPE 16、Q/O 低秩 128、2 个输出组。32 路由专家、Top-2、1 个共享专家，前两层保留 token-ID hash routing。
 

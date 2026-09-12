@@ -1,5 +1,7 @@
 # Research preview experiment snapshot
 
+> Historical snapshot. Later results: [September 10 recipes](../2026-09-10-recipe-snapshot/README.md); current training plan: [base pretraining](../../pretraining-plan.md).
+
 Captured: 2026-09-09T08:20:06.312154+00:00
 
 Numeric records only. Running trials are partial; diagnostics measure learnability, not chat quality.

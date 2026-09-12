@@ -2,7 +2,6 @@
 
 MiniFrontier-authored code is Apache-2.0. Attributed upstream components and snapshots retain their original licenses; the project license does not override them. No upstream model weights are distributed.
 
-
 ## Distribution license mapping
 
 The wheel and sdist declare `Apache-2.0 AND MIT AND LicenseRef-Kimi-K3` for their combined contents. This preserves the individual component terms and does not relicense the Kimi derivatives as Apache-2.0. Per the [PyPA License-Expression specification](https://packaging.python.org/en/latest/specifications/core-metadata/#license-expression), this field describes the containing distribution archive.
@@ -43,9 +42,13 @@ Source: [DeepSeek-V4-Flash, 60d8d70770c6776ff598c94bb586a859a38244f1](https://hu
 
 The [snapshot](third_party/upstream/deepseek-v4-60d8d70) retains the inference source and original [MIT LICENSE](third_party/upstream/deepseek-v4-60d8d70/LICENSE), copyright 2023 DeepSeek. The local unquantized expert and compressor are checked against that source. `upstream_layers.py`, `attention.py` and `kernels.py` preserve attribution for source-derived training adaptations; no complete V4 training fidelity is implied.
 
+## Architecture figure excerpts
+
+Architecture figure excerpts in `docs/assets/upstream/` are attributed to the Kimi Team / Moonshot AI, Qwen Team, and DeepSeek-AI. They are limited excerpts from their technical reports, used for architecture explanation and comparison. Original rights are retained; these report figures are not relicensed under MiniFrontier's Apache-2.0 license. Source-code licenses listed above do not automatically cover separately published reports. Exact report revisions, figure/page numbers and extraction records are in the [figure attribution index](docs/assets/upstream/README.md).
+
 ## Numerical algorithms and dependencies
 
-Polar Express coefficients in `training/polar_express.py` follow the authors' reference revision `71cc37943d99cae780024c1d198977f2f8795407` and the Qwen report's eight-step schedule. The local numerical implementation and its limitations are documented in the source.
+Polar Express coefficients in `minifrontier/training/polar_express.py` follow the authors' reference revision `71cc37943d99cae780024c1d198977f2f8795407` and the Qwen report's eight-step schedule. The local numerical implementation and its limitations are documented in the source.
 
 PyTorch and development/monitoring dependencies retain their own licenses. The lockfile records the resolved environment, not a replacement for each dependency's licensing terms.
 
@@ -85,10 +88,9 @@ the index does not resolve each original repository license. That pilot explicit
 records `original-license-unresolved`, and is not represented as a fully reviewed
 formal code corpus. Data source terms do not become the project's code license.
 
-
 ## Training data and kernel dependencies
 
-The [data source guide](docs/guides/data-sources.md) lists the datasets actually used in experiments, their pinned versions and remaining review work. The MiniFrontier1.0 examples use generated fixtures; its full training corpus is not yet prepared.
+The [data source guide](docs/guides/data-sources.md) distinguishes generated examples, historical experiments and the data used for first-stage formal pretraining. The first-stage text and visual components have been prepared; later stages require their own data bindings. Source terms and unresolved provenance remain attached to each component.
 
 The optional CUDA KDA backend uses `fla-core==0.5.2`, from the MIT-licensed
 [Flash Linear Attention project](https://github.com/fla-org/flash-linear-attention).

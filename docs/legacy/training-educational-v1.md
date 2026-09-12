@@ -1,4 +1,4 @@
-> 历史 educational-v1 文档，保留作失败对照。当前入口见 [训练指南](../guides/training.md)。
+> 2026-09-07 educational-v1 接口档案，保留作失败对照。命令、默认值与 Demo 行为按该版本解释，不能作为当前操作指南。当前入口见 [训练指南](../guides/training.md)。
 
 # 训练与 demo
 

@@ -1,10 +1,10 @@
-> 历史文本版本说明，保留早期容量、测试与未实现项的时间背景。当前状态见[模型页](../models/minikimik3.md)。
+> 2026-09-07 文本版本档案。下文容量、接口、训练状态和未实现项仅适用于该版本。当前状态见[模型页](../models/minikimik3.md)。
 
 # MiniKimi-K3
 
 基于 [moonshotai/Kimi-K3 固定 revision c5d1dd4](https://huggingface.co/moonshotai/Kimi-K3/tree/c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721) 的缩小文本训练实现。原始代码与许可位于[源码快照](../../third_party/upstream/kimi-k3-c5d1dd4)。
 
-## 当前容量与结构
+## 当时容量与结构
 
 12 层、hidden 512、词表 65,536；9 层 KDA 与 3 层 gated MLA。MLA 保留官方 NoPE 行为与输出 sigmoid 门；不会因为字段叫 `qk_rope_head_dim` 就擅自加入 RoPE。
 

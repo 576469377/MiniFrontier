@@ -541,35 +541,38 @@
     "exploratory_gpu_jobs_allowed": false,
     "automatic_scientific_followups": false,
     "initial_qualification": {
-      "max_trials": 4,
-      "warmup_updates": 50,
-      "measured_updates": 200,
-      "fix_retries_per_failed_model": 1,
-      "mf1_existing_acceptance_cap_ce": 2000000,
-      "mf1_above_acceptance_cap_requires": "shared-production-code real-data performance-only entry; no admission bypass or split-run evasion",
-      "counts_toward_main": false,
-      "withdrawn_uniform_16k_assumption": {
-        "target_global_input_tokens": 16384,
-        "max_ce_per_trial": 5000000
-      },
-      "target_global_input_tokens": "use_each_frozen_formal_recipe",
-      "budget_status": "must_reconcile_50_plus_200_updates_with_frozen_batch_before_dispatch; 5M CE is not valid for every 64K recipe",
       "launch_authorized_by_this_record": false,
       "current_policy": "formal_first_phase_start_with_runtime_monitoring",
       "standalone_runs_required_before_first_phase": false,
       "maintainer_decision": "docs/experiments/2026-09-10-pretraining-cutover/direct-training-start.json",
-      "historical_profile_schedule": "The 50+200 profile remains a recorded measurement protocol; it is no longer a mandatory extra job before the three remaining initial phases.",
+      "historical_profile_schedule": "Retained for interpreting earlier measurements; no additional profile job is required before the already-running initial phases.",
       "additional_performance_runs": {
         "default": "none",
         "if_a_specific_failure_requires_one": "Bound by a short wall-clock budget, normally at most 10 minutes; never use an additional 20M training budget as performance acceptance.",
         "formal_update_accounting": "Performance observations of formal updates remain inside the original training ledger and schedule."
+      },
+      "historical_profile_protocol": {
+        "max_trials": 4,
+        "warmup_updates": 50,
+        "measured_updates": 200,
+        "fix_retries_per_failed_model": 1,
+        "mf1_existing_acceptance_cap_ce": 2000000,
+        "mf1_above_acceptance_cap_requires": "shared-production-code real-data performance-only entry; no admission bypass or split-run evasion",
+        "counts_toward_main": false,
+        "withdrawn_uniform_16k_assumption": {
+          "target_global_input_tokens": 16384,
+          "max_ce_per_trial": 5000000
+        },
+        "target_global_input_tokens": "use_each_frozen_formal_recipe",
+        "budget_status": "must_reconcile_50_plus_200_updates_with_frozen_batch_before_dispatch; 5M CE is not valid for every 64K recipe"
       }
     },
     "mf1_engineering": {
       "review_timebox_hours": 48,
       "gpu_validation_budget_hours": 16,
       "real_first_phase_ce_s_target": 1000,
-      "target_is_measured_requirement_not_current_result": true
+      "target_is_measured_requirement_not_current_result": true,
+      "status": "Execution fixes deployed; formal P0 continues. Historical performance target and timebox are retained below for reference."
     },
     "models": {
       "minikimik3": {
@@ -584,7 +587,7 @@
           "initial_microbatch_ceiling": 64,
           "mtp_coef": 0.1
         },
-        "recipe_status": "formal_first_phase_training",
+        "recipe_status": "first_phase_frozen_later_phase_data_pending",
         "formal_init": null,
         "formal_resume": null,
         "existing_pilot_candidates": {
@@ -606,12 +609,12 @@
         "pilot_schedule_not_formal_schedule": true,
         "training_recipe": {
           "version": 1,
-          "status": "selected_pending_data_and_resource_freeze",
+          "status": "frozen",
           "seed": 42,
           "optimizer": "kimi_muon",
           "global_input_tokens": 32768,
           "initial_microbatch_candidate": 64,
-          "microbatch_status": "bind actual first-phase 1024-token/media configuration before one 50+200 qualification",
+          "microbatch_status": "Initial selected microbatch; monitor formal updates without a separate profile job.",
           "weight_decay": 0.1,
           "adam_eps": 1e-08,
           "clip_grad": 1.0,
@@ -733,10 +736,19 @@
               "video_examples": 0
             }
           ],
-          "bindings": {},
+          "bindings": {
+            "K1": {
+              "data_sha256": "a81dabbdc785daa77bb9afd69123e10fffbde2528370ee80b1279d83119e6ed8",
+              "config_sha256": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+              "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+              "batch_size": 64,
+              "sequence_length": 1024
+            }
+          },
           "decision_record": "docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md",
           "first_qualification_input_upper_bound": 8447750
-        }
+        },
+        "binding_scope_note": "The first-phase recipe is copied from the actual frozen run. Later phase data assignments remain pending; running jobs continue using their original program files."
       },
       "miniqwen4": {
         "main_ce": 3000000000,
@@ -754,7 +766,7 @@
           "initial_microbatch_ceiling": 64,
           "mtp_coef": 0.1
         },
-        "recipe_status": "formal_first_phase_training",
+        "recipe_status": "first_phase_frozen_later_phase_data_pending",
         "formal_init": null,
         "formal_resume": null,
         "existing_pilot_candidates": {
@@ -773,12 +785,12 @@
         "pilot_schedule_not_formal_schedule": true,
         "training_recipe": {
           "version": 1,
-          "status": "selected_pending_data_and_resource_freeze",
+          "status": "frozen",
           "seed": 42,
           "optimizer": "qwen_muon",
           "global_input_tokens": 16384,
           "initial_microbatch_candidate": 32,
-          "microbatch_status": "bind actual first-phase 1024-token/media configuration before one 50+200 qualification",
+          "microbatch_status": "Initial selected microbatch; monitor formal updates without a separate profile job.",
           "weight_decay": 0.1,
           "adam_eps": 1e-08,
           "clip_grad": 1.0,
@@ -928,10 +940,19 @@
               "video_examples": 10000
             }
           ],
-          "bindings": {},
+          "bindings": {
+            "Q1": {
+              "data_sha256": "c475eaa3fb9ffe1f0a3b855def363e8cf99d0239ec674ef83b1f83b17ef182f3",
+              "config_sha256": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
+              "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+              "batch_size": 32,
+              "sequence_length": 1024
+            }
+          },
           "decision_record": "docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md",
           "first_qualification_input_upper_bound": 4351750
-        }
+        },
+        "binding_scope_note": "The first-phase recipe is copied from the actual frozen run. Later phase data assignments remain pending; running jobs continue using their original program files."
       },
       "minideepseekv4": {
         "main_ce": 2500000000,
@@ -949,7 +970,7 @@
           "initial_microbatch_ceiling": 32,
           "mtp_coef": 0.3
         },
-        "recipe_status": "formal_first_phase_training",
+        "recipe_status": "first_phase_frozen_later_phase_data_pending",
         "formal_init": null,
         "formal_resume": null,
         "existing_pilot_candidates": {
@@ -970,12 +991,12 @@
         "pilot_schedule_not_formal_schedule": true,
         "training_recipe": {
           "version": 1,
-          "status": "selected_pending_data_and_resource_freeze",
+          "status": "frozen",
           "seed": 42,
           "optimizer": "deepseek_muon",
           "global_input_tokens": 32768,
-          "initial_microbatch_candidate": 32,
-          "microbatch_status": "bind actual first-phase 1024-token/media configuration before one 50+200 qualification",
+          "initial_microbatch_candidate": 16,
+          "microbatch_status": "D1 microbatch 16 at context 1024 after measured microbatch-32 OOM; one permitted targeted C1 retry",
           "weight_decay": 0.1,
           "adam_eps": 1e-08,
           "clip_grad": 1.0,
@@ -1126,10 +1147,19 @@
               "init_transition": "mtp-weight"
             }
           ],
-          "bindings": {},
+          "bindings": {
+            "D1": {
+              "data_sha256": "f972b1fe1620befc1a7a90f6fb55f370a03672a4f427bb71639acaae373e4f95",
+              "config_sha256": "b660f89fcf82048d087ba26b143a76b9b27baa38cfe71cb09e0ec9f997633b35",
+              "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+              "batch_size": 16,
+              "sequence_length": 1024
+            }
+          },
           "decision_record": "docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md",
           "first_qualification_input_upper_bound": 8447750
-        }
+        },
+        "binding_scope_note": "The first-phase recipe is copied from the actual frozen run. Later phase data assignments remain pending; running jobs continue using their original program files."
       },
       "minifrontier1": {
         "main_ce": 3000000000,
@@ -1143,7 +1173,7 @@
           "initial_microbatch_ceiling": "determine_once_after_execution_fix",
           "mtp_coef": 0.1
         },
-        "recipe_status": "formal_first_phase_training",
+        "recipe_status": "first_phase_frozen_later_phase_data_pending",
         "formal_init": null,
         "formal_resume": null,
         "documented_implementation_baseline": {
@@ -1156,12 +1186,12 @@
           "decay_start_main_ce": 2400000000,
           "decay_end_main_ce": 3000000000,
           "final_lr_factor": 0.1,
-          "microbatch": "measure_on_actual_formal_media_data"
+          "microbatch": 8
         },
         "training_recipe": {
           "version": 1,
           "executor": "mf1_existing_continuous_path",
-          "status": "selected_pending_data_and_resource_freeze",
+          "status": "frozen",
           "seed": 42,
           "optimizer": "adamw",
           "global_input_tokens": 16384,
@@ -1202,9 +1232,21 @@
           },
           "indexer_unit": "input_tokens",
           "first_qualification_input_upper_bound": 4351750,
-          "bindings": {},
+          "bindings": {
+            "p0": {
+              "data_sha256": "2a024d4fedd3e11568bdc9d4bf047e061f1dc463042f3cfdba4c23b65c3b72d2",
+              "config_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8",
+              "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
+              "batch_size": 8,
+              "sequence_lengths": [
+                512,
+                1024
+              ]
+            }
+          },
           "decision_record": "docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md"
-        }
+        },
+        "binding_scope_note": "P0 uses the existing MF1 continuous trainer and its frozen run specification; later data assignments remain pending."
       }
     },
     "data": {
@@ -1327,7 +1369,7 @@
         "performance_qualification",
         "benchmark"
       ],
-      "registration": "publish a TensorBoard log-directory link only after checking the formal run identity; retain original event files",
+      "registration": "After checking the formal identity, publish an independent grouped view rebuilt from the original JSONL/events; preserve original logs, steps and timestamps.",
       "empty_until_formal_training": true,
       "validation": {
         "source_models": {
@@ -1366,14 +1408,16 @@
         "completion_hooks": "declared bounded data checks; persisted intent prevents duplicate launches",
         "registry": "existing experiment_registry on events",
         "automatic_training_or_admission": false
-      }
+      },
+      "status_command": "python -m scripts.training_status --run formal",
+      "source_logs": "outputs/strategy-base-pretraining-v1/<model>/<phase>/{metrics.jsonl,tensorboard/}"
     },
     "readiness_priority": {
-      "first": "minideepseekv4",
       "scope": "All four models have completed actual formal optimizer updates on separate primary GPUs; continue their frozen first phases and monitor concrete runtime failures.",
       "other_models": "No additional standalone pilot or performance-profile queue; monitor the formal runs and fix concrete failures.",
       "new_parameter_grids": false,
-      "additional_first_stage_text_expansion": false
+      "additional_first_stage_text_expansion": false,
+      "next_phase": "Prepare admitted long-context text/media and actual parent-checkpoint evidence before each first phase ends; do not repeat initial pilot/profile queues."
     },
     "placement": {
       "policy": "primary_only_available_exclusive_gpu",
@@ -1400,7 +1444,7 @@
       },
       "launch_requirements": [
         "admitted phase data and frozen tokenizer",
-        "completed matching production qualification for formal training",
+        "matching correctness/data evidence and the recorded initial-start or phase-transition policy",
         "live device ownership, free memory and environment checks",
         "shared storage reservations with at least 80 GiB retained for new allocations"
       ],

@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1250" viewBox="0 0 1120 1250" role="img" aria-labelledby="title desc">
+<title id="title">MiniFrontier1.0 — native multimodal architecture</title>
+<desc id="desc">The 228M research configuration. Text embeddings and projected ViT features merge into one sequence and expand to four residual streams. Sixteen decoder layers use KDA, except CSA-4 at layers 4 and 12 and QSA-MLA at layers 8 and 16. A lookup update is added before layer 2. Every decoder layer reads and updates the residual streams twice: attention, then LatentMoE with 32 routed experts, top-4 selection and a shared FFN. Final GR readout and the vocabulary head predict the next token. The auxiliary MTP branch receives the final four-stream state and next-token embedding and shares the vocabulary head. The main model and vision encoder start from random initialization.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#526b7b" stroke-width="1.7"/></marker></defs>
+<rect x="1" y="1" width="1118" height="1248" rx="20" fill="#f7f8fa" stroke="#dce4eb"/>
+<g font-family="DejaVu Sans, Arial, sans-serif" fill="#142e3e">
+<text x="40" y="47" font-size="29" font-weight="700" fill="#142e3e" text-anchor="start">MiniFrontier1.0</text>
+<text x="40" y="77" font-size="17" font-weight="400" fill="#526b7b" text-anchor="start">Native multimodal fusion · 228M research configuration</text>
+<text x="1080" y="45" font-size="16" font-weight="400" fill="#142e3e" text-anchor="end">16 layers / hidden 512 / 32K vocab</text>
+<text x="1080" y="75" font-size="14" font-weight="400" fill="#526b7b" text-anchor="end">Text + vision initialized from scratch</text>
+<rect x="40" y="110" width="350" height="72" rx="10" fill="#eaf3f7" stroke="#b9cbd5"/>
+<text x="215.0" y="137" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Text + control tokens</text>
+<text x="215.0" y="161" font-size="14" font-weight="400" fill="#526b7b" text-anchor="middle">Embedding: 32,768 → 512</text>
+<rect x="440" y="110" width="640" height="72" rx="10" fill="#edf3f0" stroke="#b9cbd5"/>
+<text x="760.0" y="137" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Images / sampled video frames</text>
+<text x="760.0" y="161" font-size="14" font-weight="400" fill="#526b7b" text-anchor="middle">Conv3D patches (2 × 16 × 16) → 12-layer ViT, width 384</text>
+<path d="M760 182 V200" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="440" y="200" width="640" height="64" rx="10" fill="#edf3f0" stroke="#b9cbd5"/>
+<text x="760.0" y="227" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Spatial merge 2 × 2 + projector</text>
+<text x="760.0" y="251" font-size="14" font-weight="400" fill="#526b7b" text-anchor="middle">1536 → 512 → 512 · one feature per visual placeholder</text>
+<path d="M215 182 V275 H410 V290" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<path d="M760 264 V275 H710 V290" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="245" y="290" width="630" height="64" rx="10" fill="#ffffff" stroke="#b9cbd5"/>
+<text x="560.0" y="317" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">One interleaved sequence · width 512</text>
+<text x="560.0" y="341" font-size="14" font-weight="400" fill="#526b7b" text-anchor="middle">Replace visual placeholders; preserve segment and position metadata</text>
+<path d="M560 354 V373 H273 V393" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="40" y="393" width="466" height="64" rx="10" fill="#eaf3f7" stroke="#b9cbd5"/>
+<text x="273.0" y="420" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Expand to four residual streams</text>
+<text x="273.0" y="444" font-size="14" font-weight="400" fill="#526b7b" text-anchor="middle">R: [batch, sequence, 4, 512]</text>
+<path d="M273 457 V490" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="40" y="490" width="466" height="283" rx="12" fill="#fff" stroke="#a9c0ce"/>
+<text x="60" y="522" font-size="22" font-weight="650" fill="#142e3e" text-anchor="start">16 decoder layers</text>
+<text x="60" y="548" font-size="14" font-weight="400" fill="#526b7b" text-anchor="start">Read left → right, then top → bottom</text>
+<rect x="58" y="563" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="109" y="578" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">01</text>
+<text x="109" y="594" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="168" y="563" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="219" y="578" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">02</text>
+<text x="219" y="594" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="278" y="563" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="329" y="578" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">03</text>
+<text x="329" y="594" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="388" y="563" width="102" height="39" rx="6" fill="#edf3f0"/>
+<text x="439" y="578" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">04</text>
+<text x="439" y="594" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">CSA-4</text>
+<rect x="58" y="610" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="109" y="625" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">05</text>
+<text x="109" y="641" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="168" y="610" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="219" y="625" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">06</text>
+<text x="219" y="641" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="278" y="610" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="329" y="625" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">07</text>
+<text x="329" y="641" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="388" y="610" width="102" height="39" rx="6" fill="#fbf2e3"/>
+<text x="439" y="625" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">08</text>
+<text x="439" y="641" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">QSA-MLA</text>
+<rect x="58" y="657" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="109" y="672" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">09</text>
+<text x="109" y="688" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="168" y="657" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="219" y="672" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">10</text>
+<text x="219" y="688" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="278" y="657" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="329" y="672" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">11</text>
+<text x="329" y="688" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="388" y="657" width="102" height="39" rx="6" fill="#edf3f0"/>
+<text x="439" y="672" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">12</text>
+<text x="439" y="688" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">CSA-4</text>
+<rect x="58" y="704" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="109" y="719" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">13</text>
+<text x="109" y="735" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="168" y="704" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="219" y="719" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">14</text>
+<text x="219" y="735" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="278" y="704" width="102" height="39" rx="6" fill="#eaf3f7"/>
+<text x="329" y="719" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">15</text>
+<text x="329" y="735" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">KDA</text>
+<rect x="388" y="704" width="102" height="39" rx="6" fill="#fbf2e3"/>
+<text x="439" y="719" font-size="11" font-weight="400" fill="#526b7b" text-anchor="middle">16</text>
+<text x="439" y="735" font-size="13" font-weight="600" fill="#142e3e" text-anchor="middle">QSA-MLA</text>
+<rect x="40" y="804" width="466" height="64" rx="10" fill="#fbf2e3" stroke="#b9cbd5" stroke-dasharray="6 4"/>
+<text x="273.0" y="831" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Lookup update · before layer 2 only</text>
+<text x="273.0" y="855" font-size="14" font-weight="400" fill="#526b7b" text-anchor="middle">2/3-gram tables → gated update to all four streams</text>
+<path d="M40 836 H22 V555 H219 V563" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)" stroke-dasharray="6 4"/>
+<rect x="540" y="393" width="540" height="475" rx="12" fill="#fff" stroke="#a9c0ce"/>
+<text x="560" y="421" font-size="22" font-weight="650" fill="#142e3e" text-anchor="start">Inside each decoder layer</text>
+<text x="560" y="445" font-size="14" font-weight="400" fill="#526b7b" text-anchor="start">Attention first; expert computation second</text>
+<rect x="627" y="468" width="425" height="42" rx="10" fill="#eaf3f7" stroke="#b9cbd5"/>
+<text x="839.5" y="495" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">GR read · 4 × 512 → 512</text>
+<rect x="627" y="527" width="425" height="42" rx="10" fill="#fff" stroke="#b9cbd5"/>
+<text x="839.5" y="554" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Attention · KDA / CSA-4 / QSA-MLA</text>
+<rect x="627" y="586" width="425" height="42" rx="10" fill="#eaf3f7" stroke="#b9cbd5"/>
+<text x="839.5" y="613" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">GR inject · update four streams</text>
+<rect x="627" y="667" width="425" height="42" rx="10" fill="#eaf3f7" stroke="#b9cbd5"/>
+<text x="839.5" y="694" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">GR read · 4 × 512 → 512</text>
+<rect x="627" y="726" width="425" height="42" rx="10" fill="#fbf2e3" stroke="#b9cbd5"/>
+<text x="839.5" y="753" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">LatentMoE + shared FFN</text>
+<rect x="627" y="785" width="425" height="42" rx="10" fill="#eaf3f7" stroke="#b9cbd5"/>
+<text x="839.5" y="812" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">GR inject · update four streams</text>
+<path d="M839 510 V527" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<path d="M839 569 V586" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<path d="M839 628 V667" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<path d="M839 709 V726" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<path d="M839 768 V785" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<path d="M627 482 H598 V607 H627" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<path d="M627 682 H598 V806 H627" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<text x="580" y="550" font-size="17" font-weight="600" fill="#142e3e" text-anchor="start">R</text>
+<text x="580" y="751" font-size="17" font-weight="600" fill="#142e3e" text-anchor="start">R</text>
+<text x="650" y="649" font-size="14" font-weight="400" fill="#526b7b" text-anchor="start">R ← R + per-stream gate × update</text>
+<text x="565" y="851" font-size="14" font-weight="400" fill="#526b7b" text-anchor="start">32 routed experts / top-4 + one full-width shared FFN</text>
+<path d="M506 506 H540" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)" stroke-dasharray="6 4"/>
+<path d="M273 773 V790 H520 V892 H273 V923" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<text x="42" y="911" font-size="15" font-weight="400" fill="#526b7b" text-anchor="start">Final decoder state R</text>
+<rect x="40" y="923" width="466" height="64" rx="10" fill="#eaf3f7" stroke="#b9cbd5"/>
+<text x="273.0" y="950" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Final GR readout → vocabulary head</text>
+<text x="273.0" y="974" font-size="14" font-weight="400" fill="#526b7b" text-anchor="middle">512 → 32,768 · predicts token t + 1</text>
+<path d="M273 987 V1017" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="40" y="1017" width="466" height="64" rx="10" fill="#edf3f0" stroke="#b9cbd5"/>
+<text x="273.0" y="1044" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Autoregressive text output</text>
+<text x="273.0" y="1068" font-size="14" font-weight="400" fill="#526b7b" text-anchor="middle">Main next-token CE loss</text>
+<path d="M520 892 H810 V956" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)" stroke-dasharray="6 4"/>
+<text x="595" y="912" font-size="14" font-weight="400" fill="#526b7b" text-anchor="start">R at position t</text>
+<rect x="850" y="894" width="230" height="43" rx="10" fill="#fbf2e3" stroke="#b9cbd5" stroke-dasharray="6 4"/>
+<text x="965.0" y="921" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Embed(token t + 1)</text>
+<path d="M965 937 V956" fill="none" stroke="#526b7b" stroke-width="1.8" marker-end="url(#arrow)" stroke-dasharray="6 4"/>
+<rect x="550" y="956" width="530" height="125" rx="10" fill="#fbf2e3" stroke="#b9cbd5" stroke-dasharray="6 4"/>
+<text x="815.0" y="983" font-size="18" font-weight="600" fill="#142e3e" text-anchor="middle">Auxiliary MTP block</text>
+<text x="815" y="1010" font-size="15" font-weight="400" fill="#142e3e" text-anchor="middle">Fuse R + next embedding → dense QSA-MLA</text>
+<text x="815" y="1035" font-size="14" font-weight="400" fill="#142e3e" text-anchor="middle">→ LatentMoE → GR readout → shared vocabulary head</text>
+<text x="815" y="1060" font-size="14" font-weight="400" fill="#142e3e" text-anchor="middle">Predicts token t + 2 · valid supervised text only</text>
+<path d="M40 1111 H1080" stroke="#dce4eb"/>
+<text x="40" y="1140" font-size="15" font-weight="400" fill="#142e3e" text-anchor="start">LatentMoE: 512 → 256 → weighted top-4 experts → norm → 512; add shared FFN (512 → 768 → 512).</text>
+<text x="40" y="1168" font-size="14" font-weight="400" fill="#526b7b" text-anchor="start">Solid arrows: main data flow. Dashed arrows: detail callout, lookup injection or auxiliary training branch.</text>
+<text x="40" y="1196" font-size="14" font-weight="400" fill="#526b7b" text-anchor="start">Layer numbers are one-based. KDA / CSA / QSA keep distinct inference caches; MTP is not a speed claim.</text>
+<text x="40" y="1224" font-size="13" font-weight="400" fill="#526b7b" text-anchor="start">Source: model_228m_native.json + minifrontier/models/minifrontier1 · Architecture diagram, not training evidence.</text>
+</g></svg>

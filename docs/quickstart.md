@@ -1,3 +1,3 @@
-# 文档入口已整理
+# 最小示例
 
-请阅读 [操作指南](guides/quickstart.md)。此入口保留旧链接兼容。
+内容已迁至[操作指南](guides/quickstart.md)。本页保留旧链接。

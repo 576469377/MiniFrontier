@@ -1,5 +1,7 @@
 # Batch 边界、实验重排与全仓实验复核
 
+> 历史实验记录：MF1 本页约 66 CE/s 的旧实现后来已有[执行性能更新](../../audits/minifrontier1-execution-performance.md)。四模型参数选择和待办见[预训练主计划](../../pretraining-plan.md)。
+
 日期：2026-09-10。首批执行快照为 `index.json` 中的时间；后续复核的精确采集时间在 `reviewed-registry.json`。本目录保存数值与决策背景，[当前计划](../current-plan.md)是后续研究的唯一说明入口。
 
 复核快照共 **215 条记录、13 类用途**，没有未归类记录或检测到的活跃输出/GPU 分配冲突。215 包含训练阶段、父扫描和安装 fixture。31 条旧记录缺少 source 身份；4 条缺少数据/tokenizer 身份；1 条历史 RL 接口试验缺少结束证据，保留 `unverified`。这些缺项没有被写成通过。
@@ -65,11 +67,11 @@ MF1 完整 228M、512 长度、20 次预热 + 100 次测量已完成，约 **66.
 
 Kimi 固定 16K 时，61 次更新每次最多消费 53 个样本，上限 64 与 128 因而生成完全相同的实际微批，终点 NLL 也相同；两档短窗口测速差异不能归因于更大的实际 batch。固定 64K 的 64 档约 7,054 CE/s、10.57 GiB reserved，且逐更新账本与此前的 16/128 档全部一致。此前 128 档为 6,772 CE/s、19.17 GiB；它们使用不同物理卡和运行时段，不能凭约 4% 的吞吐差距判定 64 更快，但 64 值得作为更省显存的候选。
 
-较大微批的加速没有伴随本轮同窗口终点 NLL 的明显偏移。这支持进入 batch/LR 配方研究，不代表已选出最优全局 batch，亦不替代 50+200 性能准入、更多种子和独立能力评估。
+较大微批的加速没有伴随本轮同窗口终点 NLL 的明显偏移。这支持扩大微批以减少执行开销，但没有选出最优全局 batch。首版后来依据这些结果确定工作参数；额外网格、补种子和独立长性能验收不再作为开训前置条件，见[工作配方](../2026-09-10-pretraining-cutover/working-recipes.md)。
 
 ## 处理决定
 
-- 七项旧 microbatch2 运行按用户要求停止，已有日志和恢复点保留。远端六项尚未到保存间隔，没有新 checkpoint；中断时的观测 CE 不能当作可恢复状态。
+- 七项旧 microbatch2 运行已停止，已有日志和恢复点保留。远端六项尚未到保存间隔，没有新 checkpoint；中断时的观测 CE 不能当作可恢复状态。
 - 三项本机 batch16、四项已经启动的远端 Kimi128/DeepSeek32 长试验保留为冻结旧源码的探索记录。远端长期队列的后续派发暂停，等待的 Qwen 长试验不继续按旧吞吐选择规则启动。
 - 两项 MF1 100K 指令扩展约 2 CE/s，停止为 `stopped_for_review`；已保存的控制和扩展恢复点、最新未保存进度分别记录。先解决性能与实验设计再扩大预算。
 - 新源码把 microbatch ceiling 与全局 input 目标分开；新增 CE 节点的 batch ramp，保持完整样本与媒体，记录实际目标/窗口。旧 frozen checkout 不变。
@@ -85,7 +87,7 @@ Kimi 固定 16K 时，61 次更新每次最多消费 53 个样本，上限 64 �
 | `batch-comparison.json` | 本轮真实短测逐配置汇总；完整原始更新、验证记录位于对应 run 档案 |
 | `controlled-batch-comparison.json`、`controlled-*-queue*.json` | 修正全局 batch 和窗口合批后的四项完成结果与冻结执行计划 |
 | `execution-matrix-plan.json` | 随后派发的 14 组固定全局 batch 短测命令、数据身份和采集时状态；不改写此前 215 条复核快照 |
-| `execution-matrix-results.json` | 执行矩阵的最新结果、可重画曲线、逐步窗口核对和完整作业耗时；保留未完成状态 |
+| `execution-matrix-results.json` | 执行矩阵完成结果、可重画曲线、逐步窗口核对和完整作业耗时 |
 | `stopped-batch2.json`、`mf1-stopped-review.json` | 主动停止原因、已观察进度与已保存进度 |
 | `*-plan.json`、`*-state.json` | 原队列命令、来源和依赖；某些策略已经被本次复核替代，不能当作推荐启动计划 |
 | `remote-239--*.json`、`local--*.json` | 各扫描/真实试验的配置、指标、预算、性能行及临时权重 hash 清单 |

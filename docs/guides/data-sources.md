@@ -1,56 +1,75 @@
 # 数据来源与处理
 
-本页说明截至 **2026-09-10** 已准备或实际用过的数据，以及仍需完成的工作。不同实验使用的数据不同，不能把三个来源模型的语料直接视为 MiniFrontier1.0 的正式训练集。
+MiniFrontier 使用公开语料和程序生成的数据，不包含旗舰模型的官方训练集。数据、tokenizer 和模型权重各有独立的来源与许可；代码许可证不覆盖这些产物。本页按用途区分首阶段正式预训练、历史实验和离线示例。
 
-本轮正式预训练的数据构造见[主计划](../pretraining-plan.md#data)和[执行记录](../experiments/2026-09-10-pretraining-cutover/execution.md)。首批文本候选按参考 tokenizer 设中文 225M、英文 150M、数学 50M、对话 40M 目标，另需补足可核验来源的代码域；共享视觉候选正在构造。这些候选尚未完成正式准入。下文保留既往实验的数据说明，不能用诊断集代替本轮库存。
+## 首阶段正式预训练
 
-补充代码候选已接入固定版本的 [CodeParrot train](https://huggingface.co/datasets/codeparrot/codeparrot-clean-train)，目标 100M 参考 token。筛选同时检查逐文件许可字段、文件开头的明确声明和 Python 3 语法，保留 repo/path、内容和许可头校验值；原仓库 commit 的缺项单列。源码不执行，也不使用普通文本的 NFKC/空白归一化。它与原许可未核验的 Python-Edu 行分别管理；来源筛选通过不等于正式数据准入，具体限制见执行记录。
+截至 **2026-09-12**，四个模型的首阶段均已绑定训练数据和冻结 tokenizer。它们共用经过划分的文本语料，三个来源模型采用 64K 词表，MF1 采用 32K 词表；视觉模型另外绑定各自的图像编码组件。后续阶段按领域、长度和模态需要补充数据。
 
-## MiniFrontier1.0
+首阶段文本划分为 **396,842 篇训练文档、3,737 篇验证文档、4,432 篇测试文档**。同一训练文本在 64K 词表下约为 **5.33 亿 CE token**，在 MF1 词表下约为 **5.70 亿**。这是同一语料的不同编码，不能相加，也不是已完成的训练量。
 
-离线示例和已完成的小配置学习实验使用程序生成的数据：整数算术、纯色色块图片，以及带时间戳的色块视频帧。训练部分包含 32 条算术、32 条图片和 8 条视频记录，另设独立的验证、测试和演示分组。生成方法见 [data/minifrontier1.py](../../minifrontier/data/minifrontier1.py)，实际结果见[学习实验](../experiments/mf1-reference-v2/README.md)。
-
-2026-09-09 启动的完整 228M GPU 机制实验增加了已有的 Fineweb-Edu-Chinese-V2.1、FineWeb-Edu 和本项目生成数学，各抽取 2,000 个训练文档。继承原语料分组，仅用训练部分训练独立的 32K 候选 BPE，按字符边界分块并删除 38 条新增重复片段。加上各 128 条新生成图像、视频记录，训练集共 12,659 条、约 5.21M 可用 CE；验证集 232 条，未读取封存测试样本。每组实际训练预算为 500K CE，领域采样会重复暴露生成媒体，不能把暴露次数当成独立媒体数量。生成媒体与文本保留独立来源、处理记录和校验值，详见 [manifest](../experiments/mf1-gpu-mechanism-v1/data-manifest.json) 和[构造脚本](../../scripts/prepare_mf1_mechanism_data.py)。
-
-这些数据用于检查模型能否学习、视觉输入是否参与预测，以及训练恢复是否正确。32K 候选尚未完成方案要求的词表对照，机制数据也未完成正式来源及质量验收；[正式数据计划](../../configs/minifrontier1/data_manifest.json)中的文本、图像和视频数量仍是目标值，来源名单尚待填写。
-
-2026-09-10 的语言 SFT 诊断另用 **32 条本项目编写的基础问答、32 张生成图片和 8 段生成视频**，不沿用此前算术训练集作为语言问答训练集。留出集包含 106 条算术／复制任务和 32 条媒体记录，共 138 条；它们按题目与媒体身份分组。词表沿用上述 32K 候选，不重新训练。另已准备 886 条训练记录的扩展指令集，但截至最新公开快照尚未开训。数据清单、构造过程和启用条件见[语言诊断档案](../experiments/mf1-language-performance-v1/README.md)与[07:51 UTC 更新](../experiments/2026-09-10-mf1-update/README.md)。
-
-## 三个来源模型的实验数据
-
-| 来源 | 在本项目中的用途 | 数据使用条款与核查状态 |
+| 来源 | 用途 | 本地来源记录中的条款与限制 |
 |---|---|---|
-| [MiniMind 数据集](https://huggingface.co/datasets/jingyaogong/minimind_dataset) | 早期文本预训练、监督微调和偏好训练；结果保留在失败复盘中 | 数据卡列出 Apache-2.0 和 CC-BY-NC-2.0；按实际使用文件核对来源与条款 |
-| [Fineweb-Edu-Chinese-V2.1](https://huggingface.co/datasets/opencsg/Fineweb-Edu-Chinese-V2.1) | 中文文本配方试验，使用 `4_5` 子集 | 数据卡标注 Apache-2.0，保留原始子来源信息 |
-| [FineWeb-Edu](https://huggingface.co/datasets/HuggingFaceFW/fineweb-edu) | 英文文本配方试验，抽取 `sample/10BT` 中的数据 | 数据卡标注 ODC-BY；原网页内容的权利仍需按来源处理 |
-| [SmolLM-Corpus / Python-Edu](https://huggingface.co/datasets/HuggingFaceTB/smollm-corpus/blob/3ba9d605774198c5868892d7a8deda78031a781f/README.md) | Python 代码配方试验 | 上游要求参照 The Stack v2 的数据许可。本地样本索引没有逐仓库许可证，已记录此缺口，尚未作为正式代码训练集通过审核 |
-| [UltraChat 200k](https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k) | 对话数据准备，使用 `train_sft` 分片 | 数据卡标注 MIT |
-| [FineVision](https://huggingface.co/datasets/HuggingFaceM4/FineVision) 中的 [ALLaVA-4V](https://huggingface.co/datasets/FreedomIntelligence/ALLaVA-4V) | Kimi/Qwen 小规模图文试验，共 96 张独立图片 | ALLaVA 数据卡标注 CC-BY-NC-4.0；本项目记录为试验数据，正式来源和划分审核尚未完成 |
-| 本项目生成的算术与简单代数题 | 学习诊断和配方试验中的数学部分 | 生成器和随机种子随代码提供；任务范围限于所实现的规则 |
+| [Fineweb-Edu-Chinese-V2.1](https://huggingface.co/datasets/opencsg/Fineweb-Edu-Chinese-V2.1) | 中文教育文本，`4_5` 子集 | 数据卡标注 Apache-2.0；保留原始子来源 |
+| [FineWeb-Edu](https://huggingface.co/datasets/HuggingFaceFW/fineweb-edu) | 英文教育文本，`sample/10BT` | ODC-BY；原网页内容的权利单独保留 |
+| [OpenWebMath](https://huggingface.co/datasets/open-web-math/open-web-math) | 数学网页文本 | ODC-BY、Common Crawl 条款及原网页权利；领域名不表示逐题正确性已核验 |
+| [CodeParrot train](https://huggingface.co/datasets/codeparrot/codeparrot-clean-train) | Python 代码 | 逐文件筛选 Apache-2.0、MIT、BSD 声明；部分原仓库 commit 信息缺失 |
+| [UltraChat 200k](https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k) | 对话文本，`train_sft` 分片 | 数据卡标注 MIT |
+| [ALLaVA-4V](https://huggingface.co/datasets/FreedomIntelligence/ALLaVA-4V)，通过 FineVision 固定版本读取 | 自然图像描述与问答 | CC-BY-NC-4.0，并保留底层图片权利；后续权重发布需考虑非商业限制 |
+| [CoSyn-400K](https://huggingface.co/datasets/allenai/CoSyn-400K)，通过 FineVision 固定版本读取 | 文档与图表 | ODC-BY、生成内容条款及 Ai2 使用说明分别记录 |
+| 本项目生成的 OCR | 图中文字识别 | 生成过程、文本来源与渲染资源随组件记录 |
 
-这里的许可证名称用于定位上游条款；训练数据按各自来源管理，项目代码的 Apache-2.0 许可不替代数据许可。
+来源配置见 [文本读取器](../../minifrontier/data/public_sources.py)、[数学与合并流程](../../minifrontier/data/pretraining.py)、[代码筛选器](../../minifrontier/data/code_sources.py)和[视觉读取器](../../minifrontier/data/visual_sources.py)。具体组件、配比与阶段需求见[预训练计划](../pretraining-plan.md#data)；构造过程见[执行档案](../experiments/2026-09-10-pretraining-cutover/execution.md)。
 
-## 版本与处理方法
+## 已做的处理
 
-实验固定了以下来源版本，便于查找当时使用的文件。公开数据集后续更新不会自动改变已有实验。
+1. **固定来源。** 记录数据集版本、原始项目或网页、采样种子、读取位置和内容校验值，限制下载与本地存储规模。
+2. **格式与质量筛选。** 检查文本长度、编码、字段和来源评分；代码单独检查许可列、文件头声明和 Python 3 语法，不执行源码，也不做破坏缩进的文本归一化。
+3. **去重与分组。** 文本进行精确和近重复检查；同源文档、同图问答及 OCR 派生记录按关联组管理，避免跨训练／验证／测试泄漏。
+4. **评测排除。** 对固定版本的 HumanEval、MBPP、GSM8K 和已登记视觉评测内容执行重叠检查；发现与 TextVQA 评测图片重合的训练组后已排除。匹配规则不保证发现所有改写、翻译或语义等价内容。
+5. **冻结与编码。** tokenizer 仅用训练划分构建，编码记录其 SHA256、处理器配置及各领域 CE 计数。视觉模型消费原始像素，视觉编码器参与训练，不用离线视觉特征代替。
+6. **校验训练入口。** 检查组件 hash、监督掩码、样本边界和固定验证库存。每个模型按自己的监督规则计数，媒体占位、padding 和辅助 MTP 不计入主 CE 预算。
 
-| 来源 | 固定版本 |
+首阶段没有完成系统性的逐来源人工质量复核，相关记录保持“未完成”；已做的机械检查不能替代这项工作。首阶段数据用于研究预览训练，不据此声明数据或后续权重已满足发布条件。后续数据变更和已知限制继续保存在对应清单中。
+
+## 固定版本
+
+公开数据集更新不会自动改变已有实验。以下版本对应上述来源配置；具体样本库存由每次构造的 manifest 确定。
+
+| 来源 | 版本 |
 |---|---|
-| MiniMind | `312afb4f76391145c6902f765bb51691c09a12f5` |
 | Fineweb-Edu-Chinese-V2.1 | `a5b574efa48beb3a8f6887ef0b093becf004328b` |
 | FineWeb-Edu | `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9` |
-| SmolLM-Corpus | `3ba9d605774198c5868892d7a8deda78031a781f` |
+| OpenWebMath | `fde8ef8de2300f5e778f56261843dab89f230815` |
+| CodeParrot train | `3e6ab65f2864931e041f6a82db9b5a6ec2b71ab4` |
 | UltraChat 200k | `8049631c405ae6576f93f445c6b8166f76f5505a` |
 | FineVision | `3c380a731a3429c1d04693d6ec16d7e683def84c` |
+| ALLaVA-4V 来源 | `0fd42fce5c047d387a4bb5318d588eae9a9797f0` |
+| CoSyn-400K 来源 | `86e46e1fd5e754d056169f0fb38f06c6997ff7de` |
 
-早期 MiniMind 实验使用文件前缀采样，发现重复问法和覆盖不足的问题，详见[失败复盘](../training-failure-v1.md)。后续公开文本试验会按种子打乱文件和行组读取顺序，执行格式检查、去重、关联样本分组及训练/验证/测试划分。Python-Edu 通过上游索引获取代码，并核对内容校验值。
+文本与 tokenizer 校验值另见[训练执行记录](../audits/training-infrastructure.json)。重复采样消耗训练预算，但不会增加独立文档或图片的数量。
 
-图文试验会核对媒体文件和解码后的图片校验值，按图片分组，避免同一图片的相关问答分入不同集合。96 张图片足以进行工程试验，尚不足以评估通用视觉能力。
+## 历史实验与离线示例
 
-实现入口为 [public_sources.py](../../minifrontier/data/public_sources.py)、[corpus.py](../../minifrontier/data/corpus.py)、[visual_sources.py](../../minifrontier/data/visual_sources.py) 和 [recipe.py](../../minifrontier/data/recipe.py)。每次构造记录来源版本、采样种子、接受/拒绝数量、划分和文件校验值。
+| 数据 | 用途与记录 |
+|---|---|
+| 本项目生成的算术、色块图像和视频帧 | 离线示例验证训练、恢复和媒体输入；MF1 默认生成 32 条算术、32 条图像和 8 条视频训练记录。[小配置学习实验](../experiments/mf1-reference-v2/README.md)单独记录其留出结果。 |
+| 中英文教育文本与生成媒体的小切片 | MF1 两组各 500K CE 的 228M 机制实验；[manifest](../experiments/mf1-gpu-mechanism-v1/data-manifest.json)保存抽样与划分。后续基础问答诊断见[语言实验档案](../experiments/mf1-language-performance-v1/README.md)。 |
+| [MiniMind 数据集](https://huggingface.co/datasets/jingyaogong/minimind_dataset)，`312afb4f76391145c6902f765bb51691c09a12f5` | 早期文本预训练、SFT 和偏好训练，结果见[失败复盘](../training-failure-v1.md)。数据卡列出 Apache-2.0 和 CC-BY-NC-2.0，需按文件核对条款。 |
+| [SmolLM-Corpus / Python-Edu](https://huggingface.co/datasets/HuggingFaceTB/smollm-corpus/blob/3ba9d605774198c5868892d7a8deda78031a781f/README.md) | 早期代码配方试验。上游要求参照 The Stack v2；本地索引缺逐仓库许可，记录为 `original-license-unresolved`，未用于本轮正式代码训练。 |
+| 96 张 ALLaVA 图片 | 早期 Kimi/Qwen 图文流程诊断，不代表首阶段正式视觉库存。 |
 
-## 如何使用这些材料
+## 在本地构造数据
 
-首次使用建议运行[离线最小示例](quickstart.md)或 [MiniFrontier1.0 示例](minifrontier1.md)，它们会自行生成所需数据。使用公开语料时，先阅读来源说明，再通过准备脚本构造本地数据；根目录 `data/` 不包含在 Git 仓库中。
+首次使用先运行[来源模型最小示例](quickstart.md)或 [MF1 示例](minifrontier1.md)，它们自行生成所需数据。公开语料准备需要网络和 `data` extra：
 
-小规模试验的来源记录、去重和划分不等于完成了正式数据审核。更大规模训练仍需补齐来源核查、近重复与评测污染检查、分层人工抽查，以及独立验证集。实验快照和现有复现范围见[实验档案](../experiments.md)。
+```bash
+uv sync --locked --extra data
+uv run python -m minifrontier.data.evaluation --output data/base-evaluation-v1
+uv run python -m minifrontier.data.pretraining merge \
+  --inputs data/text-candidate-v1 data/code-candidate-v1 \
+  --evaluation data/base-evaluation-v1 --output data/base-candidate-v1 \
+  --max-gib 12
+```
+
+合并命令的输入是预先构造且使用同一参考 tokenizer 的候选目录，不是仓库附带文件；每次选择新的输出目录。合并器保留已有留出组，同源组连接时 test 优先于 val。合并成功表示得到可追溯的候选库存，实际训练仍需绑定冻结 tokenizer 和该阶段使用的编码。根目录 `data/` 不进入 Git 或安装包。

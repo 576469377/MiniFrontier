@@ -5,31 +5,16 @@
 | [minifrontier-cover.png](minifrontier-cover.png) | README 封面，2172 × 724，浅色不透明背景，可用于深浅两种页面主题 |
 | [minifrontier-mark.svg](minifrontier-mark.svg) | 可缩放的独立图标，适合头像、文档和小尺寸入口 |
 | [minifrontier-architecture.svg](minifrontier-architecture.svg) | MF1 模块概览；参数与层序以[模型说明](../models/minifrontier1.md)为准 |
+| [minifrontier1-detail.svg](minifrontier1-detail.svg) | 首页与 MF1 模型页的完整结构图：输入汇合、16 层顺序、GR 子层读写、lookup 与 MTP；按 228M 配置绘制 |
+| [minifrontier1-decoder.svg](minifrontier1-decoder.svg) | MF1 单层展开：GR 读写、残差旁路、潜在空间路由专家和全宽共享分支 |
+| [minifrontier1-attention.svg](minifrontier1-attention.svg) | MF1 三种历史读取方式：KDA 递推、CSA 压缩 KV、QSA-MLA 原始 token 检索及缓存差异 |
+| [upstream/](upstream/README.md) | Kimi、Qwen、DeepSeek 官方报告的结构图摘录；原作者权利保留，来源、图号及提取记录单列 |
 | [icon-source.svg](icon-source.svg) · [icon-experiment.svg](icon-experiment.svg) · [icon-multimodal.svg](icon-multimodal.svg) | README 三个项目特色入口的配套图标 |
 
 标识以折叠山峰和字母 M 表达项目名称。蓝色、暖金色与中性色贯穿封面、图标和架构图。架构图保留文本与路径源文件，更新模型时应同步检查；图片在 README 中提供文字替代说明。
 
-封面由内置 **imagegen** 工具生成并进行一次背景调整；SVG 在本仓库绘制。未复制上游项目的标识或图片。此处素材沿用仓库原创内容的 [Apache-2.0](../../LICENSE) 声明。
+MF1 详细图的核对入口是 [228M 配置](../../configs/minifrontier1/model_228m_native.json)、[Decoder](../../minifrontier/models/minifrontier1/modeling.py)、[视觉编码器](../../minifrontier/models/minifrontier1/vision.py)、[LatentMoE](../../minifrontier/models/minifrontier1/moe.py) 与 [MTP](../../minifrontier/models/minifrontier1/mtp.py)。图使用独立、不透明背景与可缩放文字；可直接下载 SVG。三个来源模型页同时展示官方报告结构图和可编辑 Mermaid 图，后者表示本项目配置；MF1 的 MTP 数据流也使用 Mermaid。
 
-README 编排参考了 [MiniMind](https://github.com/jingyaogong/minimind) 的品牌页头与入门路径、[SmolLM](https://github.com/huggingface/smollm) 的模型导航和 [nanochat](https://github.com/karpathy/nanochat) 的实践导向。项目介绍、视觉素材及实验表述按 MiniFrontier 的实际情况编写。
+封面由 imagegen 生成并调整背景；SVG 在本仓库绘制。这些原创素材沿用仓库原创内容的 [Apache-2.0](../../LICENSE) 声明。`upstream/` 下的报告图示保留原作者权利，采用独立的[来源与权利说明](upstream/README.md)，不纳入上述原创素材许可。
 
-<details>
-<summary>封面生成提示词</summary>
-
-初始生成：
-
-```text
-Use case: logo-brand.
-Asset type: polished wide GitHub README brand cover for the open source project MiniFrontier.
-Create one finished horizontal cover, approximately 3:1 aspect ratio, with spacious editorial composition suitable for a technical research repository. The concept is several small architectural paths joining into a new frontier: a sculptural, folded, ribbon-like monogram evoking an M and a horizon, rendered with subtle depth and fine material texture, beside a beautifully typeset large wordmark.
-The only text in the image must be exactly "MiniFrontier" (M i n i F r o n t i e r), very crisp and easy to read at thumbnail size. No tagline, version, numbers or tiny labels. The monogram and wordmark should feel like one coherent identity. Use a restrained contemporary research-lab aesthetic, rich ink typography on a very light neutral background, a few harmonious color accents within the sculptural mark, plenty of breathing room and meticulous alignment. Fill the horizontal composition well with a generous safe margin on every edge. Original artwork only; no existing company logos, no robots, brains, circuit-board clip art, stock illustrations, starbursts, fake charts, badges, interface mockups or watermark. This is the final cover graphic, not a photograph of a printed sign or a layout sheet.
-```
-
-背景调整（以上一步生成图为输入）：
-
-```text
-Use case: background-extraction (background replacement).
-Image 1 is the edit target: the MiniFrontier brand cover. Preserve the existing sculptural folded M, its colors and texture, and the exact MiniFrontier wordmark with its existing typography. Change only the background and framing: this finished GitHub cover MUST have a solid, fully opaque, very light warm neutral background (#f7f8fa or close), including behind the wordmark. No transparent pixels anywhere, no alpha cutout. Ensure the entire mark, its shadow and the entire wordmark fit inside the canvas with a clean safe margin, keeping a 3:1 wide aspect ratio. Keep all the current artwork and no additional text. The light panel must remain readable when displayed on either a dark or a light webpage.
-```
-
-</details>
+README 的编排参考 [MiniMind](https://github.com/jingyaogong/minimind)、[SmolLM](https://github.com/huggingface/smollm) 和 [nanochat](https://github.com/karpathy/nanochat)；图示与说明对应本项目的实现。
