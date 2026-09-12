@@ -21,6 +21,17 @@
 
 读取与筛选规则见[文本](../../minifrontier/data/public_sources.py)、[数学与合并](../../minifrontier/data/pretraining.py)、[代码](../../minifrontier/data/code_sources.py)和[视觉](../../minifrontier/data/visual_sources.py)实现；组件构造记录见[执行档案](../experiments/2026-09-10-pretraining-cutover/execution.md)。
 
+## 后续阶段增量
+
+2026-09-12 合并后的文本有 484,918 篇训练文档，64K/MF1 词表分别编码为约 676.9M/723.3M CE；DeepSeek D2 已使用该版本。旧验证与测试记录保留，新增来源按组去重后纳入后续阶段。
+
+| 来源 | 数据与当前状态 | 来源条款 |
+|---|---|---|
+| [PE-Video 训练集](https://huggingface.co/datasets/facebook/PE-Video/tree/43a297dde47e2036721f259397df04b3c338d002) | 完整英文人工描述、2–30 秒原片段和 8 帧真实图像；首批已编码，增量生产中 | CC-BY-NC-4.0，保留原视频权利 |
+| [Docmatix](https://huggingface.co/datasets/HuggingFaceM4/Docmatix/tree/0725b65616e0e5f6024be10e38ddf8d8c48664fd) | 完整双页文档与一条原始 QA；首批生产中，按原 PDF 与图像身份分组 | 数据卡标注 MIT，保留原 PDF 内容权利 |
+
+Docmatix 的问答由上游模型生成，不标为人工标注。当前读取器只接受原记录恰好有两页、完整问答符合长度预算的样本；不丢弃页面或截短答案。该任务记录为多页问答，网页段落交错另行准备。[视频](../../minifrontier/data/video_sources.py)和[双页](../../minifrontier/data/multipage_sources.py)读取器均限制来源读取与本地产物规模；候选完成后再绑定各模型编码与训练输入。
+
 ## 已做的处理
 
 1. **固定来源。** 记录数据集版本、原始项目或网页、采样种子、读取位置和内容校验值，限制下载与本地存储规模。
@@ -46,6 +57,8 @@
 | FineVision | `3c380a731a3429c1d04693d6ec16d7e683def84c` |
 | ALLaVA-4V 来源 | `0fd42fce5c047d387a4bb5318d588eae9a9797f0` |
 | CoSyn-400K 来源 | `86e46e1fd5e754d056169f0fb38f06c6997ff7de` |
+| PE-Video | `43a297dde47e2036721f259397df04b3c338d002` |
+| Docmatix | `0725b65616e0e5f6024be10e38ddf8d8c48664fd` |
 
 文本与 tokenizer 校验值见[训练执行记录](../audits/training-infrastructure.json)。
 

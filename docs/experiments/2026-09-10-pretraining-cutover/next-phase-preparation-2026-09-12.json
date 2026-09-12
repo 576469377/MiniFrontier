@@ -161,5 +161,167 @@
     "new_video_frames": 6,
     "new_video_metadata": 3
   },
-  "limits_note": "These are write limits, not measured usage. Existing active inputs remain retained. Transfers use direct connections; no GPU work is scheduled on the storage host."
+  "limits_note": "These are write limits, not measured usage. Existing active inputs remain retained. Transfers use direct connections; no GPU work is scheduled on the storage host.",
+  "followup": {
+    "observed_utc": "2026-09-12T17:04:06.930999+00:00",
+    "scope": "Data preparation and recipe decisions after the initial snapshot. The source and CPU regression results above remain bound to their original release; no new source commit or GPU result is asserted here.",
+    "training": {
+      "K1": "complete",
+      "D1": "complete",
+      "D2": "formal_training_started_by_event_queue",
+      "K2_Q2_P1": "final_media_bindings_pending"
+    },
+    "text": {
+      "state": "both_encodings_complete",
+      "train_documents": 484918,
+      "native_train_ce": 676937811,
+      "mf1_train_ce": 723308646,
+      "encoding_audit_status": "mechanical_checks_passed_pending_quality_admission",
+      "scope": "Same corpus with different tokenizers; CE totals are not independent supply and must not be added."
+    },
+    "natural": {
+      "candidate_images": 25000,
+      "excluded_new_groups": 110,
+      "excluded_QA_records": 236,
+      "retained_images_all_splits": 24874,
+      "retained_QA_all_splits": 46681,
+      "retained_train_images": 24517,
+      "retained_train_QA": 46008,
+      "identity_state": "mechanical_identity_checks_passed",
+      "identity_closure_sha256": "323fbf7eaf1d9331317a3bb987250d2e0c51a63bda48a5068f430520f357aad8",
+      "encoding_state": "running_sequential_kimi_qwen_mf1",
+      "native_max_length": 1024,
+      "mf1_max_features": 100,
+      "current_plus_candidates_native_train_unique_RGB": 415665,
+      "existing_topup_native": "optional_not_required_before_next_phase; no additional old raw transfer scheduled"
+    },
+    "video": {
+      "first_batch_three_model_encoding": "complete",
+      "kimi_qwen_1024_compatibility": "passed_with_unchanged_token_payloads",
+      "new_candidate_target": 32000,
+      "new_candidate_state": "running",
+      "mf1_encoding": "event_dependency_registered_after_candidate_completion_and_prior_encoding_exit",
+      "target_policy": "Bounded supply target; readiness uses actual CE and exposures, not an obligation to reach the candidate count."
+    },
+    "multipage": {
+      "source": "HuggingFaceM4/Docmatix",
+      "revision": "0725b65616e0e5f6024be10e38ddf8d8c48664fd",
+      "state": "producing_candidates",
+      "target_complete_QA": 5000,
+      "pages_per_QA": 2,
+      "task": "multiimage_multipage",
+      "selection": "Exactly two pages from the same source document and one complete question/answer; no page or answer truncation.",
+      "next": "Incremental identities, conservative new-group exclusions, native Kimi/Qwen encoding and assembly.",
+      "scope": "Multipage document QA. Web paragraph/image interleaving is a separate later data task, not a new prerequisite for starting K2/Q2."
+    },
+    "image_mixture_proposal": {
+      "state": "candidate_not_bound",
+      "unit": "image_occurrences",
+      "phase_image_occurrences": 1200000,
+      "video_examples_separate": 20000,
+      "occurrence_fractions": {
+        "caption": 0.2,
+        "ocr_document": 0.56,
+        "chart_table": 0.06,
+        "vqa": 0.16,
+        "multiimage_multipage": 0.02
+      },
+      "QA_weight_numerators": {
+        "caption": 20,
+        "ocr_document": 56,
+        "chart_table": 6,
+        "vqa": 16,
+        "multiimage_multipage": 1
+      },
+      "QA_weight_denominator": 99,
+      "reason": "Each complete multipage QA contains two images. Chart supply has many questions per image, so weighting unique images avoids excessive chart exposure. These are project choices, not published upstream percentages.",
+      "phase_epoch_candidate": 4,
+      "epoch_scope": "Per-domain QA rows; not a maximum on repeated appearances of one image. No two/five-pass pretraining rule is inferred from SFT."
+    },
+    "mf1_p1": {
+      "image_features": [
+        49,
+        100
+      ],
+      "curriculum": "Reuse existing 49-feature components and encode new natural images with 100 features; record actual resolution and CE shares.",
+      "video_timing": "Prepare in parallel with P0; select from measured P1 video CE and exposure supply.",
+      "visual_ce_mixture_candidate": {
+        "caption": 0.33,
+        "ocr_document": 0.35,
+        "vqa": 0.22,
+        "chart_table": 0.05,
+        "video": 0.05
+      },
+      "chart_exposure_adjustment": {
+        "unique_train_images": 19289,
+        "train_qa": 105417,
+        "prior_phase_target_ce": 16000000,
+        "candidate_phase_target_ce": 8000000,
+        "prior_mean_image_occurrences": 16.16,
+        "candidate_mean_image_occurrences": 8.08,
+        "scope": "Per-image average for planned P1, not a proven optimal recipe; P0 exposures are additional."
+      },
+      "ordinary_validation_reused": {
+        "main_ce": 100000000,
+        "matched_to_black_nll": {
+          "caption": [
+            2.6809,
+            2.7043
+          ],
+          "chart_table": [
+            2.2472,
+            2.2955
+          ],
+          "ocr_document": [
+            3.9535,
+            4.3153
+          ],
+          "vqa": [
+            2.8709,
+            2.8929
+          ]
+        },
+        "scope": "Existing periodic validation observation. The final P0 checkpoint still binds its own phase-end metrics; these gaps are not a capability qualification or a new experiment."
+      }
+    },
+    "execution": {
+      "validation": "Relevant minimal CPU checks for changed paths; normal formal-training observation. Separate GPU smoke is not a default phase prerequisite; reproduce concrete failures briefly when necessary.",
+      "task_management": "File/process events and waitpid; failures stop the affected component with a recorded cause.",
+      "temporary_encoding_cap_gib": 24,
+      "encoding_guard_mib": 64,
+      "minimum_free_gib": 80,
+      "transfers": "Direct only; storage host supplies files and performs no training.",
+      "kimi_handoff": "A running event publisher waits only for Kimi new-natural completion and the Kimi multipage component; it assembles the actual data, derives the phase recipe and publishes the parent-bound K2 command without waiting for Qwen/MF1.",
+      "encoding_reservations": {
+        "current_baseline_gib": 22.759544372558594,
+        "remaining_encoder_caps_gib": 1.14,
+        "composition_allowance_mib": 24,
+        "audit_and_block_rounding_mib": 8,
+        "guard_mib": 64,
+        "total_bound_gib": 23.993294372558594,
+        "cap_gib": 24,
+        "scope": "Bounded concurrent data tasks; no additional encoder starts outside this reservation."
+      }
+    },
+    "references": [
+      "https://arxiv.org/html/2607.24653v1#S3.SS1",
+      "https://arxiv.org/html/2608.30320v1",
+      "https://huggingface.co/datasets/HuggingFaceM4/Docmatix/tree/0725b65616e0e5f6024be10e38ddf8d8c48664fd"
+    ],
+    "source_release": {
+      "commit": "32511e8910d7f6a188a563fb383d8f6a07b6c3a7",
+      "scope": "Video continuation, complete multipage source, text-origin exclusions and declared source holdout threshold; model computation unchanged."
+    },
+    "validation": {
+      "scope": "Targeted CPU checks for changed data and admission paths; the historical full regression above is not a new full-suite claim.",
+      "multipage_and_source_resume": 23,
+      "source_network_budget": 1,
+      "source_holdout_gate": 1,
+      "video_continuation_related": 24,
+      "text_origin_and_existing_media_filters": 56,
+      "ruff": "passed",
+      "mypy_ignore_missing_imports": "passed",
+      "gpu_smoke_runs": 0
+    }
+  }
 }
