@@ -661,7 +661,11 @@ def encode_corpus(
                         rejected["requires_native_media_encoder"] += 1
                         continue
                     if stage == "pretrain":
-                        old = reusable.get(row["sample_id"])
+                        old = None
+                        if reuse_binding is not None:
+                            if not isinstance(row.get("sample_id"), str) or not row["sample_id"]:
+                                raise ValueError("text span reuse requires a sample_id")
+                            old = reusable.get(row["sample_id"])
                         if old is not None:
                             identity, old_tokens, old_labels, offset, length = old
                             if _text_encoding_identity(row) != identity:
