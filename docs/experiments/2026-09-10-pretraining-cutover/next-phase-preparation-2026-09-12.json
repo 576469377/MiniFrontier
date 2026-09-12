@@ -1,0 +1,165 @@
+{
+  "kind": "next_phase_preparation_snapshot",
+  "observed_utc": "2026-09-12T07:26:20.059940+00:00",
+  "source": {
+    "commit": "baeffd7ddedf8c34e61f22d5717158bb0cc09647",
+    "dirty": false,
+    "implementation_sha256": "4d61aaec89a01f1e4751f419c603291fb5fa193d1ca1854f54e56fd672364dfc"
+  },
+  "implementation": [
+    "Preserve the effective previous holdouts and exclusions when merging new text.",
+    "Reuse verified old token spans and encode new text; keep active phase inputs immutable.",
+    "Decode and encode real video frames for Kimi, Qwen and MF1.",
+    "Dispatch successor phases on file and process events using exact parent and input identities.",
+    "Observe continuous same-attention main-phase performance during formal updates; retain parent, data and transition checks.",
+    "Keep the offline quickstart compatible with records that do not use incremental encoding identifiers."
+  ],
+  "validation": {
+    "ruff": "passed",
+    "mypy": "passed",
+    "cpu_regression": {
+      "passed": 664,
+      "failed": 0,
+      "skipped": 1,
+      "deselected_cuda": 54,
+      "seconds": 210.24,
+      "command": "CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 python -m pytest -q -m 'not cuda'"
+    },
+    "offline_regression": "Found in the first full run and fixed in baeffd7; the subsequent full suite passed.",
+    "real_video_encoding": {
+      "independent_clips": 4,
+      "frames": 32,
+      "kimi": {
+        "main_ce": 471,
+        "visual_features": 480
+      },
+      "qwen": {
+        "main_ce": 471,
+        "visual_features": 720
+      },
+      "mf1": {
+        "main_ce": 433,
+        "visual_features": 720
+      },
+      "scope": "CPU data-path checks; not a training or capability result."
+    }
+  },
+  "text": {
+    "candidate_reference_tokens": {
+      "code": 50006670,
+      "math": 40000399,
+      "chinese": 70000949,
+      "english": 3000027
+    },
+    "reference_tokenizer_sha256": "2a85c8917120b6501e3fd5bd30e9f8bf8a8f08ac89e07dae522f9940bb92306b",
+    "token_scope": "Reference-token counts are not final native or MF1 training CE counts.",
+    "merge_state": "completed_pending_encoding",
+    "splits": {
+      "train": 484918,
+      "test": 6836,
+      "val": 5018
+    },
+    "corpus_database_sha256": "f2bd2de17336b81b1c0b22eb4fbda315df218e6d4bc1825ae782df387f62eed8",
+    "corpus_manifest_sha256": "826274b0a4f4f1523233cd03dadf8c1faf2e4e6998e0279fbb0b53a8ac765d76",
+    "retained_prior_validation_documents": 3737,
+    "retained_prior_test_documents": 4432,
+    "training_delta": {
+      "unchanged_train": 395877,
+      "unchanged_test": 4432,
+      "add_train": 89041,
+      "remove_train": 965,
+      "unchanged_val": 3737
+    },
+    "new_direct_benchmark_matches_removed_by_group": 86,
+    "native_encoding_state": "running",
+    "mf1_encoding_state": "encoding_and_checking",
+    "next_phase_admitted": false
+  },
+  "media": {
+    "natural_images": {
+      "state": "running",
+      "candidate_target": 25000,
+      "scope": "Partial top-up; reuse existing image and OCR inventories before further downloads."
+    },
+    "video": {
+      "state": "running",
+      "accepted_candidates": 1529,
+      "minimum_final_train_groups": 10000,
+      "source_revision": "43a297dde47e2036721f259397df04b3c338d002",
+      "license": "CC-BY-NC-4.0",
+      "formally_admitted": false,
+      "encoding_state": "waiting_for_finalized_video_and_encoding_space"
+    },
+    "mf1_p1_video": {
+      "target_ce": 8000000,
+      "length_sample_clips": 500,
+      "mean_caption_ce": 62.838,
+      "estimated_one_pass_ce_for_10000_train_clips": 628380,
+      "sufficient_inventory_confirmed": false
+    },
+    "repetition_plan_correction": "Two passes were the K1/Q1 execution settings, not a frozen K2/Q2 pretraining cap. Compare per-domain independent QA inventory and cumulative media exposures before selecting subsequent phase epochs; the SFT two-epoch rule does not apply here."
+  },
+  "successors": {
+    "D2": {
+      "state": "source_released_waiting_data_and_parent",
+      "pending": [
+        "complete_D1_with_actual_phase_end_validation",
+        "D1_process_exit",
+        "audited_native_encoding"
+      ],
+      "phase_ce": 500000000,
+      "sequence_length": 2048,
+      "microbatch": 8,
+      "global_input_tokens": 32768,
+      "main_training_started": false
+    },
+    "K2_Q2_MF1_P1": {
+      "state": "media_preparation_running_final_bindings_pending",
+      "main_training_started": false
+    }
+  },
+  "active_first_phases": [
+    {
+      "model": "minikimik3",
+      "phase": "K1",
+      "state": "running",
+      "main_ce_tokens": 172630161,
+      "phase_token_budget": 200000000,
+      "phase_progress": 0.8632
+    },
+    {
+      "model": "miniqwen4",
+      "phase": "Q1",
+      "state": "running",
+      "main_ce_tokens": 67725302,
+      "phase_token_budget": 300000000,
+      "phase_progress": 0.2258
+    },
+    {
+      "model": "minideepseekv4",
+      "phase": "D1",
+      "state": "running",
+      "main_ce_tokens": 149564183,
+      "phase_token_budget": 250000000,
+      "phase_progress": 0.5983
+    },
+    {
+      "model": "minifrontier1",
+      "phase": "p0",
+      "state": "running",
+      "main_ce_tokens": 82610625,
+      "phase_token_budget": 200000000,
+      "phase_progress": 0.4131
+    }
+  ],
+  "storage_limits_gib": {
+    "minimum_free": 80,
+    "temporary_total_text_and_media_encoding": 24,
+    "steady_state_encoding_target": 15,
+    "new_natural_raw": 25,
+    "new_natural_metadata": 3,
+    "new_video_frames": 6,
+    "new_video_metadata": 3
+  },
+  "limits_note": "These are write limits, not measured usage. Existing active inputs remain retained. Transfers use direct connections; no GPU work is scheduled on the storage host."
+}
