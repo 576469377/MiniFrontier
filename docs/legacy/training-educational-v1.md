@@ -1,8 +1,8 @@
-> 2026-09-07 educational-v1 接口档案，保留作失败对照。命令、默认值与 Demo 行为按该版本解释，不能作为当前操作指南。当前入口见 [训练指南](../guides/training.md)。
+# educational-v1 训练接口档案（2026-09-07—08）
 
-# 训练与 demo
+本页保留初版训练接口及 9 月 8 日失败后对采样、验证和显式预算的修正。复现时需使用对应版本；当前操作见[训练指南](../guides/training.md)。
 
-`educational-v1` 的基本对话效果验收失败，见[复盘](../training-failure-v1.md)。本文的短步数命令演示接口，不能用于估算学会语言所需的训练量。
+`educational-v1` 的基本对话效果验收失败，见[复盘](../training-failure-v1.md)。下列短步数命令只演示接口。
 
 ## 环境与模型
 
@@ -22,13 +22,13 @@ uv run minifrontier prepare-data --output data/educational-v1 \
   --vocab-size 65536 --sequence-length 256 --seed 42
 ```
 
-处理器记录 Hub revision，默认 `--sampling reservoir` 读取完整源文件并做确定性的均匀蓄水池抽样，避免只取文件开头的题材偏置；记录完整文件 hash、原始行数、样本 hash 和抽样种子。它仍然是样本集，不是全量语料训练。读取完整文件有相应下载耗时。复现旧工程实验可显式使用 `--sampling prefix`，不应将前缀视为代表性语料。最终目录已完成时拒绝覆盖，扩大语料请使用新目录。也可在 Python 中调用 `prepare_data(..., local_sources={"pretrain": ..., "sft": ..., "dpo": ...})` 接入自己的 JSONL；本地来源仍按指定行数读取前缀。
+处理器记录 Hub revision，默认 `--sampling reservoir` 读取完整源文件并做确定性的均匀蓄水池抽样，避免只取文件开头的题材偏置；记录完整文件 hash、原始行数、样本 hash 和抽样种子。蓄水池抽样需要读取完整文件，实际下载量大于最终样本量。复现旧工程实验可显式使用 `--sampling prefix`，不应将前缀视为代表性语料。最终目录已完成时拒绝覆盖，扩大语料请使用新目录。也可在 Python 中调用 `prepare_data(..., local_sources={"pretrain": ..., "sft": ..., "dpo": ...})` 接入自己的 JSONL；本地来源仍按指定行数读取前缀。
 
 预训练格式为 `{"text":"..."}`；SFT 为 `{"conversations":[{"role":"user","content":"..."},{"role":"assistant","content":"..."}]}`；偏好数据为 `chosen` / `rejected` 两份完整消息列表。SFT 仅监督 assistant 内容与结束标记，问题和 padding 标签为 -100。DPO 分别求 chosen/rejected completion 的 log probability 总和。
 
 产物包括 `manifest.json`、`tokenizer.json`、清洗后的 JSONL、预训练 int32 token 流和 SFT/DPO mmap 数组。预训练流用相邻块重叠一个 token，避免块边界漏掉 next-token 目标；不同文档以 EOS 分隔，未施加文档间隔离注意力。固定长度截断会丢失长回复尾部，manifest 记录保留下来的监督量。
 
-当前首批产物：预训练训练集 7,627,201 token；验证集 158,065 token；SFT 29,449 条训练对话，3,906,250 个有效监督 token；DPO 8,735 对训练偏好。源数据卡许可是 Apache-2.0 / CC-BY-NC-2.0，保持其使用与署名条件。
+当时首批产物：预训练训练集 7,627,201 token；验证集 158,065 token；SFT 29,449 条训练对话，3,906,250 个有效监督 token；DPO 8,735 对训练偏好。源数据卡许可是 Apache-2.0 / CC-BY-NC-2.0，保持其使用与署名条件。
 
 ## 单卡与双卡
 
@@ -46,7 +46,7 @@ CUDA_VISIBLE_DEVICES=2,3 OMP_NUM_THREADS=2 uv run torchrun --standalone \
   --output outputs/minikimik3/two-gpu/pretrain --steps 1000
 ```
 
-模型/优化器为 FP32，CUDA 前向采用 BF16 autocast 与 activation checkpointing。Kimi/DeepSeek 当前默认 AdamW 是本地教学优化选择；Qwen 默认走已有语义分块 Muon/AdamW。学习率、warmup、负载平衡更新率等不声称来自未公开官方配方。
+模型/优化器为 FP32，CUDA 前向采用 BF16 autocast 与 activation checkpointing。本版 Kimi/DeepSeek 默认 AdamW，Qwen 使用语义分块 Muon/AdamW；学习率、warmup 和路由更新率为本地设置。
 
 ## 自动运行三个模型
 
@@ -58,7 +58,7 @@ uv run python scripts/launch_training.py --run coverage-example \
 uv run python scripts/training_status.py --run coverage-example
 ```
 
-控制器脱离当前终端运行。预训练和 SFT 分别必须显式指定 `--*-steps` 或 `--*-epochs`，二者互斥；epoch 根据当前长度、数据量和全局 batch 换算为向上取整的更新次数，并将预计样本数、覆盖轮次写入 recipe。一轮命令仅演示预算方式，不保证模型可用。DPO 默认 0 步；应先检查 SFT 的留出集和真实生成，再单独安排偏好训练。Qwen/DeepSeek 中间增加 100 步索引器蒸馏和 200 步稀疏 CPT。基础/SFT/DPO 长度 256，索引器阶段长度 1,024，超过 Qwen 的 512 token 索引预算，实际触发稀疏选择。每步全局样本数 = 单卡 batch × 卡数 × 梯度累积。
+控制器脱离当前终端运行。预训练和 SFT 分别必须显式指定 `--*-steps` 或 `--*-epochs`，二者互斥；epoch 根据当前长度、数据量和全局 batch 换算为向上取整的更新次数，并将预计样本数、覆盖轮次写入 recipe。DPO 默认 0 步；应先检查 SFT 的留出集和真实生成，再单独安排偏好训练。Qwen/DeepSeek 中间增加 100 步索引器蒸馏和 200 步稀疏 CPT。基础/SFT/DPO 长度 256，索引器阶段长度 1,024，超过 Qwen 的 512 token 索引预算，实际触发稀疏选择。每步全局样本数 = 单卡 batch × 卡数 × 梯度累积。
 
 训练期验证从整个留出集均匀抽取固定样本，不再固定取前几行；`--eval-batches 64` 为每 rank 最多 64 个样本，`--eval-batches 0` 为完整留出集。偏好阶段额外记录 `preference_accuracy`。样本抽取不会消耗训练 RNG。
 
@@ -70,7 +70,7 @@ CUDA_VISIBLE_DEVICES=2 uv run python scripts/evaluate_checkpoints.py \
   --output docs/audits/minikimik3-capability-v1.json
 ```
 
-报告包含 551 条 SFT 验证样本、172 对偏好验证样本（取决于实际数据集）、token 加权 NLL、偏好指标、真实生成和权重 SHA256。脚本不会按 loss 自动判定“能正常对话”。
+报告包含 551 条 SFT 验证样本、172 对偏好验证样本（取决于实际数据集）、token 加权 NLL、偏好指标、真实生成和权重 SHA256。生成检查与损失分别记录。
 
 启动前检查 GPU 是否被占用，不干预其他任务。每模型控制器持有文件锁，阶段失败立即停止。目录结构为：
 
@@ -118,7 +118,7 @@ CUDA_VISIBLE_DEVICES=0,1 uv run torchrun --standalone --nproc_per_node=2 \
   --output outputs/minikimik3/example/grpo --steps 100
 ```
 
-GRPO 在线采样，每题多回复，用可验证整数结果给奖励，组内标准化 advantage，使用 clipped policy ratio 和冻结参考策略 KL。全部回复都错误时，组内奖励无法提供改善信号；日志中的奖励需结合模型已有能力判断。此入口不声称复现工具代理环境或完整官方 RL 系统。
+GRPO 在线采样，每题多回复，用可验证整数结果给奖励，组内标准化 advantage，使用 clipped policy ratio 和冻结参考策略 KL。全部回复都错误时，组内奖励无法提供改善信号；日志中的奖励需结合模型已有能力判断。该版任务限于可验证算术。
 
 MOPD 将 `--stage` 改为 `mopd`，加 `--teacher-map path/to/teachers.json`。映射例如：
 
@@ -129,7 +129,7 @@ MOPD 将 `--stage` 改为 `mopd`，加 `--teacher-map path/to/teachers.json`。�
 }
 ```
 
-要求至少两个不同本地检查点、相同 tokenizer，覆盖所有任务的 domain/effort。教师文件 SHA256 纳入恢复配方，替换教师后不能继续声称精确恢复。学生在线生成，教师在同一前缀评估 token，使用 Kimi K3 报告公式 15 的 stop-gradient、裁剪 log-ratio 奖励。没有教师时不会伪造教师或调用付费 API。真实领域教师质量和训练投入需要自行提供。
+要求至少两个不同本地检查点、相同 tokenizer，覆盖所有任务的 domain/effort。教师文件 SHA256 纳入恢复配方，替换教师后不能继续声称精确恢复。学生在线生成，教师在同一前缀评估 token，使用 Kimi K3 报告公式 15 的 stop-gradient、裁剪 log-ratio 奖励。教师需另行训练与评估。
 
 ## 监控与 demo
 
@@ -144,4 +144,4 @@ uv run minifrontier generate \
   --device cuda:0 --prompt '请简单解释什么是大语言模型。'
 ```
 
-demo 发现每个模型最新的教学检查点。预训练/稀疏 CPT 采用续写，SFT 后采用对话模板。训练尚不足时输出可能乱码、重复或不遵循指令；工程验收不等于已训练出可用聊天能力。远程服务器可用 SSH 转发 6006/7860 端口。
+初版 Demo 自动发现每个模型最新的教学检查点；9 月 8 日失败复盘后改为默认 SFT 并提供阶段切换。预训练/稀疏 CPT 采用续写，SFT 后采用对话模板。本版权重的实际输出仍存在重复、偏题与格式错误。远程服务器可用 SSH 转发 6006/7860 端口。

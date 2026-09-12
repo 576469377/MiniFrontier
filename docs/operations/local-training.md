@@ -1,31 +1,34 @@
-# 本机 strategy-v2 调度记录
+# strategy-v2 历史调度记录
 
 > 历史执行记录：此页保留当时的设备安排和候选值。当前配方、暂停/停止决定与新任务顺序以[实验总计划](../experiments/current-plan.md)为准。
 
 本页记录 2026-09-09 的工作站实验安排，供研究复盘参考。目录、端口和设备编号对应当时的环境，实时状态以本机日志为准。通用操作见[训练指南](../guides/training.md)。
 
 三个来源模型按 [2026-09-08 三份方案](../training-strategies/2026-09-08/) 执行；随后增加的融合模型实验见 [MF1 共卡记录](mf1-mechanism-experiments.md)。
-旧 educational-v1 的训练量、数据和生成效果未达到目标，
-[旧接口说明](../legacy/training-educational-v1.md) 保留作历史对照，不能作为本轮配方。
+更早的 educational-v1 配方及失败情况见[旧接口说明](../legacy/training-educational-v1.md)。
 
-## 环境与实时状态
+## 查看历史运行
 
 ```bash
 uv sync --locked --extra dev --extra training --extra monitoring --extra data
 uv run minifrontier doctor
-uv run python scripts/training_status.py
+uv run python scripts/training_status.py --run strategy-v2
 ```
+
+正式训练进度使用 `--run formal`；完整说明见[实验管理](experiment-management.md)。
+
+<details>
+<summary>2026-09-09 的设备、源码目录与看板设置</summary>
 
 最初双卡分配为 Kimi GPU 0–1、Qwen 2–3、DeepSeek 4–5。
 2026-09-09 起，后续每个 run 使用一张卡，首先安排 GPU 0–5 并发六组；
-6、7 上的既有任务不动。正式计划的默认 GPU 为 Kimi 0、Qwen 2、DeepSeek 4，
+6、7 上的既有任务未纳入该轮调度。当时计划的默认 GPU 为 Kimi 0、Qwen 2、DeepSeek 4，
 对应 `experiment_gpu_ids` 提供每个模型的两张独立试验卡。
 训练使用独立的代码目录 `outputs/strategy-source-pilot-v2`，避免开发目录的后续修改影响运行。
 `outputs/strategy-source-posttraining-v2` 是后训练接口的独立验证快照，尚未用于正式 RL。
 新版配方曲线在 `http://127.0.0.1:6007`；6006 保留旧 educational-v1 对照。
 
-6007 不展示 smoke / quickstart 的工程检查曲线。`mf1-quickstart-v2` 的原始日志仍保留，
-但不在 `outputs/tensorboard-strategy-v2` 下建立展示链接；后续工程冒烟检查也不要接入此看板。
+该看板按学习实验分组；smoke / quickstart 的原始日志单独保留。
 
 6007 通过 `outputs/tensorboard-strategy-v2` 的目录链接读取：
 `dual-gpu/` 对应 `strategy-recipe-pilots-v2`，`single-gpu/` 对应
@@ -51,25 +54,25 @@ TensorBoard，不需要重启训练。
 另由 MF1 监督进程执行显存和磁盘保护。6007 的 `mf1-mechanism/` 展示新增两组，
 `mf1-reference/` 保留此前小配置学习曲线；随机输入的显存探测不接入看板。
 
-工作盘写入默认保留 50 GiB，单卡预留 2 GiB 显存；数据、下载缓存和 kernel 缓存
+当时工作盘写入保留 50 GiB，单卡预留 2 GiB 显存；数据、下载缓存和 kernel 缓存
 都位于 `${WORKSPACE}`。每个原子 checkpoint 的临时重叠空间也计入估算。
 失败复盘及保留产物见[权重清理记录](artifact-retention.md)；当前可恢复点不会按中间权重清理。
 
-## 数据与配置
+</details>
+
+## 历史数据与配置
 
 新模型配置使用 `configs/strategies/*-v2.json`；DeepSeek 视觉接入另有
 `minideepseekv4-vision-v1.json`。机器可读阶段预算在对应 `*-plan.json`，原文不修改。
 
 | 数据目录 | 用途与限制 |
 |---|---|
-| `data/strategy-tokenizers-v2` | 同一训练字节上的 32K/64K；当前按方案默认冻结 64K，质量比较未完成 |
+| `data/strategy-tokenizers-v2` | 同一训练字节上的 32K/64K；当时使用默认 64K，质量比较未完成 |
 | `data/strategy-diagnostic-v2`、`strategy-diagnostic-<family>-v2` | 算术记忆和原生颜色依赖诊断；不是泛化基准 |
 | `data/strategy-recipe-public-v2`、`strategy-recipe-encoded-64k-v2` | 约 45.49M train CE 的公开文本/可核验合成数学配方池 |
 | `data/strategy-recipe-joint-v2`、`strategy-recipe-<family>-64k-v2` | Kimi/Qwen 配方池再加 96 张真实图像；未满足正式视觉分布 |
 
-数据有来源/revision/许可、分组去重和 tokenizer/文件校验；来源文件前缀、少数图片、
-算术模板都不能代表完整正式数据。许可、自然科学、OCR/图表/视频、独立验证规模
-和唯一图像数量仍未通过正式准入。
+这些配方池保留来源、revision、许可、分组和文件校验，用于短程比较。它们与后来准备的正式语料是不同数据版本，当前来源和库存见[数据指南](../guides/data-sources.md)。
 
 ## 当时的自动执行范围
 
@@ -80,10 +83,10 @@ K0/Q0/D0 在方案允许的 0.5–2M CE 范围内验证可学习性。Kimi 和 D
 续诊断通过后，Qwen 已在 `miniqwen4-after-q0-extension` 启动独立配方试验。
 
 诊断通过后，每个模型从零分别训练 Muon 20M CE 与 AdamW 20M CE，保持相同
-数据、seed 和预算。当前 seq512，每 rank microbatch 1，按实际非 padding 输入
+数据、seed 和预算。当时 seq512，每 rank microbatch 1，按实际非 padding 输入
 累积到全局至少 16,384；LR 3e-4，Muon 语义配方另用 0.01，400K token warmup/WSD。
 每 200 次更新保存并执行完整本地验证；先 50 次预热，再记录 200 次真实更新性能。
-Kimi/Qwen 配方试验只使用小型 caption 图池，另设 1,000 次图像暴露，不冒充正式混合。
+Kimi/Qwen 配方试验使用小型 caption 图池，另设 1,000 次图像暴露；其分布与正式混合不同。
 
 每个试验目录有 `run.json`、`metrics.jsonl`、`status.json`、`checkpoint.pt`、
 `best-model.pt`、完成后的 `model.pt` 和 `performance.json`。父目录 `pilot.json`
@@ -111,11 +114,9 @@ S/D 衡量单个 run 的速度，2S/D 估算同样两张卡并行独立试验的
 不同时间的共享主机负载会影响测量，不能只凭 GPU 利用率断言通信瓶颈。
 长上下文和正式图文分布需重新测量；单卡数据吞吐记录不能替代后续阶段的显存验收。
 
-原始方案正文和正在运行的实验代码副本保持原样，硬件安排调整记录在机器计划中。
-六组仍是试验，不自动启动正式预算或替换 demo。新队列不直接恢复双卡优化器/采样器，
-从而避免将跨卡数恢复误称为精确续训。磁盘继续保留50 GiB，检查点沿用原子写入保护。
+单卡六组使用新的随机初始化，未继承双卡优化器或采样器；两种卡数的运行按独立实验比较。设备调整记录在机器计划中，原方案和运行源码保留原样。
 
-## 正式阶段顺序与恢复
+## 当时的阶段安排与恢复语义
 
 ```text
 Kimi：诊断 → 配方比较 → 联合 PT 2B CE → SFT/QAT → 9 教师 → MOPD → 草稿 → 验收
@@ -128,7 +129,7 @@ DeepSeek：Text-v2 2.5B CE → 冻结文本接视觉 → Vision CPT 300M CE → 
 当时要求继续学习率、MTP 和补种子对照；后来已停止扩大筛选，以既有结果选择首版工作参数。当前正式入口和阶段继承见[训练指南](../guides/training.md)。
 
 同一阶段使用相同配方和 `--resume <run>/checkpoint.pt` 恢复优化器/数据/RNG；
-阶段迁移使用 `--init`，记录新优化器与新预算。需要结构或精度变更时显式使用
+当时的普通阶段迁移使用 `--init`，建立新优化器与预算。后来增加的正式 program 阶段继承由[当前训练指南](../guides/training.md)说明。需要结构或精度变更时显式使用
 `--init-transition text-to-vision / qat / mtp-weight`；DeepSeek V1 配合
 `--visual-warmup`，只更新视觉、aligner 和新视觉标记。
 
@@ -145,6 +146,4 @@ uv run minifrontier generate --checkpoint /path/to/model.pt --prompt '图中有�
 uv run minifrontier demo --root outputs --device cpu
 ```
 
-CLI 的图像和模式选项仅表明输入路径存在，实际能力必须有对应训练和留出验收。
-浏览器默认只列出通过能力验收且绑定该检查点的权重，目前没有新的合格模型。
-不能把训练脚本正常退出、loss 下降、诊断记忆成功或单元测试通过说成模型可用。
+图像和模式选项需要配套的训练权重。浏览器默认筛选已通过能力评估且绑定当前文件的检查点；诊断展示方式见[Demo 指南](../guides/demo-experiments.md)。

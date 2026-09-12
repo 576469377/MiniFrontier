@@ -1,8 +1,14 @@
-# MF1 小配置学习实验：独立分组修正版
+# MF1 小配置学习实验：分组修正版（2026-09-09）
 
-本页记录 2026-09-09 的小配置实验。完整 228.24M 配置完成过 CPU 随机图像前后向与缓存对照；本页的学习曲线来自约 132K 参数小配置。两者不是同一个训练能力结果。
+[返回实验索引](../../experiments.md) · [当前训练安排](../../pretraining-plan.md)
 
-此次小配置使用第 2 版合成诊断数据：32 条算术、32 条色块图片、8 条色块视频，val/test/demo 的算术输入也独立分组。训练和生成评测使用相同版本的代码；相对初版的变化，以及代码、数据、词表和权重的校验值见[实验报告](report.json)。
+**修正数据分组后，小模型仍能记住训练题，留出算术仍为 0/6。** 本轮修复 [v1](../mf1-reference-v1/README.md) 的 val/test/demo 算术输入重叠，以相同版本的训练和评估代码重跑约 132K 参数模型。
+
+报告时间：**2026-09-09 12:58 UTC**。代码、数据、词表和权重身份见[报告](report.json)。
+
+## 实验条件与结果
+
+训练集为 32 条算术、32 张色块图像、8 段色块视频，CPU 两线程。表中训练题、val 与媒体扰动各自统计，分母为相应任务的样本数。
 
 | 实测 | 结果 |
 |---|---|
@@ -13,11 +19,15 @@
 | val 置黑媒体 | 图像 1/4、视频 0/2 |
 | val 倒序 / 重复首时间组 | 视频均为 1/2 |
 
-这说明小配置可以记忆训练题并从色块媒体中获取信息；留出算术完全失败，样本量与视觉任务也不足以证明通用能力。未消费正式 3B 预算，不代表完整 228M 模型已经训练好，也不能用于估计 3090 的正式吞吐。
+结果仍表现为训练题记忆、色块媒体依赖和留出算术失败。视觉样本量很小；完整 228.24M 配置另做的 CPU 前后向/缓存检查不属于这条学习曲线。
 
-[逐步 CSV](overfit-curve.csv) 可重画 loss、梯度和 token 曲线。[工程验收记录](../../audits/minifrontier1-validation.json)单列 CPU 回归、安装包、导出和 Demo API 的验证范围。
+## 曲线与检查范围
 
-可用当前 checkout 做同规格机制复现：
+[CSV](overfit-curve.csv)可重画 loss、梯度和 token 曲线：横轴用 `step` 或累计 `ce_tokens`，纵轴用 `train_lm_loss`。这是训练集上的拟合过程，留出效果由上表的生成检查记录。
+
+[验证记录](../../audits/minifrontier1-validation.json)另列安装、导出与 Demo API 检查；报告中的 `full_model` 与 `overfit` 分别保存完整配置工程检查和小配置学习结果。
+
+## 同规格复现
 
 ```bash
 CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 uv run minifrontier mf1 prepare-fixture \
@@ -32,4 +42,8 @@ uv run minifrontier mf1 evaluate --checkpoint outputs/mf1-reproduce/checkpoint.p
   --output outputs/mf1-reproduce/generation.json
 ```
 
-这些命令用于重复同规格实验，不保证与历史结果逐位一致。精确恢复需要报告所记录的代码内容、数据、词表和原检查点；仅检出一个 Git 提交不足以满足全部条件。原始权重、媒体和完整日志不随源码分发。
+当前代码可运行同规格实验；逐位复现需要报告绑定的源码、数据、词表和原检查点。原始权重、媒体与完整日志不随源码分发。
+
+---
+
+[返回实验索引](../../experiments.md) · [当前训练安排](../../pretraining-plan.md) · [完整配置 GPU 实验](../mf1-gpu-mechanism-v1/README.md)

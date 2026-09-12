@@ -1,117 +1,54 @@
-# 文档与仓库核对（2026-09-12）
+# 文档整理记录（2026-09-12）
 
-逐篇阅读 **76 份项目 Markdown**，覆盖首页、模型、指南、实验、运维、发布、历史方案及社区模板。本轮整合已有未提交修订，统一内容与实际配置；未移动活跃训练的源码或数据。六份日期方案保留原文，其历史状态由方案索引解释。
+本轮完整阅读 76 篇项目 Markdown，修订其中 60 篇，覆盖首页、模型、操作、实验和历史说明。19 个 README 与 4 个模型展示页均完成内容和展示整理。修改范围限于文档；训练源码副本、数据、配置、检查点和共用环境保持原位。已有及并行进行的代码改动不属于本轮整理。
 
-## 修正内容
+<a id="修正内容"></a>
 
-- 当前安排集中在预训练主计划；模型页解释架构与能力，指南提供操作，实验档案保留数值和结论。旧链接保留短入口。
-- 四模型状态更新为首阶段正式训练已启动。区分现有首阶段库存、后续数据目标，以及“代码支持”“实际训练过”“能力通过”。
-- 工作配方同步实际 microbatch、来源和数据绑定；更正 DeepSeek 未生效的 Muon 参数误述。旧 20M pilot、50+200 性能测量和完整人工内容审核不再作为重复前置任务。
-- 合并重复叙述，将冗长启动流水放入按阶段展开的历史记录；保留失败结果、日期、配置和重画曲线所需数值。
-- 当前进度命令默认读取四条正式训练，结合实际进程与最新 JSONL，避免把滞后的检查点状态当作当前进度。TensorBoard 分类与原日志含义统一。
-- CI 和贡献者安装说明补齐 data、monitoring 测试依赖；补全一处数据类型标注，更新策略测试的授权状态模拟。
-- 69 份非活跃编码完成远端校验归档，回收本地载荷约 8.14 GiB，编码缓存降至 14.79 GiB；活跃依赖及历史元数据保留。
+## 内容调整
 
-主计划保持 2B / 3B / 2.5B / 3B 主 CE 预算、随机首阶段初始化和各模型日程。运行中的模型结构、损失、样本顺序、batch 和优化器计算未因文档整理改变。
+- 首页前置模型对照与 MF1 结构，提供 CPU 示例、训练状态和文档入口；各目录 README 按用途导航。
+- 四篇模型页首屏列出容量、输入与训练阶段，正文按数据流、模块计算、配置和验证范围组织。保留 MF1 三张详细 SVG 与 MTP 数据流；三个来源模型先展示本仓库结构，官方报告原图附后对照。
+- 实验 README 首屏说明问题、采集时间与结论；长表按需展开，保留完整指标、图表及复现入口。
+- 操作指南说明输入、命令和产物；实验报告将结果、条件、失败与更正分开。历史“运行中”均按采集日期理解。
+- 当前阶段、预算和数据依赖集中在预训练主计划；研究方案保留设计依据，旧指南保留兼容入口。
+- 开发、监控和绘图说明区分环境用途，监控安装使用独立目录，避免调整活跃训练的共用依赖。
 
-## 验证
+具体更正包括：`mf1 params` 统计模块参数，优化器分组应读取 `optimizer_groups.json`；Kimi 草稿的 3/7/11 是从 0 起算的层索引；MF1 稠密预训练不计算索引器损失；历史训练状态命令需指定 `--run strategy-v2`；MF1 100K 扩展曾启动并因吞吐低停止。
 
-- 完整 CPU 回归：**618 通过、1 跳过**；54 个 CUDA 标记测试未运行。跳过项为 Qwen 未声明原生 MX QAT 配方。
-- Ruff 检查与格式检查通过；Mypy 对 190 个源码文件通过。
-- 三个来源模型的公开首阶段配方绑定与各自冻结运行逐项一致。六份日期方案完整复读，共 2811 行，原文字节保留。
-- 791 个本地链接、52 个章节锚点、代码围栏及折叠结构检查通过；文档中的 181 份 JSON、10 份 SVG 及 36 份配置 JSON 可解析，3 份上游图示的文件校验值匹配。关键 CLI 使用参数帮助和示例语法核对，不以新增 GPU 训练验证文案。
-- wheel 与 sdist 构建及 Twine 严格检查通过。解压 wheel 的独立前缀可读取模型配置，正式策略入口明确要求 Git checkout；没有修改训练共用环境。
-- 打包内容不含训练权重、原始语料或数据库；组件许可元数据与导出许可文件一致。上游图示保留各自来源和权利说明。
+<a id="逐篇范围"></a>
 
-首次 CPU 回归发现一个测试模拟遗漏授权字段，已修正；另一项恢复检查在并发编辑期间未通过源码身份校验，隔离复查和完整回归均通过。恢复保护未放宽。
+## 阅读范围
 
-## 尚未完成
+| 范围 | 篇数 | 处理方式 |
+|---|---:|---|
+| 首页、贡献/模型卡模板、更新记录与社区文件 | 8 | 精简说明和提交要求；保留安全、行为及第三方归属条款 |
+| [文档根目录](../README.md) | 13 | 统一导航、架构、主计划和实验入口；保留短跳转页 |
+| [模型页](../models) | 4 | 重写结构说明，核对层序、参数口径和能力状态 |
+| [操作指南](../guides/README.md) | 8 | 整理命令、输入、预期产物及执行限制 |
+| [实验档案](../experiments.md) | 14 | 明确采集日期、比较条件、结果、失败和更正 |
+| [实现审计](README.md) | 6 | 区分历史检查范围与当前结论，保留数值依据 |
+| [运维文档](../operations) | 7 | 区分现行管理与历史机器安排，修正状态及监控命令 |
+| [历史设计](../legacy) | 5 | 标明对应接口和日期，保留失败结果及现行入口 |
+| [研究方案](../training-strategies/README.md) | 7 | 重写索引；六份日期原文保持字节一致 |
+| [图示索引](../assets/README.md)及[来源](../assets/upstream/README.md) | 2 | 保留作者、版本、图号和素材许可范围 |
+| [发布说明](../releases/v0.1.0.md) | 1 | 明确研究预览、安装包支持范围和待交付项 |
+| [脚本导航](../../scripts/README.md) | 1 | 按当前维护与历史诊断列出用途和入口 |
+| **合计** | **76** | 全文阅读，按实际问题修订 |
 
-完整基础预训练和可用聊天权重尚未交付。下一阶段仍缺部分领域文本、正式视频、阶段数据绑定与实际父检查点评估；已完成构造的代码/数学增量仍待合并去重和编码。DeepSeek 的 4000 步续写观察仍有重复，随后沿原配方恢复。
+六份研究方案中，四份由配置绑定 SHA-256；另外两份记录历史执行决策。它们的旧状态通过索引解释。许可证、原始实验 JSON/CSV、图示及历史脚本附件保留内容，未以改写文案的方式修改证据。
 
-本次没有逐一重新访问全部外部链接，没有完成从零安装全部依赖或原始语料的外部重建，也没有重做全部上游论文实验。私密反馈渠道仍需维护者补充；来源声明不等同于对所有数据或图示授予统一许可。
+<a id="验证"></a>
 
-[当前训练与曲线快照](../experiments/2026-09-10-pretraining-cutover/formal-progress.json)和[执行优化记录](training-infrastructure.md)分别保存训练观察与数值依据。
+## 本轮检查
 
-## 逐篇范围
+本地链接、章节锚点、代码围栏、折叠标签和表格列数检查通过；38 条 CLI 示例的参数、6 个 JSON 示例、181 份 JSON 记录、10 份 SVG 和 4 张 Mermaid 图均可解析。命令检查不执行训练或数据构造。六份日期方案内容保持一致，四份配置绑定校验通过。
 
-以下各篇均已完整阅读。日期方案和历史失败数值保留，当前内容按职责整理。
+整理前后，四个训练进程的启动身份相同，三个独立源码目录的代码、脚本和配置摘要一致。原始附件、图示、许可证及日期方案共 259 个文件的内容校验一致。本轮没有发送暂停或终止请求，也未安装依赖、运行 GPU 检查、移动或清理训练产物。
 
-| 文档 | 核对重点 |
-|---|---|
-| [.github/pull_request_template.md](../../.github/pull_request_template.md) | 导航、术语、维护信息与范围 |
-| [CHANGELOG.md](../../CHANGELOG.md) | 导航、术语、维护信息与范围 |
-| [CODE_OF_CONDUCT.md](../../CODE_OF_CONDUCT.md) | 导航、术语、维护信息与范围 |
-| [CONTRIBUTING.md](../../CONTRIBUTING.md) | 开发依赖、验证命令与贡献范围 |
-| [MODEL_CARD_TEMPLATE.md](../../MODEL_CARD_TEMPLATE.md) | 导航、术语、维护信息与范围 |
-| [README.md](../../README.md) | 首次使用、项目定位、训练状态与数据/许可入口 |
-| [SECURITY.md](../../SECURITY.md) | 导航、术语、维护信息与范围 |
-| [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md) | 组件许可、数据与图示的分发范围 |
-| [docs/README.md](../README.md) | 导航、术语、维护信息与范围 |
-| [docs/README.zh-CN.md](../README.zh-CN.md) | 短兼容入口及其目标 |
-| [docs/architecture.md](../architecture.md) | 导航、术语、维护信息与范围 |
-| [docs/assets/README.md](../assets/README.md) | 图示来源、模块对应关系与权利说明 |
-| [docs/assets/upstream/README.md](../assets/upstream/README.md) | 图示来源、模块对应关系与权利说明 |
-| [docs/audits/README.md](README.md) | 实现与数值证据，区分历史结果和当前结论 |
-| [docs/audits/documentation-review.md](documentation-review.md) | 本轮范围、检查结果与限制 |
-| [docs/audits/minifrontier1-execution-performance.md](minifrontier1-execution-performance.md) | 实现与数值证据，区分历史结果和当前结论 |
-| [docs/audits/minifrontier1-implementation.md](minifrontier1-implementation.md) | 实现与数值证据，区分历史结果和当前结论 |
-| [docs/audits/strategy-implementation-v2.md](strategy-implementation-v2.md) | 实现与数值证据，区分历史结果和当前结论 |
-| [docs/audits/training-infrastructure.md](training-infrastructure.md) | 实现与数值证据，区分历史结果和当前结论 |
-| [docs/demo-experiments.md](../demo-experiments.md) | 短兼容入口及其目标 |
-| [docs/draft-adaptation.md](../draft-adaptation.md) | 短兼容入口及其目标 |
-| [docs/experiments.md](../experiments.md) | 按问题导航、正式快照、状态命令与复现方法 |
-| [docs/experiments/2026-09-09-preview/README.md](../experiments/2026-09-09-preview/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/2026-09-10-batch-frontier/README.md](../experiments/2026-09-10-batch-frontier/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/2026-09-10-batch-tuning/README.md](../experiments/2026-09-10-batch-tuning/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/2026-09-10-exclusive-remote.md](../experiments/2026-09-10-exclusive-remote.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/2026-09-10-mf1-update/README.md](../experiments/2026-09-10-mf1-update/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/2026-09-10-pretraining-cutover/execution.md](../experiments/2026-09-10-pretraining-cutover/execution.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/2026-09-10-pretraining-cutover/working-recipes.md](../experiments/2026-09-10-pretraining-cutover/working-recipes.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/2026-09-10-recipe-snapshot/README.md](../experiments/2026-09-10-recipe-snapshot/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/current-plan.md](../experiments/current-plan.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/mf1-gpu-mechanism-v1/README.md](../experiments/mf1-gpu-mechanism-v1/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/mf1-language-performance-v1/README.md](../experiments/mf1-language-performance-v1/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/mf1-reference-v1/README.md](../experiments/mf1-reference-v1/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/mf1-reference-v2/README.md](../experiments/mf1-reference-v2/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/experiments/preview-quickstart/README.md](../experiments/preview-quickstart/README.md) | 问题、变量、实际数值、时间边界和复现入口 |
-| [docs/guides/README.md](../guides/README.md) | 命令、产物、依赖与适用范围 |
-| [docs/guides/data-sources.md](../guides/data-sources.md) | 命令、产物、依赖与适用范围 |
-| [docs/guides/demo-experiments.md](../guides/demo-experiments.md) | 命令、产物、依赖与适用范围 |
-| [docs/guides/draft-adaptation.md](../guides/draft-adaptation.md) | 命令、产物、依赖与适用范围 |
-| [docs/guides/minifrontier1.md](../guides/minifrontier1.md) | 命令、产物、依赖与适用范围 |
-| [docs/guides/posttraining-adaptation.md](../guides/posttraining-adaptation.md) | 命令、产物、依赖与适用范围 |
-| [docs/guides/quickstart.md](../guides/quickstart.md) | 命令、产物、依赖与适用范围 |
-| [docs/guides/training.md](../guides/training.md) | 命令、产物、依赖与适用范围 |
-| [docs/legacy/minideepseekv4-text-v1.md](../legacy/minideepseekv4-text-v1.md) | 保留历史设计/结果，标明现行入口 |
-| [docs/legacy/minikimik3-text-v1.md](../legacy/minikimik3-text-v1.md) | 保留历史设计/结果，标明现行入口 |
-| [docs/legacy/miniqwen4-text-v1.md](../legacy/miniqwen4-text-v1.md) | 保留历史设计/结果，标明现行入口 |
-| [docs/legacy/project-review-educational-v1.md](../legacy/project-review-educational-v1.md) | 保留历史设计/结果，标明现行入口 |
-| [docs/legacy/training-educational-v1.md](../legacy/training-educational-v1.md) | 保留历史设计/结果，标明现行入口 |
-| [docs/minifrontier1.md](../minifrontier1.md) | 短兼容入口及其目标 |
-| [docs/models/minideepseekv4.md](../models/minideepseekv4.md) | 结构、参数、来源、入口及实现/训练/能力状态 |
-| [docs/models/minifrontier1.md](../models/minifrontier1.md) | 结构、参数、来源、入口及实现/训练/能力状态 |
-| [docs/models/minikimik3.md](../models/minikimik3.md) | 结构、参数、来源、入口及实现/训练/能力状态 |
-| [docs/models/miniqwen4.md](../models/miniqwen4.md) | 结构、参数、来源、入口及实现/训练/能力状态 |
-| [docs/operations/artifact-retention.md](../operations/artifact-retention.md) | 当前管理方法、资源边界和历史调度背景 |
-| [docs/operations/exclusive-gpu-queue.md](../operations/exclusive-gpu-queue.md) | 当前管理方法、资源边界和历史调度背景 |
-| [docs/operations/experiment-management.md](../operations/experiment-management.md) | 当前管理方法、资源边界和历史调度背景 |
-| [docs/operations/local-training.md](../operations/local-training.md) | 当前管理方法、资源边界和历史调度背景 |
-| [docs/operations/mf1-language-performance.md](../operations/mf1-language-performance.md) | 当前管理方法、资源边界和历史调度背景 |
-| [docs/operations/mf1-mechanism-experiments.md](../operations/mf1-mechanism-experiments.md) | 当前管理方法、资源边界和历史调度背景 |
-| [docs/operations/shared-gpu-experiments.md](../operations/shared-gpu-experiments.md) | 当前管理方法、资源边界和历史调度背景 |
-| [docs/posttraining-adaptation.md](../posttraining-adaptation.md) | 短兼容入口及其目标 |
-| [docs/pretraining-plan.md](../pretraining-plan.md) | 实际配置、阶段预算、当前数据缺口、恢复和资源限制 |
-| [docs/project-review.md](../project-review.md) | 原审查的日期、历史状态和当前入口 |
-| [docs/quickstart.md](../quickstart.md) | 短兼容入口及其目标 |
-| [docs/releases/v0.1.0.md](../releases/v0.1.0.md) | 研究预览定位、安装包支持范围和未完成训练 |
-| [docs/training-failure-v1.md](../training-failure-v1.md) | 失败指标、原因与历史边界 |
-| [docs/training-strategies/2026-09-08/01-MiniKimi-K3-全流程训练与结构改造方案.md](../training-strategies/2026-09-08/01-MiniKimi-K3-全流程训练与结构改造方案.md) | 完整复读，保留绑定原文；历史待办不作为现行前置任务 |
-| [docs/training-strategies/2026-09-08/02-MiniQwen4-全流程训练与结构改造方案.md](../training-strategies/2026-09-08/02-MiniQwen4-全流程训练与结构改造方案.md) | 完整复读，保留绑定原文；历史待办不作为现行前置任务 |
-| [docs/training-strategies/2026-09-08/03-MiniDeepSeek-V4-全流程训练与结构改造方案.md](../training-strategies/2026-09-08/03-MiniDeepSeek-V4-全流程训练与结构改造方案.md) | 完整复读，保留绑定原文；历史待办不作为现行前置任务 |
-| [docs/training-strategies/2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md](../training-strategies/2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md) | 完整复读，保留绑定原文；历史待办不作为现行前置任务 |
-| [docs/training-strategies/2026-09-10/05-four-model-pretraining-execution-plan.md](../training-strategies/2026-09-10/05-four-model-pretraining-execution-plan.md) | 完整复读，保留绑定原文；历史待办不作为现行前置任务 |
-| [docs/training-strategies/2026-09-10/06-recipe-initialization-review.md](../training-strategies/2026-09-10/06-recipe-initialization-review.md) | 完整复读，保留绑定原文；历史待办不作为现行前置任务 |
-| [docs/training-strategies/README.md](../training-strategies/README.md) | 六份原文与现行实现/执行规则的差异 |
-| [docs/training.md](../training.md) | 短兼容入口及其目标 |
-| [scripts/README.md](../../scripts/README.md) | 实际脚本、正式状态入口与历史兼容命令 |
+此前代码检查记录的 618 项 CPU 通过、1 项跳过属于前一轮工程验证；本轮未重跑完整回归、构建或安装包测试。JSON/SVG 解析检查仅验证文件格式，外部链接与全部历史实验未重新执行。
+
+<a id="尚未完成"></a>
+
+## 仍需跟进
+
+完整预训练、后续阶段数据和能力评估按[主计划](../pretraining-plan.md)推进。文档已保留 MF1 INT8 CUDA 专家路径、DDP 暂停同步、MF1 预算完成状态显示及 sdist 历史附件不完整的限制；对应代码问题需另行修复和验证。私密报告渠道仍见 [SECURITY](../../SECURITY.md) 中的待补说明。

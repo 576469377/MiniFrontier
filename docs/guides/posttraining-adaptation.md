@@ -1,10 +1,10 @@
 # 三个来源模型的后训练接口
 
-本页介绍 MiniKimi-K3、MiniQwen4 和 MiniDeepSeek-V4 的对话模板、图像/视频输入、工具任务及训练记录。接口已完成工程测试，完整监督微调、领域教师和强化学习训练仍待推进。MiniFrontier1.0 的命令见[融合模型指南](minifrontier1.md)。
+本页说明 MiniKimi-K3、MiniQwen4 和 MiniDeepSeek-V4 的后训练数据格式、媒体输入、工具执行及恢复行为。完整 SFT、领域教师和强化学习训练尚未完成，当前进展见[预训练计划](../pretraining-plan.md)。MF1 使用[独立接口](minifrontier1.md#后训练与草稿)。
 
 ## 共享模板
 
-新 SFT 记录显式设置 `mode` 与 `effort`，经 `chat_tokens` / `prepare_record` 统一编码。固定词表不变：12/13/14 是 low/high/max，15/16 是 think 边界，17 是 final，18 是 tool call，19 是 tool result。角色和 effort 提示没有 CE；assistant 的真实 reasoning、输出结构、正文和 EOS 有 CE。工具观察、图像和 user/system 没有 CE。没有显式控制字段的历史数据保留旧模板。
+新 SFT 记录显式设置 `mode` 和 `effort`，由 `chat_tokens` / `prepare_record` 编码。固定 token ID 为：12/13/14 对应 low/high/max，15/16 为 think 边界，17 为 final，18/19 为 tool call/result。CE 只监督 assistant 的 reasoning、输出结构、正文和 EOS；角色、effort、user/system、媒体和工具观察均被 mask。
 
 ```json
 {
@@ -18,19 +18,19 @@
 }
 ```
 
-`direct` 不接收 reasoning；`thinking` 的最终答案必须有实际 reasoning，不能只改 effort 标签。支持 `non-thinking`、`thinking-high`、`thinking-max` 别名。去重身份包含实际 reasoning/tool_calls，单纯换标签仍会去重。一个首问最多三个不同答案的限制仍在。模式是否有用必须分别训练并验收，模板本身不提供推理能力。编码 manifest 记录 legacy/control-v1/mixed；正式 SFT/RL 拒绝混用。
+`direct` 不接收 reasoning；`thinking` 的最终答案要求实际 reasoning。另支持 `non-thinking`、`thinking-high`、`thinking-max` 别名。去重纳入 reasoning 和 tool_calls，单纯更换标签不会产生新样本，同一首问最多保留三个不同答案。
 
-checkpoint、best-model 和最终导出保留模板；推理默认按导出模板编码。新模板默认 direct/low，CLI 可显式 `--mode thinking --effort high`。
+未设控制字段的历史数据沿用旧模板。编码 manifest 标记 `legacy`、`control-v1` 或 `mixed`，正式 SFT/RL 拒绝混用。检查点及导出权重保存模板；新模板推理默认 direct/low，可用 `--mode thinking --effort high` 切换，实际效果需要分别训练和验收。
 
 ## 原生多模态 rollout
 
-RL 目录包括 `train.jsonl`、`val.jsonl` 和包含 `chat_template: "control-v1"` 的 manifest。每行有 prompt 或 turns、domain、effort、明确 verifier；媒体有原始资源引用及解码 RGB 哈希。`--rl-max-media-features` 默认 64，整个图像/视频按各家 processor 编码。prompt 预算是 `sequence_length - rollout_tokens`；超长样本拒绝，不会截图或删除依赖图像后继续奖励。
+RL 数据目录包含 `train.jsonl`、`val.jsonl` 和标记 `chat_template: "control-v1"` 的 manifest。每条记录提供 prompt 或 turns、domain、effort、verifier；媒体提供原始资源引用与解码 RGB 哈希。`--rl-max-media-features` 默认 64，图像/视频按对应 processor 完整编码。prompt 上限为 `sequence_length - rollout_tokens`，超长样本直接拒绝。
 
-同一输入复制 G 份后，媒体 batch 索引同步复制；学生、reference、对应 teacher 均看到相同图像和轨迹。教师子集排序后重排媒体索引。视觉教师要求同模型家族、同原生视觉配置、同模板；OPD/MOPD 要求相同 QAT 配方。注册器仍要求独立且合格的权重，代码测试中的小型测试教师没有真实教师资格。
+同一 prompt 采样 G 条回答时同步复制媒体索引，学生、reference 和对应 teacher 使用相同图像与轨迹；选择教师子集时重排索引。视觉教师必须来自同一模型家族，使用相同视觉配置和模板；OPD/MOPD 另要求相同 QAT 配方。教师权重须独立通过资格评估，测试中的微型教师仅验证接口。
 
 ## 本地工具任务
 
-任务只操作自己的可重复模拟状态：`lookup`、`search`、`read_file`、`replace_text`、`set_value`、`python`。数据库、文件和键值状态在内存中隔离；Python 使用现有 seccomp worker，不能读文件、联网或创建进程。工具 schema 自动加入任务的 user/system 上下文，标准答案只留在 verifier。
+支持 `lookup`、`search`、`read_file`、`replace_text`、`set_value` 和 `python`，操作范围限任务自身的模拟状态。数据库、文件与键值状态在内存中隔离；Python 由 seccomp worker 执行，禁止读文件、联网和创建进程。工具 schema 加入 user/system 上下文，标准答案仅供 verifier 使用。
 
 ```json
 {
@@ -53,18 +53,20 @@ RL 目录包括 `train.jsonl`、`val.jsonl` 和包含 `chat_template: "control-v
 }
 ```
 
-assistant 采样 `<|tool_call|>` 后输出严格 JSON：`{"calls":[{"name":"set_value","arguments":{"key":"done","value":true}}]}`，并真实生成 EOS。也支持 `{type:"function",function:{name,arguments}}` 形式。每轮最多四个调用，整条最多八个；初始/终态最多 256 KiB，单工具结果最多 8192 字节。文件替换必须命中一次且路径在允许集合内；失败不会留下该次半完成修改。工具返回再接入下一 assistant turn，观察和角色前缀的行为概率占位为零、损失为 `-100`。多轮共享总 response token 上限；没有人为补 EOS，也不复用旧策略轨迹。
+assistant 在 `<|tool_call|>` 后生成严格 JSON 和 EOS，例如 `{"calls":[{"name":"set_value","arguments":{"key":"done","value":true}}]}`；也支持 `type: "function"` 与嵌套 `function` 对象。每轮最多四个调用，整条轨迹最多八个；初始/终态上限 256 KiB，单工具结果上限 8192 字节。文件替换要求路径在允许集合内且仅命中一次，失败不保留部分修改。
 
-终止原因包括 final、truncated、invalid、length、context_limit；工具报错单独记录并使严格终态奖励失败。中间状态正确但未完成 final 不算任务成功。支持整数、精确文本、严格 JSON、小函数测试，以及显式单位换算/容差的 quantity 和归一化 box 坐标误差奖励，不从自由文本随意抽取第一个数字。
+工具返回后开始下一 assistant turn，观察及角色前缀的行为概率占位为零、标签为 `-100`。多轮共用 response token 预算，不人为补 EOS。终止原因包括 final、truncated、invalid、length、context_limit；工具报错单独记录，并使严格终态奖励失败。中间状态正确但没有完成 final，仍不算成功。
+
+verifier 支持整数、精确文本、严格 JSON、小函数测试、带单位换算/容差的 quantity 和归一化 box 坐标误差。按任务指定的规则评分，不从自由文本中默认抽取第一个数字。
 
 ## 训练记录与恢复
 
-训练与验证的每条完整轨迹在更新前写入 `trajectories/`，包括实际策略参数 SHA256、源码/tokenizer/teacher 身份、任务与媒体身份、完整输入、动作掩码、真实采样 logprob、工具输出、奖励拆解和终止原因。文件名按内容寻址且不可变；恢复时重新用当前恢复的策略和 RNG 采样，不把磁盘旧轨迹当成当前 on-policy 数据。
+更新前将完整训练/验证轨迹写入 `trajectories/`，保存策略参数 SHA256、源码/tokenizer/teacher、任务与媒体身份，以及输入、动作掩码、采样 logprob、工具输出、奖励分项和终止原因。文件按内容寻址且不可变。恢复后用恢复的策略与 RNG 重新采样，旧轨迹仅作记录。
 
-轨迹与 checkpoint 一样遵守跨进程磁盘写入锁及默认 50 GiB 剩余下限；哈希分块搬到 CPU，避免额外复制整个模型。正式长跑需把轨迹容量计入磁盘估算。RL 记录实际有效输入、response、图像/帧/feature 数，即使零优势窗口也记录暴露量。GRPO/MOPD 的损失按有效 response 平均，DeepSeek OPD 按实际 response 位置平均；验证采用对应分母。全零优势不做 weight decay 或路由状态更新。
+轨迹与检查点共用磁盘锁和默认 50 GiB 保留线，长期运行须计入轨迹空间。RL 记录有效输入、response、图像、帧及 feature 数，零优势窗口也记录数据曝光。GRPO/MOPD 按有效 response 平均损失，DeepSeek OPD 按实际 response 位置平均，验证沿用对应分母。全零优势时跳过优化器与路由状态更新。
 
-行为采样沿用调用者精度，避免 GPU 采样强制 BF16 却用 FP32 重算。每批在更新前检查冻结策略概率比；显式本地最大偏差为 CPU FP32 2e-5、CUDA FP32 0.001、低精度 0.02，超过即失败。KDA 的 CUDA chunk/recurrent 累积不同，因此单列 CUDA 上限。微型原生视觉测试中 BF16 最大约 0.00147；这不是正式上下文长度的通过证明。完整测量及失败记录见[精度检查](../audits/native-rollout-precision-v2.json)。
+采样沿用调用者精度，更新前检查冻结策略的概率比偏差，上限为 CPU FP32 `2e-5`、CUDA FP32 `0.001`、低精度 `0.02`，超限则停止。CUDA 单列阈值是因为 KDA chunk/recurrent 的累积方式不同。微型视觉测量及失败记录见[精度检查](../audits/native-rollout-precision-v2.json)，长上下文需独立核验。
 
 ## 范围限制
 
-当前实现同步处理完整短轨迹，未接入长任务 partial rollout/过期策略修正、真实软件仓库修复或动态工具返回图片。CLI 支持 `--image` 重复传入多图，训练端使用原生视频 processor；来源模型的浏览器媒体上传、按已验收模式展示，以及完整视觉课程仍待完成；MF1 已有独立媒体 Demo。九/十二教师、QAT 的 5M 校准、正式 RL token 预算与人工奖励审查均尚未完成。
+当前同步处理完整短轨迹，未实现长任务 partial rollout、过期策略修正、真实仓库修复或工具动态返回图片。CLI 支持重复 `--image` 输入多图，训练端支持原生视频 processor；来源模型浏览器媒体上传尚未接入。九/十二教师、QAT 的 5M 校准、正式 RL 预算、人工奖励审查及完整视觉课程均待完成。

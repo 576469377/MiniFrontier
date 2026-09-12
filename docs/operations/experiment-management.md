@@ -1,6 +1,6 @@
 # 实验登记、调度与归档
 
-日常入口：[当前实验计划](../experiments/current-plan.md)、[公开实验索引](../experiments.md)。执行安排集中在[预训练主计划](../pretraining-plan.md)，对应机器可读配置维护在 `configs/experiments.json`；每台机器的执行队列是冻结后的命令实例，不另写一份科学配方。
+执行安排见[预训练主计划](../pretraining-plan.md)，公开结果见[实验索引](../experiments.md)。`configs/experiments.json` 登记比较组与运行目录；各机器的队列计划保存实际命令、输入身份和资源约束。
 
 每次运行以主机标签和相对输出目录生成稳定的 `exp-*` 编号。父试验、实际训练阶段及合成测速分别登记；它们可以属于同一个比较组，台账条数不等于 GPU 任务数。台账自动读取原始运行记录，更新时不会启动训练或修改配方。
 
@@ -11,7 +11,7 @@
 python -m scripts.training_status --run formal
 # 输出 outputs/experiment-registry/current.json 和 current.md
 python -m scripts.experiment_registry
-# 可选的传统轮询模式；本轮数据准备已使用下文的事件接续
+# 持续刷新台账；数据准备的完成回调使用下文的事件接续
 python -m scripts.experiment_registry --watch 30
 # 导出一次不可覆盖的公开台账快照（只含元数据）
 python -m scripts.export_experiments --workspace "$PWD" \
@@ -20,11 +20,11 @@ python -m scripts.export_experiments --workspace "$PWD" \
 
 正式状态命令结合最新 JSONL 和本地训练进程显示进度，优先于保存检查点时的滞后状态。没有进程可见性时报告 `unknown`；ETA 仅涵盖当前阶段的更新时间，验证、存盘和后续阶段另计。
 
+截至 2026-09-12，状态脚本尚未把 MF1 的 `budget_complete_unqualified` 映射为完成：进程退出后可能显示 `stopped`。遇到该状态，应结合 `recorded_state`、实际 token 账本和检查点确认预算完成情况；能力是否通过仍须单独判断。
+
 重复刷新受文件锁保护。台账包含来源模型、MF1、历史诊断、本机队列及已经同步的远端记录；不会扫描实验代码目录。迁移后遗留的空白等待记录合并到实际远端运行，已产生结果的独立运行保留各自编号。缺少完成证据或记录过期时显示 `unverified` / `unverified_stale`，不能根据目录存在推断正在训练。
 
 ## TensorBoard
-
-正式预训练使用本机 `6008` 端口，展示目录为 `outputs/tensorboard-pretraining-v1`。`6007` 保留策略探测，`6006` 保留早期教学训练。服务命令保存在 `outputs/services/tensorboard-pretraining-v1/service.json`，同步器配置保存在 `outputs/services/pretraining-tensorboard-grouped-v1/`；这些是维护环境的本地记录。
 
 四个模型统一使用 `train / eval / perf`。训练计数与验证分母分开，常规和阶段末验证分别显示。启动、QK 裁剪及缓存回收等事件保留在 JSONL，不重复画成训练曲线；具体指标见[展示说明](../audits/training-infrastructure.md#tensorboard-展示)。
 
@@ -41,16 +41,26 @@ python -m scripts.export_experiments --workspace "$PWD" \
 ```
 
 ```bash
+# 在独立环境安装监控依赖，避免训练期间同步共用 .venv
+UV_PROJECT_ENVIRONMENT=outputs/envs/monitoring uv sync --locked --extra monitoring
 # 每次启动指定新的视图目录；源训练目录及其 tensorboard 子目录须已存在
-uv run python scripts/sync_mf1_tensorboard.py \
+UV_PROJECT_ENVIRONMENT=outputs/envs/monitoring uv run --no-sync python scripts/sync_mf1_tensorboard.py \
   --registry /path/to/registry.json --output outputs/tensorboard-grouped-new \
   --watch --event-driven --interval 5
 # 仅在端口空闲时启动；已有服务沿用其记录的启动命令
-uv run tensorboard --logdir outputs/tensorboard-pretraining-v1 \
+UV_PROJECT_ENVIRONMENT=outputs/envs/monitoring uv run --no-sync tensorboard \
+  --logdir outputs/tensorboard-pretraining-v1 \
   --host 127.0.0.1 --port 6008 --reload_interval 5
 ```
 
 Linux 事件模式等待文件写入，`--interval` 合并短时间内的更新。普通 `--watch` 为兼容的轮询模式。半行 JSON 等待写完后读取；源日志被截断或替换时停止并报错，需新建视图。原始日志、事件和检查点均不改写。切换视图时重启 TensorBoard 可清除其内存中的旧标签，训练进程继续运行。
+
+<details>
+<summary>维护环境的展示目录与端口</summary>
+
+2026-09-12 的正式训练视图为 `outputs/tensorboard-pretraining-v1`，端口 `6008`；`6007` 为策略探测，`6006` 为早期教学训练。服务命令保存在 `outputs/services/tensorboard-pretraining-v1/service.json`，同步器配置保存在 `outputs/services/pretraining-tensorboard-grouped-v1/`。复现时按自己的目录和空闲端口配置。
+
+</details>
 
 ## 启动前记录什么
 
@@ -83,27 +93,34 @@ Linux 事件模式等待文件写入，`--interval` 合并短时间内的更新�
 
 一个 batch 扫描可以正常完成并包含 OOM 档位；这只表示找到了该配置的边界。长期配方运行只有实际 token 预算完成后才算完成，OOM 不能替代成功。台账会报告重复活跃输出或同卡多个活跃任务，设备独占仍由队列锁执行。
 
-主动停止时，先停用相关自动派发，核对进程身份和现有恢复点，再终止指定任务。`interruption.json` 保存最新已记录指标、停止原因和恢复点情况。没有新检查点时，内存中的训练状态不会被描述为已保存；更换 batch 后的新初始化试验也不能把旧试验的部分 token 合并进来。
+需要中断时，先暂停相关后续派发，再核对训练进程身份和恢复点。支持 `pause.request` 的单卡训练器可在输出目录收到该文件后完成当前更新、保存检查点并退出；恢复前检查 `status.json`、检查点和进程退出状态。固定源码目录可能使用较早版本，操作前核对该版本是否支持请求文件。
+
+截至 2026-09-12，来源模型 DDP 仍由各 rank 独立检查 `pause.request`，暂停判定尚未同步，可能导致不同 rank 进入不同流程。该文件不能视为已验证的 DDP 安全暂停方式。直接终止进程也不保证新增检查点，只能恢复到最后成功保存的位置。具体续训参数见[来源模型指南](../guides/training.md#保存恢复与评估)和 [MF1 指南](../guides/minifrontier1.md)。
+
+中断记录 `interruption.json` 保存最新已记录指标、停止原因和恢复点情况。更换 batch 后重新初始化的试验保留独立身份和 token 账本。
 
 ## 历史 batch 筛选与当前训练计划
 
-此前三个模型先测固定合成输入的 16/32/64/128，再进行 1M CE 的真实数据对照。当前已选定首版工作参数，不再自动派发这套扫描；下文解释历史选择器行为。选择器要求来源、数据、tokenizer、seed、学习率和输入目标一致，16/32 对照均完成，并具有足够测量次数和有限的验证损失。它选择实际吞吐距最快档不超过 5% 的最小 batch。
+当前工作参数见[执行配方](../experiments/2026-09-10-pretraining-cutover/working-recipes.md)。早期 batch 扫描和停止原因保存在[边界与重排记录](../experiments/2026-09-10-batch-frontier/README.md)。
+
+在队列目录放置 `dispatch-pause.json` 可阻止支持该功能的控制器派发新任务，已有 worker 继续运行。旧冻结控制器需核对身份后停止控制器并保留 worker。恢复时使用符合当前安排的计划，保留此前的暂停与停止记录。
+
+<details>
+<summary>历史 batch 选择器与临时权重规则</summary>
+
+此前三个模型先测固定合成输入的 16/32/64/128，再进行 1M CE 的真实数据对照。选择器要求来源、数据、tokenizer、seed、学习率和输入目标一致，16/32 对照均完成，并具有足够测量次数和有限的验证损失。它选择实际吞吐距最快档不超过 5% 的最小 batch。
 
 这一选择仅用于最多 1M CE 的执行确认。**2026-09-10 复核已取消按吞吐自动派发 20M CE 的规则**：旧训练器的大 microbatch 会扩大实际全局 batch，有限的短测损失不足以选择长期配方。已有自动派发结果保留原始身份并标为探索证据；新长训必须来自独立登记的全局 batch/LR 计划。不同模型的 LR/batch schedule 依据见总计划。
 
-在队列目录放置 `dispatch-pause.json` 可阻止新版控制器派发新任务，已有 worker 仍受观察。旧冻结控制器没有该功能，需核对身份后停止控制器并保留 worker；不得修改正在执行的冻结脚本。恢复时创建经过复核的新计划，不能删除记录后自动沿用已经废止的选择规则。
-
 历史 1M CE 测速预先声明临时权重：完成后先记录本次目录内权重的文件名、大小和 SHA-256，再清理这些权重。配置、验证结果、数值曲线及 TensorBoard 保留；既有检查点与 20M CE 配方产物按原规则保留。当时磁盘保留 50 GiB，显存保留 2 GiB；当前正式训练的空间规则以[主计划](../pretraining-plan.md#resources)及冻结运行配置为准。
 
-本机和远端可用不同的调度器进程，但共用各自机器的物理卡锁。短任务结束后，后续任务按已登记的依赖接续；等待某个候选结果的设备会明确显示等待原因。历史安排和测量见[batch 边界与重排记录](../experiments/2026-09-10-batch-frontier/README.md)。
+</details>
 
 ## 目录与记录边界
 
-- 模型计算在 `minifrontier/models/<model>/`，训练算法在 `minifrontier/training/`；新 batch 控制复用现有训练器和游标，不新增另一套 trainer。
-- 新工作站队列统一使用 `run_exclusive_gpu_queue.py`。旧 single/shared 调度器保留供历史复现，不再为新研究增加 `queue_vN.py`；设备分配变化写计划 JSON。
-- `experiment_registry.py` 负责观测与用途核对；`export_experiments.py` 保留历史数值导出职责。台账不隐式修改运行配方。
-- `docs/pretraining-plan.md` 维护当前安排，`docs/experiments/current-plan.md` 保留兼容入口，日期目录保存不可覆盖的快照，`docs/operations/` 解释如何执行和管理。历史策略/复盘不混入入门指南。
-- 台账中的 `audit_findings` 如实列出旧记录缺少来源/数据身份和实际 batch 越界等问题。缺少的历史 hash 不补造，未知记录不能作为正式准入证据。
+- 新队列使用 `run_exclusive_gpu_queue.py`，设备分配和依赖写入计划 JSON；旧 single/shared 调度器用于历史复现。
+- `experiment_registry.py` 观测运行并核对用途；`export_experiments.py` 导出数值快照。台账的 `audit_findings` 标注来源、数据身份缺失及实际 batch 越界等问题，缺失证据保留为未知。
+- 当前安排维护在 `docs/pretraining-plan.md`，日期目录保存历史快照，`docs/operations/` 说明执行方法。运行中的源码和产物目录保持原位，新的代码整理在独立工作副本进行。
 
 ## 数据准备的事件接续
 

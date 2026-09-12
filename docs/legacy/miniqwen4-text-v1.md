@@ -1,10 +1,10 @@
-> 2026-09-07 文本版本档案。下文容量、接口、训练状态和未实现项仅适用于该版本。当前状态见[模型页](../models/miniqwen4.md)。
+# MiniQwen4：初版文本实现（2026-09-07）
 
-# MiniQwen4
+本页记录初版文本主干、优化器与缓存。当前配置和训练状态见[模型介绍](../models/miniqwen4.md)。
 
-MiniQwen4 是从固定官方实现派生的缩小文本模型，不是官方发布的模型名称。
+MiniQwen4 是本项目对 Qwen4 实验架构缩小实现的命名，文本计算层来自固定版本的官方源码。
 该版本完成文本主干、无 MTP 的语言模型适配器、基础优化与推理缓存验收；
-当时已启动文本教学预训练；其后生成检查失败，见[失败复盘](../training-failure-v1.md)。
+当时已启动文本教学预训练，其后生成检查失败，见[失败复盘](../training-failure-v1.md)。
 
 ## 来源与容量
 
@@ -12,7 +12,7 @@ MiniQwen4 是从固定官方实现派生的缩小文本模型，不是官方发�
 [`4177486a9f199bd7be520eff14431071d5d41ec5`](https://github.com/huggingface/transformers/tree/4177486a9f199bd7be520eff14431071d5d41ec5/src/transformers/models/qwen4_exp)。
 发布配置核对的是 Qwen3.8-Flash-Next
 [`de4b8e4d43b917e7706784d8bb445c9af86a3540`](https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/de4b8e4d43b917e7706784d8bb445c9af86a3540/config.json)。
-名称中的 Qwen4 对应该源码的 `qwen4_exp` 架构标识，不代表声称复刻其他未核验版本。
+名称中的 Qwen4 对应该源码的 `qwen4_exp` 架构标识。
 
 | 项目 | 该版缩小配置 |
 |---|---|
@@ -26,13 +26,12 @@ MiniQwen4 是从固定官方实现派生的缩小文本模型，不是官方发�
 | PLE | 第 2 层，2/3-gram，每种 2 头，完整投影/门控/归一化/膨胀卷积 |
 | QSA indexer | 4 头 × 32，压缩比 4，token budget 512 |
 | 输出门控 / RoPE theta | sigmoid / 10,000,000 |
-| 配置最大长度 | 4,096；不是已通过该长度的显存验收 |
+| 配置最大长度 | 4,096；本版未测该长度的显存 |
 | 文本主干参数 | 398,055,200 |
 | 主干 + 未绑定 LM 头 | 431,609,632；**不含 MTP** |
 
 本次核对纠正了早期新配置的 GDN 头比例、共享专家宽度、indexer 头数/维度/
-压缩比、输出门控和 RoPE theta。此前记录的 408,283,072 是修正前的主干计数，
-已被上述数值取代；不删除原审计记录。
+压缩比、输出门控和 RoPE theta。修正前主干计数为 408,283,072；上表为修正后的计数，原审计保留。
 
 ## 训练与缓存实现边界
 
@@ -48,12 +47,11 @@ KL 按报告完成跨头求和/L1、完整块 max-pooling/L1；第二阶段只�
 实现语义分块 Muon：8 步 Polar Express、0.95 Nesterov 动量、按 Q/K/V 头拆分、
 按专家拆分 gate/up；融合 Q/output-gate 中的门控行走 AdamW。PLE key/value 投影走
 Muon，embedding、LM 头、router、门控等走 AdamW，n-gram 表不做 weight decay。
-LR、Adam 参数和其他 decay 是明确的本地验收设置，不声称官方未公开值；
-当前为复制式 DDP，未实现 Canzona/ZeRO/TP 的完整官方工程栈。
+LR、Adam 参数和其他 decay 使用本地设置；并行为复制式 DDP，未实现 Canzona/ZeRO/TP。
 
 缓存覆盖 GDN 卷积/递归状态、PLE 词组/膨胀卷积历史、KV 与 QSA 索引历史。
 状态更新与同一 HF revision 的原始 `cache_utils.py` 对照。
-只支持 eval + no-grad 的无填充文本批次；不声称支持 beam search、rollback、
+仅支持 eval + no-grad 的无填充文本批次，未实现 beam search、rollback、
 offloading、缓存序列化或训练反传。部分 forward 失败后缓存必须 reset，不能继续复用。
 
 ## 工程验收，不是训练曲线
@@ -62,7 +60,7 @@ offloading、缓存序列化或训练反传。部分 forward 失败后缓存必�
 融合优化器分块以及微型双卡更新/恢复另有独立测试。缓存比较同时覆盖 CPU/CUDA、
 FP32/BF16、逐 token 与分段输入、跨 EOS，以及非零 PLE 卷积权重。
 
-实际 431,609,632 参数配置也执行了双卡一次更新，使用合成 token，**不用于评估效果**：
+431,609,632 参数配置完成了一次合成 token 的双卡更新：
 
 | 条件 / 结果 | 数值 |
 |---|---|
@@ -79,17 +77,14 @@ FP32/BF16、逐 token 与分段输入、跨 EOS，以及非零 PLE 卷积权重�
 测量发生在本轮目录整理前。长上下文、更大 batch、MTP 和其他训练阶段
 必须单独测显存，不可外推此结果。
 
-当前教学训练及 TensorBoard 位于 `outputs/miniqwen4/educational-v1/`。
-较早的合成 token 单步记录作为历史审计保留；本轮真实语料的双卡阶段验收单独汇总，
-不会混入教学训练曲线。见[本轮验收](../audits/training-acceptance.json)。
+当时教学训练及 TensorBoard 位于 `outputs/miniqwen4/educational-v1/`。
+合成 token 单步记录与真实语料双卡阶段检查分别保存。见[本轮验收](../audits/training-acceptance.json)。
 
 ## 尚未完成
 
-- MTP 的完整官方训练依据、训练接入与对照验证。
-- MTP、原生视觉和量化感知后训练仍待接入。
-- 更大语料、领域后训练和真实能力评测；当前配方仅为文本教学规模。
-
-公开代码没有披露的训练细节将单独记录，不能用历史模型的简化实现替代。
+- MTP、原生视觉、量化感知后训练及相应对照。
+- 更大语料、领域后训练和能力评测。
+- 长上下文与新增模块的显存测量。
 
 
 ## 当时的执行流程
@@ -101,5 +96,4 @@ CLI 和浏览器生成使用已有 Qwen cache。[操作指南](../guides/trainin
 
 本轮真实语料上完成双 3090、每阶段两步的基础流程；另外在单 3090 上验证了长度
 1,024、batch 2、累积 2 的 sparse CPT 更新，峰值 allocated 约 5,785 MiB。
-该序列长度超过 512 token 的 indexer budget，会实际触发稀疏选择。
-这项显存实测只覆盖所述配置，不代表更长上下文或加入 MTP 后的开销。
+该长度超过 512 token 的 indexer budget，实际触发稀疏选择。测量不含 MTP。

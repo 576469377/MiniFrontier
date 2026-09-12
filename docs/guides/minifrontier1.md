@@ -1,8 +1,8 @@
 # MiniFrontier1.0 使用与训练
 
-本页介绍 `minifrontier mf1` 的数据准备、训练、评估和推理命令。建议先运行下面的离线示例，再阅读自定义数据和分阶段训练部分。当前实现与训练进展见[模型说明](../models/minifrontier1.md)。
+本页介绍 `minifrontier mf1` 的数据、训练、评估、推理和导出接口。首次运行从离线示例开始，架构见[模型说明](../models/minifrontier1.md)，正式阶段与进展见[预训练计划](../pretraining-plan.md)。
 
-以下命令在 Linux 的仓库根目录运行，需要 Python 3.11+ 和 uv；首次克隆见[首页](../../README.md#快速开始)。改用 CUDA 时，先安装 `uv sync --locked --extra dev --extra training --extra monitoring`，并确认所选设备可用。
+命令在 Linux 仓库根目录运行，需要 Python 3.11+ 和 uv；安装步骤见[首页](../../README.md#快速开始)。使用 CUDA 时加装 `--extra training`，并选择空闲设备。训练主机应使用独立开发环境，避免 `uv sync` 调整活跃任务的依赖。
 
 ## 离线最小示例
 
@@ -16,13 +16,32 @@ uv run minifrontier mf1 generate \
   --max-new-tokens 12 --temperature 0 --device cpu
 ```
 
-该图用于展示输入链路，属于训练数据，不能作为视觉能力评测。生成可能为空或错误。示例生成 72 条训练记录：32 条算术、32 条图像色块、8 条带时间戳的视频；另有独立 val/test/demo 分组。它不下载网络数据，不使用已有视觉权重。输出包含覆盖各模块的四层小配置、约 320 词表、训练日志、检查点、参数分组、路由统计与验证记录。
+示例离线生成 72 条训练记录：32 条算术、32 条图像色块、8 条带时间戳的视频，另有独立 val/test/demo 分组。模型使用覆盖各模块的四层小配置和约 320 词表，视觉塔随机初始化。上述图片来自训练集，生成可能为空或错误，不用于评定视觉能力。
 
-quickstart 顺序执行 `pilot` 暂停/恢复、`indexer` 两步、`p2` 稀疏训练两步与 `sft` 两步。提前暂停不改变原 update 预算；恢复会拒绝源码、配置、词表、数据或优化器组变化。示例的接受标记是 `diagnostic_only`，不是正式阶段资格。完整 228M 不能用这个微型实验的耗时估算。
+quickstart 先执行 `pilot`，在第 4 次更新暂停后恢复至第 8 次，再运行 `indexer`、`p2` 和 `sft` 各两步。输出包括模型配置、日志、检查点、参数分组、路由统计和验证报告，标记为 `diagnostic_only`。微型示例的耗时不能外推到 228M 配置。
+
+独立评估使用相同数据与检查点，`--generation` 追加生成任务评分：
+
+```bash
+uv run minifrontier mf1 evaluate \
+  --checkpoint outputs/mf1-quickstart/sft/checkpoint.pt \
+  --data outputs/mf1-quickstart/data --split val --generation \
+  --output outputs/mf1-evaluation.json --device cpu
+```
 
 ## 数据和 tokenizer
 
-样本使用方案第 7 节定义的 `sample_id/source/split_group/messages/media/supervision/provenance` 字段。媒体文件放在输入 JSONL 的目录范围内，并记录尺寸和 SHA256；视频还需记录逐帧校验值和递增时间戳。编码时仅将训练内容送入模型，来源地址、独立的评测答案字段和评测规则作为元数据保存。已有实验的数据来源见[数据说明](data-sources.md)。
+每条 JSONL 记录遵循[样本校验器](../../minifrontier/data/minifrontier1.py)：
+
+| 字段 | 要求 |
+|---|---|
+| `sample_id`、`split_group`、`language`、`domain` | 非空字符串；`split_group` 用于关联样本划分 |
+| `source` / `provenance` | 固定 `dataset`、`revision`、`record_id` 及 `license_record` |
+| `messages` | 角色及类型化 content 列表；文本用 `text`，图像/视频用 `media_id` 引用 |
+| `supervision.type` | `answer_ce` 或 `continuation_ce` |
+| `media`（有媒体时） | 媒体 ID、目录内相对路径、尺寸与 SHA256；视频另需逐帧 hash 和递增时间戳 |
+
+每份媒体须在 messages 中恰好引用一次。来源地址、独立评测答案和评分规则仅作元数据保存，不送入模型。实际语料见[数据说明](data-sources.md)。
 
 ```bash
 uv run minifrontier mf1 prepare-data --input data/candidate/records.jsonl \
@@ -31,20 +50,20 @@ uv run minifrontier mf1 prepare-data --input data/candidate/records.jsonl \
 uv run minifrontier mf1 tokenizer --data data/mf1-candidate-v1 --vocab-size 32768
 uv run minifrontier mf1 encode --data data/mf1-candidate-v1 \
   --config configs/minifrontier1/model_228m_native.json \
-  --output data/mf1-encoded-v1 --max-gib 16
+  --output data/mf1-encoded-v1 --compact --max-gib 16
 ```
 
-以上是准备真实候选数据时使用的接口，`data/candidate` 并非仓库自带数据。allowlist 是 JSON 数组，每项包含 `dataset/revision/license_record/status="admitted"`。未知来源进入隔离记录。准备器在 SQLite 中做精确去重、同媒体/规范化文本的传递分组，再按组切分；近重复与评测重叠检查由后续数据流程执行，准备器本身不将候选 manifest 标为正式数据。首阶段已完成的处理及人工质量复核限制见[数据说明](data-sources.md#已做的处理)。
+`data/candidate` 需自行准备。allowlist 为 JSON 数组，每项包含 `dataset`、`revision`、`license_record` 和 `status: "admitted"`，未知来源进入隔离记录。准备器执行精确去重，将同媒体/规范化文本关联成组后划分数据；近重复、评测排除和正式准入由后续流程负责，见[已做的处理](data-sources.md#已做的处理)。
 
-参考编码产物保存 token IDs、shift 前 labels、三轴 positions、segment/modality/media IDs、媒体 span/grid、计数与来源信息。使用 `mf1 encode --compact` 可生成训练器直接消费的紧凑分片：32K/64K 词表使用 uint16 IDs 与监督位图，位置和样本边界按确定规则恢复，媒体描述保存在稀疏索引中。加载器使用有界 memmap，避免每次采样重新分词和校验整个分片；图片、视频仍在线解码并进入可训练视觉塔。旧 JSONL 路径继续兼容。跨格式输入、位置和输出已做对照；正式训练使用该紧凑编码，性能与计算一致性记录见[执行审计](../audits/training-infrastructure.md)。
+编码保存 token、shift 前标签、三轴位置、segment/modality/media ID、媒体 span/grid 和来源计数。正式训练使用 `--compact`：32K/64K 词表保存为 uint16 IDs 与监督位图，按确定规则恢复位置和样本边界，媒体描述另存稀疏索引。加载器以有界 memmap 读取，图片/视频在线解码并经过可训练视觉塔；旧 JSONL 编码仍可读取。两种格式的计算对照见[执行审计](../audits/training-infrastructure.md)。
 
-文档图片可在对应 media 记录设置 `"representation": "document"`，从原图生成全局缩略图和最多四个裁剪，保存 source box；这些 view 合计消耗媒体 token 预算，但只记一次原图曝光。超过上下文/媒体预算时拒绝，不静默丢掉局部图。该路径尚未取得 OCR 任务能力结果。
+文档图片可设置 `"representation": "document"`，生成全局缩略图与最多四个裁剪，并记录 source box。所有 view 合计占用媒体 token 预算，只计一次原图曝光；超过上下文或媒体预算则拒绝样本。该路径尚无 OCR 能力结果。
 
-正式训练使用冻结的 32K tokenizer；quickstart 的小 BPE 仅用于示例。重建词表时只读取训练划分，并独立比较留出文本。与控制 token 同形的用户字符串会插入 WORD JOINER 转义；代码、数字、空格及缩进不做 NFKC 归一化。词表变更需要重新编码，不能直接接续原检查点。
+正式训练冻结 32K tokenizer，quickstart 的小 BPE 只用于示例。词表只从训练划分构建；变更后必须重新编码，不能直接恢复原检查点。与控制 token 同形的用户文本插入 WORD JOINER 转义，代码、数字、空格及缩进不做 NFKC 归一化。
 
 ## 跨机器媒体读取
 
-紧凑组件可以保留原机器的媒体根目录，通过有界缓存读取原图；token、标签和媒体 span 仍来自同一份已核验编码。先将编码文件和审计复制到训练机器并核对 hash，再为该组件配置访问方式。无需复制整库图片，也不缓存视觉塔的输出。
+紧凑组件可从远端读取原始媒体，并在训练机器设置有界缓存。先复制编码和审计文件、核对 hash，再配置媒体访问；token、标签和 span 仍由同一份编码提供，视觉塔输出不缓存。
 
 例如，在数据主机仅对本机开放图片目录，再从训练主机建立 SSH 转发：
 
@@ -56,7 +75,7 @@ ssh -o ProxyCommand=none -o ProxyJump=none -NT \
   -L 127.0.0.1:18390:127.0.0.1:18390 user@data-host
 ```
 
-通过现有组合接口绑定缓存策略。下面的 `uri_prefix` 对应原编码中的 `images/` 路径；`cache_dir` 相对于组合输出目录。组件顺序、访问配置和原 manifest 校验值都保存在组合 manifest 中。
+通过组合接口设置缓存。`uri_prefix` 对应原编码路径，`cache_dir` 相对于组合输出目录；组件顺序、访问配置及原 manifest 校验值写入组合 manifest。
 
 ```python
 import json
@@ -85,21 +104,19 @@ assemble_components(
 )
 ```
 
-SSH 示例显式直连数据主机；媒体读取器也禁用环境代理。缓存按内容 SHA256 共用文件，每次返回经过校验的原始字节，再执行原媒体变换。容量包括索引、临时写入与图片，最多保留 32,768 个文件；仅驱逐本缓存持有的训练文件。验证／测试读取会持久标记保留，正式训练前应预取固定验证媒体。保留图片填满缓存、来源校验失败或剩余空间不足时停止新增写入。原库由数据主机保留，缓存命中时可离线读取；缺失文件需要原服务与隧道可用。
-
-这一接口解决数据消费与存储问题。来源质量、阶段供给、固定评估和真实训练性能仍按[预训练计划](../pretraining-plan.md)验收。
+SSH 示例直连数据主机，媒体读取器禁用环境代理。缓存按 SHA256 共用并校验原始字节，随后执行原媒体变换；容量包含索引、临时文件和图片，最多 32,768 个文件。仅驱逐本缓存的训练文件，验证/测试媒体持久保留，应在训练前预取。保留文件填满缓存、校验失败或空间不足时停止新增写入。缓存未命中的媒体仍需原服务和隧道可用。
 
 ## 阶段与恢复
 
 ```bash
 uv run minifrontier mf1 params --output outputs/mf1-param-report.json
 uv run minifrontier mf1 recipe
-CUDA_VISIBLE_DEVICES='' MINIFRONTIER_MIN_FREE_GIB=1 \
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MINIFRONTIER_MIN_FREE_GIB=1 \
   uv run minifrontier mf1 train --phase pilot \
   --config outputs/mf1-quickstart/model.json \
   --data outputs/mf1-quickstart/data --output outputs/mf1-local-pilot \
   --device cpu --steps 20 --input-batch-tokens 64 --stop-after-updates 10
-CUDA_VISIBLE_DEVICES='' MINIFRONTIER_MIN_FREE_GIB=1 \
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MINIFRONTIER_MIN_FREE_GIB=1 \
   uv run minifrontier mf1 train --phase pilot \
   --config outputs/mf1-quickstart/model.json \
   --data outputs/mf1-quickstart/data --output outputs/mf1-local-pilot \
@@ -107,13 +124,15 @@ CUDA_VISIBLE_DEVICES='' MINIFRONTIER_MIN_FREE_GIB=1 \
   --resume outputs/mf1-local-pilot/checkpoint.pt
 ```
 
-当前执行顺序、工作参数与阶段目标见[预训练主计划](../pretraining-plan.md)；全面架构对照和正式后训练列为基础模型完成后的工作。阶段配方在 `configs/minifrontier1/*.json`，可由 `mf1 recipe` 查看实际代码中的预算。正式入口使用 `--run-kind strategy --token-budget <该阶段预算> --evidence <阶段准入文件>`，要求 Git checkout。证据文件绑定方案 SHA、前驱检查点、tokenizer、processor、配置、数据和源码；条件按阶段核验。首阶段已启动，后续阶段按自身依赖准备，不重复将小示例作为开训条件。
+`mf1 params` 输出研究配置的模块参数量；实际优化器参数组、学习率与 weight decay 见训练目录的 `optimizer_groups.json`。阶段模板在 `configs/minifrontier1/*.json`，`mf1 recipe` 显示代码中的阶段预算。
 
-P0/P1/P2/P3 共 3B CE，WSD 的主日程累计贯穿四阶段；indexer 阶段暂停主 CE 日程，保留主干 moments，P2 合并 indexer 新状态。P2 前 20M CE 逐 batch 增加 sparse 概率，P3 前 10M CE 增加 8K 概率。正式训练按 CE deficit 采样领域，按阶段长度概率选择可容纳完整样本的 bucket，打包时同时隔离 KDA、lookup、attention、MTP 和 CE。缺少某个领域/长度桶时拒绝运行，不截掉答案。
+正式训练要求 Git checkout，使用 `--run-kind strategy --token-budget <阶段预算> --evidence <准入文件>`。证据绑定方案、前驱检查点、tokenizer、processor、配置、数据与源码。恢复须保持预算和这些身份一致；`--stop-after-updates` 仅暂停，不缩短原预算。当前配方和阶段依赖见[主计划](../pretraining-plan.md)。
 
-默认全局输入目标为 16,384 token，`--batch-size` 默认为 8，表示每个微批的最大样本行数。训练器先选择完整更新窗口，再按行数及补齐后的 token 容量合批；保留完整样本会使实际输入量略超目标。首阶段使用微批上限 8；增加微批前应按实际长度和媒体分布测量显存、padding 与吞吐，不能直接套用合成文本的最大 batch。测量依据见[性能报告](../audits/minifrontier1-execution-performance.md)。主 CE、MTP、index KL 使用各自分母。当前正式配方使用 AdamW；参数分组可由 `mf1 params` 查看。
+P0/P1/P2/P3 合计 3B CE，WSD 主日程贯穿四阶段。indexer 阶段暂停主 CE 日程并保留主干 moments，P2 合并新 indexer 状态；P2 前 20M CE 逐 batch 提高 sparse 概率，P3 前 10M CE 提高 8K 概率。领域采样按 CE 缺额平衡，长度按阶段概率选择可容纳完整样本的 bucket。打包隔离 KDA、lookup、attention、MTP 和 CE；缺少必需领域/长度桶时拒绝运行，不截断答案。
 
-底层写入默认保留 **50 GiB**，通过 `MINIFRONTIER_MIN_FREE_GIB` 调整；正式训练的更高保留量与缓存总额见[存储安排](../pretraining-plan.md#resources)。保存采用带空间检查的原子替换；旧检查点在新文件写完前保持存在。quickstart 显式设 1 GiB 只为小型本地演示。不要对正式训练沿用该低保留值。当前训练器使用滚动检查点，阶段权重的额外保留与轮换按上述存储安排执行。
+默认每次更新目标为 16,384 个输入 token，`--batch-size 8` 限制每个微批的最大样本行数。训练器先选择完整更新窗口，再按行数和补齐后的 token 容量合批，实际输入可略超目标。调整微批须使用真实长度与媒体分布测量显存、padding 和吞吐，参考[性能报告](../audits/minifrontier1-execution-performance.md)。当前正式配方使用 AdamW；主 CE、MTP 和 index KL 各用自己的分母。
+
+写入默认保留 **50 GiB**，由 `MINIFRONTIER_MIN_FREE_GIB` 调整。检查点采用原子替换，新文件完成前保留旧文件，需预留重叠空间。正式训练的缓存总额、阶段权重保留与轮换见[存储安排](../pretraining-plan.md#resources)；示例的 1 GiB 仅用于微型本地运行。
 
 ## 后训练与草稿
 
@@ -128,15 +147,15 @@ uv run minifrontier mf1 posttrain --phase draft \
   --steps 2 --max-tokens 2 --device cpu
 ```
 
-随机/弱模型的 RL group 可能全错；代码记录 zero-variance 并跳过 optimizer update，不制造优势。环境工具复用受限 Python、表格查询和离线搜索等本地执行器，tool observation 被 mask。RL/teacher/OPD/DPO/draft 都是待能力验收的独立路径；少量运行不代表后训练已有效。
+RL、teacher、OPD、DPO 和 draft 为独立后训练路径，目前尚无完整训练结果。弱模型的一组回答可能全错，此时记录 zero-variance 并跳过更新。工具任务使用受限 Python、表格查询和离线搜索等本地执行器，tool observation 不计入损失。
 
-正式 RL/teacher 默认每轮 32 prompts × 4 responses，先用同一 policy 生成，再顺序反向；按整轮有效 assistant token 数归一化。诊断默认一个 prompt，可用 `--prompts-per-update` 调整。采样时实际行为 logprob 与每组奖励保存在 `rollouts.jsonl`；正式运行按 generated-token 预算结束，显式 `--steps` 可限制试运行更新数。
+正式 RL/teacher 默认每次更新 32 prompts × 4 responses，用同一策略生成后顺序反向，按整轮有效 assistant token 归一化。诊断默认一个 prompt，可用 `--prompts-per-update` 调整。`rollouts.jsonl` 保存采样 logprob 和分组奖励；正式运行按 generated-token 预算结束，`--steps` 可限制诊断更新数。
 
-`opd` 使用当前学生生成的前缀和同图/视频，按位置块计算完整词表 `KL(student || teacher)`。teacher registry 必须给出领域/模式槽、权重 SHA、资格评测与相同词表/processor；正式 OPD 拒绝不合格教师。`train-teachers` 从同一个基础 checkpoint 依次诊断八槽，没有对应数据的槽记录为不合格。`qualify-teacher` 比较同一领域/模式留出集的候选与基础模型，检查 bootstrap 增益、非目标领域退化、视觉置黑依赖和 EOS；数据未准入或证据不足时保持不合格。阈值和原始分项结果随报告保存。`opd` 不指定 `--teacher-slot` 时按 prompt 域/模式选择已合格教师、同卡分时加载，保留同一个 student optimizer。试训完成不会自动取得资格。
+`opd` 在学生生成的前缀和相同媒体上，按位置块计算全词表 `KL(student || teacher)`。teacher registry 记录领域/模式槽、权重 SHA、资格评测及相同词表/processor。`train-teachers` 从同一基础检查点依次诊断八槽；`qualify-teacher` 在对应留出集比较候选与基础模型，检查 bootstrap 增益、非目标领域退化、视觉置黑依赖和 EOS，报告保存阈值与分项结果。缺数据或证据不足的教师不能进入正式 OPD。未指定 `--teacher-slot` 时，按 prompt 领域/模式选择合格教师，同卡分时加载并保留学生优化器。
 
-draft 训练固定 target SHA，MTP 副本沿自身采样前缀展开 2–6 步，只用已验证 target anchor，不读未来 target hidden。推测采样复用全状态快照/拒绝重放；尚无 acceptance/速度收益结论，Demo 使用 target-only。
+draft 绑定 target SHA，将 MTP 副本沿自身采样前缀展开 2–6 步，只读取已验证的 target anchor。投机采样使用全状态快照与拒绝重放；尚无接受率或速度收益结论，Demo 默认仅用 target。
 
-`mf1 generate --draft-checkpoint <draft/checkpoint.pt> --draft-steps 4` 可显式测试绑定目标的草稿；`--temperature 0` 验证贪心输出，`--temperature 1` 使用接受/拒绝采样。导出或量化改变 target SHA 后，旧 draft 会被拒绝，需重新适应和验收。
+生成时加 `--draft-checkpoint <draft/checkpoint.pt> --draft-steps 4` 可测试草稿，`--temperature 0` 使用贪心验证，`--temperature 1` 使用接受/拒绝采样。导出或量化改变目标 SHA 后，旧草稿不再匹配，须重新适应与验收。
 
 ## 导出和诊断 Demo
 
@@ -147,6 +166,6 @@ uv run minifrontier mf1 demo --checkpoint outputs/mf1-export/model.pt \
   --device cpu --port 7861 --allow-unqualified
 ```
 
-浏览器打开本地 `http://127.0.0.1:7861`。页面支持多图、浏览器采样视频帧、direct/thinking、生成预算和输入用量预览。上传后先确认实际处理的帧数、分辨率与视觉 token；不会承诺分析未输入的完整视频。`--allow-unqualified` 仅开放标明状态的诊断页面，不能作为发布验收。
+打开 `http://127.0.0.1:7861`。页面支持多图、浏览器采样视频帧、direct/thinking 和生成预算，并预览实际帧数、分辨率与视觉 token 用量。模型只处理这些输入帧。`--allow-unqualified` 开放诊断检查点，页面保留其未通过能力验收的状态。
 
-默认导出保持 FP32 权重数值，剥离优化器。`--dtype bfloat16` 单列精度转换；`--int8 --group-size 64` 提供真实 INT8 expert/shared 权重存储、dequantized matmul reference。它没有 INT8 kernel 加速承诺，量化后需重新评测。INT4、QAT 和正式 BF16/量化发布包当前未选用；量化校准与能力结果待后续权重评估。
+默认导出保留 FP32 权重并去掉优化器，`--dtype bfloat16` 转换权重精度。`--int8 --group-size 64` 将 expert/shared 线性权重存为 INT8，前向时反量化并调用浮点矩阵乘法，**仅用于 CPU 参考路径；当前 CUDA 分组专家路径与此格式不兼容**。量化后需要重新评估，尚无 INT8 kernel 加速或能力结果。INT4、QAT 及正式 BF16/量化发布包均未选用。

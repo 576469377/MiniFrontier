@@ -8,12 +8,13 @@ Describe the problem, the resulting behavior and how you checked it. Link perfor
 
 For source-derived computation, pin the upstream revision, preserve attribution and state any capacity or algorithm changes. Compare forward values and gradients against the original implementation where possible. Update the model page and source mapping when the architecture changes.
 
-Documentation should work for someone using a fresh clone. Use concise explanations, runnable examples and relative links. Keep hardware identifiers, local paths and discussion history out of general guides; date experiment results and retain their limitations.
+Write documentation for a reader using a fresh clone. Explain the operation, expected output and relevant limitations; use runnable examples and relative links. Keep machine identifiers and discussion history out of general guides. Date experimental results and preserve unsuccessful outcomes.
 
 ## Repository layout
 
 - Put model structures in `models/<model>/` and their data, training, evaluation or inference logic in the corresponding functional directories. Commands and browser handlers call those modules.
 - Put reusable instructions in `docs/guides/`, model explanations in `docs/models/`, and dated numeric results in `docs/experiments/`. See the [extension rules](docs/architecture.md#扩展与迁移约定).
+- Maintain current training arrangements in `docs/pretraining-plan.md`. Link to the canonical page instead of copying budgets, commands or status into parallel plans. Keep existing public links working when moving a page.
 - Preserve frozen strategy documents and historical measurements. Amend a plan through a new version; do not modify source checkouts or directories used by active training jobs.
 - Keep raw datasets, weights, credentials and complete runtime outputs out of commits and packages. Review public experiment excerpts for sample content and machine identifiers.
 
@@ -31,7 +32,7 @@ uv run python -m build --no-isolation
 uv run twine check dist/*
 ```
 
-Use available GPUs for bounded tests when required; include hardware, precision and known limitations in the report. A long training run is not a prerequisite for an unrelated engineering change.
+Run GPU tests only on devices available for that work; record the hardware, precision and limitations. On a training host, use a separate development environment and leave active jobs, their source copies and their data unchanged.
 
 ## Licensing
 

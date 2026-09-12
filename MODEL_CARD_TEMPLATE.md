@@ -1,7 +1,6 @@
 # Model card: `<checkpoint-name>`
 
-> Replace every angle-bracket field before publishing weights. A diagnostic checkpoint must be
-> labelled as such and must not be described as reproducing an upstream model's capabilities.
+Replace each placeholder before publishing weights. Label diagnostic checkpoints and distinguish completed training from evaluated capabilities.
 
 ## Identity and provenance
 
@@ -10,6 +9,7 @@
 - Resolved pipeline/recipe digest: `<sha256>`
 - Parent checkpoint(s): `<name, revision, license>`
 - Upstream architecture sources: `<paper/repository revisions>`
+- Download and integrity check: `<artifact URL, filename, SHA256>`
 
 ## Training
 
@@ -28,14 +28,15 @@
 
 ## Evaluation
 
-Report versioned benchmark code, prompts, decoding parameters, sample counts and uncertainty.
-Separate text, vision, reasoning, safety and contamination checks. Loss measurements and short generation checks are engineering evidence; report independent capability results separately.
+Report benchmark versions, prompts, decoding parameters, sample counts, results and uncertainty. Include failed results and modality-specific controls. Give the scope of contamination checks and distinguish validation loss from independent capability evaluation.
+
+## Inference
+
+Provide a tested loading and generation command, required software, tokenizer/config paths, supported precision and measured memory requirements. State any restrictions on quantized or draft execution.
 
 ## Intended use and limitations
 
-Describe supported languages/modalities, expected users, out-of-scope uses, context limits,
-known architecture approximations, failure modes and deployment controls. State that model output
-is untrusted and must not be executed or used for high-stakes decisions without independent review.
+Describe evaluated languages and modalities, intended users, context limits, architecture approximations and observed failure modes. State which lengths, tasks and deployment settings remain unevaluated.
 
 ## License and attribution
 

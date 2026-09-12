@@ -1,12 +1,12 @@
 # 数据来源与处理
 
-MiniFrontier 使用公开语料和程序生成的数据，不包含旗舰模型的官方训练集。数据、tokenizer 和模型权重各有独立的来源与许可；代码许可证不覆盖这些产物。本页按用途区分首阶段正式预训练、历史实验和离线示例。
+本页记录正式预训练、历史实验与离线示例实际使用的数据。语料来自公开数据集或本项目生成，不使用旗舰模型的官方训练集；数据、tokenizer 和权重的许可独立于代码许可证。
 
 ## 首阶段正式预训练
 
-截至 **2026-09-12**，四个模型的首阶段均已绑定训练数据和冻结 tokenizer。它们共用经过划分的文本语料，三个来源模型采用 64K 词表，MF1 采用 32K 词表；视觉模型另外绑定各自的图像编码组件。后续阶段按领域、长度和模态需要补充数据。
+四个模型的首阶段已绑定数据和冻结 tokenizer，共用同一文本划分。来源模型使用 64K 词表，MF1 使用 32K；视觉模型另行绑定图像组件。各阶段的数据供给与后续补充见[预训练计划](../pretraining-plan.md#data)。
 
-首阶段文本划分为 **396,842 篇训练文档、3,737 篇验证文档、4,432 篇测试文档**。同一训练文本在 64K 词表下约为 **5.33 亿 CE token**，在 MF1 词表下约为 **5.70 亿**。这是同一语料的不同编码，不能相加，也不是已完成的训练量。
+首阶段冻结文本包含 **396,842 篇训练文档、3,737 篇验证文档、4,432 篇测试文档**。训练划分在 64K 词表下约为 **5.33 亿 CE token**，在 MF1 词表下约为 **5.70 亿**；两者是同一语料的不同编码库存，不能相加或视为训练进度。重复采样会消耗训练预算，但不会增加独立样本数。
 
 | 来源 | 用途 | 本地来源记录中的条款与限制 |
 |---|---|---|
@@ -19,7 +19,7 @@ MiniFrontier 使用公开语料和程序生成的数据，不包含旗舰模型�
 | [CoSyn-400K](https://huggingface.co/datasets/allenai/CoSyn-400K)，通过 FineVision 固定版本读取 | 文档与图表 | ODC-BY、生成内容条款及 Ai2 使用说明分别记录 |
 | 本项目生成的 OCR | 图中文字识别 | 生成过程、文本来源与渲染资源随组件记录 |
 
-来源配置见 [文本读取器](../../minifrontier/data/public_sources.py)、[数学与合并流程](../../minifrontier/data/pretraining.py)、[代码筛选器](../../minifrontier/data/code_sources.py)和[视觉读取器](../../minifrontier/data/visual_sources.py)。具体组件、配比与阶段需求见[预训练计划](../pretraining-plan.md#data)；构造过程见[执行档案](../experiments/2026-09-10-pretraining-cutover/execution.md)。
+读取与筛选规则见[文本](../../minifrontier/data/public_sources.py)、[数学与合并](../../minifrontier/data/pretraining.py)、[代码](../../minifrontier/data/code_sources.py)和[视觉](../../minifrontier/data/visual_sources.py)实现；组件构造记录见[执行档案](../experiments/2026-09-10-pretraining-cutover/execution.md)。
 
 ## 已做的处理
 
@@ -30,11 +30,11 @@ MiniFrontier 使用公开语料和程序生成的数据，不包含旗舰模型�
 5. **冻结与编码。** tokenizer 仅用训练划分构建，编码记录其 SHA256、处理器配置及各领域 CE 计数。视觉模型消费原始像素，视觉编码器参与训练，不用离线视觉特征代替。
 6. **校验训练入口。** 检查组件 hash、监督掩码、样本边界和固定验证库存。每个模型按自己的监督规则计数，媒体占位、padding 和辅助 MTP 不计入主 CE 预算。
 
-首阶段没有完成系统性的逐来源人工质量复核，相关记录保持“未完成”；已做的机械检查不能替代这项工作。首阶段数据用于研究预览训练，不据此声明数据或后续权重已满足发布条件。后续数据变更和已知限制继续保存在对应清单中。
+**系统性的逐来源人工质量复核尚未完成。** 首阶段按主计划记录的条件开展研究训练，机械检查不替代人工复核，也不构成数据或权重的发布验收。后续变更及已知限制保存在各组件清单中。
 
 ## 固定版本
 
-公开数据集更新不会自动改变已有实验。以下版本对应上述来源配置；具体样本库存由每次构造的 manifest 确定。
+读取器固定以下版本；上游更新不会改变已有实验。每次构造的 manifest 另行记录实际样本库存。
 
 | 来源 | 版本 |
 |---|---|
@@ -47,7 +47,7 @@ MiniFrontier 使用公开语料和程序生成的数据，不包含旗舰模型�
 | ALLaVA-4V 来源 | `0fd42fce5c047d387a4bb5318d588eae9a9797f0` |
 | CoSyn-400K 来源 | `86e46e1fd5e754d056169f0fb38f06c6997ff7de` |
 
-文本与 tokenizer 校验值另见[训练执行记录](../audits/training-infrastructure.json)。重复采样消耗训练预算，但不会增加独立文档或图片的数量。
+文本与 tokenizer 校验值见[训练执行记录](../audits/training-infrastructure.json)。
 
 ## 历史实验与离线示例
 
@@ -61,7 +61,7 @@ MiniFrontier 使用公开语料和程序生成的数据，不包含旗舰模型�
 
 ## 在本地构造数据
 
-首次使用先运行[来源模型最小示例](quickstart.md)或 [MF1 示例](minifrontier1.md)，它们自行生成所需数据。公开语料准备需要网络和 `data` extra：
+离线试用可运行[来源模型示例](quickstart.md)或 [MF1 示例](minifrontier1.md)，由命令生成数据。准备公开语料需要网络和 `data` extra；下面演示固定评测集准备与已有候选的合并：
 
 ```bash
 uv sync --locked --extra data
@@ -72,4 +72,4 @@ uv run python -m minifrontier.data.pretraining merge \
   --max-gib 12
 ```
 
-合并命令的输入是预先构造且使用同一参考 tokenizer 的候选目录，不是仓库附带文件；每次选择新的输出目录。合并器保留已有留出组，同源组连接时 test 优先于 val。合并成功表示得到可追溯的候选库存，实际训练仍需绑定冻结 tokenizer 和该阶段使用的编码。根目录 `data/` 不进入 Git 或安装包。
+`--inputs` 需要预先构造、使用同一参考 tokenizer 的候选目录，每次输出到新目录。合并保留已有留出组，同源组连接时 test 优先于 val；得到候选库存后，再绑定正式 tokenizer 和阶段编码。`data/` 不随 Git 仓库或安装包分发。

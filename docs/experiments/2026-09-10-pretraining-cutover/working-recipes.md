@@ -4,7 +4,7 @@
 
 ## 已选工作参数
 
-所有模型使用 seed=42、BF16 计算、FP32 优化状态与梯度裁剪 1.0。首阶段从随机初始化开始；旧试验及性能验收权重不作为初始化。下表为已进入正式首阶段的 microbatch 上限；实际微批受完整样本窗口和长度约束。后续长上下文与媒体配置不能直接套用首阶段容量。
+四模型从随机初始化开始，使用 seed=42、BF16 计算、FP32 优化状态和梯度裁剪 1.0。下表记录正式首阶段的 microbatch 上限；实际微批由样本长度和窗口决定，后续阶段需重新核对容量。
 
 | 模型 | 全局非 padding input 目标 | 首阶段 microbatch | 峰值 LR | 主日程 |
 |---|---:|---:|---|---|
@@ -13,25 +13,23 @@
 | DeepSeek | 32,768 | 16 | 主干 Muon/Adam 共用 3e-4 | 前 25M 主 CE warmup，保持到累计 2B，最后 500M cosine 至 0.1 peak；固定 batch |
 | MF1 | 16,384 | 8 | 主干 3e-4，视觉/标量 1e-4 | 沿用前 2M warmup、保持至 2.4B、最后 600M cosine 至 0.1 peak |
 
-前三个来源模型保留 WD=0.1，标量及各自规定的特殊参数继续使用原分组，Adam eps=1e-8、betas=(0.9,0.95)。DeepSeek 的 eps 是本项目的 FP32 稳定性适配，不声称复刻官方全部数值。MF1 保留矩阵/视觉 WD=0.1、embedding/head/lookup WD=0.01、标量 WD=0，以及原参数分组。
+三个来源模型使用 WD=0.1，标量和特殊参数按各自分组处理；Adam eps=1e-8、betas=(0.9,0.95)。DeepSeek 的 eps 是本项目的 FP32 稳定性适配。MF1 的矩阵/视觉 WD=0.1、embedding/head/lookup WD=0.01、标量 WD=0，betas=(0.9,0.95)、eps=1e-8。
 
 ## 选择依据与限制
 
-[轻量证据](working-recipe-evidence.json)保存六项已结束 20M CE 对照的来源、数据/tokenizer 身份、完整验证曲线及原始记录校验值。运行命令记录的 init 均为空。比较限于相同旧数据、同一 seed 和当时实现；这些语料与验证不等于正式准入语料。
+[配方证据](working-recipe-evidence.json)保存六项 20M CE 对照的配置、数据/tokenizer 身份、曲线和校验值。各项均从随机初始化开始；比较使用同一 seed 和旧数据，与正式训练的数据分别记录。
 
 | 对照 | 最终固定验证 NLL | 决定 |
 |---|---|---|
 | Kimi Muon 0.005 / 0.01，Adam 同为 3e-4 | 5.0802 / 5.2561 | 首版采用 0.005 |
 | DeepSeek 共享 LR 3e-4 / 1e-4 | 5.3335 / 6.0566 | 首版采用 3e-4；不再把无效的 `--muon-lr 0.01` 当实际 LR |
-| Qwen Muon / AdamW，Adam 分支均为 3e-4 | 5.0179 / 5.6559 | 采用已有 Muon 0.01 路径；没有证据宣称其优于尚未完成的所有其他 LR |
+| Qwen Muon / AdamW，Adam 分支均为 3e-4 | 5.0179 / 5.6559 | 采用已测的 Muon 0.01；未完成其他 LR 的质量比较 |
 
 这些旧对照采用 WSD 与 400K warmup。Kimi 正式的 cosine 与整条 2B 的 1% warmup 来自主计划/专项方案，不能把旧曲线当新日程的实测结果。
 
-[固定窗口执行矩阵](../2026-09-10-batch-frontier/README.md)已证明扩大微批可减少执行开销；它没有选出最优全局 batch。Kimi/DeepSeek 的 32K 是原候选中的中间工作档：减少小窗口的更新开销，同时保留比 64K 更多的更新。32K 尚无同配置的独立质量对照。Qwen 保留 16K，控制较大模型和随机视觉的首阶段容量；MF1 沿用既定 16K。DeepSeek 首版暂用固定 batch，官方的 batch 增长设计保留为后续研究。
+[固定窗口测量](../2026-09-10-batch-frontier/README.md)表明，扩大微批可减少已测负载的执行开销。Kimi/DeepSeek 选用 32K 全局 input，在执行开销与更新次数之间折中，尚无同配置的独立质量对照。Qwen/MF1 保留 16K。DeepSeek 首版使用固定 batch，batch 增长另行研究。
 
-不再扩大 batch×LR 网格。DeepSeek 完成工程修复和既有生产检查后开训；Kimi、Qwen、MF1 直接在正式运行中检查数值、固定验证、显存、磁盘和恢复点。2026-09-11 的[执行调整](direct-training-start.json)取消了这三个模型额外的独立 smoke、20M pilot 和 50＋200 性能检查。该调整保留学习率日程、数据身份和后续阶段要求。
-
-历史 250 次更新的输入上界为 Kimi/DeepSeek 8,447,750、Qwen/MF1 4,351,750；这些是当时的检查预算，不是新开训前置任务。失败尝试和实际使用的配置见[启动记录](execution.md)与[正式运行快照](formal-starts.json)。
+2026-09-11 的[执行调整](direct-training-start.json)取消了 Kimi、Qwen、MF1 额外的独立 smoke、20M pilot 和 50＋200 性能检查，改在正式更新中观察；DeepSeek 完成既有检查和修复后开训。失败尝试、历史检查预算和实际配置见[启动记录](execution.md)与[运行快照](formal-starts.json)。
 
 ## Qwen 与 DeepSeek 的索引器和后续阶段
 
@@ -44,7 +42,7 @@
 
 ## 显式阶段状态
 
-来源模型入口新增 `--pretraining-program configs/experiments.json --pretraining-phase <phase> --schedule program`。该入口要求 `--run-kind strategy` 与当前阶段的数据/执行证据；模板中的候选状态不能代替实际运行绑定。普通 `--init` 的既有行为保留，只有显式 program 才执行下列状态继承。
+来源模型通过 `--pretraining-program <运行配方.json> --pretraining-phase <phase> --schedule program` 继承阶段状态。运行配方从 `configs/experiments.json` 模板生成，并绑定 `--run-kind strategy` 所需的数据和执行证据。普通 `--init` 新建优化器与计数。
 
 | 状态 | 同阶段恢复 | 后续 program 阶段 |
 |---|---|---|
@@ -56,23 +54,19 @@
 
 检查点只额外保存当前优化器未持有的冻结状态，避免重复序列化一整份活跃优化器。`pretraining-transition.json` 和 checkpoint 的 `pretraining_state` 保存继承表、父权重 hash、阶段账本及谱系。缺失完整 program 状态、前阶段未完成、跨执行种类、变更总配方或试图从旧试验启动首阶段均拒绝。
 
-CPU 回归比较 Kimi 的连续训练与两个阶段的模型、优化器、路由、QK clip、RNG 和数据位置；Qwen/DeepSeek 比较索引器前后的冻结主干及 moments、暂停/恢复，并验证稀疏阶段取回主状态。DeepSeek 另覆盖连续两个 sparse 阶段中 MTP 0.3→0.1 的迁移。测试使用小配置验证机制，不代表真实数据、稀疏转换质量或生产性能已经通过。
-
-program 与既有策略准入的定向回归共 8 项通过；合并 MF1 位置修复后的完整 CPU 回归为 379 passed / 1 skipped，Ruff、格式与项目 CI 的 174 源文件 mypy 检查通过。
-
-DeepSeek D1 的初次 microbatch 32 和 16 尝试都在首次反向时 OOM，完成更新数为零。后来以 128-query 分块重算控制 dense attention 的中间张量，在相同 microbatch 16 和 32K 全局输入目标下开训。两次失败及修复保留在[启动档案](execution.md)，不再列为当前待办。
+CPU 小配置回归覆盖连续训练与跨阶段继承、索引器冻结及取回主干状态，以及 DeepSeek MTP 0.3→0.1 的迁移。真实数据上的稀疏转换仍需阶段评估，检查记录见[启动档案](execution.md)和[训练基础设施审计](../../audits/training-infrastructure.md)。
 
 ## 分阶段绑定数据
 
-来源模型的 program 检查点保存完整训练日程，以及截至该检查点阶段的全部数据、配置、tokenizer 和 microbatch 绑定。后续阶段补入或调整自己的数据绑定，不改变已有阶段的身份；当前及已训练阶段的绑定、完整 LR 日程、优化器或预算发生变化，恢复仍会拒绝。进入下一阶段时先核对父阶段身份，再独立检查下一阶段的数据准入与质量证据。这个修复不放宽完整 `run_spec`、源码或状态继承检查，也不自动升级旧格式检查点。
+program 检查点保存完整日程，以及当前和已训练阶段的数据、配置、tokenizer 与 microbatch 绑定。后续阶段可补充自己的数据；修改已有阶段绑定、完整 LR 日程、优化器或预算会被拒绝。转换时先核对父阶段，再检查新阶段的数据与质量证据。旧格式检查点不会自动升级。
 
 正式训练固定源码 checkout。执行配方从配置复制到 `outputs/` 的运行快照，通过 `--pretraining-program` 指定；新增后续阶段绑定写入新的执行快照，并保留原快照。运行期间不要修改冻结 checkout 中的 `configs/`，因为它也是源码身份的一部分。单独补数据不需要改变训练源码或重新跑前一阶段。
 
-三条来源模型均已用真实 CPU 保存/恢复与阶段切换验证：补入后续数据后，恢复结果与连续训练的模型参数、优化器、RNG 和 token 账本一致；已训练阶段的数据改动会被拒绝。来源模型共 11 项 program 测试通过，属于工程回归，不计正式训练 token。
+三条来源模型的 CPU 保存、恢复和阶段切换检查表明：补充后续数据不改变连续训练的参数、优化器、RNG 和 token 账本；修改已训练阶段数据会被拒绝。
 
 ## DeepSeek 既有 MTP 对照的复用
 
-已补入[轻量证据](working-recipe-evidence.json)中的 `deepseek_mtp_comparison`：MTP 0、0.1、0.3 三组均完成 20,013,084 CE、1,195 次更新，完整验证同为 732 条、291,035 CE。原始 run、状态、曲线与保留模型的哈希均已核对；除 MTP 系数、输出/配置文件路径和开始时间外，记录的训练设置一致。
+[MTP 对照记录](working-recipe-evidence.json)中的三组均完成 20,013,084 CE、1,195 次更新，固定验证为 732 条、291,035 CE。除 MTP 系数、路径和开始时间外，记录的设置一致。
 
 | MTP 系数 | 最终主语言 NLL |
 |---|---:|
@@ -80,4 +74,4 @@ DeepSeek D1 的初次 microbatch 32 和 16 尝试都在首次反向时 OOM，完
 | 0.1 | 5.330807 |
 | 0.3 | 5.333452 |
 
-比较使用主语言损失，不能拿包含不同权重 MTP 项的总 loss 排名。0.1 与 0.3 相差约 0.00265；单 seed、旧数据的一次结果不足以支持改动已经选定的首版配方。保留 D1–D4 的 0.3 与 D5 的 0.1，没有重跑训练或新开系数网格。这些旧对照使用 16K input、512 长度、400K warmup 和旧 tokenizer，只作为配方依据，不替代新数据质量、当前执行配置与正式模型能力验收。
+表中比较主语言 NLL，总 loss 含不同权重的 MTP 项，不适合直接排名。旧对照使用单 seed、16K input、512 长度、400K warmup 和旧 tokenizer；0.1 与 0.3 的差值约 0.00265，不足以支持调整首版配方。因此保留 D1–D4 的 0.3 和 D5 的 0.1。

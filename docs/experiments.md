@@ -17,7 +17,7 @@
 | 早期实验与安装示例 | [2026-09-09 快照](experiments/2026-09-09-preview/README.md)、[离线示例实测](experiments/preview-quickstart/README.md) |
 | 调度、TensorBoard 与产物保留 | [实验管理](operations/experiment-management.md)、[清理记录](operations/artifact-retention.md) |
 
-旧数据上的对照用于选择首版工作参数；新数据上的正式训练单独计数。当前不再自动派发 batch×LR 网格或补种子试验。源码与轻量报告已公开，训练权重尚未发布。
+旧数据上的配方对照与正式训练分别计数。公开档案提供配置、数值和曲线，训练权重尚未发布。
 
 ## 如何读结果
 
@@ -26,7 +26,7 @@
 - **生成能力**：检查完整输出及独立任务。训练题记忆、有限梯度和低 NLL 都不能单独证明模型能正常对话。
 - **吞吐**：先核对 CE/input 分母、全局 batch、模态、精度、测量窗口及共卡时段。合成计算速度与实际训练端到端速度分别报告。
 
-例如，Qwen 首轮 Q0 训练内算术为 14/16；重置优化器、降低 LR 后追加 500,450 CE 达到 16/16，留出题仍为 0/9。该结果证明训练题可以被记住，不能用于证明泛化。原命令和额外预算单列保存。旧 educational-v1 的[语言失败复盘](training-failure-v1.md)继续保留。
+早期模型记忆训练题但未通过留出题的结果，见[配方快照](experiments/2026-09-10-recipe-snapshot/README.md)；更早的语言退化见[失败复盘](training-failure-v1.md)。
 
 ## 运行产物
 
@@ -41,13 +41,13 @@
 | `tensorboard/` | 训练器原始事件；正式看板从原日志生成独立的 `train / eval / perf` 视图 |
 | 数据 manifest、来源审计 | 来源版本、采样、清洗、分组、编码和文件校验值 |
 
-来源模型还会保存 `best-validation.json`、`best-model.pt` 和阶段导出的 `model.pt`。历史 `performance.json` 的测量窗口以该文件为准，不能把旧的 50＋200 设置理解为每次开训要求。
+来源模型还会保存 `best-validation.json`、`best-model.pt` 和阶段导出的 `model.pt`。历史 `performance.json` 按各自记录的测量窗口阅读。
 
 MF1 另有 `resolved_config.json`、`optimizer_groups.json`、`router_metrics.jsonl` 和 `checkpoint_manifest.json`。其 `budget_complete_unqualified` 表示该次预算完成，能力尚未通过；推理用 `model.pt` 由 `mf1 export` 显式导出。
 
 ## 本地状态与公开快照
 
-正式产物位于 `outputs/strategy-base-pretraining-v1/<model>/<phase>/`。`outputs/` 与 `data/` 被 Git 忽略；克隆仓库不会获得原始语料、完整日志或权重。训练时保留实际使用的独立源码目录，避免开发改动影响进程。
+正式产物位于 `outputs/strategy-base-pretraining-v1/<model>/<phase>/`。`outputs/` 与 `data/` 被 Git 忽略；克隆仓库不会获得原始语料、完整日志或权重。以下命令用于已有运行记录的训练工作区；训练时保留独立源码目录，避免开发改动影响进程。
 
 ```bash
 python -m scripts.training_status --run formal
@@ -56,14 +56,14 @@ python -m scripts.experiment_registry
 
 台账包含父任务、数据准备、评估与训练阶段，记录条数不等于独立实验数。具体状态语义、事件接续和 TensorBoard 操作见[实验管理](operations/experiment-management.md)。
 
-公开档案至少保留目的与变量、配置和命令、seed、源码版本、数据/tokenizer 校验值、实际 token 预算、验证指标、吞吐和显存，以及可重画曲线。失败和主动停止的结果保留原状态；缺失的历史校验值明确标记，不补造。
+导出前核对配置、命令、seed、运行身份、实际预算、指标和曲线是否完整。保留失败与主动停止状态，明确标记缺失的历史校验值。
 
 ```bash
 # 从本地记录导出到新的日期目录，保留旧快照
-uv run python scripts/export_experiments.py --workspace "$PWD" \
+uv run --no-sync python -m scripts.export_experiments --workspace "$PWD" \
   --output docs/experiments/YYYY-MM-DD-snapshot
 # 绘图依赖无需加入训练环境
-uv run --with matplotlib==3.10.7 python scripts/plot_experiments.py \
+uv run --no-project --with matplotlib==3.10.7 python scripts/plot_experiments.py \
   docs/experiments/2026-09-09-preview
 ```
 

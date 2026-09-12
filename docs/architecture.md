@@ -1,6 +1,6 @@
 # 架构与目录
 
-MiniFrontier1.0 是独立融合主线，三个来源模型保留为独立实现与实验对照。统一模型清单位于 [configs/models.json](../configs/models.json)，四个模型通过 `models/factory.py` 构造；模型清单分别记录训练入口的可执行范围与权重能力状态。
+MiniFrontier 按模型、数据、训练、评估和推理划分代码。MF1 与三个来源模型遵循相同目录规则，通过 [models/factory.py](../minifrontier/models/factory.py) 构造。[configs/models.json](../configs/models.json) 记录模型入口及能力字段；实际训练进度见[预训练主计划](pretraining-plan.md)。
 
 ## 模型与流程
 
@@ -21,17 +21,17 @@ MiniFrontier1.0 是独立融合主线，三个来源模型保留为独立实现�
 | `configs/minifrontier1/` | 融合配置、各阶段预算、数据/教师/评测规则及来源映射 |
 | `configs/strategies/` | 三个来源模型机器计划与策略配置 |
 
-MF1 的阶段累计和恢复由自己的训练器管理，主干 moments 跨 indexer 阶段保留。三个来源模型的显式 `pretraining-program` 路径已支持按参数名继承优化器状态与累计主 CE；普通 `--init` 仍新建优化运行。同阶段 `--resume` 与跨阶段迁移的条件不同，详见[状态继承表](experiments/2026-09-10-pretraining-cutover/working-recipes.md#显式阶段状态)。操作入口集中在 [guides](guides/README.md)。
+训练器分别管理模型的阶段累计与恢复。MF1 在 indexer 阶段暂存主干优化器状态；三个来源模型通过显式 `pretraining-program` 按参数名继承状态。三个来源模型的普通 `--init` 路径新建优化器与计数，详见[状态继承表](experiments/2026-09-10-pretraining-cutover/working-recipes.md#显式阶段状态)。操作命令见[指南](guides/README.md)。
 
 ## 扩展与迁移约定
 
-1. 包目录按功能划分；新增模型的结构放在 `models/<完整模型名>/`，训练、数据或推理差异放入对应功能目录。专用模块使用 `minifrontier1_*` 等完整模型名前缀。
-2. 模型结构、数据处理和训练计算不依赖命令解析或浏览器服务。`commands/` 组合各模块；Demo 调用共用推理，命令文件不新增训练算法。
-3. 可共用的检查点保存、随机状态、存储预算、分布计算等继续复用已有模块。阶段状态和损失含义不同的训练器显式区分，整合前验证行为一致。
-4. 根包仅保留入口、模型清单和硬件/存储/来源等跨功能模块。数据处理不再新增根层 `data_v3.py` 一类文件，也不再新增包含整套数据/训练/Demo 的模型专属根目录。
-5. 实验统一登记在 `configs/experiments.json`，工作站命令实例保存在各自忽略的 `outputs/<cohort>/queue-plan.json`。新的独占任务复用同一个队列入口；历史 launcher 保留可追溯性，不继续增加版本化 Python 调度器。当前计划、通用管理与日期快照分别集中在[计划](experiments/current-plan.md)、[管理](operations/experiment-management.md)和[实验索引](experiments.md)。
+1. 新模型结构放入 `models/<完整模型名>/`；专用的数据、训练和推理逻辑放入对应功能目录，使用完整模型名前缀。
+2. `commands/` 和浏览器服务负责组合模块。模型计算、数据处理与训练算法保持独立，可直接调用和测试。
+3. 复用检查点、随机状态、存储和分布计算模块；不同训练器的损失与阶段状态分别定义，共用实现前检查行为一致性。
+4. 根包仅保留入口及硬件、存储、来源等跨功能模块。扩展既有功能目录，避免新增包含整套流程的模型专属根目录或版本化副本。
+5. 实验登记在 `configs/experiments.json`，实际命令保存在本地 `outputs/<cohort>/queue-plan.json`。复用[统一队列](operations/exclusive-gpu-queue.md)，历史 launcher 仅供复现。当前安排见[主计划](pretraining-plan.md)，管理方法见[实验管理](operations/experiment-management.md)，日期结果见[实验索引](experiments.md)。
 
-MF1 与其他模型使用相同的目录规则；原根包 `mf1/` 中的数据、训练和推理模块已迁入相应功能目录。`minifrontier mf1 ...` 等 CLI 入口保持兼容；依赖旧 `minifrontier.mf1.*` 或 `data_v2` 内部路径的脚本需更新导入。
+原 `minifrontier/mf1/` 的数据、训练和推理模块已迁入功能目录。`minifrontier mf1 ...` CLI 保持兼容；使用旧 `minifrontier.mf1.*` 或 `data_v2` 内部路径的脚本需更新导入。
 
 精确恢复会检查代码、数据、词表和运行配置是否与原检查点一致，代码目录迁移也可能影响这项检查。恢复历史实验时应使用原记录的代码版本与产物；将旧权重用于推理或新实验初始化则通过共用加载器完成。
 
@@ -39,9 +39,7 @@ MF1 与其他模型使用相同的目录规则；原根包 `mf1/` 中的数据�
 
 `third_party/upstream/` 保存固定的官方源码和许可证；各模型的 `upstream_*.py` 是可读、可打包的派生文件，不在运行时下载或动态执行远程代码。提取规则见 [scripts](../scripts/README.md)，原始条款见 [LICENSES](../LICENSES)。原始策略正文和上游快照保留字节内容，以便复核 SHA。
 
-融合方案中的组合、预算和媒体分段属于本项目设计。来源对照测试验证借用的原语；融合正确性、模型学习、硬件效率和最终能力各有独立验收，不能相互替代。
-
-当前四个主训练各使用一张卡，空闲设备按主计划安排；教师训练和新的参数探索在基础模型完成后推进。三个来源模型保留 DDP，使用前需确认实际收益。MF1 的无缓存稠密注意力、KDA 片段和专家计算已加入合批优化，测量条件与结果见[执行性能报告](audits/minifrontier1-execution-performance.md)。稀疏、长上下文和不同模态阶段分别记录执行表现。
+MF1 的组合、预算和媒体分段由本项目设计。来源对照测试检查借用的计算模块；完整模型的学习效果与运行效率另行测量，见[实验档案](experiments.md)和[执行性能报告](audits/minifrontier1-execution-performance.md)。
 
 ## 可分享材料与本地产物
 
@@ -50,7 +48,8 @@ MF1 与其他模型使用相同的目录规则；原根包 `mf1/` 中的数据�
 | `docs/guides/`、`docs/models/` | 通用操作、模型结构和当前能力状态 |
 | `docs/training-strategies/` | 按日期冻结的方案，修订另建版本 |
 | `docs/experiments/`、`docs/audits/` | 轻量配置/指标/曲线与有时间边界的审计 |
-| `docs/operations/`、`docs/legacy/` | 本机操作记录与历史设计；不作为默认入门说明 |
+| `docs/operations/` | 实验管理、监控、资源调度与历史工作站记录 |
+| `docs/legacy/` | 历史设计和旧接口；现行操作从指南进入 |
 | `data/`、`tokenizers/` | 本地数据与独立训练产物；不提交 |
 | `outputs/` | 训练状态、检查点、完整日志、实验代码副本、TensorBoard 与本地构建结果；不提交 |
 | `.venv/`、缓存、`dist/`、`build/` | 可重新生成的环境与构建产物；不提交 |

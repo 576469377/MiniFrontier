@@ -4,11 +4,10 @@ Describe the user-visible behavior and why the change is needed.
 
 ## Evidence
 
-- [ ] Relevant existing checks passed; tests added or updated when behavior changes
-- [ ] `ruff check .`
-- [ ] `pytest -q -m 'not cuda'` for runtime changes (documentation-only changes may use link/layout checks)
-- [ ] CUDA/DDP evidence attached when the change affects kernels or distributed state
-- [ ] Documentation and provenance ledger updated when behavior or architecture fidelity changes
+- [ ] Relevant checks from [CONTRIBUTING.md](https://github.com/576469377/MiniFrontier/blob/main/CONTRIBUTING.md) passed; behavior changes have corresponding evidence
+- [ ] Documentation changes have working links, accurate examples and valid diagrams
+- [ ] Kernel or distributed-state changes include CUDA/DDP evidence where applicable
+- [ ] Model documentation and provenance are updated for changes to source-derived computation
 
 Commands and relevant output:
 

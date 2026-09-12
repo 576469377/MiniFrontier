@@ -1,66 +1,44 @@
-# 项目审查与整理（2026-09-08）
+# 三个来源模型的项目审查（2026-09-08）
 
-> 历史记录：以下进度与路径描述对应 2026-09-08。当前结构和训练状态请查看[文档导航](README.md)与[实验档案](experiments.md)。
-
-当前实现以 [三份训练方案](training-strategies/2026-09-08/) 为准。
-`educational-v1` 已确认没有达到基本对话目标；旧权重和
-[初版审查](legacy/project-review-educational-v1.md) 保留用于复盘。
-目前有可训练的模型和分阶段入口，还没有完成正式全流程或可用模型验收。
+本轮审查确认三个来源模型已有可训练主干、原生视觉和分阶段入口；`educational-v1` 的基本对话目标失败。以下为当时的实现与实验范围，当前四模型进度见[预训练计划](pretraining-plan.md)，早期版本见[初版审查](legacy/project-review-educational-v1.md)。
 
 ## 模型与命名
 
-| 名称 | 当前 strategy 配置 | 核心适应 | 参数量（含 MTP） |
+| 模型 | 当时的 strategy 配置 | 主要模块 | 浮点参数量（含 MTP） |
 |---|---|---|---:|
-| MiniKimi-K3 | 12 层、512 hidden、32 路由专家 top-2、2 shared、64K vocab | KDA/MLA、AttnRes、QB、Per-Head Muon、MoonViT、7-step draft | 204,526,216 |
-| MiniQwen4 | 16 层、512 hidden、64 路由专家 top-4、64K vocab | PLE/GDN/GR/QSA、原生视觉、四流 MTP | 513,405,536 |
-| MiniDeepSeek-V4 | 12 层、512 hidden、32 专家、64K vocab | SWA128/CSA-HCA、mHC、hash route、文本 MTP、后接 Vision-Exp、DSpark | 243,983,472（文本） |
+| MiniKimi-K3 | 12 层、hidden 512、32 专家 top-2、2 shared、64K 词表 | KDA/MLA、AttnRes、QB、Per-Head Muon、MoonViT | 204,526,216 |
+| MiniQwen4 | 16 层、hidden 512、64 专家 top-4、64K 词表 | PLE、GDN、GR、QSA、原生视觉、四流 MTP | 513,405,536 |
+| MiniDeepSeek-V4 | 12 层、hidden 512、32 专家、64K 词表 | SWA128/CSA-HCA、mHC、hash routing、文本 MTP | 243,983,472（文本） |
 
-名称采用 Mini + 模型/架构名。MiniQwen4 对应方案所固定的 Qwen3.8-Flash-Next
-`qwen4_exp` 源码，不能把教学项目名称当作官方 Qwen4 产品声明。包名与 Python 类
-去掉连字符，展示名保留 MiniKimi-K3 / MiniDeepSeek-V4。
+MiniQwen4 的名称对应 Qwen3.8-Flash-Next 源码标识 `qwen4_exp`。Kimi 七步草稿、DeepSeek Vision-Exp 和 DSpark 是另外接入的模块，不计入表中主模型容量。
 
 ## 目录与职责
 
-| 位置 | 作用 |
+| 范围 | 职责 |
 |---|---|
-| `third_party/upstream`、各模型 `upstream_*.py` | 固定官方来源及提取代码；提取脚本和来源测试保留 |
-| `minifrontier/models/<family>` | 模型、原生视觉、MTP、缓存与独立草稿 |
-| `configs/strategies` | 本轮结构配置与机器可读阶段预算；根目录旧配置保留兼容用途 |
-| `data_v2.py`、`native_data.py`、`multimodal.py` | 来源/分组去重、整样本编码、原生媒体和标签对齐 |
-| `chat_controls.py` | SFT / rollout / 推理共用控制模板 |
-| `training/train.py`、`training/train_draft.py` | 主模型与独立草稿训练、DDP、账本和恢复 |
-| `training/rollouts.py`、`tool_environment.py`、`trajectory_log.py` | 原生媒体与工具轨迹、教师路由、行为概率和审计 |
-| `scripts/run_recipe_pilot.py` | 诊断通过后执行独立 20M Muon/AdamW 比较；完成不自动晋级 |
-| `scripts/training_status.py` | 读取实际在跑阶段、token 和该阶段实测 ETA |
-| `outputs/strategy-source-*` | 每批真实训练使用的实验代码副本；开发不修改在跑实现 |
-| `docs/audits` | 失败复盘、数值对照、代码验证与运行快照；不能混为能力报告 |
+| `third_party/upstream`、模型内 `upstream_*.py` | 上游快照、提取代码与来源对照 |
+| `minifrontier/models/<family>` | 主干、视觉、MTP、缓存和独立草稿 |
+| `configs/strategies` | 结构配置与阶段预算 |
+| 数据及 `multimodal` 模块 | 来源、分组去重、完整记录编码、媒体和标签对齐 |
+| `chat_controls.py` | 训练、rollout 与推理共享控制模板 |
+| 主模型与草稿训练入口 | DDP、实际 token 账本、恢复及目标权重绑定 |
+| rollout、工具环境与轨迹模块 | 媒体、教师路由、行为概率、工具观察与奖励 |
+| 实验脚本、`docs/audits` | 配方试验、状态观察、数值对照与失败记录 |
+
+此表按职责保留旧审查范围；重构后的文件位置见[文档导航](README.md)。
 
 ## 已处理的训练问题
 
-预训练使用连续文档、真实 next-token 分母；SFT 保留完整答案且仅监督 assistant。
-累计窗口和 DDP 按实际有效 token 汇总，视觉暴露、视频帧、response token 分别记录。
-空 CE/零优势窗口不做衰减或路由更新。模型、优化器、数据游标、RNG、配置、数据和
-源码身份一同恢复，写入遵守磁盘保留量。
+预训练使用连续文档和实际 next-token 分母；SFT 保留完整答案，仅监督 assistant。累积窗口与 DDP 汇总有效 token，视觉曝光、视频帧和 response 分别计数。空 CE、零优势窗口跳过优化器衰减及路由更新；检查点恢复模型、优化器、采样游标、RNG、配方与数据身份。
 
-Kimi/DeepSeek 的专用优化器、路由与精度边界、原生视觉迁移已接入。QAT 是明确的
-MX 数值仿真；不宣称 3090 原生 FP4 加速。Kimi sampled-token MOPD 与 DeepSeek
-full-vocabulary reverse KL 保持独立目标。9/12 个教师槽位要求独立权重与留出提升，
-不能把同一模型复制登记。
+Kimi/DeepSeek 专用优化器、路由、精度边界和视觉迁移已接入。QAT 为 MX 数值仿真；Kimi sampled-token MOPD 与 DeepSeek full-vocabulary reverse KL 保留独立目标。教师槽位要求互异权重和留出提升。
 
-草稿训练冻结主模型，导出绑定精确目标哈希；投机推理具有拒绝重采样和状态回滚。
-原生媒体进入学生/reference/对应教师；工具操作在可重置本地环境中执行，观察
-不计动作损失。GPU sampler 的强制 BF16 问题已修正，概率比超界在更新前失败。
+草稿训练冻结目标，导出绑定目标 hash；投机推理包含拒绝重采样和状态回滚。媒体进入学生、参考模型与教师，工具观察屏蔽动作损失。GPU sampler 强制 BF16 的问题已修正，概率比超限在更新前报错。
 
 ## 尚未完成的工作
 
-正式数据来源/许可、配比和独立留出规模还未达到方案要求；当前真实视觉池只有
-96 张，不能支撑百万图片课程。20M 配方试验正在进行，还需要 LR、MTP、32K/64K
-质量和补种子对照。三条正式主预算、长上下文课程、SFT/QAT 校准、教师培养、
-正式 RL/草稿训练与生成质量验收均未完成。
+当时真实视觉池只有 96 张图，正式数据、配比和独立留出规模不足。20M 配方试验正在进行，LR、MTP、词表质量与补种子对照尚未齐备；正式主预训练、长上下文、SFT/QAT、教师培养、RL 和草稿收益也没有完成结果。
 
-浏览器目前仍是文本演示；CLI 已支持原生多图和控制模式。浏览器媒体/模式范围、
-训练后草稿接受率、confidence calibration 和实际延迟仍待完成。实验性批量专家
-GEMM 未通过完整 BF16 梯度验收，实际配方保持原有专家循环。
+浏览器当时仅支持文本，CLI 已支持原生多图与控制模式。批量专家 GEMM 未通过完整 BF16 梯度检查，实际实验继续使用专家循环。
 
-最近完整工程回归：229 项 CPU、41 项 CUDA；这些结果不能替代实际模型的语言、
-视觉、模式或工具能力。细节与剩余门槛见 [方案执行记录](audits/strategy-implementation-v2.md)。
+当次工程回归为 **229 项 CPU、41 项 CUDA**。具体配置、生成结果和未完成实验见[方案执行记录](audits/strategy-implementation-v2.md)。
