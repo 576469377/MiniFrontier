@@ -2,6 +2,8 @@
 
 import argparse
 import json
+import math
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -9,8 +11,199 @@ from typing import Any
 def read_json(path):
     try:
         return json.loads(path.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError):
         return {}
+
+
+def reverse_metrics(path):
+    """Read complete JSON records backwards, including across buffer boundaries."""
+    try:
+        with path.open("rb") as stream:
+            position = stream.seek(0, 2)
+            pending = b""
+            while position:
+                size = min(position, 131072)
+                position -= size
+                stream.seek(position)
+                lines = (stream.read(size) + pending).split(b"\n")
+                pending = lines.pop(0)
+                for line in reversed(lines):
+                    try:
+                        value = json.loads(line)
+                    except (ValueError, UnicodeDecodeError):
+                        continue
+                    if isinstance(value, dict):
+                        yield value
+            try:
+                value = json.loads(pending)
+                if isinstance(value, dict):
+                    yield value
+            except (ValueError, UnicodeDecodeError):
+                pass
+    except OSError:
+        return
+
+
+def training_processes(proc_root=Path("/proc")):
+    """Return local output directories and PIDs; None means visibility is unavailable."""
+    try:
+        entries = list(proc_root.iterdir())
+    except OSError:
+        return None
+    found: dict[str, list[int]] = {}
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            args = entry.joinpath("cmdline").read_bytes().decode(errors="replace").split("\0")
+            cli = "minifrontier" in args or any(
+                Path(arg).name == "minifrontier" for arg in args[:2]
+            )
+            if not ("minifrontier.training.train" in args or (cli and "train" in args)):
+                continue
+            output = args[args.index("--output") + 1]
+            path = Path(output)
+            if not path.is_absolute():
+                path = entry.joinpath("cwd").resolve(strict=True) / path
+            found.setdefault(str(path.resolve()), []).append(int(entry.name))
+        except PermissionError:
+            return None
+        except (OSError, ValueError, IndexError):
+            continue  # A process may exit while its command line is read.
+    return found
+
+
+def formal_row(path, processes):
+    run, status = read_json(path / "run.json"), read_json(path / "status.json")
+    recent: list[dict[str, Any]] = []
+    validation: dict[str, Any] = {}
+    progress: dict[str, Any] = {}
+    event = None
+    for row in reverse_metrics(path / "metrics.jsonl"):
+        if not progress and ("token_ledger" in row or "train_lm_loss" in row):
+            progress = row
+        if event is None and row.get("event") in {
+            "start",
+            "train",
+            "paused",
+            "complete",
+            "completed",
+        }:
+            event = row["event"]
+        if row.get("event") == "train" or "train_lm_loss" in row:
+            if event is None:
+                event = "train"
+            if len(recent) < 20:
+                recent.append(row)
+        if not validation and row.get("event") == "validation":
+            validation = row
+        if len(recent) == 20 and validation:
+            break
+    train = progress or (recent[0] if recent else {})
+    train_ledger = train.get("token_ledger", train)
+    ledger = train_ledger
+    saved_ledger = status.get("token_ledger", status.get("ledger", {}))
+    step = train.get("step", ledger.get("optimizer_updates", 0))
+    if status.get("step", 0) >= step:
+        ledger = saved_ledger or ledger
+        step = status.get("step", step)
+    unit = run.get("unit", "input_tokens" if run.get("input_token_budget") else "ce_tokens")
+    budget = (
+        run.get("token_budget")
+        or run.get("ce_token_budget")
+        or run.get("input_token_budget")
+        or status.get("token_budget")
+    )
+    consumed = ledger.get("phase_tokens", ledger.get(unit, 0))
+    pids = processes.get(str(path.resolve()), []) if processes is not None else None
+    state = "running" if pids else "unknown" if processes is None else "stopped"
+    if pids == []:
+        durable = (
+            status.get("state") if status.get("step", 0) >= step and event != "start" else None
+        )
+        terminal = event if event in {"paused", "complete", "completed"} else durable
+        if terminal in {"paused", "complete", "completed"}:
+            state = "completed" if terminal in {"complete", "completed"} else "paused"
+    speed_key = "input_per_second" if unit == "input_tokens" else "ce_per_second"
+    observations = [
+        r.get(
+            speed_key,
+            r.get("input_batch_actual", 0) / r["step_seconds"]
+            if unit == "input_tokens" and r.get("step_seconds", 0) > 0
+            else r.get("tokens_per_second")
+            if unit == "ce_tokens"
+            else None,
+        )
+        for r in recent
+    ]
+    speeds = [
+        float(s) for s in observations if isinstance(s, (int, float)) and math.isfinite(s) and s > 0
+    ]
+    speed = sum(speeds) / len(speeds) if speeds else None
+    return dict(
+        model=path.parent.name,
+        phase=run.get("pretraining_program", {}).get("phase", run.get("mf1_phase", path.name)),
+        path=str(path),
+        state=state,
+        pids=pids,
+        process_observation="local_proc" if processes is not None else "unavailable",
+        recorded_state=status.get("state"),
+        step=step,
+        ce_tokens=ledger.get("ce_tokens", 0),
+        main_ce_tokens=ledger.get(
+            "main_ce_tokens",
+            train.get("main_ce_tokens", train_ledger.get("ce_tokens", 0))
+            + ledger.get("ce_tokens", 0)
+            - train_ledger.get("ce_tokens", 0),
+        )
+        if train
+        else ledger.get("main_ce_tokens", ledger.get("ce_tokens", 0)),
+        phase_token_budget=budget,
+        phase_tokens=consumed,
+        budget_unit=unit,
+        phase_progress=round(consumed / budget, 4) if budget else None,
+        recent_tokens_per_second=round(speed, 2) if speed else None,
+        throughput_samples=len(speeds),
+        estimate_remaining_update_hours=round(max(0, budget - consumed) / speed / 3600, 2)
+        if speed and budget
+        else None,
+        estimate_scope="recent logged updates only; excludes evaluation, saves, waiting and later phases",
+        validation=dict(
+            step=validation.get("step"),
+            main_ce_tokens=validation.get("main_ce_tokens"),
+            nll=validation.get("lm_loss", validation.get("nll")),
+            ce_tokens=validation.get("supervised_tokens", validation.get("ce_tokens")),
+            scope=validation.get("evaluation_scope"),
+            selection_sha256=validation.get("selection_sha256"),
+        )
+        if validation
+        else None,
+    )
+
+
+def formal_status(root, proc_root=Path("/proc")):
+    root = Path(root).resolve()
+    processes = training_processes(proc_root)
+    print(
+        json.dumps(
+            dict(disk_free_gib=round(shutil.disk_usage(root).free / 1024**3, 2), reserve_gib=80)
+        )
+    )
+    for family in ("minikimik3", "miniqwen4", "minideepseekv4", "minifrontier1"):
+        candidates = [
+            p for p in (root / "strategy-base-pretraining-v1" / family).glob("*") if p.is_dir()
+        ]
+        if not candidates:
+            print(json.dumps(dict(model=family, state="not_started")))
+            continue
+
+        def priority(path):
+            files = [path / name for name in ("metrics.jsonl", "status.json", "run.json")]
+            return bool((processes or {}).get(str(path))), max(
+                (p.stat().st_mtime_ns for p in files if p.exists()), default=0
+            )
+
+        print(json.dumps(formal_row(max(candidates, key=priority), processes), ensure_ascii=False))
 
 
 def latest_train(path):
@@ -186,9 +379,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default="outputs")
     parser.add_argument(
-        "--run", default="strategy-v2", help="strategy-v2 or a named historical educational run"
+        "--run",
+        default="formal",
+        help="formal (default), strategy-v2, or a historical educational run",
     )
     args = parser.parse_args()
+    if args.run == "formal":
+        formal_status(args.root)
+        return
     if args.run == "strategy-v2":
         strategy_status(args.root)
         return

@@ -321,7 +321,9 @@ def test_formal_recipe_requires_actual_bindings_and_matching_profile(corpus, tmp
         video_examples=0,
     )
     monkeypatch.setattr(
-        strategy_gate, "check", lambda *a, **k: dict(model=name, phase=phase, errors=[])
+        strategy_gate,
+        "check",
+        lambda *a, **k: dict(model=name, phase=phase, errors=[], initial_start_authorized=False),
     )
     keys = (
         "sequence_length",

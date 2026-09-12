@@ -146,7 +146,7 @@ def assemble_native_components(components, output, *, max_bytes=64 * 1024**2, me
     partitions = _shared_text_partitions(shared, baseline["text_source"]["manifest_sha256"])
     samples = set(partitions)
     groups: dict[str, str] = {}
-    source_groups = defaultdict(lambda: defaultdict(set))
+    source_groups: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
     pixels: dict[str, str] = {}
     stages: dict[str, dict[str, Any]] = {}
     for stage in ("pretrain", "sft"):
