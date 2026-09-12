@@ -243,6 +243,28 @@ def test_main_phase_gate_keeps_separate_periodic_and_phase_end_minima(tmp_path, 
         phase_end_validation_ce_tokens=5_000_000,
         readable_200_passed=False,
     )
+    # A bound execution plan may retain the measured historical split instead
+    # of moving previously trained records to validation to meet a rounded target.
+    plan_record = json.loads(plan.read_text())
+    record["data_audit"].update(readable_200_passed=True, minimum_source_holdout_fraction=0.004658)
+    for target, allowed in (
+        (0.005, False),
+        (0.004658, True),
+        (0, False),
+        (1, False),
+        (True, False),
+        ("0.004", False),
+    ):
+        plan.write_text(
+            json.dumps(dict(plan_record, validation=dict(source_holdout_min_fraction=target)))
+        )
+        evidence.write_text(json.dumps(record))
+        result = strategy_gate.check(
+            plan, "Q1", evidence, data=tmp_path, config=config, output=tmp_path
+        )
+        assert result["allowed"] is allowed
+    plan.write_text(json.dumps(plan_record))
+    record["data_audit"].update(readable_200_passed=False, minimum_source_holdout_fraction=0.005)
     waiver = tmp_path / "waiver.json"
     authorized = dict(
         kind="maintainer_human_review_waiver",

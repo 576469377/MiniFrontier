@@ -57,7 +57,11 @@ def _inputs(corpus, encoded, *, reclassify=False):
         not in (
             {"correct_source_task_classification"}
             if reclassify
-            else {"exclude_cross_pool_train_groups", "exclude_source_quality_train_groups"}
+            else {
+                "exclude_cross_pool_train_groups",
+                "exclude_source_quality_train_groups",
+                "exclude_changed_text_origin_train_groups",
+            }
         )
     ):
         raise ValueError(

@@ -367,3 +367,54 @@ def test_legacy_short_range_resume_preserves_rows_and_rejects_protocol_errors(
         with pytest.raises(ValueError, match="source transport"):
             visual_sources.build_visual_candidates(output, reference, resume=True, **args)
         assert calls == [0]
+
+
+def test_public_parquet_budget_prevents_opening_another_source_file(monkeypatch):
+    import huggingface_hub
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from minifrontier.data import remote
+
+    data = io.BytesIO()
+    pq.write_table(pa.table({"value": [1, 2]}), data)
+    payload = data.getvalue()
+    opened = []
+    monkeypatch.setattr(
+        huggingface_hub,
+        "HfApi",
+        lambda: SimpleNamespace(
+            list_repo_tree=lambda *a, **k: [SimpleNamespace(path=f"{i}.parquet") for i in range(2)]
+        ),
+    )
+    monkeypatch.setattr(
+        huggingface_hub,
+        "HfFileSystem",
+        lambda: SimpleNamespace(info=lambda p: dict(size=len(payload))),
+    )
+
+    def bounded_file(url, size, *, network_budget, **kwargs):
+        opened.append(dict(url=url, allowance=network_budget))
+        result = io.BytesIO(payload)
+        result.transport_failures = []
+        return result
+
+    monkeypatch.setattr(remote, "RangeFile", bounded_file)
+    audit = {}
+    iterator = public_sources.source_rows(
+        "fixture",
+        seed=13,
+        audit=audit,
+        specification=dict(
+            repo="fixture",
+            revision="fixed",
+            prefix="",
+            bounded_http_ranges=True,
+            network_byte_budget=12345,
+        ),
+    )
+    assert next(iterator)[0] and next(iterator)[0]
+    with pytest.raises(ValueError, match="source network-byte budget"):
+        next(iterator)
+    assert len(opened) == 1 and opened[0]["allowance"] == 12345
+    assert audit["network_charged_bytes"] == 12345

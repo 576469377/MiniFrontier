@@ -179,8 +179,11 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
         ):
             errors.append("data admission missing readable_200_passed or bound maintainer waiver")
         holdout_fraction = audit.get("minimum_source_holdout_fraction", 0)
-        if holdout_fraction < 0.005 and not (direct_start and holdout_fraction > 0):
-            errors.append("some source has less than 0.5% group holdout")
+        holdout_target = plan.get("validation", {}).get("source_holdout_min_fraction", 0.005)
+        if type(holdout_target) not in (int, float) or not 0 < holdout_target < 1:
+            errors.append("source holdout target must be a fraction strictly between zero and one")
+        elif holdout_fraction < holdout_target and not (direct_start and holdout_fraction > 0):
+            errors.append(f"some source has less than {100 * holdout_target:g}% group holdout")
         base_pretraining = phase["budget_scope"] == "main"
         minimum_periodic = 1_000_000 if base_pretraining else 5_000_000
         if audit.get("periodic_validation_ce_tokens", 0) < minimum_periodic:

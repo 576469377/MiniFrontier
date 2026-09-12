@@ -340,3 +340,160 @@ def test_source_audit_only_publishes_closed_unchanged_candidates(tmp_path):
     (tmp_path / "corpus.sqlite").write_bytes(b"modified database")
     with pytest.raises(ValueError, match="checksum differs"):
         write_source_audit(tmp_path)
+
+
+def _closed_video_candidate(path, key="42", predecessor=None):
+    """Small immutable predecessor with the same persisted hashes as production."""
+    from minifrontier.data.corpus import CorpusBuilder
+    from minifrontier.data.video_sources import (
+        REPO,
+        REVISION,
+        Continuation,
+        atomic_json,
+        write_source_audit,
+    )
+
+    builder = CorpusBuilder(path, seed=19, max_gib=0.01, group_image_phash=False)
+    try:
+        builder.add(
+            dict(
+                source=REPO,
+                revision=REVISION,
+                item_id=key,
+                group_id=f"{REPO}:{key}",
+                license="CC-BY-NC-4.0",
+                lang="en",
+                task="video",
+                stage="pretrain",
+                text=f"A complete and distinct video caption identifying source clip {key}.",
+                media=[
+                    dict(
+                        kind="video",
+                        video_id=f"{REPO}:{key}",
+                        frames=["00.jpg"],
+                        rgb_sha256=f"stored-{key}",
+                        frame_rgb_sha256=[f"stored-{key}"],
+                        original_frame_rgb_sha256=[f"original-{key}"],
+                        sha256=f"mp4-{key}",
+                        clip_rgb_sha256=f"clip-{key}",
+                    )
+                ],
+            )
+        )
+        builder.finalize()
+    finally:
+        builder.db.close()
+    config = dict(repo=REPO, revision=REVISION, official_split="train", seed=19)
+    if predecessor:
+        config["continuation"] = Continuation(predecessor, seed=19).binding
+    atomic_json(path / "producer-config.json", config)
+    atomic_json(path / "source-catalog.json", [dict(path="train/000000.tar", size=4096)])
+    atomic_json(
+        path / "candidate-audit.json",
+        dict(
+            status="candidate_complete",
+            target_met=True,
+            independent_train_groups=1,
+            frame_bytes=0,
+            cursors={"train/000000.tar": 1024},
+            completed_shards=[],
+        ),
+    )
+    write_source_audit(path)
+    return path
+
+
+def test_continuation_inherits_cursor_and_excludes_every_ancestor(tmp_path):
+    from minifrontier.data.video_sources import Continuation, file_checksum
+
+    first = _closed_video_candidate(tmp_path / "first")
+    second = _closed_video_candidate(tmp_path / "second", "84", first)
+    before = {p: file_checksum(p / "corpus.sqlite") for p in (first, second)}
+    continuation = Continuation(second, seed=19)
+    assert continuation.ids == {"42", "84"}
+    assert continuation.cursors == {"train/000000.tar": 1024}
+    assert len(continuation.binding["ancestors"]) == 2
+    assert continuation.binding["source_frames_redecoded"] is False
+    for key in ("42", "84"):
+        for update in (
+            {"sha256": f"mp4-{key}"},
+            {"clip_rgb_sha256": f"clip-{key}"},
+            {"frame_rgb_sha256": [f"stored-{key}"]},
+            {"original_frame_rgb_sha256": [f"original-{key}"]},
+        ):
+            media = dict(sha256="new", clip_rgb_sha256="new", frame_rgb_sha256=["new"])
+            assert continuation.overlaps(dict(item_id="new", media=[media | update]))
+    assert not continuation.overlaps(
+        dict(
+            item_id="new",
+            media=[dict(sha256="new", clip_rgb_sha256="new", frame_rgb_sha256=["new"])],
+        )
+    )
+    assert before == {p: file_checksum(p / "corpus.sqlite") for p in (first, second)}
+
+
+def test_continuation_rejects_changed_identity_seed_and_cursor(tmp_path):
+    import json
+
+    from minifrontier.data.video_sources import Continuation, atomic_json, file_checksum
+
+    first = _closed_video_candidate(tmp_path / "first")
+    second = _closed_video_candidate(tmp_path / "second", "84", first)
+    with pytest.raises(ValueError, match="pinned train corpus"):
+        Continuation(first, seed=20)
+    audit_path = first / "candidate-audit.json"
+    audit = json.loads(audit_path.read_text())
+    audit["cursors"]["train/000000.tar"] = 17
+    atomic_json(audit_path, audit)
+    with pytest.raises(ValueError, match="ancestor identity changed"):
+        Continuation(second, seed=19)
+    source_path = first / "source-audit.json"
+    source = json.loads(source_path.read_text())
+    source["candidate_audit_sha256"] = file_checksum(audit_path)
+    atomic_json(source_path, source)
+    with pytest.raises(ValueError, match="cursor is invalid"):
+        Continuation(first, seed=19)
+
+
+def test_known_video_skips_mp4_body_and_decoder(tmp_path):
+    import json
+
+    from minifrontier.data.video_sources import Shard
+
+    data = io.BytesIO()
+    with tarfile.open(fileobj=data, mode="w") as archive:
+        for name, value in (
+            ("42.json", json.dumps({"video_id": 42}).encode()),
+            ("42.mp4", b"must never be decoded"),
+        ):
+            member = tarfile.TarInfo(name)
+            member.size = len(value)
+            archive.addfile(member, io.BytesIO(value))
+    data.seek(0)
+    shard = Shard.__new__(Shard)
+    shard.row, shard.excluded_ids = dict(size=len(data.getvalue())), {"42"}
+    shard.archive = tarfile.open(fileobj=data, mode="r:")  # noqa: SIM115
+    extracted = []
+    original = shard.archive.extractfile
+
+    def metadata_only(member):
+        extracted.append(member.name)
+        assert member.name.endswith(".json")
+        return original(member)
+
+    shard.archive.extractfile = metadata_only
+    try:
+        assert shard.next_clip()["rejected"] == {"source_video_in_predecessor": 1}
+        assert extracted == ["42.json"]
+    finally:
+        shard.archive.close()
+
+
+def test_completed_candidate_requires_new_output_before_any_write(tmp_path):
+    from minifrontier.data.video_sources import file_checksum, produce
+
+    first = _closed_video_candidate(tmp_path / "first")
+    before = {p.name: file_checksum(p) for p in first.iterdir() if p.is_file()}
+    with pytest.raises(FileExistsError, match="completed corpus is immutable"):
+        produce(SimpleNamespace(output=first))
+    assert before == {p.name: file_checksum(p) for p in first.iterdir() if p.is_file()}

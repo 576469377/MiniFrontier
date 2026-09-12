@@ -111,17 +111,34 @@ def source_rows(name, *, seed, audit, specification=None, skip_rows=0):
     )
     audit["reads"] = []
     fs = HfFileSystem()
+    network_limit = source.get("network_byte_budget")
+    if network_limit is not None and (
+        type(network_limit) is not int
+        or network_limit <= 0
+        or not source.get("bounded_http_ranges")
+    ):
+        raise ValueError("a positive network budget requires bounded HTTP ranges")
+    charged = 0
     for filename in files:
         remote = f"datasets/{source['repo']}@{source['revision']}/{filename}"
         if source.get("bounded_http_ranges"):
             from minifrontier.data.remote import RangeFile
 
             info = fs.info(remote)
+            file_budget = 2 * info["size"] + 64 * 1024**2
+            if network_limit is not None:
+                file_budget = min(file_budget, network_limit - charged)
+                if file_budget <= 0:
+                    raise ValueError("source network-byte budget reached")
+                # Charge a bounded file read before opening it. Rereads and retries
+                # fit inside RangeFile's allowance; unused allowance is conservative.
+                charged += file_budget
+                audit["network_charged_bytes"] = charged
             stream = RangeFile(
                 f"https://huggingface.co/datasets/{source['repo']}/resolve/{source['revision']}/{filename}",
                 info["size"],
                 chunk_size=1024**2,
-                network_budget=2 * info["size"] + 64 * 1024**2,
+                network_budget=file_budget,
             )
         else:
             stream = fs.open(remote, block_size=4 * 1024**2)

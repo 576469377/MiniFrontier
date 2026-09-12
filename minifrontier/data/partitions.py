@@ -368,6 +368,92 @@ def create_quality_exclusion_view(corpus_root, quality_review, inventory, output
     return _create_group_exclusion_view(corpus_root, quality_review, inventory, output, "quality")
 
 
+def create_text_origin_exclusion_view(corpus_root, text_corpus, report_path, output):
+    """Exclude old training media whose source text is no longer training data.
+
+    Missing text and held-out text are distinct reasons for exclusion. Neither
+    turns previously trained media into validation data. Existing media holdouts
+    must still match the new text partition, otherwise this operation stops.
+    """
+    from collections import Counter
+
+    from minifrontier.data.minifrontier1 import write_json
+
+    source, text, report_path = map(Path, (corpus_root, text_corpus, report_path))
+    if Path(output).exists() or report_path.exists():
+        raise FileExistsError("text-origin refinement requires new report and view paths")
+    inputs = {}
+    for name, path in (("media", source), ("text", text)):
+        manifest = json.loads((path / "corpus-manifest.json").read_text())
+        audit = json.loads((path / "source-audit.json").read_text())
+        if audit.get("status") not in {
+            "candidate_slice_complete_pending_admission",
+            "candidate_inventory_below_target",
+        }:
+            raise ValueError("text-origin refinement requires completed source inventories")
+        with contextlib.closing(open_corpus(path)) as db:
+            if sha256(corpus_storage_root(db) / "corpus.sqlite") != manifest["database_sha256"]:
+                raise ValueError("text-origin source database changed")
+            if name == "text":
+                partitions = dict(
+                    (identity, (stage, split))
+                    for identity, stage, split in db.execute("SELECT id,stage,split FROM samples")
+                )
+        inputs[name] = dict(
+            path=str(path.resolve()),
+            corpus_manifest_sha256=sha256(path / "corpus-manifest.json"),
+            source_audit_sha256=sha256(path / "source-audit.json"),
+            database_sha256=manifest["database_sha256"],
+        )
+    sizes: Counter[str] = Counter()
+    excluded, conflicts, holdout_conflicts = set(), [], []
+    checked = 0
+    with contextlib.closing(open_corpus(source)) as db:
+        for identity, split, group, payload in db.execute(
+            "SELECT id,split,group_root,payload FROM samples ORDER BY id"
+        ):
+            sizes[group] += 1
+            origin = json.loads(payload).get("text_origin")
+            if origin is None:
+                continue
+            checked += 1
+            current = partitions.get(origin.get("sample_id"))
+            if origin.get("split") != split or current != ("pretrain", split):
+                detail = dict(
+                    sample_id=identity,
+                    group=group,
+                    split=split,
+                    origin=origin,
+                    current_text_partition=current,
+                )
+                if split != "train":
+                    holdout_conflicts.append(detail)
+                else:
+                    excluded.add(group)
+                    conflicts.append(detail)
+    report = dict(
+        kind="changed_text_origin_group_audit",
+        corpus_kind="media",
+        inputs=inputs,
+        checked_origins=checked,
+        direct_conflicts=conflicts,
+        holdout_conflicts=holdout_conflicts,
+        excluded_training_groups=[
+            dict(group=g, records=sizes[g], reason="source text is absent or no longer train")
+            for g in sorted(excluded)
+        ],
+        status="holdout_conflicts_require_attention" if holdout_conflicts else "selection_complete",
+        old_holdouts_relabelled=False,
+        formal_admission=False,
+    )
+    require_space(report_path, len(json.dumps(report).encode()) + 1024**2, reserve_bytes=80 * GIB)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    write_json(report_path, report)
+    if holdout_conflicts:
+        raise ValueError("old media holdout text origins conflict with new text inventory")
+    return _create_group_exclusion_view(source, report_path, "media", output, "text_origin")
+
+
 def _create_group_exclusion_view(
     corpus_root, group_audit, inventory, output, kind, resolve_validation_conflicts=False
 ):
@@ -385,6 +471,15 @@ def _create_group_exclusion_view(
     audit = json.loads((source / "source-audit.json").read_text())
     binding = report["inputs"][inventory]
     quality = kind == "quality"
+    origin_change = kind == "text_origin"
+    if origin_change:
+        if (
+            report.get("status") != "selection_complete"
+            or report.get("holdout_conflicts") != []
+            or binding.get("source_audit_sha256") != sha256(source / "source-audit.json")
+        ):
+            raise ValueError("text-origin exclusion requires a complete, bound selection")
+        kind = "media"
     evidence_key = "quality_review_sha256" if quality else "grouping_audit_sha256"
     if quality:
         kind = report.get("corpus_kind")
@@ -408,7 +503,13 @@ def _create_group_exclusion_view(
         raise ValueError("validation conflicts require an explicit, complete grouping audit")
     if (
         report["kind"]
-        != ("source_quality_exclusion_review" if quality else f"cross_corpus_{kind}_group_audit")
+        != (
+            "changed_text_origin_group_audit"
+            if origin_change
+            else "source_quality_exclusion_review"
+            if quality
+            else f"cross_corpus_{kind}_group_audit"
+        )
         or binding["corpus_manifest_sha256"] != sha256(source / "corpus-manifest.json")
         or binding["database_sha256"] != manifest["database_sha256"]
         or audit.get("formal_admission")
@@ -417,7 +518,7 @@ def _create_group_exclusion_view(
     ):
         raise ValueError("exclusion evidence and unadmitted source differ")
     selected, promotions, test_anchors = {}, {}, {}
-    if quality:
+    if quality or origin_change:
         for defect in report["excluded_training_groups"]:
             group = defect.get("group")
             count = defect.get("records")
@@ -433,7 +534,7 @@ def _create_group_exclusion_view(
             ):
                 raise ValueError("quality exclusions require distinct groups, counts and reasons")
             selected[group] = count
-    for component in [] if quality else report["split_conflicts"]:
+    for component in [] if quality or origin_change else report["split_conflicts"]:
         if component["required_split"] not in {"val", "test"}:
             raise ValueError("exclusion has no held-out component")
         for member in component["members"]:
@@ -582,7 +683,9 @@ def _create_group_exclusion_view(
         formal_admission=False,
         split_rule=manifest["split_rule"]
         + (
-            "; exclude entire training groups with confirmed source-quality defects"
+            "; exclude entire train media groups whose source text is absent or no longer train"
+            if origin_change
+            else "; exclude entire training groups with confirmed source-quality defects"
             if quality
             else f"; exclude entire train groups linked to held-out {kind} across corpora"
         )
@@ -609,7 +712,9 @@ def _create_group_exclusion_view(
         root / "source-audit.json",
         dict(
             audit,
-            operation="exclude_source_quality_train_groups"
+            operation="exclude_changed_text_origin_train_groups"
+            if origin_change
+            else "exclude_source_quality_train_groups"
             if quality
             else (
                 f"resolve_{kind}_split_conflicts"

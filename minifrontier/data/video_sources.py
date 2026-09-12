@@ -17,6 +17,7 @@ import os
 import random
 import re
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tarfile
@@ -323,8 +324,9 @@ def read_catalog(budget):
 
 
 class Shard:
-    def __init__(self, row, budget, temporary, decoder_python, offset=0):
+    def __init__(self, row, budget, temporary, decoder_python, offset=0, *, excluded_ids=()):
         self.row, self.temporary, self.decoder_python = row, temporary, decoder_python
+        self.excluded_ids = excluded_ids
         url = f"https://huggingface.co/datasets/{REPO}/resolve/{REVISION}/{row['path']}"
         self.remote = BoundedRangeFile(url, row["size"], budget)
         self.remote.seek(offset)
@@ -342,6 +344,9 @@ class Shard:
             if video is None or safe_member(video) != (key, ".mp4"):
                 raise ValueError("JSON/MP4 archive pair is not aligned")
             cursor = self.archive.offset
+            if key in self.excluded_ids:
+                rejected["source_video_in_predecessor"] += 1
+                continue
             try:
                 caption = caption_metadata(metadata, key)
                 if video.size > MAX_CLIP_BYTES:
@@ -467,6 +472,126 @@ def corpus_record(item, shard):
     )
 
 
+class Continuation:
+    """Read immutable ancestors once; retain their cursors and exclude their media.
+
+    Every predecessor split is excluded, including held-out samples. Rejecting any
+    shared decoded frame prevents cross-version connected groups from moving an
+    already frozen split. This is exact identity protection, not a pHash audit.
+    """
+
+    def __init__(self, predecessor, *, seed):
+        self.ids: set[str] = set()
+        self.source_hashes: set[str] = set()
+        self.clip_hashes: set[str] = set()
+        self.frame_hashes: set[str] = set()
+        self.original_hashes: set[str] = set()
+        self.catalog: list[dict[str, Any]] = []
+        self.cursors: dict[str, int] = {}
+        self.completed: list[str] = []
+        self.binding: dict[str, Any] | None = None
+        if predecessor is None:
+            return
+        path: Path | None = Path(predecessor).resolve()
+        visited = set()
+        ancestors: list[dict[str, Any]] = []
+        expected: dict[str, str] | None = None
+        while path is not None:
+            if path in visited:
+                raise ValueError("video continuation has an ancestry cycle")
+            visited.add(path)
+            names = (
+                "source-audit.json",
+                "candidate-audit.json",
+                "producer-config.json",
+                "source-catalog.json",
+                "corpus-manifest.json",
+                "corpus.sqlite",
+            )
+            digests = {name: file_checksum(path / name) for name in names}
+            if expected is not None and digests != expected:
+                raise ValueError("video continuation ancestor identity changed")
+            source, audit, config, catalog, manifest = (
+                json.loads((path / name).read_text()) for name in names[:-1]
+            )
+            if (
+                config.get("repo") != REPO
+                or config.get("revision") != REVISION
+                or config.get("official_split") != "train"
+                or config.get("seed") != seed
+                or manifest.get("seed") != seed
+                or audit.get("status") not in {"candidate_complete", "insufficient_train_groups"}
+                or source.get("status")
+                not in {
+                    "candidate_slice_complete_pending_admission",
+                    "candidate_inventory_below_target",
+                }
+                or source.get("corpus_manifest_sha256") != digests["corpus-manifest.json"]
+                or source.get("candidate_audit_sha256") != digests["candidate-audit.json"]
+                or source.get("producer_config_sha256") != digests["producer-config.json"]
+                or manifest.get("database_sha256") != digests["corpus.sqlite"]
+            ):
+                raise ValueError("continuation requires a finalized unchanged pinned train corpus")
+            if not ancestors:
+                self.catalog = catalog
+                self.cursors = dict(audit["cursors"])
+                self.completed = list(audit["completed_shards"])
+                sizes = {row["path"]: row["size"] for row in catalog}
+                if not set(self.completed) <= sizes.keys() or any(
+                    key not in sizes
+                    or type(offset) is not int
+                    or not 0 <= offset <= sizes[key]
+                    or offset % 512
+                    for key, offset in self.cursors.items()
+                ):
+                    raise ValueError("continuation TAR cursor is invalid")
+            elif catalog != self.catalog:
+                raise ValueError("continuation source catalog changed")
+            ancestors.append(dict(path=str(path), files_sha256=digests))
+            db = sqlite3.connect(
+                (path / "corpus.sqlite").as_uri() + "?mode=ro&immutable=1", uri=True
+            )
+            try:
+                for (payload,) in db.execute("SELECT payload FROM samples"):
+                    record = json.loads(payload)
+                    media = record["media"][0]
+                    self.ids.add(record["item_id"])
+                    self.source_hashes.add(media["sha256"])
+                    self.clip_hashes.add(media["clip_rgb_sha256"])
+                    self.frame_hashes.update(media["frame_rgb_sha256"])
+                    self.original_hashes.update(media.get("original_frame_rgb_sha256", []))
+            finally:
+                db.close()
+            previous = config.get("continuation")
+            if previous:
+                parent = previous["ancestors"][0]
+                path, expected = Path(parent["path"]).resolve(), parent["files_sha256"]
+            else:
+                path = None
+        self.binding = dict(
+            schema_version=1,
+            ancestors=ancestors,
+            excluded_source_videos=len(self.ids),
+            excluded_stored_frame_hashes=len(self.frame_hashes),
+            excluded_original_frame_hashes=len(self.original_hashes),
+            policy="inherit committed TAR cursors; exclude every predecessor split by source ID, original MP4, whole decoded clip, or any original/stored decoded frame hash",
+            inherited_completed_shards=self.completed,
+            inherited_cursors=self.cursors,
+            source_frames_redecoded=False,
+            formal_admission=False,
+        )
+
+    def overlaps(self, record):
+        media = record["media"][0]
+        return bool(
+            record["item_id"] in self.ids
+            or media["sha256"] in self.source_hashes
+            or media["clip_rgb_sha256"] in self.clip_hashes
+            or self.frame_hashes.intersection(media["frame_rgb_sha256"])
+            or self.original_hashes.intersection(media.get("original_frame_rgb_sha256", []))
+        )
+
+
 def count_train_groups(builder):
     """Preview the corpus connected-group split before closing the candidate set."""
     parents: dict[str, str] = {}
@@ -540,6 +665,11 @@ def produce(args):
     from minifrontier.storage import require_space, reserve_write
 
     root = Path(args.output).resolve()
+    if (root / "corpus-manifest.json").exists():
+        raise FileExistsError(
+            "completed corpus is immutable; use --continue-from into a new output"
+        )
+    predecessor = Continuation(getattr(args, "continue_from", None), seed=args.seed)
     root.mkdir(parents=True, exist_ok=True)
     require_space(root, (args.workers + 1) * 40 * MIB, reserve_bytes=80 * GIB)
     config = dict(
@@ -563,6 +693,8 @@ def produce(args):
         label="complete human_caption; original clip fully decoded; no temporal truncation",
         source_code_sha256=checksum(Path(__file__).read_bytes()),
     )
+    if predecessor.binding is not None:
+        config["continuation"] = predecessor.binding
     config_path = root / "producer-config.json"
     if config_path.exists() and json.loads(config_path.read_text()) != config:
         raise ValueError("resume configuration/source changed; select a new candidate version")
@@ -570,7 +702,9 @@ def produce(args):
     budget = NetworkBudget(args.network_gib * GIB, journal=root / "network-budget.json")
     catalog_path = root / "source-catalog.json"
     catalog = (
-        json.loads(catalog_path.read_text()) if catalog_path.exists() else read_catalog(budget)
+        json.loads(catalog_path.read_text())
+        if catalog_path.exists()
+        else predecessor.catalog or read_catalog(budget)
     )
     atomic_json(catalog_path, catalog)
     random.Random(args.seed).shuffle(catalog)
@@ -586,13 +720,15 @@ def produce(args):
             started_at=time.time(),
             accepted_clips=0,
             frame_bytes=0,
-            cursors={},
+            cursors=dict(predecessor.cursors),
             rejected={},
             license=LICENSE,
             source_card=CARD_URL,
-            completed_shards=[],
+            completed_shards=list(predecessor.completed),
         )
     )
+    if predecessor.binding is not None:
+        audit["continuation"] = predecessor.binding
     builder = CorpusBuilder(
         root, seed=args.seed, max_gib=args.metadata_gib / 2, group_image_phash=False
     )
@@ -640,7 +776,12 @@ def produce(args):
         if pending:
             row = pending.pop(0)
             return Shard(
-                row, budget, temporary, args.decoder_python, audit["cursors"].get(row["path"], 0)
+                row,
+                budget,
+                temporary,
+                args.decoder_python,
+                audit["cursors"].get(row["path"], 0),
+                excluded_ids=predecessor.ids,
             )
         return None
 
@@ -685,7 +826,9 @@ def produce(args):
                             (directory / "frames" / f["path"]).stat().st_size
                             for f in item["decoded"]["frames"]
                         )
-                        if (
+                        if predecessor.overlaps(record):
+                            rejected["media_overlap_with_predecessor"] += 1
+                        elif (
                             item["key"] in seen
                             or record["media"][0]["clip_rgb_sha256"] in media_hashes
                         ):
@@ -699,6 +842,13 @@ def produce(args):
                                 (directory / "frames").replace(destination)
                             if builder.add(record):
                                 builder.db.commit()
+                                # Each accepted clip is durably committed. Refresh the
+                                # physical page allocation before reserving the next row;
+                                # do not compound conservative per-row estimates forever.
+                                builder.approximate_bytes = (
+                                    builder.db.execute("PRAGMA page_count").fetchone()[0]
+                                    * builder.db.execute("PRAGMA page_size").fetchone()[0]
+                                )
                                 seen.add(item["key"])
                                 media_hashes.add(record["media"][0]["clip_rgb_sha256"])
                                 frame_bytes += size
@@ -777,6 +927,10 @@ def main():
     producer = sub.add_parser("produce")
     producer.add_argument("--output", required=True)
     producer.add_argument("--decoder-python", default=sys.executable)
+    producer.add_argument(
+        "--continue-from",
+        help="finalized PE candidate predecessor; append unseen clips into a new output only",
+    )
     producer.add_argument("--seed", type=int, default=20260912)
     producer.add_argument(
         "--target-clips",
