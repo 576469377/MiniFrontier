@@ -147,6 +147,97 @@ def test_native_metrics_preserve_values_and_skip_operational_counters():
     assert training_scalars(metrics)["eval/phase_end_reward"] == 0.5
 
 
+def test_native_ledger_counters_match_flat_mf1_counters_without_duplicate_updates():
+    ledger = dict(
+        ce_tokens=100,
+        input_tokens=130,
+        response_tokens=0,
+        optimizer_updates=5,
+        skipped_windows=0,
+        image_occurrences=2,
+        video_examples=1,
+        video_frames=8,
+        image_features=196,
+    )
+    native = training_scalars(dict(event="train", step=5, token_ledger=ledger))
+    assert native == training_scalars(dict(step=5, **ledger))
+    assert native == {f"train/{k}": v for k, v in ledger.items() if k != "optimizer_updates"}
+    overridden = training_scalars(dict(event="train", ce_tokens=101, token_ledger=ledger))
+    assert overridden["train/ce_tokens"] == 101
+    assert "train/lr" not in native and "perf/optimizer_seconds" not in native
+
+
+@pytest.mark.parametrize(
+    "stage", [None, "pretrain", "sft", "sparse_cpt", "dense_distill", "dpo", "grpo", "mopd", "opd"]
+)
+def test_native_throughput_requires_known_ce_stage(stage):
+    # Even inherited nonzero CE counters cannot establish this update's unit.
+    values = dict(event="train", tokens_per_second=40, token_ledger=dict(ce_tokens=100))
+    scalars = training_scalars(values, stage=stage)
+    tag = "ce_per_second" if stage in {"pretrain", "sft", "sparse_cpt"} else "tokens_per_second"
+    assert scalars == {"train/ce_tokens": 100, f"perf/{tag}": 40}
+    assert training_scalars(dict(values, ce_per_second=42), stage="pretrain") == {
+        "train/ce_tokens": 100,
+        "perf/ce_per_second": 42,
+    }
+
+
+def test_input_throughput_uses_current_batch_and_preserves_recorded_value():
+    values = dict(
+        event="train",
+        input_batch_actual=160,
+        step_seconds=2,
+        token_ledger=dict(input_tokens=999999),
+    )
+    assert training_scalars(values)["perf/input_per_second"] == 80
+    assert "input_per_second" not in values
+    values["input_per_second"] = 75
+    assert training_scalars(values)["perf/input_per_second"] == 75
+
+
+@pytest.mark.parametrize(
+    ("inputs", "seconds"),
+    [
+        (None, 2),
+        (160, None),
+        (160, 0),
+        (160, -1),
+        (True, 2),
+        (160, float("nan")),
+        (float("inf"), 2),
+    ],
+)
+def test_input_throughput_does_not_invent_missing_or_invalid_measurements(inputs, seconds):
+    scalars = training_scalars(dict(event="train", input_batch_actual=inputs, step_seconds=seconds))
+    assert "perf/input_per_second" not in scalars
+
+
+@pytest.mark.parametrize("scope", ["periodic", "phase_end"])
+@pytest.mark.parametrize(
+    "denominator", ["ce_tokens", "response_positions", "active_responses", "pairs", None]
+)
+def test_validation_aliases_preserve_non_ce_denominators(scope, denominator):
+    values = dict(
+        event="validation",
+        evaluation_scope=scope,
+        loss_denominator=denominator,
+        supervised_tokens=17,
+        seconds=2.5,
+    )
+    prefix = "eval/phase_end_" if scope == "phase_end" else "eval/"
+    ce = denominator == "ce_tokens"
+    assert training_scalars(values) == {
+        prefix + ("ce_tokens" if ce else "supervised_tokens"): 17,
+        prefix + ("duration_seconds" if ce else "seconds"): 2.5,
+    }
+    if ce:
+        values.update(ce_tokens=19, duration_seconds=3.0)
+        assert training_scalars(values) == {
+            prefix + "ce_tokens": 19,
+            prefix + "duration_seconds": 3.0,
+        }
+
+
 def test_native_view_skips_diagnostics_and_preserves_actual_event_times(tmp_path):
     source = tmp_path / "source"
     source.mkdir()

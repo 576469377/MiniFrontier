@@ -33,6 +33,8 @@ class RunView:
         self.events = EventAccumulator(
             str(self.source / "tensorboard"), size_guidance={"scalars": 0}
         )
+        run = self.source / "run.json"
+        self.stage = json.loads(run.read_text()).get("stage") if run.exists() else None
         self.writer = SummaryWriter(str(self.output))
         self.offset = self.rows = 0
         self.inode = None
@@ -65,7 +67,7 @@ class RunView:
                 if not line.endswith(b"\n"):
                     break  # A training process may still be writing this JSON record.
                 values = json.loads(line)
-                scalars = training_scalars(values)
+                scalars = training_scalars(values, stage=self.stage)
                 if not scalars:
                     self.rows += 1
                     self.offset = handle.tell()
@@ -114,26 +116,43 @@ def directory_notifications(paths):
     read_fd, write_fd = os.pipe2(os.O_NONBLOCK | os.O_CLOEXEC)
     previous_handler = signal.signal(signal.SIGIO, lambda *_: None)
     previous_wakeup = signal.set_wakeup_fd(write_fd, warn_on_full_buffer=False)
-    watches = []
+    watches = {}
+
+    def refresh():
+        # Future phases may not have created their run/event directories yet.
+        # Watch their nearest existing parent, then move inward on creation.
+        wanted = set()
+        for path in paths:
+            path = Path(path).resolve()
+            while not path.is_dir():
+                path = path.parent
+            wanted.add(path)
+        changed = wanted != watches.keys()
+        for path in wanted - watches.keys():
+            fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
+            watches[path] = fd
+            fcntl.fcntl(
+                fd,
+                fcntl.F_NOTIFY,
+                fcntl.DN_MODIFY | fcntl.DN_CREATE | fcntl.DN_RENAME | fcntl.DN_MULTISHOT,
+            )
+        for path in watches.keys() - wanted:
+            os.close(watches.pop(path))
+        return changed
 
     def wait():
+        if refresh():
+            return  # Sync directories that appeared before the watch was installed.
         select.select([read_fd], [], [])
         with contextlib.suppress(BlockingIOError):
             while os.read(read_fd, 65536):
                 pass
 
     try:
-        for path in sorted(set(paths)):
-            fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
-            watches.append(fd)
-            fcntl.fcntl(
-                fd,
-                fcntl.F_NOTIFY,
-                fcntl.DN_MODIFY | fcntl.DN_CREATE | fcntl.DN_RENAME | fcntl.DN_MULTISHOT,
-            )
+        refresh()
         yield wait
     finally:
-        for fd in watches:
+        for fd in watches.values():
             os.close(fd)
         signal.set_wakeup_fd(previous_wakeup)
         signal.signal(signal.SIGIO, previous_handler)
@@ -149,7 +168,7 @@ def main():
     parser.add_argument(
         "--event-driven",
         action="store_true",
-        help="Linux: wait for file writes between syncs; all source directories must exist",
+        help="Linux: wait for file writes and future run-directory creation between syncs",
     )
     parser.add_argument("--interval", type=float, default=5)
     args = parser.parse_args()

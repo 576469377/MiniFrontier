@@ -20,13 +20,15 @@ python -m scripts.export_experiments --workspace "$PWD" \
 
 正式状态命令结合最新 JSONL 和本地训练进程显示进度，优先于保存检查点时的滞后状态。没有进程可见性时报告 `unknown`；ETA 仅涵盖当前阶段的更新时间，验证、存盘和后续阶段另计。
 
-截至 2026-09-12，状态脚本尚未把 MF1 的 `budget_complete_unqualified` 映射为完成：进程退出后可能显示 `stopped`。遇到该状态，应结合 `recorded_state`、实际 token 账本和检查点确认预算完成情况；能力是否通过仍须单独判断。
+MF1 的 `budget_complete_unqualified` 在进程已退出且阶段 token 达到预算时显示为 `completed`，`recorded_state` 保留原值；能力是否通过仍须单独判断。
 
 重复刷新受文件锁保护。台账包含来源模型、MF1、历史诊断、本机队列及已经同步的远端记录；不会扫描实验代码目录。迁移后遗留的空白等待记录合并到实际远端运行，已产生结果的独立运行保留各自编号。缺少完成证据或记录过期时显示 `unverified` / `unverified_stale`，不能根据目录存在推断正在训练。
 
 ## TensorBoard
 
 四个模型统一使用 `train / eval / perf`。训练计数与验证分母分开，常规和阶段末验证分别显示。启动、QK 裁剪及缓存回收等事件保留在 JSONL，不重复画成训练曲线；具体指标见[展示说明](../audits/training-infrastructure.md#tensorboard-展示)。
+
+CE 训练统一展示 `perf/ce_per_second`；`perf/input_per_second` 取原记录，或由本步实际 input 数除以耗时计算。训练 CE/input 计数和验证 CE 分母分别对齐。索引器、偏好与 rollout 的吞吐保留原分母，模型未记录的学习率或专有指标不补造。正式看板排除失败运行，失败原因和原日志仍留在实验档案。
 
 [`sync_mf1_tensorboard.py`](../../scripts/sync_mf1_tensorboard.py)兼容四个训练器，从原始 JSONL 和 event 文件生成独立视图，保留 step 与 wall time。脚本名称为兼容已有服务保留。注册表为以下对象的列表，`source` 指向训练目录，`publish` 可选，用于建立展示链接：
 
@@ -43,17 +45,19 @@ python -m scripts.export_experiments --workspace "$PWD" \
 ```bash
 # 在独立环境安装监控依赖，避免训练期间同步共用 .venv
 UV_PROJECT_ENVIRONMENT=outputs/envs/monitoring uv sync --locked --extra monitoring
-# 每次启动指定新的视图目录；源训练目录及其 tensorboard 子目录须已存在
+# 每次启动指定新的视图目录；可预登记尚未创建的后续阶段
 UV_PROJECT_ENVIRONMENT=outputs/envs/monitoring uv run --no-sync python scripts/sync_mf1_tensorboard.py \
   --registry /path/to/registry.json --output outputs/tensorboard-grouped-new \
   --watch --event-driven --interval 5
 # 仅在端口空闲时启动；已有服务沿用其记录的启动命令
 UV_PROJECT_ENVIRONMENT=outputs/envs/monitoring uv run --no-sync tensorboard \
   --logdir outputs/tensorboard-pretraining-v1 \
-  --host 127.0.0.1 --port 6008 --reload_interval 5
+  --host 127.0.0.1 --port 6008 --reload_interval 5 --samples_per_plugin=scalars=1000000
 ```
 
-Linux 事件模式等待文件写入，`--interval` 合并短时间内的更新。普通 `--watch` 为兼容的轮询模式。半行 JSON 等待写完后读取；源日志被截断或替换时停止并报错，需新建视图。原始日志、事件和检查点均不改写。切换视图时重启 TensorBoard 可清除其内存中的旧标签，训练进程继续运行。
+Linux 事件模式等待文件写入，`--interval` 合并短时间内的更新；未开始的阶段先监听已有父目录，创建后自动监听其日志目录，无需预建训练目录。普通 `--watch` 为兼容的轮询模式。半行 JSON 等待写完后读取；源日志被截断或替换时停止并报错，需新建视图。原始日志、事件和检查点均不改写。
+
+`--samples_per_plugin=scalars=1000000` 将每条曲线的展示上限从默认 1,000 点提高到 100 万点，足以覆盖本轮各阶段的预计记录量；该版本设为 `0` 会返回空曲线。展示上限不影响原日志。移除失败运行需同时更新注册表、移除展示链接，并重启 TensorBoard 清除旧标签缓存；训练进程继续运行。
 
 <details>
 <summary>维护环境的展示目录与端口</summary>
