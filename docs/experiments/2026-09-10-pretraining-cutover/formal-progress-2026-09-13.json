@@ -1,0 +1,2221 @@
+{
+  "schema_version": 1,
+  "kind": "formal_pretraining_progress_snapshot",
+  "observed_utc": "2026-09-13T06:56:45.290773+00:00",
+  "live_feed": false,
+  "scope": "Active formal phases and completed parent budgets. All token budgets are main CE; independent indexer budgets excluded. Budget completion does not establish generation capability.",
+  "training_curve_sampling": "For each active phase: first, every logged step divisible by 250, and latest training row; all validation records through capture retained. Completed parent phase summaries supplement the 2026-09-12 snapshot.",
+  "throughput_scope": "Arithmetic mean of up to the latest 20 logged CE update rates; excludes evaluation, checkpoint saves and waiting. Different phases and modalities are not performance-equivalent.",
+  "eta_scope": "Remaining current-phase optimizer updates only. No ETA published for a recovered run with fewer than 20 logged throughput samples.",
+  "models": [
+    {
+      "model": "minikimik3",
+      "phase": "K2",
+      "state": "running",
+      "recorded_state": null,
+      "step": 25,
+      "ce_tokens": 779461,
+      "main_ce_tokens": 200806972,
+      "phase_token_budget": 1200000000,
+      "phase_tokens": 779461,
+      "budget_unit": "ce_tokens",
+      "phase_progress": 0.0006,
+      "recent_tokens_per_second": 1927.43,
+      "throughput_samples": 6,
+      "estimate_remaining_update_hours": null,
+      "validation": {
+        "step": 0,
+        "main_ce_tokens": 200027511,
+        "nll": 3.580845569031459,
+        "ce_tokens": 1000657,
+        "scope": "periodic",
+        "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743"
+      },
+      "program_main_ce_budget": 2000000000,
+      "program_progress": 0.100403,
+      "run_directory": "outputs/strategy-base-pretraining-v1/minikimik3/K2-recovery-mb16",
+      "generation_capability_qualified": false,
+      "identity": {
+        "seed": 42,
+        "batch_size": 16,
+        "input_batch_tokens": 32768,
+        "sequence_length": 2048,
+        "source": {
+          "commit": "32511e8910d7f6a188a563fb383d8f6a07b6c3a7",
+          "dirty": false,
+          "implementation_sha256": "747525761f19b5c4a7e008f0f32629a6091895da9e3e7d116948fdf6f8aa53a3"
+        },
+        "data_sha256": "7b6088dcfa4a6fd473e8ecf4b7434281ab1ed325ebfac3655e393913e989e490",
+        "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+        "recipe_sha256": "1f66452404467d015b5646f1857756259d5c20d4be4d28795e8216553dfb5112",
+        "bindings": {
+          "K1": {
+            "data_sha256": "a81dabbdc785daa77bb9afd69123e10fffbde2528370ee80b1279d83119e6ed8",
+            "config_sha256": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+            "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+            "batch_size": 64,
+            "sequence_length": 1024
+          },
+          "K2": {
+            "data_sha256": "7b6088dcfa4a6fd473e8ecf4b7434281ab1ed325ebfac3655e393913e989e490",
+            "config_sha256": "d3b65a8fd6d2a11f08ae73c8db45aaea1dc51cee21dd9aa9a510d0208a96b634",
+            "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+            "batch_size": 16,
+            "sequence_length": 2048
+          }
+        }
+      },
+      "training_curve": [
+        {
+          "step": 1,
+          "main_ce_tokens": 200058542,
+          "lm_loss": 3.716338634490967,
+          "loss": 4.115666389465332,
+          "grad_norm": 0.545545220375061,
+          "tokens_per_second": 1938.809881020531,
+          "step_seconds": 16.005179416388273,
+          "input_batch_actual": 33275,
+          "microbatch_max_samples": 16,
+          "peak_allocated_mib": 14712.7626953125
+        },
+        {
+          "step": 25,
+          "main_ce_tokens": 200806972,
+          "lm_loss": 3.9275224208831787,
+          "loss": 4.346424579620361,
+          "grad_norm": 0.535155713558197,
+          "tokens_per_second": 1072.913579617899,
+          "step_seconds": 28.818723695352674,
+          "input_batch_actual": 33095,
+          "microbatch_max_samples": 16,
+          "peak_allocated_mib": 14770.11572265625
+        }
+      ],
+      "validation_curve": [
+        {
+          "step": 0,
+          "main_ce_tokens": 200027511,
+          "lm_loss": 3.580845569031459,
+          "supervised_tokens": 1000657,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+          "requested_ce_tokens": 1000000,
+          "seconds": 115.04959457553923,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 2.6708789649938733,
+              "ce_tokens": 8977
+            },
+            "chart_table": {
+              "lm_loss": 2.500061385978489,
+              "ce_tokens": 23139
+            },
+            "code": {
+              "lm_loss": 1.9315580566894905,
+              "ce_tokens": 271792
+            },
+            "dialogue": {
+              "lm_loss": 3.1142729113065903,
+              "ce_tokens": 41394
+            },
+            "en_edu": {
+              "lm_loss": 4.16422130822668,
+              "ce_tokens": 173460
+            },
+            "ocr_document": {
+              "lm_loss": 3.0237207040652683,
+              "ce_tokens": 25965
+            },
+            "verified_math_science": {
+              "lm_loss": 3.726433525724021,
+              "ce_tokens": 136322
+            },
+            "video": {
+              "lm_loss": 3.3023478190104165,
+              "ce_tokens": 438
+            },
+            "vqa": {
+              "lm_loss": 2.7999486418113966,
+              "ce_tokens": 6967
+            },
+            "zh_edu": {
+              "lm_loss": 4.86123857113801,
+              "ce_tokens": 312203
+            }
+          }
+        }
+      ],
+      "eta_note": "Insufficient recent updates after recovery; no stable duration estimate."
+    },
+    {
+      "model": "miniqwen4",
+      "phase": "Q1",
+      "state": "running",
+      "recorded_state": "running",
+      "step": 11745,
+      "ce_tokens": 187841929,
+      "main_ce_tokens": 187841929,
+      "phase_token_budget": 300000000,
+      "phase_tokens": 187841929,
+      "budget_unit": "ce_tokens",
+      "phase_progress": 0.6261,
+      "recent_tokens_per_second": 1476.68,
+      "throughput_samples": 20,
+      "estimate_remaining_update_hours": 21.1,
+      "validation": {
+        "step": 9380,
+        "main_ce_tokens": 150005925,
+        "nll": 4.252340675778458,
+        "ce_tokens": 1000555,
+        "scope": "periodic",
+        "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276"
+      },
+      "program_main_ce_budget": 3000000000,
+      "program_progress": 0.062614,
+      "run_directory": "outputs/strategy-base-pretraining-v1/miniqwen4/Q1",
+      "generation_capability_qualified": false,
+      "identity": {
+        "seed": 42,
+        "batch_size": 32,
+        "input_batch_tokens": 16384,
+        "sequence_length": 1024,
+        "source": {
+          "commit": "9b1d8fd6f26ab125d3e8d64a0e830a2db3db72fa",
+          "dirty": false,
+          "implementation_sha256": "08d10e01ee255d43118c5970433d2e8e77126f313bdb668e5347a6b21fe34004"
+        },
+        "data_sha256": "c475eaa3fb9ffe1f0a3b855def363e8cf99d0239ec674ef83b1f83b17ef182f3",
+        "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+        "recipe_sha256": "13b50bc54ca657d9ea3b999a0035ea7b5f520cfd7a8594d778a4ba03a9b905cd",
+        "bindings": {
+          "Q1": {
+            "data_sha256": "c475eaa3fb9ffe1f0a3b855def363e8cf99d0239ec674ef83b1f83b17ef182f3",
+            "config_sha256": "d9c18392356f2a42236b124404dc8eed76f8d5694bc8f98aeab4b13d2507c253",
+            "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+            "batch_size": 32,
+            "sequence_length": 1024
+          }
+        }
+      },
+      "training_curve": [
+        {
+          "step": 1,
+          "main_ce_tokens": 15647,
+          "lm_loss": 11.113167762756348,
+          "loss": 12.232523918151855,
+          "grad_norm": 2.014950752258301,
+          "tokens_per_second": 922.9851251298817,
+          "step_seconds": 16.952602565288544,
+          "input_batch_actual": 16435,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 13820.18115234375
+        },
+        {
+          "step": 250,
+          "main_ce_tokens": 3993498,
+          "lm_loss": 7.803239822387695,
+          "loss": 8.59866714477539,
+          "grad_norm": 0.5819848775863647,
+          "tokens_per_second": 954.785233107125,
+          "step_seconds": 16.52518226392567,
+          "input_batch_actual": 16624,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16481.87744140625
+        },
+        {
+          "step": 500,
+          "main_ce_tokens": 7998719,
+          "lm_loss": 6.263284683227539,
+          "loss": 6.901834964752197,
+          "grad_norm": 0.44295600056648254,
+          "tokens_per_second": 1791.432763231071,
+          "step_seconds": 8.85324882157147,
+          "input_batch_actual": 16628,
+          "microbatch_max_samples": 31,
+          "peak_allocated_mib": 16491.8056640625
+        },
+        {
+          "step": 750,
+          "main_ce_tokens": 11996559,
+          "lm_loss": 5.991194725036621,
+          "loss": 6.609404563903809,
+          "grad_norm": 0.4456842541694641,
+          "tokens_per_second": 1316.3862806080517,
+          "step_seconds": 12.357315052300692,
+          "input_batch_actual": 17037,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16494.330078125
+        },
+        {
+          "step": 1000,
+          "main_ce_tokens": 15995369,
+          "lm_loss": 5.623569965362549,
+          "loss": 6.211397171020508,
+          "grad_norm": 0.41639313101768494,
+          "tokens_per_second": 1228.1774046574992,
+          "step_seconds": 12.883317947387695,
+          "input_batch_actual": 16599,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16494.330078125
+        },
+        {
+          "step": 1250,
+          "main_ce_tokens": 19990220,
+          "lm_loss": 5.291371822357178,
+          "loss": 5.845247745513916,
+          "grad_norm": 0.40277647972106934,
+          "tokens_per_second": 1920.7842782392156,
+          "step_seconds": 8.538699626922607,
+          "input_batch_actual": 17211,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16495.1357421875
+        },
+        {
+          "step": 1500,
+          "main_ce_tokens": 23979629,
+          "lm_loss": 4.97813606262207,
+          "loss": 5.505311012268066,
+          "grad_norm": 0.40084460377693176,
+          "tokens_per_second": 1401.0695877746757,
+          "step_seconds": 11.566877292469144,
+          "input_batch_actual": 16993,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16495.1357421875
+        },
+        {
+          "step": 1750,
+          "main_ce_tokens": 27978601,
+          "lm_loss": 4.652012825012207,
+          "loss": 5.146112442016602,
+          "grad_norm": 0.40543118119239807,
+          "tokens_per_second": 1462.5629631529212,
+          "step_seconds": 11.094223229214549,
+          "input_batch_actual": 16969,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 2000,
+          "main_ce_tokens": 31977606,
+          "lm_loss": 4.83698034286499,
+          "loss": 5.347661018371582,
+          "grad_norm": 0.3993600308895111,
+          "tokens_per_second": 1410.6358402462422,
+          "step_seconds": 11.336022766306996,
+          "input_batch_actual": 16777,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 2250,
+          "main_ce_tokens": 35974308,
+          "lm_loss": 4.865757942199707,
+          "loss": 5.382537841796875,
+          "grad_norm": 0.4618471562862396,
+          "tokens_per_second": 1891.209112775208,
+          "step_seconds": 8.479760324582458,
+          "input_batch_actual": 16820,
+          "microbatch_max_samples": 31,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 2500,
+          "main_ce_tokens": 39977298,
+          "lm_loss": 4.798804759979248,
+          "loss": 5.308754920959473,
+          "grad_norm": 0.440914511680603,
+          "tokens_per_second": 1438.906904115016,
+          "step_seconds": 11.025035709142685,
+          "input_batch_actual": 16644,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 2750,
+          "main_ce_tokens": 43973640,
+          "lm_loss": 4.5369672775268555,
+          "loss": 5.020898818969727,
+          "grad_norm": 0.42881906032562256,
+          "tokens_per_second": 1451.0644140788263,
+          "step_seconds": 11.304115682840347,
+          "input_batch_actual": 17180,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 3000,
+          "main_ce_tokens": 47976832,
+          "lm_loss": 4.382194995880127,
+          "loss": 4.8470354080200195,
+          "grad_norm": 0.45065003633499146,
+          "tokens_per_second": 1485.6500112540045,
+          "step_seconds": 10.84575766697526,
+          "input_batch_actual": 16902,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 3250,
+          "main_ce_tokens": 51970206,
+          "lm_loss": 4.5085039138793945,
+          "loss": 4.98789119720459,
+          "grad_norm": 0.44843757152557373,
+          "tokens_per_second": 1384.364681806333,
+          "step_seconds": 11.552591748535633,
+          "input_batch_actual": 16731,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 3500,
+          "main_ce_tokens": 55970217,
+          "lm_loss": 3.9670112133026123,
+          "loss": 4.398108959197998,
+          "grad_norm": 0.5451918840408325,
+          "tokens_per_second": 1382.4607641275734,
+          "step_seconds": 11.36524117551744,
+          "input_batch_actual": 16541,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 3750,
+          "main_ce_tokens": 59962399,
+          "lm_loss": 4.442739486694336,
+          "loss": 4.916082859039307,
+          "grad_norm": 0.4590284526348114,
+          "tokens_per_second": 1452.3231356247495,
+          "step_seconds": 10.844694003462791,
+          "input_batch_actual": 16550,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 4000,
+          "main_ce_tokens": 63966200,
+          "lm_loss": 4.117468357086182,
+          "loss": 4.559925079345703,
+          "grad_norm": 0.4669763743877411,
+          "tokens_per_second": 1509.4619673982934,
+          "step_seconds": 10.958871675655246,
+          "input_batch_actual": 17368,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 4250,
+          "main_ce_tokens": 67964332,
+          "lm_loss": 4.1969804763793945,
+          "loss": 4.649569988250732,
+          "grad_norm": 0.5042169094085693,
+          "tokens_per_second": 1446.8856658310067,
+          "step_seconds": 11.246223792433739,
+          "input_batch_actual": 17058,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 4500,
+          "main_ce_tokens": 71955486,
+          "lm_loss": 4.1362385749816895,
+          "loss": 4.5825700759887695,
+          "grad_norm": 0.5240989327430725,
+          "tokens_per_second": 1451.9281700486056,
+          "step_seconds": 11.198212374001741,
+          "input_batch_actual": 17033,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 4750,
+          "main_ce_tokens": 75953378,
+          "lm_loss": 4.201278209686279,
+          "loss": 4.6535725593566895,
+          "grad_norm": 0.4850294589996338,
+          "tokens_per_second": 1391.3371724406095,
+          "step_seconds": 11.435042716562748,
+          "input_batch_actual": 16719,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 5000,
+          "main_ce_tokens": 79954402,
+          "lm_loss": 4.348416328430176,
+          "loss": 4.814245700836182,
+          "grad_norm": 0.5060544013977051,
+          "tokens_per_second": 1470.4943691327353,
+          "step_seconds": 11.196914687752724,
+          "input_batch_actual": 17230,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 5250,
+          "main_ce_tokens": 83955106,
+          "lm_loss": 4.067290306091309,
+          "loss": 4.506618976593018,
+          "grad_norm": 0.4927053451538086,
+          "tokens_per_second": 1408.688649264813,
+          "step_seconds": 11.118141690269113,
+          "input_batch_actual": 16454,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 5500,
+          "main_ce_tokens": 87954623,
+          "lm_loss": 4.189815998077393,
+          "loss": 4.640254497528076,
+          "grad_norm": 0.5453320145606995,
+          "tokens_per_second": 1460.8098756056365,
+          "step_seconds": 10.815233565866947,
+          "input_batch_actual": 16529,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 5750,
+          "main_ce_tokens": 91954879,
+          "lm_loss": 3.8414793014526367,
+          "loss": 4.257041931152344,
+          "grad_norm": 0.5311387777328491,
+          "tokens_per_second": 1415.6574502793328,
+          "step_seconds": 11.088134348392487,
+          "input_batch_actual": 16477,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 6000,
+          "main_ce_tokens": 95947853,
+          "lm_loss": 4.112369537353516,
+          "loss": 4.554226875305176,
+          "grad_norm": 0.5507445335388184,
+          "tokens_per_second": 1434.3680100917293,
+          "step_seconds": 11.059923177585006,
+          "input_batch_actual": 16625,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 6250,
+          "main_ce_tokens": 99948643,
+          "lm_loss": 4.191100120544434,
+          "loss": 4.642189025878906,
+          "grad_norm": 0.5323230624198914,
+          "tokens_per_second": 1414.792691233209,
+          "step_seconds": 11.055329941213131,
+          "input_batch_actual": 16386,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 6500,
+          "main_ce_tokens": 103945299,
+          "lm_loss": 4.065725803375244,
+          "loss": 4.512510299682617,
+          "grad_norm": 0.6002298593521118,
+          "tokens_per_second": 1471.6042230015835,
+          "step_seconds": 11.219728607684374,
+          "input_batch_actual": 17287,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 6750,
+          "main_ce_tokens": 107947531,
+          "lm_loss": 4.034887313842773,
+          "loss": 4.470661640167236,
+          "grad_norm": 0.5663536787033081,
+          "tokens_per_second": 1407.8393930158925,
+          "step_seconds": 11.122007295489311,
+          "input_batch_actual": 16446,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 7000,
+          "main_ce_tokens": 111940574,
+          "lm_loss": 4.104985237121582,
+          "loss": 4.546737194061279,
+          "grad_norm": 0.5912275910377502,
+          "tokens_per_second": 1399.0386917194087,
+          "step_seconds": 11.16695348918438,
+          "input_batch_actual": 16449,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 7250,
+          "main_ce_tokens": 115940207,
+          "lm_loss": 4.017061710357666,
+          "loss": 4.449310302734375,
+          "grad_norm": 0.5953394770622253,
+          "tokens_per_second": 1413.573486731549,
+          "step_seconds": 11.07052455842495,
+          "input_batch_actual": 16435,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 7500,
+          "main_ce_tokens": 119939718,
+          "lm_loss": 4.010195732116699,
+          "loss": 4.444114685058594,
+          "grad_norm": 0.5876034498214722,
+          "tokens_per_second": 1342.7206577663844,
+          "step_seconds": 11.736618416383862,
+          "input_batch_actual": 16567,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 7750,
+          "main_ce_tokens": 123933951,
+          "lm_loss": 4.231416702270508,
+          "loss": 4.683369159698486,
+          "grad_norm": 0.5863974690437317,
+          "tokens_per_second": 1468.3156693401681,
+          "step_seconds": 11.3122813757509,
+          "input_batch_actual": 17389,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16496.818359375
+        },
+        {
+          "step": 8000,
+          "main_ce_tokens": 127931380,
+          "lm_loss": 4.013718605041504,
+          "loss": 4.443327903747559,
+          "grad_norm": 0.6362033486366272,
+          "tokens_per_second": 1453.0984927751983,
+          "step_seconds": 10.976544314995408,
+          "input_batch_actual": 16734,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16497.849609375
+        },
+        {
+          "step": 8250,
+          "main_ce_tokens": 131926802,
+          "lm_loss": 4.042773246765137,
+          "loss": 4.4788618087768555,
+          "grad_norm": 0.6209369897842407,
+          "tokens_per_second": 1442.3019405105667,
+          "step_seconds": 10.994923846796155,
+          "input_batch_actual": 16564,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16497.849609375
+        },
+        {
+          "step": 8500,
+          "main_ce_tokens": 135926667,
+          "lm_loss": 3.987748861312866,
+          "loss": 4.417514801025391,
+          "grad_norm": 0.6436964273452759,
+          "tokens_per_second": 1486.006012278175,
+          "step_seconds": 10.942082243040204,
+          "input_batch_actual": 16982,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16497.849609375
+        },
+        {
+          "step": 8750,
+          "main_ce_tokens": 139926269,
+          "lm_loss": 4.236997127532959,
+          "loss": 4.6920952796936035,
+          "grad_norm": 0.6365357041358948,
+          "tokens_per_second": 1438.6138881596457,
+          "step_seconds": 11.017549691721797,
+          "input_batch_actual": 16573,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16497.849609375
+        },
+        {
+          "step": 9000,
+          "main_ce_tokens": 143927417,
+          "lm_loss": 4.14526891708374,
+          "loss": 4.590310573577881,
+          "grad_norm": 0.6378570199012756,
+          "tokens_per_second": 1422.862519997012,
+          "step_seconds": 11.220339123159647,
+          "input_batch_actual": 16740,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 9250,
+          "main_ce_tokens": 147926725,
+          "lm_loss": 4.199488162994385,
+          "loss": 4.6478447914123535,
+          "grad_norm": 0.6345313787460327,
+          "tokens_per_second": 1458.8650915718035,
+          "step_seconds": 11.062709014862776,
+          "input_batch_actual": 16897,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 9500,
+          "main_ce_tokens": 151924212,
+          "lm_loss": 3.9611129760742188,
+          "loss": 4.390488624572754,
+          "grad_norm": 0.6879544854164124,
+          "tokens_per_second": 1913.1605061697362,
+          "step_seconds": 8.338558081537485,
+          "input_batch_actual": 16724,
+          "microbatch_max_samples": 31,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 9750,
+          "main_ce_tokens": 155918929,
+          "lm_loss": 4.311435699462891,
+          "loss": 4.774166107177734,
+          "grad_norm": 0.6681069135665894,
+          "tokens_per_second": 1468.237418472788,
+          "step_seconds": 10.968253361061215,
+          "input_batch_actual": 16875,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 10000,
+          "main_ce_tokens": 159915689,
+          "lm_loss": 4.075664043426514,
+          "loss": 4.514437675476074,
+          "grad_norm": 0.7037873864173889,
+          "tokens_per_second": 1488.0268500931556,
+          "step_seconds": 10.992409175261855,
+          "input_batch_actual": 17139,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 10250,
+          "main_ce_tokens": 163906806,
+          "lm_loss": 3.968539237976074,
+          "loss": 4.399033069610596,
+          "grad_norm": 0.737866222858429,
+          "tokens_per_second": 1452.2967248337761,
+          "step_seconds": 11.162319464609027,
+          "input_batch_actual": 16986,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 10500,
+          "main_ce_tokens": 167910509,
+          "lm_loss": 3.897313117980957,
+          "loss": 4.32291316986084,
+          "grad_norm": 0.6786098480224609,
+          "tokens_per_second": 1440.3563860357356,
+          "step_seconds": 11.23333097063005,
+          "input_batch_actual": 16964,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 10750,
+          "main_ce_tokens": 171913386,
+          "lm_loss": 3.962006092071533,
+          "loss": 4.388514041900635,
+          "grad_norm": 0.7057889699935913,
+          "tokens_per_second": 1427.5033981541599,
+          "step_seconds": 11.06827487796545,
+          "input_batch_actual": 16529,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 11000,
+          "main_ce_tokens": 175917934,
+          "lm_loss": 4.214179039001465,
+          "loss": 4.665951251983643,
+          "grad_norm": 0.7270366549491882,
+          "tokens_per_second": 1470.643730364111,
+          "step_seconds": 11.137979689985514,
+          "input_batch_actual": 17161,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 11250,
+          "main_ce_tokens": 179923452,
+          "lm_loss": 3.738004684448242,
+          "loss": 4.144796848297119,
+          "grad_norm": 0.7009657025337219,
+          "tokens_per_second": 1465.7194621532813,
+          "step_seconds": 11.08397644944489,
+          "input_batch_actual": 16994,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.14111328125
+        },
+        {
+          "step": 11500,
+          "main_ce_tokens": 183919833,
+          "lm_loss": 3.882641553878784,
+          "loss": 4.30448055267334,
+          "grad_norm": 0.7428011894226074,
+          "tokens_per_second": 1951.3829909598674,
+          "step_seconds": 8.156266644597054,
+          "input_batch_actual": 16688,
+          "microbatch_max_samples": 30,
+          "peak_allocated_mib": 16498.6005859375
+        },
+        {
+          "step": 11745,
+          "main_ce_tokens": 187841929,
+          "lm_loss": 4.131786346435547,
+          "loss": 4.576580047607422,
+          "grad_norm": 0.7219387888908386,
+          "tokens_per_second": 1421.229603719007,
+          "step_seconds": 11.29866698384285,
+          "input_batch_actual": 16837,
+          "microbatch_max_samples": 32,
+          "peak_allocated_mib": 16498.6005859375
+        }
+      ],
+      "validation_curve": [
+        {
+          "step": 0,
+          "main_ce_tokens": 0,
+          "lm_loss": 11.116453101194853,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 167.0514992326498,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 11.117011739550053,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 11.114872694758764,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 11.115810324778451,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 11.116575219545311,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 11.116932335939046,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 11.122157023046764,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 11.11731151733079,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 11.113246799519308,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 11.11551827904033,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 300,
+          "main_ce_tokens": 4795892,
+          "lm_loss": 7.523663275817468,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 161.17038694396615,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 5.899833010239173,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 6.018867197839465,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 6.204501910295248,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 6.904885966432677,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 7.424126066736849,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 4.919369992205545,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 7.438725511823021,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 6.059475496086922,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 8.55737534467838,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 626,
+          "main_ce_tokens": 10015598,
+          "lm_loss": 6.497111228512316,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 169.14984014816582,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 4.457170957024316,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 4.630596522814835,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 4.4720291252910656,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 5.673756978146575,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 6.346757926097442,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 4.350541808282193,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 6.1886629471869465,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 4.805472955441562,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 7.836040970703009,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 1251,
+          "main_ce_tokens": 20005931,
+          "lm_loss": 5.568182574198664,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 164.70701699890196,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 3.5878888049953406,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 3.6661207716182136,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 3.336734332081939,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 4.682040593313979,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 5.511193008207248,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.8661001685023746,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 5.1850920820162205,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.9801191241756713,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 6.871499759128266,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 1877,
+          "main_ce_tokens": 30011498,
+          "lm_loss": 5.123323608619872,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 158.4647530466318,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 3.2592765637480032,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 3.2748804657285784,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.9248319749090066,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 4.250263711651789,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 5.132494543823006,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.6209157773076592,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.773220832845514,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.598553591912641,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 6.326826472072317,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 2502,
+          "main_ce_tokens": 40009070,
+          "lm_loss": 4.882593229788229,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 159.15895899385214,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 3.090518365060348,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 3.0638994394516317,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.7436402233717274,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 3.99084152114568,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 4.922599136297798,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.4876262211289384,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.589359589210122,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.3968911855186317,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 6.018764605158485,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 3127,
+          "main_ce_tokens": 50006713,
+          "lm_loss": 4.717243355718826,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 163.7150724194944,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 2.978898519313543,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 2.945685467490883,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.591999830623785,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 3.8530101494569142,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 4.791296213597488,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.3864639295173586,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.443764327902469,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.307501266287939,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 5.800203447590073,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 3753,
+          "main_ce_tokens": 60009981,
+          "lm_loss": 4.602670397568022,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 154.8609052710235,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 2.909468981573926,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 2.8446650857624185,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.507636898016797,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 3.7446951867940608,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 4.692115468430935,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.31320106705588,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.3641085523068694,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.221687989755482,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 5.64817997804943,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 4378,
+          "main_ce_tokens": 70005897,
+          "lm_loss": 4.527836687845277,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 172.1642190758139,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 2.8899259448770858,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 2.7849552335616288,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.461671014695992,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 3.6623641157162665,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 4.627703035813613,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.310757641069871,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.299751475725531,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.1506050094102576,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 5.545934441231328,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 5003,
+          "main_ce_tokens": 80002105,
+          "lm_loss": 4.464275825330028,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 163.31142172403634,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 2.824533004137824,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 2.732779548698422,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.399524315995614,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 3.608508937985672,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 4.5691509770954895,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.2750941755140692,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.254082268523939,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.110277773294732,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 5.466829954970088,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 5628,
+          "main_ce_tokens": 90002208,
+          "lm_loss": 4.418172620555455,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 160.07575701922178,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 2.805044654247648,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 2.6944530678457332,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.3707750878142377,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 3.547443384933703,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 4.534817805452584,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.222916331290749,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.2204832654977364,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.0601807222558794,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 5.406494987046005,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 6254,
+          "main_ce_tokens": 100012845,
+          "lm_loss": 4.374523818418961,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 157.5188893917948,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 2.7629689198671015,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 2.6660962225682496,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.330485912808869,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 3.510801119211659,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 4.499183935811,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.1952156605634654,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.1868466268433835,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 3.0655930169186,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 5.3479498439204916,
+              "ce_tokens": 372086
+            }
+          }
+        },
+        {
+          "step": 9380,
+          "main_ce_tokens": 150005925,
+          "lm_loss": 4.252340675778458,
+          "supervised_tokens": 1000555,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "5cd07b12d40d5aa554b393184a61004dd8063b9b90808981ebfae8f682d92276",
+          "requested_ce_tokens": 1000000,
+          "seconds": 164.09983375295997,
+          "per_domain": {
+            "caption": {
+              "lm_loss": 2.7100667577709,
+              "ce_tokens": 11268
+            },
+            "chart_table": {
+              "lm_loss": 2.54585720170183,
+              "ce_tokens": 34002
+            },
+            "code": {
+              "lm_loss": 2.233887314834177,
+              "ce_tokens": 88468
+            },
+            "dialogue": {
+              "lm_loss": 3.378623580899558,
+              "ce_tokens": 69234
+            },
+            "en_edu": {
+              "lm_loss": 4.39124971301699,
+              "ce_tokens": 267873
+            },
+            "ocr_document": {
+              "lm_loss": 3.1442418580816325,
+              "ce_tokens": 42428
+            },
+            "verified_math_science": {
+              "lm_loss": 4.089661028442456,
+              "ce_tokens": 108903
+            },
+            "vqa": {
+              "lm_loss": 2.95238392670924,
+              "ce_tokens": 6293
+            },
+            "zh_edu": {
+              "lm_loss": 5.193421556105309,
+              "ce_tokens": 372086
+            }
+          }
+        }
+      ]
+    },
+    {
+      "model": "minideepseekv4",
+      "phase": "D2",
+      "state": "running",
+      "recorded_state": "running",
+      "step": 4500,
+      "ce_tokens": 150710142,
+      "main_ce_tokens": 400734289,
+      "phase_token_budget": 500000000,
+      "phase_tokens": 150710142,
+      "budget_unit": "ce_tokens",
+      "phase_progress": 0.3014,
+      "recent_tokens_per_second": 2535.54,
+      "throughput_samples": 20,
+      "estimate_remaining_update_hours": 38.27,
+      "validation": {
+        "step": 4479,
+        "main_ce_tokens": 400032814,
+        "nll": 3.2116972670564214,
+        "ce_tokens": 1000153,
+        "scope": "periodic",
+        "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b"
+      },
+      "program_main_ce_budget": 2500000000,
+      "program_progress": 0.160294,
+      "run_directory": "outputs/strategy-base-pretraining-v1/minideepseekv4/D2",
+      "generation_capability_qualified": false,
+      "identity": {
+        "seed": 42,
+        "batch_size": 8,
+        "input_batch_tokens": 32768,
+        "sequence_length": 2048,
+        "source": {
+          "commit": "baeffd7ddedf8c34e61f22d5717158bb0cc09647",
+          "dirty": false,
+          "implementation_sha256": "4d61aaec89a01f1e4751f419c603291fb5fa193d1ca1854f54e56fd672364dfc"
+        },
+        "data_sha256": "160cf1e554d17101687047362a73e3e3baf7c0d68f1b3473b0dcae70c92cd365",
+        "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+        "recipe_sha256": "f7dea93e2059907130241036dd0f5071a7bd87d7424bea4dd789790d8bf1c9ed",
+        "bindings": {
+          "D1": {
+            "data_sha256": "f972b1fe1620befc1a7a90f6fb55f370a03672a4f427bb71639acaae373e4f95",
+            "config_sha256": "b660f89fcf82048d087ba26b143a76b9b27baa38cfe71cb09e0ec9f997633b35",
+            "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+            "batch_size": 16,
+            "sequence_length": 1024
+          },
+          "D2": {
+            "data_sha256": "160cf1e554d17101687047362a73e3e3baf7c0d68f1b3473b0dcae70c92cd365",
+            "config_sha256": "b660f89fcf82048d087ba26b143a76b9b27baa38cfe71cb09e0ec9f997633b35",
+            "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+            "batch_size": 8,
+            "sequence_length": 2048
+          }
+        }
+      },
+      "training_curve": [
+        {
+          "step": 1,
+          "main_ce_tokens": 250058032,
+          "lm_loss": 3.4959564208984375,
+          "loss": 4.637601375579834,
+          "grad_norm": 1.1936347484588623,
+          "tokens_per_second": 2204.485328236752,
+          "step_seconds": 15.370934687554836,
+          "input_batch_actual": 33920,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14115.576171875
+        },
+        {
+          "step": 250,
+          "main_ce_tokens": 258390941,
+          "lm_loss": 3.6741299629211426,
+          "loss": 4.8705973625183105,
+          "grad_norm": 1.1432946920394897,
+          "tokens_per_second": 2622.439736702799,
+          "step_seconds": 12.504005160182714,
+          "input_batch_actual": 32822,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14122.75244140625
+        },
+        {
+          "step": 500,
+          "main_ce_tokens": 266767903,
+          "lm_loss": 3.595980405807495,
+          "loss": 4.769395351409912,
+          "grad_norm": 1.1344903707504272,
+          "tokens_per_second": 2678.0151096149807,
+          "step_seconds": 12.233687510713935,
+          "input_batch_actual": 32791,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14123.6083984375
+        },
+        {
+          "step": 750,
+          "main_ce_tokens": 275146265,
+          "lm_loss": 3.2981555461883545,
+          "loss": 4.379181385040283,
+          "grad_norm": 1.1894211769104004,
+          "tokens_per_second": 2713.1739663314684,
+          "step_seconds": 12.144447945058346,
+          "input_batch_actual": 32978,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14123.6083984375
+        },
+        {
+          "step": 1000,
+          "main_ce_tokens": 283518821,
+          "lm_loss": 3.723895788192749,
+          "loss": 4.942216396331787,
+          "grad_norm": 1.22841477394104,
+          "tokens_per_second": 2733.5757682027324,
+          "step_seconds": 12.241475209593773,
+          "input_batch_actual": 33492,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14123.6083984375
+        },
+        {
+          "step": 1250,
+          "main_ce_tokens": 291868456,
+          "lm_loss": 3.4910409450531006,
+          "loss": 4.636965751647949,
+          "grad_norm": 1.0604677200317383,
+          "tokens_per_second": 2253.357041233449,
+          "step_seconds": 14.931499706581235,
+          "input_batch_actual": 33682,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 1500,
+          "main_ce_tokens": 300242462,
+          "lm_loss": 3.691065549850464,
+          "loss": 4.89390754699707,
+          "grad_norm": 1.0694656372070312,
+          "tokens_per_second": 2765.042016318895,
+          "step_seconds": 12.520243741571903,
+          "input_batch_actual": 34649,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 1750,
+          "main_ce_tokens": 308617139,
+          "lm_loss": 3.74670147895813,
+          "loss": 4.971831321716309,
+          "grad_norm": 1.2160505056381226,
+          "tokens_per_second": 2733.674727316999,
+          "step_seconds": 12.047519652172923,
+          "input_batch_actual": 32963,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 2000,
+          "main_ce_tokens": 317001498,
+          "lm_loss": 3.453104019165039,
+          "loss": 4.577517986297607,
+          "grad_norm": 1.170271396636963,
+          "tokens_per_second": 2728.926735952224,
+          "step_seconds": 12.185376603156328,
+          "input_batch_actual": 33282,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 2250,
+          "main_ce_tokens": 325389232,
+          "lm_loss": 3.5999996662139893,
+          "loss": 4.786839962005615,
+          "grad_norm": 1.2241441011428833,
+          "tokens_per_second": 2730.9756634180058,
+          "step_seconds": 12.138519007712603,
+          "input_batch_actual": 33177,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 2500,
+          "main_ce_tokens": 333775413,
+          "lm_loss": 3.5357213020324707,
+          "loss": 4.695117950439453,
+          "grad_norm": 1.136596918106079,
+          "tokens_per_second": 2764.489043103353,
+          "step_seconds": 12.164996668696404,
+          "input_batch_actual": 33655,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 2750,
+          "main_ce_tokens": 342142194,
+          "lm_loss": 3.6843016147613525,
+          "loss": 4.875486850738525,
+          "grad_norm": 1.1029107570648193,
+          "tokens_per_second": 2856.921411241334,
+          "step_seconds": 12.040233191102743,
+          "input_batch_actual": 34427,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 3000,
+          "main_ce_tokens": 350511604,
+          "lm_loss": 3.6233339309692383,
+          "loss": 4.798004150390625,
+          "grad_norm": 1.0699708461761475,
+          "tokens_per_second": 2215.088174713948,
+          "step_seconds": 14.822434779256582,
+          "input_batch_actual": 32868,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 3250,
+          "main_ce_tokens": 358870407,
+          "lm_loss": 3.406506061553955,
+          "loss": 4.517796039581299,
+          "grad_norm": 1.0603843927383423,
+          "tokens_per_second": 2733.158432817589,
+          "step_seconds": 12.164314955472946,
+          "input_batch_actual": 33277,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 3500,
+          "main_ce_tokens": 367243888,
+          "lm_loss": 3.6627705097198486,
+          "loss": 4.857297420501709,
+          "grad_norm": 1.1912667751312256,
+          "tokens_per_second": 2771.088373340483,
+          "step_seconds": 12.293003834784031,
+          "input_batch_actual": 34094,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 3750,
+          "main_ce_tokens": 375618196,
+          "lm_loss": 3.4120969772338867,
+          "loss": 4.5401530265808105,
+          "grad_norm": 1.1197768449783325,
+          "tokens_per_second": 2783.846778915684,
+          "step_seconds": 12.170569248497486,
+          "input_batch_actual": 33909,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 4000,
+          "main_ce_tokens": 383985585,
+          "lm_loss": 3.3672313690185547,
+          "loss": 4.477196216583252,
+          "grad_norm": 1.1555763483047485,
+          "tokens_per_second": 2650.2885459610643,
+          "step_seconds": 12.843884509056807,
+          "input_batch_actual": 34072,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 4250,
+          "main_ce_tokens": 392364814,
+          "lm_loss": 3.560359477996826,
+          "loss": 4.725168228149414,
+          "grad_norm": 1.1557576656341553,
+          "tokens_per_second": 2661.6161333343302,
+          "step_seconds": 12.552148140966892,
+          "input_batch_actual": 33440,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        },
+        {
+          "step": 4500,
+          "main_ce_tokens": 400734289,
+          "lm_loss": 3.611097574234009,
+          "loss": 4.786558151245117,
+          "grad_norm": 1.244713544845581,
+          "tokens_per_second": 2256.4010331306054,
+          "step_seconds": 14.635253004729748,
+          "input_batch_actual": 33056,
+          "microbatch_max_samples": 8,
+          "peak_allocated_mib": 14127.02197265625
+        }
+      ],
+      "validation_curve": [
+        {
+          "step": 0,
+          "main_ce_tokens": 250024147,
+          "lm_loss": 3.3477887697635387,
+          "supervised_tokens": 1000153,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+          "requested_ce_tokens": 1000000,
+          "seconds": 71.02670312486589,
+          "per_domain": {
+            "code": {
+              "lm_loss": 1.654379829599066,
+              "ce_tokens": 317945
+            },
+            "dialogue": {
+              "lm_loss": 2.9970418088502213,
+              "ce_tokens": 47657
+            },
+            "en_edu": {
+              "lm_loss": 4.066251753492671,
+              "ce_tokens": 191025
+            },
+            "verified_math_science": {
+              "lm_loss": 3.621016554482501,
+              "ce_tokens": 137005
+            },
+            "zh_edu": {
+              "lm_loss": 4.588971231273714,
+              "ce_tokens": 306521
+            }
+          }
+        },
+        {
+          "step": 1493,
+          "main_ce_tokens": 300006850,
+          "lm_loss": 3.2933194087515547,
+          "supervised_tokens": 1000153,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+          "requested_ce_tokens": 1000000,
+          "seconds": 70.94158184714615,
+          "per_domain": {
+            "code": {
+              "lm_loss": 1.617270405455346,
+              "ce_tokens": 317945
+            },
+            "dialogue": {
+              "lm_loss": 2.9239770365908995,
+              "ce_tokens": 47657
+            },
+            "en_edu": {
+              "lm_loss": 4.018750488217347,
+              "ce_tokens": 191025
+            },
+            "verified_math_science": {
+              "lm_loss": 3.564076556284442,
+              "ce_tokens": 137005
+            },
+            "zh_edu": {
+              "lm_loss": 4.51614784409653,
+              "ce_tokens": 306521
+            }
+          }
+        },
+        {
+          "step": 2985,
+          "main_ce_tokens": 350009500,
+          "lm_loss": 3.2510382390986368,
+          "supervised_tokens": 1000153,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+          "requested_ce_tokens": 1000000,
+          "seconds": 71.71021545678377,
+          "per_domain": {
+            "code": {
+              "lm_loss": 1.5891051813206687,
+              "ce_tokens": 317945
+            },
+            "dialogue": {
+              "lm_loss": 2.869264946813952,
+              "ce_tokens": 47657
+            },
+            "en_edu": {
+              "lm_loss": 3.98237871505284,
+              "ce_tokens": 191025
+            },
+            "verified_math_science": {
+              "lm_loss": 3.5202702598673405,
+              "ce_tokens": 137005
+            },
+            "zh_edu": {
+              "lm_loss": 4.458156278061903,
+              "ce_tokens": 306521
+            }
+          }
+        },
+        {
+          "step": 4479,
+          "main_ce_tokens": 400032814,
+          "lm_loss": 3.2116972670564214,
+          "supervised_tokens": 1000153,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+          "requested_ce_tokens": 1000000,
+          "seconds": 70.96337091177702,
+          "per_domain": {
+            "code": {
+              "lm_loss": 1.553425403273365,
+              "ce_tokens": 317945
+            },
+            "dialogue": {
+              "lm_loss": 2.8106937374428207,
+              "ce_tokens": 47657
+            },
+            "en_edu": {
+              "lm_loss": 3.942378408319428,
+              "ce_tokens": 191025
+            },
+            "verified_math_science": {
+              "lm_loss": 3.4818321953350244,
+              "ce_tokens": 137005
+            },
+            "zh_edu": {
+              "lm_loss": 4.418014850787141,
+              "ce_tokens": 306521
+            }
+          }
+        }
+      ]
+    },
+    {
+      "model": "minifrontier1",
+      "phase": "P1",
+      "state": "running",
+      "recorded_state": "running",
+      "step": 1569,
+      "ce_tokens": 21280771,
+      "main_ce_tokens": 221292990,
+      "phase_token_budget": 800000000,
+      "phase_tokens": 21280771,
+      "budget_unit": "ce_tokens",
+      "phase_progress": 0.0266,
+      "recent_tokens_per_second": 1793.31,
+      "throughput_samples": 20,
+      "estimate_remaining_update_hours": 120.62,
+      "validation": {
+        "step": 0,
+        "main_ce_tokens": 200012219,
+        "nll": 3.4979414638771447,
+        "ce_tokens": 1000976,
+        "scope": "periodic",
+        "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed"
+      },
+      "program_main_ce_budget": 3000000000,
+      "program_progress": 0.073764,
+      "run_directory": "outputs/strategy-base-pretraining-v1/minifrontier1/P1",
+      "generation_capability_qualified": false,
+      "identity": {
+        "seed": 42,
+        "batch_size": 8,
+        "input_batch_tokens": 16384,
+        "source": {
+          "commit": "32511e8910d7f6a188a563fb383d8f6a07b6c3a7",
+          "dirty": false,
+          "implementation_sha256": "747525761f19b5c4a7e008f0f32629a6091895da9e3e7d116948fdf6f8aa53a3"
+        },
+        "dataset_manifest_sha256": "ea2f37ab10c18b0b34a1be6b6b82840e0e12c6f6c3dddc431962d0c8aa58d706",
+        "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
+        "model_config_sha256": "2988cee90942ae29cf8dda748e83116a5b0b404dcad0bdd2e48c238433c1b30d",
+        "actual_init_checkpoint_sha256": "603ca19cba472ea26aff36abf8dba81f8254f7253471a96f706c66f32d8e9a8c"
+      },
+      "training_curve": [
+        {
+          "step": 1,
+          "main_ce_tokens": 200026191,
+          "phase_tokens": 13972,
+          "ce_tokens": 13972,
+          "train_lm_loss": 3.440192462942029,
+          "grad_norm": 0.8315389752388,
+          "ce_per_second": 1426.676834453108,
+          "step_seconds": 9.793388146907091,
+          "input_batch_actual": 16954,
+          "microbatch_max_samples": 8,
+          "peak_allocated_gib": 6.842825412750244
+        },
+        {
+          "step": 250,
+          "main_ce_tokens": 203405608,
+          "phase_tokens": 3393389,
+          "ce_tokens": 3393389,
+          "train_lm_loss": 3.4894629126562178,
+          "grad_norm": 1.053246021270752,
+          "ce_per_second": 1607.2622745375263,
+          "step_seconds": 8.40559765137732,
+          "input_batch_actual": 16947,
+          "microbatch_max_samples": 8,
+          "peak_allocated_gib": 9.511837482452393
+        },
+        {
+          "step": 500,
+          "main_ce_tokens": 206798909,
+          "phase_tokens": 6786690,
+          "ce_tokens": 6786690,
+          "train_lm_loss": 3.5683685217064744,
+          "grad_norm": 0.7933055758476257,
+          "ce_per_second": 1893.0014637528543,
+          "step_seconds": 7.350760295987129,
+          "input_batch_actual": 17085,
+          "microbatch_max_samples": 8,
+          "peak_allocated_gib": 9.575307846069336
+        },
+        {
+          "step": 750,
+          "main_ce_tokens": 210187439,
+          "phase_tokens": 10175220,
+          "ce_tokens": 10175220,
+          "train_lm_loss": 3.840992320784755,
+          "grad_norm": 0.8768525719642639,
+          "ce_per_second": 1936.6616575538926,
+          "step_seconds": 6.87884739600122,
+          "input_batch_actual": 16672,
+          "microbatch_max_samples": 8,
+          "peak_allocated_gib": 9.575307846069336
+        },
+        {
+          "step": 1000,
+          "main_ce_tokens": 213579088,
+          "phase_tokens": 13566869,
+          "ce_tokens": 13566869,
+          "train_lm_loss": 3.2394443778308624,
+          "grad_norm": 1.1156033277511597,
+          "ce_per_second": 2003.3311149072294,
+          "step_seconds": 7.052753234282136,
+          "input_batch_actual": 17079,
+          "microbatch_max_samples": 8,
+          "peak_allocated_gib": 9.575307846069336
+        },
+        {
+          "step": 1250,
+          "main_ce_tokens": 216972461,
+          "phase_tokens": 16960242,
+          "ce_tokens": 16960242,
+          "train_lm_loss": 3.6991194378827132,
+          "grad_norm": 0.841953456401825,
+          "ce_per_second": 1745.485285157869,
+          "step_seconds": 7.691843703389168,
+          "input_batch_actual": 16734,
+          "microbatch_max_samples": 8,
+          "peak_allocated_gib": 9.575307846069336
+        },
+        {
+          "step": 1500,
+          "main_ce_tokens": 220361766,
+          "phase_tokens": 20349547,
+          "ce_tokens": 20349547,
+          "train_lm_loss": 3.3464974142897606,
+          "grad_norm": 0.9214691519737244,
+          "ce_per_second": 2296.933316301883,
+          "step_seconds": 6.327131874859333,
+          "input_batch_actual": 16961,
+          "microbatch_max_samples": 8,
+          "peak_allocated_gib": 9.575307846069336
+        },
+        {
+          "step": 1569,
+          "main_ce_tokens": 221292990,
+          "phase_tokens": 21280771,
+          "ce_tokens": 21280771,
+          "train_lm_loss": 3.6481131776908917,
+          "grad_norm": 0.9006734490394592,
+          "ce_per_second": 1652.683319651969,
+          "step_seconds": 7.955547105520964,
+          "input_batch_actual": 16632,
+          "microbatch_max_samples": 8,
+          "peak_allocated_gib": 9.575307846069336
+        }
+      ],
+      "validation_curve": [
+        {
+          "step": 0,
+          "main_ce_tokens": 200012219,
+          "nll": 3.4979414638771447,
+          "ce_tokens": 1000976,
+          "evaluation_scope": "periodic",
+          "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+          "requested_ce_tokens": 1000000,
+          "duration_seconds": 173.13804670982063,
+          "per_domain": {
+            "caption": 2.4052556175789404,
+            "chart_table": 1.952149454662118,
+            "code": 2.301114372978813,
+            "en_general": 3.957853754833284,
+            "math": 3.8233639445111423,
+            "ocr_document": 3.601887370822931,
+            "structured": 3.032017493942409,
+            "video": 2.919875581190832,
+            "vqa": 2.4659860855205378,
+            "zh_general": 4.47602986447836
+          },
+          "domain_ce": {
+            "caption": 10627,
+            "chart_table": 16424,
+            "code": 308625,
+            "en_general": 163388,
+            "math": 117874,
+            "ocr_document": 20137,
+            "structured": 37080,
+            "video": 1327,
+            "vqa": 4748,
+            "zh_general": 320746
+          },
+          "black_media_nll": {
+            "caption": 2.4240722733875697,
+            "chart_table": 1.9700965909654782,
+            "ocr_document": 4.626910127522888,
+            "video": 2.9811128353659337,
+            "vqa": 2.4748588602585055
+          },
+          "black_media_ce": {
+            "caption": 10627,
+            "chart_table": 16424,
+            "ocr_document": 20137,
+            "video": 1327,
+            "vqa": 4748
+          }
+        }
+      ]
+    }
+  ],
+  "completed_parent_phases": [
+    {
+      "model": "minikimik3",
+      "phase": "K1",
+      "state": "completed",
+      "recorded_state": "complete",
+      "step": 6471,
+      "phase_tokens": 200027511,
+      "phase_token_budget": 200000000,
+      "main_ce_tokens": 200027511,
+      "validation": {
+        "step": 6471,
+        "main_ce_tokens": 200027511,
+        "nll": 4.004336973695068,
+        "ce_tokens": 5000086,
+        "scope": "phase_end",
+        "selection_sha256": "fe6e76626585029de8517e2840973450dd619f728fc9711e99a482396376778e"
+      }
+    },
+    {
+      "model": "minideepseekv4",
+      "phase": "D1",
+      "state": "completed",
+      "recorded_state": "complete",
+      "step": 7540,
+      "phase_tokens": 250024147,
+      "phase_token_budget": 250000000,
+      "main_ce_tokens": 250024147,
+      "validation": {
+        "step": 7540,
+        "main_ce_tokens": 250024147,
+        "nll": 3.9146131433622817,
+        "ce_tokens": 5000587,
+        "scope": "phase_end",
+        "selection_sha256": "110310cbd5df5cca4ca04eb2df1802c27b6b20dedf6599a21521ff8b31b0b8b4"
+      }
+    },
+    {
+      "model": "minifrontier1",
+      "phase": "p0",
+      "state": "completed",
+      "recorded_state": "budget_complete_unqualified",
+      "step": 14599,
+      "phase_tokens": 200012219,
+      "phase_token_budget": 200000000,
+      "main_ce_tokens": 200012219,
+      "validation": {
+        "step": 14599,
+        "main_ce_tokens": 200012219,
+        "nll": 3.846730517872142,
+        "ce_tokens": 5000500,
+        "scope": "phase_end",
+        "selection_sha256": "6577e9439e24d1c700bf2df92961ce1f198eec55a3805672d82e19b9bbb1c3c4"
+      }
+    }
+  ],
+  "kimi_k2_recovery": {
+    "failed_run": "outputs/strategy-base-pretraining-v1/minikimik3/K2",
+    "failure": "CUDA out of memory at the first backward after successful initial fixed validation",
+    "failed_run_optimizer_updates": 0,
+    "change": {
+      "microbatch_before": 32,
+      "microbatch_after": 16,
+      "context": 2048,
+      "global_input_tokens": 32768
+    },
+    "preserved": [
+      "data and tokenizer",
+      "optimizer and router inheritance from completed K1",
+      "learning-rate schedule",
+      "sampling global-window boundary and CE normalization"
+    ],
+    "bitwise_identical_claim": false,
+    "parent_checkpoint_sha256": "e2ed7b36aee44c47f36882a51e577d55c66667bb9d465e9d51156b0e4626b0e3",
+    "first_formal_update": {
+      "step": 1,
+      "main_ce_tokens": 200058542,
+      "lm_loss": 3.716338634490967,
+      "grad_norm": 0.545545220375061,
+      "input_batch_target": 32768,
+      "input_batch_actual": 33275,
+      "microbatch_samples": [
+        16,
+        16,
+        16,
+        11
+      ],
+      "token_ledger": {
+        "ce_tokens": 31031,
+        "input_tokens": 33275,
+        "response_tokens": 0,
+        "optimizer_updates": 1,
+        "skipped_windows": 0,
+        "image_occurrences": 29,
+        "video_examples": 1,
+        "video_frames": 8,
+        "image_features": 1956
+      },
+      "peak_allocated_mib": 14712.7626953125
+    },
+    "failed_evidence_retained": true
+  },
+  "data_readiness": {
+    "scope": "K2, Q2 and P1 inputs completed; not a claim that all later phases are prepared.",
+    "shared_text": {
+      "train_documents": 484918,
+      "native_train_ce": 676937811,
+      "mf1_train_ce": 723308646,
+      "additive_across_tokenizers": false
+    },
+    "new_natural": {
+      "train_unique_rgb": 24517,
+      "train_qa": 46008,
+      "encoded_models": [
+        "minikimik3",
+        "miniqwen4",
+        "minifrontier1"
+      ]
+    },
+    "multipage": {
+      "candidate_qa": 5000,
+      "retained_qa": 3552,
+      "train_qa": 3529,
+      "train_unique_rgb": 7055,
+      "native_train_ce_per_model": 230303,
+      "projected_qa_passes_per_stage": 3.4004,
+      "encoded_models": [
+        "minikimik3",
+        "miniqwen4"
+      ],
+      "domain": "multiimage_multipage"
+    },
+    "mf1_video": {
+      "independent_train_groups": 42846,
+      "single_pass_train_ce": 2779616,
+      "p1_target_ce": 8000000,
+      "projected_ce_passes": 2.8781,
+      "first_batch_only_projected_ce_passes": 12.1247
+    },
+    "mf1_p1": {
+      "text_ce_budget": 640000000,
+      "visual_ce_budget": 160000000,
+      "visual_ce_fractions": {
+        "caption": 0.33,
+        "ocr_document": 0.35,
+        "vqa": 0.22,
+        "chart_table": 0.05,
+        "video": 0.05
+      },
+      "image_features": [
+        49,
+        100
+      ],
+      "video_features_per_clip": 196,
+      "length_mixture": {
+        "1024": 0.7,
+        "2048": 0.3
+      }
+    }
+  },
+  "automatic_handoff": {
+    "deepseek_D1_D2": "running",
+    "mf1_P0_P1": "running",
+    "mf1_phase_end_evaluation_seconds": 1112.2623014040291,
+    "mf1_parent_evaluation_complete_to_child_start_seconds": 35.33,
+    "qwen_Q1_Q2": "publisher_running_waiting_for_Q1_complete_and_process_exit",
+    "qwen_Q2_execution": {
+      "microbatch": 8,
+      "context_length": 2048,
+      "global_input_tokens": 16384,
+      "additional_gpu_smoke": false,
+      "parent_binding": "Final Q1 checkpoint and phase-end evaluation will be bound after completion; no rolling checkpoint pinned."
+    }
+  },
+  "tensorboard": {
+    "port": 6008,
+    "active_runs": [
+      "MiniKimi-K3/K2",
+      "MiniQwen4/Q1",
+      "MiniDeepSeek-V4/D2",
+      "MiniFrontier1/P1"
+    ],
+    "groups": [
+      "train",
+      "eval",
+      "perf"
+    ],
+    "failed_run_separate": true,
+    "http_tags_verified": true
+  },
+  "storage": {
+    "free_gib": 126.93,
+    "reserve_gib": 80,
+    "inode_deduplicated_encoded_gib": 23.421429,
+    "encoded_measurement_utc": "2026-09-13T06:47:00+00:00",
+    "temporary_encoded_limit_gib": 24,
+    "steady_encoded_target_gib": 15,
+    "transfers": "direct connection with proxies disabled"
+  }
+}

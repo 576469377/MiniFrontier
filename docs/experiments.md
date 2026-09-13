@@ -7,7 +7,7 @@
 | 内容 | 入口 |
 | --- | --- |
 | 首版配方及选择依据 | [工作参数](experiments/2026-09-10-pretraining-cutover/working-recipes.md) |
-| 四模型正式训练进度与可重画曲线 | [2026-09-12 数值快照](experiments/2026-09-10-pretraining-cutover/formal-progress.json)；固定验证全部保留，训练曲线按 50 步抽样 |
+| 四模型正式训练进度与可重画曲线 | [2026-09-13 接续进度](experiments/2026-09-10-pretraining-cutover/formal-progress-2026-09-13.json)、[2026-09-12 首阶段曲线](experiments/2026-09-10-pretraining-cutover/formal-progress.json)；采样间隔及验证范围见各快照 |
 | 正式数据、失败修复与开训记录 | [2026-09-10—11 启动档案](experiments/2026-09-10-pretraining-cutover/execution.md) |
 | 正式训练中的数据预取、优化器与显存处理 | [2026-09-11 执行优化](audits/training-infrastructure.md) |
 | MF1 注意力、KDA、专家和数据加载优化 | [MF1 性能报告](audits/minifrontier1-execution-performance.md) |

@@ -124,6 +124,13 @@ def formal_row(path, processes):
         terminal = event if event in {"paused", "complete", "completed"} else durable
         if terminal in {"paused", "complete", "completed"}:
             state = "completed" if terminal in {"complete", "completed"} else "paused"
+        elif (
+            terminal == "budget_complete_unqualified"
+            and budget
+            and ledger.get("phase_tokens", 0) >= budget
+        ):
+            # Budget completion does not imply model capability qualification.
+            state = "completed"
     speed_key = "input_per_second" if unit == "input_tokens" else "ce_per_second"
     observations = [
         r.get(

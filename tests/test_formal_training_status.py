@@ -82,6 +82,34 @@ def test_terminal_checkpoint_includes_updates_since_last_log(tmp_path, state):
     assert formal_row(path, {str(path): [123]})["state"] == "running"
 
 
+@pytest.mark.parametrize(
+    ("phase_tokens", "saved_step", "process_state", "expected"),
+    [
+        (9999, 10, "exited", "stopped"),
+        (10000, 10, "exited", "completed"),
+        (10001, 10, "exited", "completed"),
+        (None, 10, "exited", "stopped"),
+        (10000, 9, "exited", "stopped"),
+        (10000, 10, "active", "running"),
+        (10000, 10, "unknown", "unknown"),
+    ],
+)
+def test_mf1_unqualified_completion_requires_phase_budget_and_process_exit(
+    tmp_path, phase_tokens, saved_step, process_state, expected
+):
+    path = write_run(tmp_path, "minifrontier1", mf1=True)
+    ledger = dict(ce_tokens=20000, main_ce_tokens=220000, optimizer_updates=saved_step)
+    if phase_tokens is not None:
+        ledger["phase_tokens"] = phase_tokens
+    (path / "status.json").write_text(
+        json.dumps(dict(state="budget_complete_unqualified", step=saved_step, ledger=ledger))
+    )
+    processes = {"exited": {}, "active": {str(path): [123]}, "unknown": None}[process_state]
+    row = formal_row(path, processes)
+    assert row["state"] == expected
+    assert row["recorded_state"] == "budget_complete_unqualified"
+
+
 def test_stale_pause_does_not_hide_newer_train_or_resume_start(tmp_path):
     path = write_run(tmp_path)
     (path / "status.json").write_text('{"state":"paused","step":5}')
