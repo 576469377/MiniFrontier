@@ -11,6 +11,7 @@ import random
 import time
 from dataclasses import asdict
 from datetime import timedelta
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Any
 
@@ -349,6 +350,7 @@ def run(args, rank, world, device):
     model = build_model(args.model, config, phase=phase).to(device)
     if args.model == "miniqwen4" and phase == "dense_pretrain" and device.type == "cuda":
         model.set_dense_attention_backend("sdpa")
+        model.set_gdn_backend("fla" if find_spec("fla") is not None else "torch")
     if args.model == "minideepseekv41" and saved is None:
         from tokenizers import Tokenizer
 
@@ -1120,6 +1122,7 @@ def run(args, rank, world, device):
             world_size=world,
             data_prefetch_windows=int(prefetch is not None),
             dense_attention_backend=getattr(model, "dense_attention_backend", None),
+            gdn_backend=getattr(model, "gdn_backend", None),
         )
     )
     # Exact continuation already binds the validation selection. Keep its token

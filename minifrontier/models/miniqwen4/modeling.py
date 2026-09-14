@@ -533,6 +533,13 @@ class MiniQwen4ForCausalLM(nn.Module):
         )
         self.dense_attention_backend = backend
 
+    def set_gdn_backend(self, backend: str) -> None:
+        """Select optional CUDA BF16 FLA execution; CPU and caches retain torch."""
+        from .gdn import configure_gdn
+
+        configure_gdn(self, backend)
+        self.gdn_backend = backend
+
     def transition_training_phase(self, phase: str) -> None:
         """Monotonic stages; caller must rebuild DDP and optimizer afterwards.
 
