@@ -1,0 +1,225 @@
+{
+  "format": "checkpoint-cleanup-v1",
+  "completed_utc": "2026-09-14T14:03:55.637374+00:00",
+  "scope": "Retire superseded execution-upgrade v1 recovery copies and unused diagnostic refresh pins. Active model and diagnostic inputs are retained.",
+  "deleted_file_count": 15,
+  "reclaimed_allocated_bytes": 19541843968,
+  "reclaimed_gib": 18.19976043701172,
+  "free_gib_after": 120.84,
+  "retired_files": [
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/00-minideepseekv4-D2-checkpoint.pt.refresh",
+      "logical_bytes": 2222573666,
+      "allocated_bytes": 2222579712,
+      "hard_links_before": 1,
+      "reclaimed_allocated_bytes": 2222579712,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": []
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/01-minikimik3-K2-recovery-mb16-checkpoint.pt.refresh",
+      "logical_bytes": 2049557385,
+      "allocated_bytes": 2049564672,
+      "hard_links_before": 1,
+      "reclaimed_allocated_bytes": 2049564672,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": []
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/04-minideepseekv4-D1-model.pt.refresh",
+      "logical_bytes": 977485203,
+      "allocated_bytes": 977489920,
+      "hard_links_before": 2,
+      "reclaimed_allocated_bytes": 0,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": [
+        "outputs/strategy-base-pretraining-v1/minideepseekv4/D1/model.pt"
+      ]
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/05-minideepseekv4-D1-best-model.pt.refresh",
+      "logical_bytes": 977485459,
+      "allocated_bytes": 977489920,
+      "hard_links_before": 2,
+      "reclaimed_allocated_bytes": 0,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": [
+        "outputs/strategy-base-pretraining-v1/minideepseekv4/D1/best-model.pt"
+      ]
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/06-minideepseekv4-D2-best-model.pt.refresh",
+      "logical_bytes": 977485459,
+      "allocated_bytes": 977489920,
+      "hard_links_before": 1,
+      "reclaimed_allocated_bytes": 977489920,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": []
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/07-minikimik3-K1-model.pt.refresh",
+      "logical_bytes": 818619311,
+      "allocated_bytes": 818626560,
+      "hard_links_before": 2,
+      "reclaimed_allocated_bytes": 0,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": [
+        "outputs/strategy-base-pretraining-v1/minikimik3/K1/model.pt"
+      ]
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/08-minikimik3-K1-best-model.pt.refresh",
+      "logical_bytes": 818619567,
+      "allocated_bytes": 818626560,
+      "hard_links_before": 2,
+      "reclaimed_allocated_bytes": 0,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": [
+        "outputs/strategy-base-pretraining-v1/minikimik3/K1/best-model.pt"
+      ]
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/09-minikimik3-K2-recovery-mb16-best-model.pt.refresh",
+      "logical_bytes": 818619567,
+      "allocated_bytes": 818626560,
+      "hard_links_before": 1,
+      "reclaimed_allocated_bytes": 818626560,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": []
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/10-miniqwen4-Q1-model.pt.refresh",
+      "logical_bytes": 2053810991,
+      "allocated_bytes": 2053816320,
+      "hard_links_before": 2,
+      "reclaimed_allocated_bytes": 0,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": [
+        "outputs/strategy-base-pretraining-v1/miniqwen4/Q1/model.pt"
+      ]
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/11-miniqwen4-Q1-best-model.pt.refresh",
+      "logical_bytes": 2053811247,
+      "allocated_bytes": 2053816320,
+      "hard_links_before": 2,
+      "reclaimed_allocated_bytes": 0,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": [
+        "outputs/strategy-base-pretraining-v1/miniqwen4/Q1/best-model.pt"
+      ]
+    },
+    {
+      "path": "outputs/checkpoint-diagnostics/2026-09-14_085825-gpu6/pins/12-minifrontier1-P0-checkpoint.pt.refresh",
+      "logical_bytes": 4606506411,
+      "allocated_bytes": 4606513152,
+      "hard_links_before": 2,
+      "reclaimed_allocated_bytes": 0,
+      "reason": "Unpublished refresh artifact; active diagnostic runner reads retained checkpoints/model.pt exports.",
+      "retained_hardlinks": [
+        "outputs/strategy-base-pretraining-v1/minifrontier1/P0/checkpoint.pt"
+      ]
+    },
+    {
+      "path": "outputs/strategy-pretraining-infra-upgrade-v1/minifrontier1/resume-checkpoint.pt",
+      "logical_bytes": 4574560187,
+      "allocated_bytes": 4574564352,
+      "hard_links_before": 1,
+      "reclaimed_allocated_bytes": 4574564352,
+      "reason": "Superseded execution-upgrade v1 rollback; completed phase endpoint and newer v2 rollback retained.",
+      "recorded_sha256": "ca212889c93a7c897449fb7d3f63bd6516ad5811cda8ba2e43be1d25abacadfd",
+      "hash_source": "immutable execution-upgrade.json; not reread during cleanup"
+    },
+    {
+      "path": "outputs/strategy-pretraining-infra-upgrade-v1/minikimik3/cache-reclaim-v2/resume-checkpoint.pt",
+      "logical_bytes": 2049555913,
+      "allocated_bytes": 2049560576,
+      "hard_links_before": 1,
+      "reclaimed_allocated_bytes": 2049560576,
+      "reason": "Superseded execution-upgrade v1 rollback; completed phase endpoint and newer v2 rollback retained.",
+      "recorded_sha256": "5252b778a89a40a932f089c7ba1191862eadfe1c19edfe8860baf9ac4c4ba703",
+      "hash_source": "immutable execution-upgrade.json; not reread during cleanup"
+    },
+    {
+      "path": "outputs/strategy-pretraining-infra-upgrade-v1/minikimik3/resume-checkpoint.pt",
+      "logical_bytes": 2049555593,
+      "allocated_bytes": 2049560576,
+      "hard_links_before": 1,
+      "reclaimed_allocated_bytes": 2049560576,
+      "reason": "Superseded execution-upgrade v1 rollback; completed phase endpoint and newer v2 rollback retained.",
+      "recorded_sha256": "8c490398aafe46fbf62cc74844b9b7cd7dd503ab244e9070610144ebb8abeded",
+      "hash_source": "immutable execution-upgrade.json; not reread during cleanup"
+    },
+    {
+      "path": "outputs/strategy-pretraining-infra-upgrade-v1/miniqwen4/resume-checkpoint.pt",
+      "logical_bytes": 4799891884,
+      "allocated_bytes": 4799897600,
+      "hard_links_before": 1,
+      "reclaimed_allocated_bytes": 4799897600,
+      "reason": "Superseded execution-upgrade v1 rollback; completed phase endpoint and newer v2 rollback retained.",
+      "recorded_sha256": "10dc3a2012db0edb5d235bbd8dda5eb4de93a4b6d6baa2b15f70c6ba3bc5ae97",
+      "hash_source": "immutable execution-upgrade.json; not reread during cleanup"
+    }
+  ],
+  "preserved": [
+    "Six current formal training recovery checkpoints and their output directories",
+    "Four completed phase endpoints: K1, Q1, DeepSeek-V4 D1, MF1 P0",
+    "All seven execution-upgrade v2 rollback copies, including both Qwen upgrades",
+    "Thirteen diagnostic inference snapshots used by the active comparison controller",
+    "Deferred instructions recovery checkpoints and teacher/baseline artifacts",
+    "Inference models, tokenizer, configs, logs, evaluation results, training data and frozen source checkouts"
+  ],
+  "verification": [
+    "Exact file manifest reviewed against live training, phase queues and diagnostic runner inputs",
+    "Device/inode/size/mtime/link count checked immediately before unlink; no live command, file descriptor or mapping references",
+    "Seven retained hard-link targets still exist with their original inodes; their deleted aliases count as zero reclaimed bytes",
+    "All protected files remain present; the six original training processes advanced after cleanup; diagnostic controller remains active"
+  ],
+  "hash_note": "Recorded hashes retain creation-time provenance. This cleanup did not reload tensors or recompute whole-weight hashes.",
+  "training_continues": [
+    {
+      "model": "minikimik3",
+      "phase": "K2",
+      "before_step": 7160,
+      "after_step": 7180,
+      "same_process": true
+    },
+    {
+      "model": "miniqwen4",
+      "phase": "Q2",
+      "before_step": 1430,
+      "after_step": 1450,
+      "same_process": true
+    },
+    {
+      "model": "minifrontier1",
+      "phase": "p1",
+      "before_step": 15192,
+      "after_step": 15232,
+      "same_process": true
+    },
+    {
+      "model": "minideepseekv41",
+      "phase": "D1",
+      "before_step": 1420,
+      "after_step": 1445,
+      "same_process": true
+    },
+    {
+      "model": "minideepseekv4",
+      "phase": "D2",
+      "before_step": 13040,
+      "after_step": 13065,
+      "same_process": true
+    },
+    {
+      "model": "minifrontier11",
+      "phase": "p0",
+      "before_step": 1346,
+      "after_step": 1372,
+      "same_process": true
+    }
+  ],
+  "limitation": "The four retired early v1 execution-switch points can no longer be resumed exactly. Complete later phase endpoints and newer v2 rollback checkpoints remain available.",
+  "accounting_scope": "Only allocated blocks released by the last unlink count as reclaimed; seven aliases release no blocks. Filesystem free space may also change during ongoing saves."
+}
