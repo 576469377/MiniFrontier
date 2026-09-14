@@ -713,5 +713,666 @@
       "allocator_threshold_alone_sufficient": false,
       "resolution": "Release unused CUDA cache after validation and, if necessary, before enforcing the unchanged 2 GiB free-device floor. Preserve peak counters and all computation/batch settings."
     }
+  },
+  "execution_2026_09_14": {
+    "kind": "six_model_execution_optimization",
+    "status": "all_six_continuing",
+    "source": {
+      "code_commit": "829a8bdf010619171e977df53279129c68b6d59d",
+      "runtime_release_commit": "3fd51a672113c97661a89615432cb601d11b61ee",
+      "runtime_implementation_sha256": "68673984cbd391d8e0a99b8dcecfae9b629a270f2a57f722987e5c025a7280dd",
+      "retained_strategy_revision": "95fd1ffa7d9e723ecb29b168b00d11ec7cd3dcbd",
+      "release_only_differences": [
+        "docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md",
+        "configs/strategies/minideepseekv41-plan.json"
+      ],
+      "release_note": "The execution release retains the previously bound strategy materials. Actual batch and program bindings come from each existing run; historical candidate values in the retained plan do not replace them."
+    },
+    "preserved_contract": [
+      "model architecture and parameter order",
+      "training objectives and loss denominators",
+      "causal, padding and media masks",
+      "routing frequencies and accumulation order",
+      "optimizer algorithm and state",
+      "sampler, consumed-window state and RNG",
+      "phase budgets, learning-rate schedule and data bindings"
+    ],
+    "changes": [
+      {
+        "scope": "supported formal pretraining",
+        "change": "Enable one-window CPU prefetch by default; preserve consumed sampler state and allow MINIFRONTIER_PREFETCH_WINDOWS=0 to disable. Native support requires one rank, a fixed input-token target, sample-bounded policy and a resumable mixture. MF support remains pilot/P0/P1/P3; P2 remains serial."
+      },
+      {
+        "scope": "native exact resume",
+        "change": "An existing token-based validation schedule does not repeat startup evaluation after an exact resume with completed updates. New starts, phase transitions and required phase-end evaluation retain their checks."
+      },
+      {
+        "scope": "miniqwen4",
+        "change": "Router prepasses skip unused vocabulary losses while retaining backbone, MTP decoder and routing collection. Dense CUDA pretraining uses SDPA with the existing masks; QSA stages retain eager probabilities. The loop adapter copies active expert IDs once."
+      },
+      {
+        "scope": "minideepseekv4",
+        "change": "Dense attention removes only key columns masked for every query in a chunk. Custom image-visibility masks retain full support. mHC uses FP32 contraction instead of a five-dimensional broadcast temporary."
+      },
+      {
+        "scope": "minikimik3",
+        "change": "Stable route grouping replaces per-expert nonzero synchronization while preserving expert order, token order and empty-expert zero gradients. Vision grid and split metadata are prepared once on CPU."
+      },
+      {
+        "scope": "minifrontier1 and minifrontier11",
+        "change": "Each independent package prepares vision integer metadata once and reuses sin/cos values within rotary operations."
+      },
+      {
+        "scope": "minideepseekv41 and minifrontier11",
+        "change": "Continuation uses the already verified model-local single-pass mHC FP32 contraction instead of the older broadcast implementation; checkpoint parameter names, order and equations are preserved."
+      }
+    ],
+    "formal_baseline": {
+      "scope": "The latest 100 recorded updates in each pre-cutover snapshot; medians are not a controlled cross-model benchmark. CE targets exclude padding and image features.",
+      "models": [
+        {
+          "model": "minikimik3",
+          "phase": "K2",
+          "seed": 42,
+          "source_commit": "32511e8910d7f6a188a563fb383d8f6a07b6c3a7",
+          "observed_utc": "2026-09-14T12:24:57.865080+00:00",
+          "records": 100,
+          "step_range": [
+            6270,
+            6765
+          ],
+          "median_ce_tokens_per_second": 2112.218143973525,
+          "median_update_seconds": 14.699417156167328,
+          "median_foreground_data_seconds": 1.3620642088353634,
+          "median_microbatches": 4.0
+        },
+        {
+          "model": "miniqwen4",
+          "phase": "Q2",
+          "seed": 42,
+          "source_commit": "32511e8910d7f6a188a563fb383d8f6a07b6c3a7",
+          "observed_utc": "2026-09-14T12:24:57.879248+00:00",
+          "records": 100,
+          "step_range": [
+            650,
+            1145
+          ],
+          "median_ce_tokens_per_second": 762.17785112972,
+          "median_update_seconds": 20.967634171247482,
+          "median_foreground_data_seconds": 0.7478996505960822,
+          "median_microbatches": 4.0
+        },
+        {
+          "model": "minideepseekv4",
+          "phase": "D2",
+          "seed": 42,
+          "source_commit": "baeffd7ddedf8c34e61f22d5717158bb0cc09647",
+          "observed_utc": "2026-09-14T12:24:58.235003+00:00",
+          "records": 100,
+          "step_range": [
+            12060,
+            12555
+          ],
+          "median_ce_tokens_per_second": 2690.6197252836937,
+          "median_update_seconds": 12.41523124370724,
+          "median_foreground_data_seconds": 0.010000452399253845,
+          "median_microbatches": 4.0
+        },
+        {
+          "model": "minideepseekv41",
+          "phase": "D1",
+          "seed": 42,
+          "source_commit": "95fd1ffa7d9e723ecb29b168b00d11ec7cd3dcbd",
+          "observed_utc": "2026-09-14T12:24:58.200650+00:00",
+          "records": 100,
+          "step_range": [
+            435,
+            930
+          ],
+          "median_ce_tokens_per_second": 2679.3626318428505,
+          "median_update_seconds": 12.418873685412109,
+          "median_foreground_data_seconds": 0.01068506296724081,
+          "median_microbatches": 6.0
+        },
+        {
+          "model": "minifrontier1",
+          "phase": "P1",
+          "seed": 42,
+          "source_commit": "32511e8910d7f6a188a563fb383d8f6a07b6c3a7",
+          "observed_utc": "2026-09-14T12:24:58.108073+00:00",
+          "records": 100,
+          "step_range": [
+            14404,
+            14503
+          ],
+          "median_ce_tokens_per_second": 1764.863813306247,
+          "median_update_seconds": 7.699138456955552,
+          "median_foreground_data_seconds": 1.3140229601413012,
+          "median_microbatches": 3.0
+        },
+        {
+          "model": "minifrontier11",
+          "phase": "P0",
+          "seed": 42,
+          "source_commit": "95fd1ffa7d9e723ecb29b168b00d11ec7cd3dcbd",
+          "observed_utc": "2026-09-14T12:24:58.258343+00:00",
+          "records": 100,
+          "step_range": [
+            760,
+            859
+          ],
+          "median_ce_tokens_per_second": 1216.8476601692723,
+          "median_update_seconds": 11.25757709145546,
+          "median_foreground_data_seconds": 1.4558047521859407,
+          "median_microbatches": 6.0
+        }
+      ]
+    },
+    "gpu_comparison": {
+      "device": "NVIDIA GeForce RTX 3090",
+      "torch_version": "2.13.0+cu130",
+      "precision": "float32 parameters with bfloat16 autocast",
+      "scope": "Short operator forward/backward comparisons, without optimizer updates or added formal training tokens. Timings do not predict end-to-end training speedups.",
+      "measurement_note": "All initial operator timings are medians: Qwen uses five measured repeats, DeepSeek three, and Kimi/MF two.",
+      "cases": [
+        {
+          "operator": "qwen_dense_attention",
+          "seed": 2941,
+          "shape": {
+            "batch": 8,
+            "sequence": 2048,
+            "hidden": 512,
+            "query_heads": 8,
+            "kv_heads": 2
+          },
+          "mask": "causal, right-padded last sample, MTP diagonal allowance",
+          "warmups": 2,
+          "measurements": 5,
+          "before_ms": 33.096702575683594,
+          "after_ms": 13.694975852966309,
+          "before_incremental_peak_mib": 4290.8759765625,
+          "after_incremental_peak_mib": 558.8759765625,
+          "numerical_comparison": {
+            "output_relative_l2": 0.004559345543384552,
+            "input_gradient_relative_l2": 0.006291923113167286,
+            "parameter_gradient_relative_l2": 0.005515097174793482
+          },
+          "passed": true,
+          "input_precision": "float32 parameters and activations",
+          "timing_aggregation": "median"
+        },
+        {
+          "operator": "deepseek_v4_dense_attention",
+          "seed": 493,
+          "shape": [
+            8,
+            2048,
+            8,
+            64
+          ],
+          "warmups": 1,
+          "measurements": 3,
+          "before_ms": 61.11027145385742,
+          "after_ms": 37.50707244873047,
+          "before_incremental_peak_mib": 295.12548828125,
+          "after_incremental_peak_mib": 67.74755859375,
+          "numerical_comparison": {
+            "output_relative_rms": 2.294642399647273e-05,
+            "max_gradient_relative_rms": 0.002839593682438135,
+            "max_output_absolute_error": 0.00390625,
+            "max_gradient_absolute_error": 0.0625
+          },
+          "passed": true,
+          "compress_ratio": 0,
+          "window": 128,
+          "query_chunk": 128,
+          "recompute": true,
+          "input_precision": "bfloat16 activations; float32 sink or mHC coefficients",
+          "timing_aggregation": "median"
+        },
+        {
+          "operator": "deepseek_v4_dense_attention",
+          "seed": 493,
+          "shape": [
+            8,
+            2048,
+            8,
+            64
+          ],
+          "warmups": 1,
+          "measurements": 3,
+          "before_ms": 71.10246276855469,
+          "after_ms": 44.06681442260742,
+          "before_incremental_peak_mib": 360.62548828125,
+          "after_incremental_peak_mib": 144.37646484375,
+          "numerical_comparison": {
+            "output_relative_rms": 2.5600476874387823e-05,
+            "max_gradient_relative_rms": 0.004792946390807629,
+            "max_output_absolute_error": 0.001953125,
+            "max_gradient_absolute_error": 0.0625
+          },
+          "passed": true,
+          "compress_ratio": 4,
+          "window": 128,
+          "query_chunk": 128,
+          "recompute": true,
+          "input_precision": "bfloat16 activations; float32 sink or mHC coefficients",
+          "timing_aggregation": "median"
+        },
+        {
+          "operator": "deepseek_v4_dense_attention",
+          "seed": 493,
+          "shape": [
+            8,
+            2048,
+            8,
+            64
+          ],
+          "warmups": 1,
+          "measurements": 3,
+          "before_ms": 59.74630355834961,
+          "after_ms": 39.772159576416016,
+          "before_incremental_peak_mib": 297.17236328125,
+          "after_incremental_peak_mib": 77.29541015625,
+          "numerical_comparison": {
+            "output_relative_rms": 2.8461945476010442e-05,
+            "max_gradient_relative_rms": 0.0032463129609823227,
+            "max_output_absolute_error": 0.00390625,
+            "max_gradient_absolute_error": 0.09375
+          },
+          "passed": true,
+          "compress_ratio": 128,
+          "window": 128,
+          "query_chunk": 128,
+          "recompute": true,
+          "input_precision": "bfloat16 activations; float32 sink or mHC coefficients",
+          "timing_aggregation": "median"
+        },
+        {
+          "operator": "deepseek_v4_hc_post",
+          "seed": 493,
+          "shape": [
+            8,
+            2048,
+            4,
+            512
+          ],
+          "warmups": 1,
+          "measurements": 3,
+          "before_ms": 7.646207809448242,
+          "after_ms": 5.8961920738220215,
+          "before_incremental_peak_mib": 1217.0,
+          "after_incremental_peak_mib": 576.25,
+          "numerical_comparison": {
+            "output_relative_rms": 9.526274880045094e-06,
+            "max_gradient_relative_rms": 1.4912314327375498e-05,
+            "max_output_absolute_error": 0.0625,
+            "max_gradient_absolute_error": 0.0625
+          },
+          "passed": true,
+          "input_precision": "bfloat16 activations; float32 sink or mHC coefficients",
+          "timing_aggregation": "median"
+        },
+        {
+          "operator": "kimi_loop_route_8192_tokens_32_experts",
+          "seed": 604,
+          "shape": {
+            "tokens": 8192,
+            "latent_width": 256,
+            "experts": 32,
+            "top_k": 2
+          },
+          "warmups": 1,
+          "measurements": 2,
+          "before_ms": 53.02535556256771,
+          "after_ms": 46.440902166068554,
+          "forward_bitwise_equal": true,
+          "all_gradients_bitwise_equal": true,
+          "max_output_absolute_error": 0.0,
+          "max_gradient_absolute_error": 0.0,
+          "passed": true,
+          "input_precision": "bfloat16 activations; float32 route weights",
+          "timing_aggregation": "median"
+        },
+        {
+          "operator": "minikimik3_vision_12_layers_image_video",
+          "seed": 604,
+          "shape": {
+            "grid_thw": [
+              [
+                1,
+                12,
+                12
+              ],
+              [
+                2,
+                10,
+                12
+              ]
+            ],
+            "depth": 12,
+            "hidden": 384,
+            "heads": 6,
+            "patch_size": 14,
+            "output_width": 512,
+            "qkv_hidden": 576
+          },
+          "warmups": 1,
+          "measurements": 2,
+          "before_ms": 75.86585078388453,
+          "after_ms": 71.85123488306999,
+          "forward_bitwise_equal": true,
+          "all_gradients_bitwise_equal": true,
+          "max_output_absolute_error": 0.0,
+          "max_gradient_absolute_error": 0.0,
+          "passed": true,
+          "input_precision": "float32 patch pixels and int64 grids",
+          "timing_aggregation": "median"
+        },
+        {
+          "operator": "minifrontier1_vision_12_layers_image_video",
+          "seed": 604,
+          "shape": {
+            "grid_thw": [
+              [
+                1,
+                12,
+                12
+              ],
+              [
+                2,
+                10,
+                12
+              ]
+            ],
+            "depth": 12,
+            "hidden": 384,
+            "heads": 6,
+            "patch_size": 16,
+            "output_width": 512,
+            "qkv_hidden": 384
+          },
+          "warmups": 1,
+          "measurements": 2,
+          "before_ms": 63.60375415533781,
+          "after_ms": 61.43409386277199,
+          "forward_bitwise_equal": true,
+          "all_gradients_bitwise_equal": true,
+          "max_output_absolute_error": 0.0,
+          "max_gradient_absolute_error": 0.0,
+          "passed": true,
+          "input_precision": "float32 patch pixels and int64 grids",
+          "timing_aggregation": "median"
+        },
+        {
+          "operator": "minifrontier11_vision_12_layers_image_video",
+          "seed": 604,
+          "shape": {
+            "grid_thw": [
+              [
+                1,
+                12,
+                12
+              ],
+              [
+                2,
+                10,
+                12
+              ]
+            ],
+            "depth": 12,
+            "hidden": 384,
+            "heads": 6,
+            "patch_size": 16,
+            "output_width": 512,
+            "qkv_hidden": 384
+          },
+          "warmups": 1,
+          "measurements": 2,
+          "before_ms": 61.68483477085829,
+          "after_ms": 62.39391304552555,
+          "forward_bitwise_equal": true,
+          "all_gradients_bitwise_equal": true,
+          "max_output_absolute_error": 0.0,
+          "max_gradient_absolute_error": 0.0,
+          "passed": true,
+          "input_precision": "float32 patch pixels and int64 grids",
+          "timing_aggregation": "median"
+        }
+      ],
+      "numerical_limit": "For these nine initial cases, the largest recorded relative RMS/L2 difference is below 0.007; attention kernels and reductions are tolerance-equivalent, not bitwise identical. Kimi routing and all three vision comparisons are bitwise identical.",
+      "vision_limit": "The three vision timings vary within roughly 6%; MF1.1 did not show a speedup in this short measurement.",
+      "seed_scope": "Each benchmark group seeds once before its ordered cases: Qwen 2941, DeepSeek 493, and Kimi/MF 604; cases within a group do not reseed."
+    },
+    "verification": {
+      "cpu_tests_passed": 105,
+      "ruff": "passed",
+      "mypy": "passed",
+      "test_files": [
+        "tests/test_deepseek_attention_memory.py",
+        "tests/test_deepseek_v4_upstream_alignment.py",
+        "tests/test_execution_prefetch.py",
+        "tests/test_mf11.py",
+        "tests/test_mf1_workflow.py",
+        "tests/test_model_local_performance.py",
+        "tests/test_pretraining_validation.py",
+        "tests/test_qwen_prepass.py",
+        "tests/test_qwen_sdpa.py"
+      ],
+      "parameter_bindings": "Six resolved configurations and optimizer parameter/group orders match the original runs; four native program bindings match."
+    },
+    "formal_after": {
+      "observed_utc": "2026-09-14T13:03:26.240500+00:00",
+      "state": "all_six_continuing",
+      "scope": "Preliminary medians from distinct real data windows, not a controlled end-to-end benchmark. Before uses 100 logged updates per model; after uses up to 50. Qwen has only three records after the GDN switch, so its result is especially preliminary.",
+      "maximum_after_records_per_model": 50,
+      "token_denominator": "main cross-entropy targets, excluding padding and image features",
+      "data_time_interpretation": "Foreground waiting after prefetch; excludes background preparation overlapped with model execution.",
+      "models": [
+        {
+          "model": "minikimik3",
+          "phase": "K2",
+          "source_commit": "3fd51a672113c97661a89615432cb601d11b61ee",
+          "resume_checkpoint_step": 6815,
+          "latest_step": 6905,
+          "records": 18,
+          "step_range": [
+            6820,
+            6905
+          ],
+          "median_ce_tokens_per_second": 2429.881609832834,
+          "median_update_seconds": 12.761544132605195,
+          "median_foreground_data_wait_seconds": 0.006169050000607967,
+          "median_microbatches": 4.0,
+          "recorded_loss_and_grad_finite": true
+        },
+        {
+          "model": "miniqwen4",
+          "phase": "Q2",
+          "source_commit": "c4a5822d618179f7efd41e25d6dc1ed92cd803c2",
+          "resume_checkpoint_step": 1186,
+          "latest_step": 1200,
+          "records": 3,
+          "step_range": [
+            1190,
+            1200
+          ],
+          "median_ce_tokens_per_second": 1170.881532221676,
+          "median_update_seconds": 13.841485064476728,
+          "median_foreground_data_wait_seconds": 0.0022431015968322754,
+          "median_microbatches": 4,
+          "recorded_loss_and_grad_finite": true
+        },
+        {
+          "model": "minideepseekv4",
+          "phase": "D2",
+          "source_commit": "3fd51a672113c97661a89615432cb601d11b61ee",
+          "resume_checkpoint_step": 12632,
+          "latest_step": 12740,
+          "records": 22,
+          "step_range": [
+            12635,
+            12740
+          ],
+          "median_ce_tokens_per_second": 3114.0970133667006,
+          "median_update_seconds": 10.706497703678906,
+          "median_foreground_data_wait_seconds": 0.005363427102565765,
+          "median_microbatches": 4.0,
+          "recorded_loss_and_grad_finite": true
+        },
+        {
+          "model": "minideepseekv41",
+          "phase": "D1",
+          "source_commit": "3fd51a672113c97661a89615432cb601d11b61ee",
+          "resume_checkpoint_step": 1016,
+          "latest_step": 1130,
+          "records": 23,
+          "step_range": [
+            1020,
+            1130
+          ],
+          "median_ce_tokens_per_second": 2951.930810726847,
+          "median_update_seconds": 11.23029594682157,
+          "median_foreground_data_wait_seconds": 0.00436781719326973,
+          "median_microbatches": 6,
+          "recorded_loss_and_grad_finite": true
+        },
+        {
+          "model": "minifrontier1",
+          "phase": "P1",
+          "source_commit": "3fd51a672113c97661a89615432cb601d11b61ee",
+          "resume_checkpoint_step": 14602,
+          "latest_step": 14719,
+          "records": 50,
+          "step_range": [
+            14670,
+            14719
+          ],
+          "median_ce_tokens_per_second": 2184.3222280931604,
+          "median_update_seconds": 6.164410303346813,
+          "median_foreground_data_wait_seconds": 0.023880652152001858,
+          "median_microbatches": 3.0,
+          "recorded_loss_and_grad_finite": true
+        },
+        {
+          "model": "minifrontier11",
+          "phase": "P0",
+          "source_commit": "3fd51a672113c97661a89615432cb601d11b61ee",
+          "resume_checkpoint_step": 934,
+          "latest_step": 1012,
+          "records": 50,
+          "step_range": [
+            963,
+            1012
+          ],
+          "median_ce_tokens_per_second": 1385.1002248480286,
+          "median_update_seconds": 9.877615572884679,
+          "median_foreground_data_wait_seconds": 0.00047801434993743896,
+          "median_microbatches": 6.0,
+          "recorded_loss_and_grad_finite": true
+        }
+      ]
+    },
+    "qwen_gdn_followup": {
+      "status": "resumed_training_continues",
+      "model": "miniqwen4",
+      "phase": "Q2",
+      "resume_checkpoint_step": 1186,
+      "source_before": "3fd51a672113c97661a89615432cb601d11b61ee",
+      "source_after": "c4a5822d618179f7efd41e25d6dc1ed92cd803c2",
+      "implementation_sha256": "b685cb22d07fc2cfd982a5fe4adeb6454c8a8ecc84fe89fc81feb3cf14ac11b9",
+      "other_five_model_runtime_release": "3fd51a672113c97661a89615432cb601d11b61ee",
+      "change": "Use the verified FLA chunk GDN kernel for supported uncached CUDA BF16 execution. Preserve projections, convolution, Q/K normalization, gates, head mapping, padding mask and FP32 recurrent state. CPU, cached inference and unsupported inputs retain the torch reference.",
+      "training_configuration_changes": [],
+      "gpu": {
+        "device": "NVIDIA GeForce RTX 3090",
+        "torch_version": "2.13.0+cu130",
+        "fla_core_version": "0.5.2",
+        "seed": 9564,
+        "shape": {
+          "batch": 8,
+          "sequence": 2048,
+          "hidden": 512,
+          "key_heads": 4,
+          "value_heads": 12,
+          "head_dim": 64
+        },
+        "precision": "FP32 parameters/inputs with BF16 autocast; FP32 gate and recurrent state",
+        "scope": "one uncached GDN layer with right padding; no optimizer or learning trial",
+        "warmups": 2,
+        "measurements": 3,
+        "timing_aggregation": "median",
+        "before_ms": 85.01350402832031,
+        "after_ms": 13.489151954650879,
+        "before_incremental_peak_mib": 1499.6748046875,
+        "after_incremental_peak_mib": 625.2177734375,
+        "elapsed_seconds_including_compilation": 82.09921467490494,
+        "comparisons": [
+          {
+            "gradient_checkpointing": false,
+            "output_relative_l2": 0.0035712269600480795,
+            "input_gradient_relative_l2": 0.004420457407832146,
+            "parameter_gradient_relative_l2": 0.004374449606984854,
+            "max_single_parameter_gradient_relative_l2": 0.005777178797870874,
+            "finite": true
+          },
+          {
+            "gradient_checkpointing": true,
+            "output_relative_l2": 0.0035712269600480795,
+            "input_gradient_relative_l2": 0.004417832940816879,
+            "parameter_gradient_relative_l2": 0.004354945383965969,
+            "max_single_parameter_gradient_relative_l2": 0.008714208379387856,
+            "finite": true
+          }
+        ],
+        "state_check": {
+          "nonzero_initial_state": true,
+          "state_shape": [
+            8,
+            12,
+            64,
+            64
+          ],
+          "state_dtype": "float32",
+          "output_relative_l2": 0.005643236916512251,
+          "final_state_relative_l2": 0.0046714250929653645,
+          "max_input_or_initial_state_gradient_relative_l2": 0.005842027720063925,
+          "finite": true
+        },
+        "passed": true,
+        "interpretation": "The approximately 6.3x ratio is for one GDN layer, not a full optimizer update or end-to-end training. FP32 state semantics are preserved; fused BF16 execution has measured rounding differences."
+      },
+      "verification": {
+        "additional_cpu_tests_passed": 11,
+        "prior_cpu_tests_passed": 105,
+        "ruff": "passed",
+        "mypy": "passed",
+        "test_file": "tests/test_qwen_gdn_backend.py",
+        "training_tokens_spent": 0
+      },
+      "regular_checkpoint_step": 1200,
+      "observed_utc": "2026-09-14T13:03:26.240500+00:00"
+    },
+    "resume_control_followup": {
+      "scope": "local execution control script only",
+      "issue": "A pause-marker cleanup ordering race caused each of the two newly resumed MF processes to finish one optimizer update and then pause again.",
+      "checkpoint_status": "Both completed updates were saved in complete resumable checkpoints; no update was lost.",
+      "correction": "Correct the pause-marker cleanup order before launching the next process.",
+      "continuations": [
+        {
+          "model": "minifrontier1",
+          "phase": "P1",
+          "resume_checkpoint_step": 14602
+        },
+        {
+          "model": "minifrontier11",
+          "phase": "P0",
+          "resume_checkpoint_step": 934
+        }
+      ],
+      "model_or_trainer_computation_error": false,
+      "lost_optimizer_updates": 0,
+      "status": "corrected_both_mf_runs_continuing"
+    }
   }
 }
