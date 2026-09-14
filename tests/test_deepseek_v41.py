@@ -7,18 +7,14 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from minifrontier.models.deepseek_v41_layers import (
-    Compressor,
-    CSA2Attention,
-    CSA2State,
-    SinglePassHC,
-)
-from minifrontier.models.minideepseekv4.vision import DeepSeekVisionConfig
 from minifrontier.models.minideepseekv41 import (
     MiniDeepSeekV41Cache,
     MiniDeepSeekV41Config,
     MiniDeepSeekV41ForCausalLM,
 )
+from minifrontier.models.minideepseekv41.attention import Compressor, CSA2Attention, CSA2State
+from minifrontier.models.minideepseekv41.residual import SinglePassHC
+from minifrontier.models.minideepseekv41.vision import DeepSeekVisionConfig
 
 
 def tiny(**changes):

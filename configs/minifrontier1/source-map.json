@@ -2,34 +2,9 @@
   "revisions": {
     "kimi": "c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721",
     "qwen": "4177486a9f199bd7be520eff14431071d5d41ec5",
-    "deepseek": "60d8d70770c6776ff598c94bb586a859a38244f1"
+    "deepseek": "60d8d70770c6776ff598c94bb586a859a38244f1",
+    "deepseek_v41": "dba1be0a40aa45a94ad051997016db3960a90277"
   },
-  "local_adapters": [
-    {
-      "path": "minifrontier/models/minikimik3/upstream_layers.py",
-      "sha256": "0541b319780a957f779b97f3f25259ebc6472b73518f9dcea254eecd082c2305"
-    },
-    {
-      "path": "minifrontier/models/minikimik3/kernels.py",
-      "sha256": "1d5934b5a00436abde59c59605beb839a3f328b0583c1f4e17f501d5e284d5bb"
-    },
-    {
-      "path": "minifrontier/models/miniqwen4/upstream_core.py",
-      "sha256": "0ee90804a2e20bfe898c0d11f744082cd2a65f20bcd9a900abc5dd4f64af62ee"
-    },
-    {
-      "path": "minifrontier/models/miniqwen4/upstream_vision.py",
-      "sha256": "320d1d2ae9659626e84b41c1530128e84b310e1facec9e4df51ffff5f7410674"
-    },
-    {
-      "path": "minifrontier/models/miniqwen4/upstream_processing.py",
-      "sha256": "2bc55e3d1951ea50fb93efff7279f1d68bb8843fe4e362680ae6bfb66a1ae07c"
-    },
-    {
-      "path": "minifrontier/models/minideepseekv4/attention.py",
-      "sha256": "fc7b2aef9c8aefedc2bfd0bc317f53e419111e47ee4284626c4de71eaa6c9705"
-    }
-  ],
   "new_designs": [
     "QSA-MLA integration",
     "segment-aware CSA",
@@ -38,9 +13,9 @@
     "native recipe and training gates"
   ],
   "license_expression": "Apache-2.0 AND MIT AND LicenseRef-Kimi-K3",
-  "evidence": "pinned local adaptations; original files retain upstream attribution",
+  "evidence": "Model-local attributed copies; reference_adapters record their extraction sources, not runtime imports. Output/gradient parity is checked in tests/test_mf_local_layers.py and tests/test_mf_local_vision.py.",
   "strategy_document": {
-    "path": "docs/training-strategies/2026-09-09/04-MiniFrontier1.0-\u539f\u751f\u591a\u6a21\u6001\u878d\u5408\u67b6\u6784\u4e0e\u5168\u6d41\u7a0b\u5b9e\u73b0\u65b9\u6848.md",
+    "path": "docs/training-strategies/2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md",
     "sha256": "e0840c97bc5c23823e723af79b27ddb69c6067e74af1fa06fd294b0cc4791ef7"
   },
   "upstream_files": [
@@ -112,5 +87,85 @@
       "path": "third_party/upstream/deepseek-v4-60d8d70/model.py",
       "sha256": "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71"
     }
-  ]
+  ],
+  "reference_adapters": [
+    {
+      "path": "minifrontier/models/minikimik3/upstream_layers.py",
+      "sha256": "0541b319780a957f779b97f3f25259ebc6472b73518f9dcea254eecd082c2305"
+    },
+    {
+      "path": "minifrontier/models/minikimik3/kernels.py",
+      "sha256": "1d5934b5a00436abde59c59605beb839a3f328b0583c1f4e17f501d5e284d5bb"
+    },
+    {
+      "path": "minifrontier/models/miniqwen4/upstream_core.py",
+      "sha256": "0ee90804a2e20bfe898c0d11f744082cd2a65f20bcd9a900abc5dd4f64af62ee"
+    },
+    {
+      "path": "minifrontier/models/miniqwen4/upstream_vision.py",
+      "sha256": "320d1d2ae9659626e84b41c1530128e84b310e1facec9e4df51ffff5f7410674"
+    },
+    {
+      "path": "minifrontier/models/miniqwen4/upstream_processing.py",
+      "sha256": "2bc55e3d1951ea50fb93efff7279f1d68bb8843fe4e362680ae6bfb66a1ae07c"
+    },
+    {
+      "path": "minifrontier/models/minideepseekv4/attention.py",
+      "sha256": "cb1312a042d137d0a267e0e09ac7085ef01eff73784d7ce0534e17c6e41f3274"
+    }
+  ],
+  "local_adapters": [
+    {
+      "path": "minifrontier/models/minifrontier1/kda_primitives.py",
+      "sha256": "a96b63a4a107ba880cd2ecbe332e69dcdb4fb273617d1596b12894e1d5187f61",
+      "source": "kimi",
+      "license": "LicenseRef-Kimi-K3"
+    },
+    {
+      "path": "minifrontier/models/minifrontier1/upstream_vision.py",
+      "sha256": "229f3f2489aa6e300104d7f9a1ef11bcc1c8a845e336c38d2b077749b0d28734",
+      "source": "qwen",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "minifrontier/models/minifrontier1/upstream_processing.py",
+      "sha256": "74145c28b360bac64b37b6eb86b81c21be9aa0682fbc4f5e12ef86b29ea8658c",
+      "source": "qwen",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "minifrontier/models/minifrontier1/upstream_residual.py",
+      "sha256": "617c6416146ff0c844cd486def69b039a4fab5bc35962c519e93d3742cdbcf6f",
+      "source": "qwen",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "minifrontier/models/minifrontier11/kda_primitives.py",
+      "sha256": "8fb43b551b338e0a3aaf1a5c8e45f22dea9d3b4939494cb3cca012c8e2a7e69d",
+      "source": "kimi",
+      "license": "LicenseRef-Kimi-K3"
+    },
+    {
+      "path": "minifrontier/models/minifrontier11/upstream_vision.py",
+      "sha256": "229f3f2489aa6e300104d7f9a1ef11bcc1c8a845e336c38d2b077749b0d28734",
+      "source": "qwen",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "minifrontier/models/minifrontier11/upstream_processing.py",
+      "sha256": "74145c28b360bac64b37b6eb86b81c21be9aa0682fbc4f5e12ef86b29ea8658c",
+      "source": "qwen",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "minifrontier/models/minifrontier11/residual.py",
+      "sha256": "50fcc7d5394cfa1f26cd2dbea1740969a98a745f6866a7a532fdff14e01fbc32",
+      "source": "deepseek_v41",
+      "license": "MIT"
+    }
+  ],
+  "model_packages": {
+    "minifrontier1": "minifrontier/models/minifrontier1",
+    "minifrontier11": "minifrontier/models/minifrontier11"
+  }
 }

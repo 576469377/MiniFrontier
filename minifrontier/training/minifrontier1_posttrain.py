@@ -12,9 +12,10 @@ import torch
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import RecordDataset, encode_record, safe_text, write_json
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
-from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM, MiniFrontier11ForCausalLM
-from minifrontier.models.minifrontier1.configuration import MF11_VERSION
+from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM
 from minifrontier.models.minifrontier1.draft import MF1Draft
+from minifrontier.models.minifrontier11 import MiniFrontier11ForCausalLM
+from minifrontier.models.minifrontier11.configuration import MF11_VERSION
 from minifrontier.multimodal import move
 from minifrontier.training.deepseek_opd import full_vocab_reverse_kl
 from minifrontier.training.distributions import forbidden_actions

@@ -21,7 +21,7 @@ from minifrontier.data.minifrontier1 import digest, write_json
 from minifrontier.data.minifrontier1_encoding import FORMAT, _encode_compact_items
 from minifrontier.data.native import processor_identity
 from minifrontier.data.partitions import corpus_storage_root, open_corpus
-from minifrontier.models.minifrontier1 import MiniFrontier1Config
+from minifrontier.models.factory import mf_config
 from minifrontier.multimodal import prepare_record
 from minifrontier.storage import GIB, reserve_write
 
@@ -532,7 +532,7 @@ def filter_media_encoding(corpus, encoded, output, *, config=None, max_gib=1, re
                     corpus,
                     encoded,
                     output,
-                    MiniFrontier1Config(**values),
+                    mf_config(values),
                     (maximum - metadata_reserve) / GIB,
                     old,
                     remaining,

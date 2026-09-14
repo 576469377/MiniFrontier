@@ -17,10 +17,9 @@ import torch
 from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.data.minifrontier1 import safe_text
+from minifrontier.data.minifrontier1 import processing_for, safe_text
 from minifrontier.inference.demo_web import page
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
-from minifrontier.models.minifrontier1.processing import process_frames
 from minifrontier.multimodal import move
 
 PAGE = page("mf1")
@@ -113,7 +112,7 @@ def prepare_request(payload, model, tokenizer):
                 images.append(image.convert("RGB"))
             hashes.append(hashlib.sha256(raw).hexdigest())
         remaining = model.config.protected_media_tokens - sum(s["feature_count"] for s in spans)
-        sample = process_frames(
+        sample = processing_for(model.config).process_frames(
             images,
             max_features=remaining,
             patch_size=model.config.vision_config.patch_size,

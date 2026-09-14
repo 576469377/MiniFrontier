@@ -186,7 +186,7 @@ uv run minifrontier mf1 demo --checkpoint outputs/mf1-export/model.pt \
 
 ```text
 minifrontier/
-├── models/       六个版本的实现；MF1.0 / 1.1 共用一个包
+├── models/       六个独立模型包；MF1.0 / 1.1 分别维护
 ├── data/         数据准备、清洗与编码
 ├── training/     训练、恢复、优化器与后训练
 ├── evaluation/   生成评测与多模态对照

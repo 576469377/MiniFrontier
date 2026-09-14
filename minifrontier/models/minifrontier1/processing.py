@@ -6,7 +6,7 @@ from typing import Any
 
 import torch
 
-from minifrontier.models.miniqwen4.processing import process_frames as qwen_frames
+from .upstream_processing import process_frames as source_frames
 
 PROCESSOR_VERSION = "mf1-native-v1"
 CONTROL_VERSION = "mf1-control-v1"
@@ -18,7 +18,7 @@ def process_frames(frames, *, max_features=1024, patch_size=16, min_pixels=None,
     if per_group < 1:
         raise ValueError("frame count exceeds total media budget; reduce frames explicitly")
     minimum = (2 * patch_size) ** 2 if min_pixels is None else min_pixels
-    sample = qwen_frames(
+    sample = source_frames(
         frames,
         max_features=per_group,
         patch_size=patch_size,

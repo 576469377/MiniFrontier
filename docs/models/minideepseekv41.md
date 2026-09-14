@@ -95,8 +95,8 @@ L = L_CE + 1.0 × L_indexer + 0.0001 × L_sequence_balance
 | 阅读目标 | 代码入口 |
 |---|---|
 | CED 层序、损失与图像接口 | [modeling.py](../../minifrontier/models/minideepseekv41/modeling.py) |
-| CSA2 与共享状态 | [deepseek_v41_layers.py](../../minifrontier/models/deepseek_v41_layers.py) |
-| Single-Pass mHC | [deepseek_v41_layers.py](../../minifrontier/models/deepseek_v41_layers.py) |
+| CSA2 与共享状态 | [attention.py](../../minifrontier/models/minideepseekv41/attention.py) |
+| Single-Pass mHC | [residual.py](../../minifrontier/models/minideepseekv41/residual.py) |
 | Token 映射、哈希与门控查表 | [engram.py](../../minifrontier/models/minideepseekv41/engram.py) |
 | 完整前缀重算 | [cache.py](../../minifrontier/models/minideepseekv41/cache.py) |
 | Muon / Sinkhorn / AdamW 分组 | [v41_optim.py](../../minifrontier/training/v41_optim.py) |

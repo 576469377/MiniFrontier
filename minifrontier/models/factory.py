@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import json
+from importlib import import_module
 from pathlib import Path
 
 
 def model_classes(name):
     if name == "minifrontier11":
-        from .minifrontier1 import MiniFrontier1Config, MiniFrontier11ForCausalLM
+        from .minifrontier11 import MiniFrontier11Config, MiniFrontier11ForCausalLM
 
-        return MiniFrontier1Config, MiniFrontier11ForCausalLM
+        return MiniFrontier11Config, MiniFrontier11ForCausalLM
     if name == "minideepseekv41":
         from .minideepseekv41 import MiniDeepSeekV41Config, MiniDeepSeekV41ForCausalLM
 
@@ -32,6 +33,26 @@ def model_classes(name):
 
         return MiniDeepSeekV4Config, MiniDeepSeekV4ForCausalLM
     raise ValueError(f"unknown model: {name}")
+
+
+def model_processing(name):
+    """Select preprocessing from the same package as the model implementation."""
+    _, model_cls = model_classes(name)
+    package = model_cls.__module__.rsplit(".", 1)[0]
+    return import_module(f"{package}.processing")
+
+
+def mf_config(values=None, *, model_version=None):
+    """Decode the existing MF config schema into its independent versioned class."""
+    values = {} if values is None else dict(values)
+    version = values.get("model_version", model_version or "1.0-reference-v1")
+    if model_version is not None and version != model_version:
+        raise ValueError("explicit model version differs from config or parent checkpoint")
+    names = {"1.0-reference-v1": "minifrontier1", "1.1-reference-v1": "minifrontier11"}
+    if version not in names:
+        raise ValueError(f"unknown MF model version: {version}")
+    config_cls, _ = model_classes(names[version])
+    return config_cls(**values)
 
 
 def build_model(name, values=None, *, phase=None):

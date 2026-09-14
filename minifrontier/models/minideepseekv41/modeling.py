@@ -16,13 +16,14 @@ from torch import nn
 from torch.utils.checkpoint import checkpoint
 
 from minifrontier.models.common import CausalLMOutput, validate_batch
-from minifrontier.models.deepseek_v41_layers import CSA2Attention, CSA2State, SinglePassHC
-from minifrontier.models.minideepseekv4.expert import TrainingGate
-from minifrontier.models.minideepseekv4.upstream_layers import MoE, RMSNorm
-from minifrontier.models.minideepseekv4.vision import DeepSeekVision, DeepSeekVisionConfig
 from minifrontier.training.losses import causal_lm_loss, chunked_linear_ce
 
+from .attention import CSA2Attention, CSA2State
 from .engram import Engram, compressed_token_map, table_layout
+from .expert import TrainingGate
+from .layers import MoE, RMSNorm
+from .residual import SinglePassHC
+from .vision import DeepSeekVision, DeepSeekVisionConfig
 
 
 @dataclass
@@ -208,7 +209,7 @@ class MiniDeepSeekV41ForCausalLM(nn.Module):
         self.layers = nn.ModuleList(Block(config, i, layout) for i in range(config.n_layers))
         self.norm = RMSNorm(config.dim, config.norm_eps)
         self.head = nn.Linear(config.dim, config.vocab_size, bias=False)
-        # This shared tower has identical operations to dba1be0 inference/vision.py.
+        # Local tower retains the operations from dba1be0 inference/vision.py.
         self.vision = DeepSeekVision(config.vision_config) if config.vision_config else None
         if self.vision is not None:
             assert config.vision_config is not None
@@ -220,9 +221,9 @@ class MiniDeepSeekV41ForCausalLM(nn.Module):
             self.image_pad = nn.Parameter(torch.zeros(config.dim))
         self._initialize()
         if config.expert_execution != "loop":
-            from minifrontier.models.grouped_experts import configure
+            from .batched_experts import configure_experts
 
-            configure(self, config.expert_execution)
+            configure_experts(self, config.expert_execution)
         self.configure_training_phase(training_phase)
 
     @torch.no_grad()

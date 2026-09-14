@@ -17,14 +17,14 @@ import torch
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import digest, write_json
 from minifrontier.data.minifrontier1_encoding import evaluation_items, open_dataset
+from minifrontier.models.factory import mf_config
 from minifrontier.models.minifrontier1 import (
-    MiniFrontier1Config,
     MiniFrontier1ForCausalLM,
-    MiniFrontier11ForCausalLM,
 )
-from minifrontier.models.minifrontier1.configuration import MF11_VERSION
 from minifrontier.models.minifrontier1.mtp import mtp_targets
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, token_metadata
+from minifrontier.models.minifrontier11 import MiniFrontier11ForCausalLM
+from minifrontier.models.minifrontier11.configuration import MF11_VERSION
 from minifrontier.multimodal import move
 from minifrontier.training.metrics import mf1_scalars
 from minifrontier.training.minifrontier1_curriculum import (
@@ -403,15 +403,7 @@ def train(
         else None
     )
     values = json.loads(Path(config).read_text()) if isinstance(config, (str, Path)) else config
-    c = (
-        MiniFrontier1Config(**(values or cast(dict, saved)["config"]))
-        if values or saved
-        else MiniFrontier1Config.v11()
-        if model_version == MF11_VERSION
-        else MiniFrontier1Config()
-    )
-    if model_version is not None and c.model_version != model_version:
-        raise ValueError("explicit model version differs from config or parent checkpoint")
+    c = mf_config(values or (saved["config"] if saved else None), model_version=model_version)
     phases = phases_for(c.model_version)
     model_name = model_name_for(c.model_version)
     optimizer_kind = optimizer_kind or (

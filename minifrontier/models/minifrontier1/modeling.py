@@ -11,16 +11,16 @@ from minifrontier.models.cache_utils import cache_transaction
 from minifrontier.models.common import CausalLMOutput, insert_media_embeddings, validate_batch
 from minifrontier.training.losses import causal_lm_loss, chunked_linear_ce
 
-from .configuration import MF1_VERSION, MF11_VERSION, MiniFrontier1Config
+from .configuration import MF1_VERSION, MiniFrontier1Config
 from .csa import CSA, Compressor
 from .indexer import prefill_directory
 from .kda import KDA, prefill_groups
 from .lookup import NgramLookup
-from .moe import LatentMoE, RMSNorm, Router
+from .moe import LatentMoE, Router
 from .mtp import MF1MTPBlock, mtp_targets
 from .processing import token_metadata
 from .qsa_mla import QSAMLA
-from .residual import GatedResidual, SinglePassMHC
+from .residual import GatedResidual
 from .vision import NativeVision
 
 
@@ -54,43 +54,6 @@ class MF1DecoderLayer(nn.Module):
         return self.moe_gr.inject(residual, update, weights), state, loss, count
 
 
-class MF11DecoderLayer(nn.Module):
-    """The same attention/experts with a shifted mHC mixer at each sublayer boundary."""
-
-    def __init__(self, c, kind):
-        super().__init__()
-        self.kind = kind
-        self.attention_mhc = SinglePassMHC(c)
-        self.attention_norm = RMSNorm(c.hidden_size, c.rms_norm_eps)
-        self.attention = {"kda": KDA, "csa4": CSA, "qsa_mla": QSAMLA}[kind](c)
-        self.moe_mhc = SinglePassMHC(c)
-        self.moe_norm = RMSNorm(c.hidden_size, c.rms_norm_eps)
-        self.moe = LatentMoE(c)
-
-    def forward(self, residual, pre_mix, metadata, state=None, *, cache_output=True):
-        attention_pre, post, combination = self.attention_mhc.coefficients(residual)
-        h = self.attention_norm(SinglePassMHC.mix(residual, pre_mix))
-        if self.kind == "kda":
-            update, state = self.attention(
-                h,
-                metadata["segment_ids"],
-                state,
-                cache_output=cache_output,
-                layout=metadata.get("kda_prefill"),
-            )
-            loss, count = h.sum() * 0, 0
-        else:
-            update, state, loss, count = self.attention(
-                h, metadata, state, cache_output=cache_output
-            )
-        residual = SinglePassMHC.inject(residual, update, post, combination)
-        next_pre, post, combination = self.moe_mhc.coefficients(residual)
-        h = self.moe_norm(SinglePassMHC.mix(residual, attention_pre))
-        update = self.moe(h, metadata.get("valid_token_indices"))
-        residual = SinglePassMHC.inject(residual, update, post, combination)
-        return residual, next_pre, state, loss, count
-
-
 class MiniFrontier1ForCausalLM(nn.Module):
     source_revision = "minifrontier1-native-fusion-v1"
     expected_model_version = MF1_VERSION
@@ -104,19 +67,15 @@ class MiniFrontier1ForCausalLM(nn.Module):
         self.config = config
         c = config
         self.embed_tokens = nn.Embedding(c.vocab_size, c.hidden_size, c.pad_token_id)
-        if c.model_version == MF11_VERSION:
-            self.layers = nn.ModuleList(MF11DecoderLayer(c, kind) for kind in c.attention_schedule)
-            self.final_norm = RMSNorm(c.hidden_size, c.rms_norm_eps)
-        else:
-            self.layers = nn.ModuleList(MF1DecoderLayer(c, kind) for kind in c.attention_schedule)
-            self.final_gr = GatedResidual(c, read_only=True)
+        self.layers = nn.ModuleList(MF1DecoderLayer(c, kind) for kind in c.attention_schedule)
+        self.final_gr = GatedResidual(c, read_only=True)
         self.lm_head = nn.Linear(c.hidden_size, c.vocab_size, bias=False)
         self.lookup = NgramLookup(c) if c.lookup_enabled else None
         self.vision = NativeVision(c.vision_config)
         self.mtp = MF1MTPBlock(c) if c.mtp_enabled else None
         self.indexer_loss_enabled = True
         self.apply(self._initialize)
-        # Residual-output scaling is applied once; GR's read/inject scaling is unchanged.
+        # Residual-output scaling is applied once during initialization.
         with torch.no_grad():
             for name, parameter in self.named_parameters():
                 if name.endswith(
@@ -141,7 +100,7 @@ class MiniFrontier1ForCausalLM(nn.Module):
             nn.init.normal_(module.weight, std=c.initializer_range)
         if isinstance(module, KDA):
             module.core.A_log.zero_()
-            # Choose retention directly under alpha=exp(-5*sigmoid(z)), not inverse-softplus.
+            # Choose retention directly under alpha=exp(-5*sigmoid(z)).
             retention = torch.empty_like(module.core.dt_bias).uniform_(0.8, 0.99)
             module.core.dt_bias.copy_(torch.logit(-retention.log() / 5))
         if isinstance(module, Compressor):
@@ -224,16 +183,10 @@ class MiniFrontier1ForCausalLM(nn.Module):
                 metadata["segment_ids"][:, 1:].ne(metadata["segment_ids"][:, :-1]), -100
             )
         residual = h.unsqueeze(-2).expand(*h.shape[:-1], c.hc_count, c.hidden_size)
-        single_pass = c.model_version == MF11_VERSION
-        pre_mix = SinglePassMHC.identity(residual) if single_pass else None
         losses, counts, taps = [], [], []
         for i, layer in enumerate(self.layers):
             if self.lookup is not None and i == c.lookup_layer - 1:
-                read = (
-                    SinglePassMHC.mix(residual, pre_mix)
-                    if single_pass
-                    else cast(MF1DecoderLayer, layer).attention_gr(residual)
-                )
+                read = cast(MF1DecoderLayer, layer).attention_gr(residual)
                 update, state = self.lookup(
                     read,
                     input_ids,
@@ -246,29 +199,7 @@ class MiniFrontier1ForCausalLM(nn.Module):
                     cache.lookup = state
             if layer.kind != "kda":
                 cast(Any, layer).attention.indexer_loss_enabled = self.indexer_loss_enabled
-            if single_pass:
-                if self.training and c.gradient_checkpointing:
-
-                    def run_single(r, pre, layer=layer):
-                        value, next_pre, _, loss, count = layer(
-                            r, pre, metadata, cache_output=False
-                        )
-                        return value, next_pre, loss, count
-
-                    residual, pre_mix, loss, count = checkpoint(
-                        run_single, residual, pre_mix, use_reentrant=False
-                    )
-                else:
-                    residual, pre_mix, state, loss, count = layer(
-                        residual,
-                        pre_mix,
-                        metadata,
-                        cache.layers[i] if cache is not None else None,
-                        cache_output=cache is not None,
-                    )
-                    if cache is not None:
-                        cache.layers[i] = state
-            elif self.training and c.gradient_checkpointing:
+            if self.training and c.gradient_checkpointing:
 
                 def run(r, layer=layer):
                     value, _, loss, count = layer(r, metadata, cache_output=False)
@@ -287,16 +218,8 @@ class MiniFrontier1ForCausalLM(nn.Module):
             losses.append(loss)
             counts.append(count)
             if return_taps:
-                taps.append(
-                    SinglePassMHC.mix(residual, pre_mix)
-                    if single_pass
-                    else cast(MF1DecoderLayer, layer).attention_gr(residual)
-                )
-        features = (
-            self.final_norm(SinglePassMHC.mix(residual, pre_mix))
-            if single_pass
-            else self.final_gr(residual)
-        )
+                taps.append(cast(MF1DecoderLayer, layer).attention_gr(residual))
+        features = self.final_gr(residual)
         logits = self.lm_head(features) if return_logits else None
         lm_loss = (
             None
@@ -333,62 +256,3 @@ class MiniFrontier1ForCausalLM(nn.Module):
         )
         result.index_query_tokens = sum(counts)
         return result
-
-
-class MiniFrontier11ForCausalLM(MiniFrontier1ForCausalLM):
-    """MF1.1 is a new backbone, with no implicit 1.0 weight or optimizer conversion."""
-
-    source_revision = "minifrontier11-single-pass-mhc-dba1be0-v1"
-    expected_model_version = MF11_VERSION
-    model_name = "minifrontier11"
-
-    def optimizer_metadata(self):
-        """Semantic Q/K partitions; fused K/V and V-only matrices are not split by head."""
-        names = {id(parameter): name for name, parameter in self.named_parameters()}
-        result = {
-            name: dict(kind="muon" if parameter.ndim == 2 else "adamw", role="backbone")
-            for name, parameter in self.named_parameters()
-        }
-
-        def mark(parameter, **metadata):
-            result[names[id(parameter)]].update(metadata)
-
-        mark(self.embed_tokens.weight, kind="sinkhorn", role="token_embedding")
-        mark(self.lm_head.weight, kind="sinkhorn", role="prediction_head")
-        if self.lookup is not None:
-            for table in self.lookup.tables:
-                mark(table.weight, kind="sinkhorn", role="ngram_embedding")
-        for layer in self.layers:
-            attention = cast(Any, layer).attention
-            if layer.kind == "kda":
-                for parameter in (attention.core.q_proj.weight, attention.core.k_proj.weight):
-                    mark(parameter, heads=self.config.num_attention_heads, role="attention_qk")
-            else:
-                mark(
-                    attention.q_up.weight,
-                    heads=self.config.num_attention_heads,
-                    role="attention_query",
-                )
-                if layer.kind == "qsa_mla":
-                    mark(attention.kv_up.weight, role="interleaved_joint_kv_whole_matrix")
-        for name, parameter in self.vision.named_parameters():
-            mark(parameter, role="vision_projector" if name.startswith("merger.") else "vision")
-        heads = self.config.vision_config.num_heads
-        width = self.config.vision_config.hidden_size
-        head_width = width // heads
-        blocks = [(i * head_width, (i + 1) * head_width) for i in range(2 * heads)]
-        blocks.append((2 * width, 3 * width))
-        for layer in self.vision.blocks:
-            mark(cast(Any, layer).attn.qkv.weight, blocks=blocks, role="vision_qk_heads_v_whole")
-        return result
-
-    def load_state_dict(self, state_dict, strict=True, assign=False):
-        if (
-            "final_norm.weight" not in state_dict
-            or "layers.0.attention_mhc.fn" not in state_dict
-            or any("_gr." in name for name in state_dict)
-        ):
-            raise ValueError(
-                "MF1.1 requires its own complete backbone checkpoint, not MF1.0 weights"
-            )
-        return super().load_state_dict(state_dict, strict=strict, assign=assign)

@@ -3,12 +3,12 @@
 import argparse
 import json
 import time
+from importlib import import_module
 from pathlib import Path
 
 import torch
 
 from minifrontier.models.factory import build_model
-from minifrontier.models.grouped_experts import configure
 
 
 def main():
@@ -22,6 +22,8 @@ def main():
     torch.set_num_threads(2)
     torch.manual_seed(196)
     model = build_model(args.model, args.config).to(args.device).train()
+    package = model.__class__.__module__.rsplit(".", 1)[0]
+    configure = import_module(f"{package}.batched_experts").configure_experts
     ids = torch.randint(21, model.config.vocab_size, (1, 512), device=args.device)
     report = dict(
         model=args.model,

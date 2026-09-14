@@ -9,10 +9,10 @@ import torch
 from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.data.minifrontier1 import safe_text
+from minifrontier.data.minifrontier1 import processing_for, safe_text
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
-from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM, MiniFrontier11ForCausalLM
-from minifrontier.models.minifrontier1.processing import process_frames
+from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM
+from minifrontier.models.minifrontier11 import MiniFrontier11ForCausalLM
 from minifrontier.multimodal import move
 
 
@@ -35,7 +35,7 @@ def prepare_prompt(
             with Image.open(path) as image:
                 frames.append(image.convert("RGB"))
         remaining = c.protected_media_tokens - sum(m["feature_count"] for m in media)
-        sample = process_frames(
+        sample = processing_for(model.config).process_frames(
             frames, max_features=remaining, patch_size=c.vision_config.patch_size, timestamps=times
         )
         ids.append(20 if times is not None else 9)

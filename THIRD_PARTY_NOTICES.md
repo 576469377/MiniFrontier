@@ -12,9 +12,11 @@ The wheel and sdist declare `Apache-2.0 AND MIT AND LicenseRef-Kimi-K3` for thei
 | Qwen Transformers and vLLM derived computational/vision/MTP files | Apache-2.0; retained attribution | [Apache-2.0](LICENSES/Apache-2.0.txt) |
 | Kimi attributed text, AttnRes, vision/processing, MTP and related derived computation, including its grouped-expert branch | LicenseRef-Kimi-K3; full custom terms, including commercial-use conditions | [Kimi K3](LICENSES/LicenseRef-Kimi-K3.txt) |
 | DeepSeek attributed text, compression, vision and DSpark-derived computation | MIT; retained attribution | [MIT](LICENSES/MIT-DeepSeek.txt) |
-| MiniFrontier1 fusion: KDA/MLA/LatentMoE adaptations, GR/ViT reuse, CSA-derived pooling and local integration | Respectively LicenseRef-Kimi-K3, Apache-2.0, MIT and Apache-2.0; combining these modules does not remove the source terms | [MF1 source map](configs/minifrontier1/source-map.json) and the standalone licenses above |
+| MiniFrontier1.0 / 1.1 fusion: model-local KDA/MLA/LatentMoE, GR/ViT, CSA and mHC adaptations | Respectively LicenseRef-Kimi-K3, Apache-2.0, MIT and Apache-2.0; combining these modules does not remove the source terms | [MF1 source map](configs/minifrontier1/source-map.json) and the standalone licenses above |
 | Upstream snapshots (sdist; not wheel reference resources) | Each snapshot's original license as listed below | Original LICENSE beside each snapshot |
 | Dependencies installed separately | Their own licenses; not relicensed by this package | Refer to each dependency distribution |
+
+The `minifrontier1/` and `minifrontier11/` packages each include `kda_primitives.py` under the Kimi K3 terms and Qwen-derived vision/processing under Apache-2.0. MF1.0 additionally includes Qwen-derived gated residuals; MF1.1 includes MIT-derived Single-Pass mHC. V4.1 keeps its own MIT-derived expert, norm and vision layers. Source copies and revisions are recorded in the [MF source map](configs/minifrontier1/source-map.json).
 
 Full standalone license texts and these notices are included in distribution license files. File-level notices and the pinned sources below provide the finer-grained mapping. Source-derived modifications keep the applicable upstream terms. Data and model weights are not distributed in this release; any later artifacts require their own provenance and license declarations.
 
@@ -45,7 +47,7 @@ The [snapshot](third_party/upstream/deepseek-v4-60d8d70) retains the inference s
 ## DeepSeek-V4.1
 
 Source: [DeepSeek-V4.1-Flash, dba1be0a40aa45a94ad051997016db3960a90277](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/tree/dba1be0a40aa45a94ad051997016db3960a90277/inference).
-The [pinned snapshot](third_party/upstream/deepseek-v4.1-dba1be0/source.json) retains the original MIT license and per-file hashes. `minideepseekv41/` and `deepseek_v41_layers.py` adapt its CED/CSA2, Single-Pass mHC and Engram computation for differentiable mini training. MF1.1 reuses the mHC layer while retaining the existing MF1 components and their respective terms. The V4.1 optimizer follows the published report; its local training implementation is not the unpublished upstream trainer. No flagship weights or complete technical-report PDF are distributed.
+The [pinned snapshot](third_party/upstream/deepseek-v4.1-dba1be0/source.json) retains the original MIT license and per-file hashes. `minideepseekv41/` adapts its CED/CSA2, Single-Pass mHC and Engram computation for differentiable mini training. The model's [attention.py](minifrontier/models/minideepseekv41/attention.py) owns CSA2; [residual.py](minifrontier/models/minideepseekv41/residual.py) owns mHC. MF1.1 keeps its own attributed [mHC implementation](minifrontier/models/minifrontier11/residual.py). Both MF packages maintain local copies of their borrowed components; copying does not change their respective terms. The V4.1 optimizer follows the published report; its local training implementation is not the unpublished upstream trainer. No flagship weights or complete technical-report PDF are distributed.
 
 ## Architecture figure excerpts
 

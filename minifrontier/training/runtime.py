@@ -108,16 +108,17 @@ class RouterBalance:
 
     def __init__(self, model):
         from minifrontier.models.minideepseekv4.upstream_layers import Gate
+        from minifrontier.models.minideepseekv41.layers import Gate as V41Gate
         from minifrontier.models.minikimik3.upstream_layers import KimiMoEGate
 
         self.gates: list[tuple[Any, torch.Tensor, int]] = []
         for module in model.modules():
             if isinstance(module, KimiMoEGate):
                 self.gates.append((module, module.e_score_correction_bias, 0))
-            elif isinstance(module, Gate) and module.bias is not None:
+            elif isinstance(module, (Gate, V41Gate)) and module.bias is not None:
                 self.gates.append((module, module.bias, 1))
         for module in model.modules():
-            if isinstance(module, Gate) and getattr(module, "bias_vl", None) is not None:
+            if isinstance(module, (Gate, V41Gate)) and getattr(module, "bias_vl", None) is not None:
                 self.gates.append((module, cast(torch.Tensor, module.bias_vl), 1))
         self.counts = [torch.zeros_like(bias) for _, bias, _ in self.gates]
         self.handles = []

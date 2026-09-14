@@ -23,10 +23,11 @@ class Tokenizer:
         return "ok"
 
 
-@pytest.fixture
-def model():
+@pytest.fixture(params=["1.0-reference-v1", "1.1-reference-v1"], ids=["mf1", "mf11"])
+def model(request):
     return SimpleNamespace(
         config=SimpleNamespace(
+            model_version=request.param,
             max_position_embeddings=256,
             protected_media_tokens=64,
             vision_config=SimpleNamespace(patch_size=16),

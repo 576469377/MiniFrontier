@@ -203,7 +203,7 @@
       "source_revision": "minifrontier11-single-pass-mhc-dba1be0-v1",
       "status": "base_pretraining_active_quality_unassessed",
       "training_ready": true,
-      "training_ready_scope": "native multimodal fusion, versioned within the MF1 package",
+      "training_ready_scope": "native multimodal fusion in the independent minifrontier11 package",
       "gpus_per_model": 1,
       "usable_chat_checkpoint": false,
       "trained_status": "base_pretraining_in_progress",

@@ -11,8 +11,10 @@ from test_mf1_workflow import fixture_data as fixture_data
 
 from minifrontier.data.minifrontier1 import RecordDataset
 from minifrontier.data.minifrontier1_encoding import CompactDataset, encode_dataset
+from minifrontier.models.factory import mf_config
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
-from minifrontier.models.minifrontier1.configuration import MF1_VERSION, MF11_VERSION
+from minifrontier.models.minifrontier1.configuration import MF1_VERSION
+from minifrontier.models.minifrontier11.configuration import MF11_VERSION
 from minifrontier.training import minifrontier1 as runtime
 from minifrontier.training import validation
 from minifrontier.training.metrics import mf1_scalars
@@ -170,7 +172,7 @@ def test_native_fixed_validation_cadence_and_resume(fixture_data, tmp_path, monk
 def test_formal_main_automatically_requires_phase_end_inventory(
     fixture_data, tmp_path, monkeypatch, model_version
 ):
-    config = MiniFrontier1Config.tiny(model_version=model_version)
+    config = type(mf_config(model_version=model_version)).tiny()
     phases = runtime.phases_for(model_version)
     monkeypatch.setattr(runtime, "validate_gate", lambda *args, **kwargs: {})
     monkeypatch.setitem(phases["p0"], "lengths", {config.max_position_embeddings: 1.0})

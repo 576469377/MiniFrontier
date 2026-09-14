@@ -25,12 +25,12 @@ from minifrontier.data.minifrontier1 import (
     digest,
     encode_record,
     prepare_media,
+    processing_for,
     safe_text,
     validate_record,
     write_json,
 )
 from minifrontier.data.partitions import corpus_storage_root, open_corpus
-from minifrontier.models.minifrontier1.processing import PROCESSOR_VERSION, token_metadata
 from minifrontier.storage import require_space
 
 
@@ -48,6 +48,12 @@ def processing_reuse_contract(source_config, target_config):
         "1.1-reference-v1",
     ):
         raise ValueError("data reuse requires the explicit MF1.0 to MF1.1 version pair")
+    original, replacement = processing_for(source), processing_for(target_config)
+    if any(
+        getattr(original, key) != getattr(replacement, key)
+        for key in ("PROCESSOR_VERSION", "CONTROL_VERSION")
+    ):
+        raise ValueError("data processing contract differs between model implementations")
     architecture_only = {"model_version", "mtp_enabled", "mtp_loss_coef"}
     before = {k: v for k, v in source.items() if k not in architecture_only}
     after = {k: v for k, v in target.items() if k not in architecture_only}
@@ -62,6 +68,7 @@ def encode_dataset(data, output, config, *, max_gib=16, compact=False, shard_tok
         return encode_compact_dataset(
             data, output, config, max_gib=max_gib, shard_tokens=shard_tokens
         )
+    processing = processing_for(config)
     data, output = Path(data).resolve(), Path(output).resolve()
     if output.exists() or max_gib <= 0:
         raise ValueError("choose a new encoding version and positive disk budget")
@@ -87,7 +94,7 @@ def encode_dataset(data, output, config, *, max_gib=16, compact=False, shard_tok
         ):
             for i in range(len(dataset)):
                 item = dataset[i]
-                metadata = token_metadata(item["input_ids"], config, item["media"])
+                metadata = processing.token_metadata(item["input_ids"], config, item["media"])
                 ids = item["input_ids"][0].numpy().astype(token_dtype)
                 labels = item["labels"][0].numpy().astype("int32")
                 positions = metadata["position_ids"][:, 0].T.numpy().astype("int32")
@@ -941,7 +948,7 @@ def _encode_compact_items(
         format=FORMAT,
         source_manifest_sha256=source_manifest_sha256,
         config_sha256=digest(asdict(config)),
-        processor_version=PROCESSOR_VERSION,
+        processor_version=processing_for(config).PROCESSOR_VERSION,
         tokenizer_sha256=sha256(output / "tokenizer.json"),
         token_dtype=dtype.str,
         domains=domains,
@@ -970,7 +977,7 @@ class CompactDataset:
         if (
             self.manifest.get("format") != FORMAT
             or self.manifest["config_sha256"] != expected_config
-            or self.manifest["processor_version"] != PROCESSOR_VERSION
+            or self.manifest["processor_version"] != processing_for(config).PROCESSOR_VERSION
         ):
             raise ValueError("compact data config/processor identity differs")
         if sha256(self.root / "tokenizer.json") != self.manifest["tokenizer_sha256"]:

@@ -13,13 +13,13 @@ from tokenizers import Tokenizer
 
 from minifrontier.data import sha256
 from minifrontier.data.media_cache import validate_policy
-from minifrontier.data.minifrontier1 import digest, write_json
+from minifrontier.data.minifrontier1 import digest, processing_for, write_json
 from minifrontier.data.minifrontier1_encoding import (
     FORMAT,
     CompactDataset,
     processing_reuse_contract,
 )
-from minifrontier.models.minifrontier1.processing import PROCESSOR_VERSION
+from minifrontier.models.factory import mf_config
 from minifrontier.storage import require_space
 
 COMPONENT_FORMAT = "mf1-compact-components-v1"
@@ -77,7 +77,7 @@ def create_model_compatibility_view(source, output, source_config, target_config
         original.get("format") != COMPONENT_FORMAT
         or original.get("model_compatibility") is not None
         or original["config_sha256"] != digest(source_config)
-        or original["processor_version"] != PROCESSOR_VERSION
+        or original["processor_version"] != processing_for(source_config).PROCESSOR_VERSION
         or sha256(source / "tokenizer.json") != original["tokenizer_sha256"]
     ):
         raise ValueError("source composition config, processor or tokenizer differs")
@@ -90,7 +90,7 @@ def create_model_compatibility_view(source, output, source_config, target_config
         if (
             child.get("format") != FORMAT
             or child["config_sha256"] != digest(source_config)
-            or child["processor_version"] != PROCESSOR_VERSION
+            or child["processor_version"] != processing_for(source_config).PROCESSOR_VERSION
             or child["tokenizer_sha256"] != original["tokenizer_sha256"]
         ):
             raise ValueError("source component processing identity differs")
@@ -155,7 +155,7 @@ def assemble_components(components, output, config, *, media_access=None):
             raise ValueError("composition requires completed canonical compact components")
         if (
             manifest["config_sha256"] != digest(asdict(config))
-            or manifest["processor_version"] != PROCESSOR_VERSION
+            or manifest["processor_version"] != processing_for(config).PROCESSOR_VERSION
         ):
             raise ValueError("component model config or media processor differs")
         current = sha256(root / "tokenizer.json")
@@ -242,7 +242,7 @@ def assemble_components(components, output, config, *, media_access=None):
         formal_admission=False,
         main_budget_eligible=False,
         config_sha256=digest(asdict(config)),
-        processor_version=PROCESSOR_VERSION,
+        processor_version=processing_for(config).PROCESSOR_VERSION,
         tokenizer_sha256=tokenizer_hash,
         components=references,
         splits=splits,
@@ -273,7 +273,7 @@ class ComponentDataset:
         if (
             self.manifest.get("format") != COMPONENT_FORMAT
             or self.manifest["config_sha256"] != digest(asdict(config))
-            or self.manifest["processor_version"] != PROCESSOR_VERSION
+            or self.manifest["processor_version"] != processing_for(config).PROCESSOR_VERSION
             or sha256(self.root / "tokenizer.json") != self.manifest["tokenizer_sha256"]
         ):
             raise ValueError("composition config, processor or tokenizer differs")
@@ -338,8 +338,6 @@ class ComponentDataset:
 if __name__ == "__main__":
     import argparse
 
-    from minifrontier.models.minifrontier1 import MiniFrontier1Config
-
     parser = argparse.ArgumentParser(description="Create an immutable MF1.1 data reuse view")
     parser.add_argument("--source", required=True)
     parser.add_argument("--output", required=True)
@@ -350,5 +348,5 @@ if __name__ == "__main__":
         args.source,
         args.output,
         json.loads(Path(args.source_config).read_text()),
-        MiniFrontier1Config(**json.loads(Path(args.config).read_text())),
+        mf_config(json.loads(Path(args.config).read_text())),
     )

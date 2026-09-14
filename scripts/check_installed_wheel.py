@@ -14,7 +14,8 @@ import torch
 from minifrontier import provenance
 from minifrontier.catalog import default_manifest_path
 from minifrontier.inference.demo_web import page
-from minifrontier.models.minifrontier1.configuration import MF1_VERSION, MF11_VERSION
+from minifrontier.models.minifrontier1.configuration import MF1_VERSION
+from minifrontier.models.minifrontier11.configuration import MF11_VERSION
 from minifrontier.training.strategy_gate import check
 
 

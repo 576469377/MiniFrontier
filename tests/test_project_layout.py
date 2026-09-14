@@ -54,6 +54,7 @@ def test_repository_has_only_current_model_packages():
         "minikimik3",
         "minideepseekv4",
         "minifrontier1",
+        "minifrontier11",
         "minideepseekv41",
     }
     # Historical documentation is retained as evidence; executable retired

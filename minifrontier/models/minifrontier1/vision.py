@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from torch import nn
 from torch.utils.checkpoint import checkpoint
 
-from minifrontier.models.miniqwen4.upstream_vision import (
+from .upstream_vision import (
     Qwen4ExpVisionBlock,
     Qwen4ExpVisionPatchEmbed,
     Qwen4ExpVisionRotaryEmbedding,

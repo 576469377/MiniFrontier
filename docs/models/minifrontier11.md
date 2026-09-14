@@ -11,9 +11,9 @@ MiniFrontier1.1（MF1.1）在 [MF1.0](minifrontier1.md) 的原生多模态主干
 | 输入 | 文本、图像、采样视频帧；不包含音频 |
 | 状态 | 图文联合预训练已启动，尚无通过独立能力评估的聊天权重 |
 
-[模型配置](../../configs/minifrontier11.json) · [实现代码](../../minifrontier/models/minifrontier1/modeling.py) · [训练方案](../training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md) · [阶段进度](../pretraining-plan.md)
+[模型配置](../../configs/minifrontier11.json) · [实现代码](../../minifrontier/models/minifrontier11/modeling.py) · [训练方案](../training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md) · [阶段进度](../pretraining-plan.md)
 
-MF1.1 的模型名称为 `minifrontier11`，配置版本为 `1.1-reference-v1`，实现仍位于 `models/minifrontier1/`，以便共用注意力、媒体处理和缓存代码。MF1.0 权重及优化器状态与新结构不兼容，不能直接用于 MF1.1 恢复。
+MF1.1 的模型名称为 `minifrontier11`，配置版本为 `1.1-reference-v1`，实现位于独立的 `models/minifrontier11/`，注意力、媒体处理和缓存均为本地副本，不继承 MF1.0 模型类。MF1.0 权重及优化器状态与新结构不兼容，不能直接用于 MF1.1 恢复。
 
 ## 模型结构
 
@@ -55,7 +55,7 @@ R_next[j]         = Σ_i C[i,j] × R[i] + post[j] × u
 | LatentMoE | 512→256 潜在空间，32 选 4；共享分支 intermediate 768，SiTU 激活 | [专家计算](minifrontier1.md#latentmoe-路由与共享分支) |
 | Lookup | 第 2 层前注入 2/3-gram 特征，4 张 32768×64 表 | [Lookup](minifrontier1.md#第-2-层前的-n-gram-lookup) |
 | 视觉 | 12 层 ViT384，Conv3D patch `(2,16,16)`，2×2 空间合并 | [视觉处理](minifrontier1.md#视觉输入与位置编码) |
-| 位置与边界 | 图像/视频 mRoPE、样本隔离、媒体保护和原有增量缓存 | [处理实现](../../minifrontier/models/minifrontier1/processing.py) |
+| 位置与边界 | 图像/视频 mRoPE、样本隔离、媒体保护和原有增量缓存 | [处理实现](../../minifrontier/models/minifrontier11/processing.py) |
 
 MF1.1 没有引入 CED、CSA2 跨层 KV 共享或 Engram。CSA/QSA 的历史缓存仍随长度增长；配置上限 8192 不代表已通过完整 8K 质量或性能评估。视觉 token 不计入文本 CE，回答文本提供监督。
 
@@ -110,8 +110,8 @@ MF1.1 尚不支持旧 MTP 草稿训练入口；独立草稿模型和实际推测
 
 | 阅读目标 | 代码入口 |
 |---|---|
-| 两版本隔离、Decoder 与最终读出 | [modeling.py](../../minifrontier/models/minifrontier1/modeling.py)、[configuration.py](../../minifrontier/models/minifrontier1/configuration.py) |
-| Single-Pass mHC | [residual.py](../../minifrontier/models/minifrontier1/residual.py)、[V4.1 残差公式](../../minifrontier/models/deepseek_v41_layers.py) |
+| 独立配置、Decoder 与最终读出 | [modeling.py](../../minifrontier/models/minifrontier11/modeling.py)、[configuration.py](../../minifrontier/models/minifrontier11/configuration.py) |
+| Single-Pass mHC | [residual.py](../../minifrontier/models/minifrontier11/residual.py) |
 | 独立训练课程与优化器 | [minifrontier1_strategy.py](../../minifrontier/training/minifrontier1_strategy.py)、[v41_optim.py](../../minifrontier/training/v41_optim.py) |
 | 数据版本视图 | [minifrontier1_components.py](../../minifrontier/data/minifrontier1_components.py) |
 

@@ -8,8 +8,9 @@ from typing import Any
 
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import digest
-from minifrontier.models.minifrontier1.configuration import MF1_VERSION, MF11_VERSION
+from minifrontier.models.minifrontier1.configuration import MF1_VERSION
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, PROCESSOR_VERSION
+from minifrontier.models.minifrontier11.configuration import MF11_VERSION
 from minifrontier.provenance import checkout_root, require_source_checkout, source_identity
 from minifrontier.training.strategy_gate import initial_start_authorized
 

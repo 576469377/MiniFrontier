@@ -43,10 +43,11 @@ def generate_ids(
     finished = torch.zeros(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
     all_ids = input_ids
     cache: Any = None
-    if use_cache and model.__class__.__name__ in {
-        "MiniFrontier1ForCausalLM",
-        "MiniFrontier11ForCausalLM",
-    }:
+    if use_cache and model.__class__.__name__ == "MiniFrontier11ForCausalLM":
+        from minifrontier.models.minifrontier11 import MiniFrontier11Cache
+
+        cache = MiniFrontier11Cache()
+    elif use_cache and model.__class__.__name__ == "MiniFrontier1ForCausalLM":
         from minifrontier.models.minifrontier1 import MiniFrontier1Cache
 
         cache = MiniFrontier1Cache()

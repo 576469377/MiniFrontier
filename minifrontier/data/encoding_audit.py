@@ -16,7 +16,7 @@ from minifrontier.data.corpus import STRATEGY_SPECIAL_TOKENS
 from minifrontier.data.minifrontier1 import SPECIAL_TOKENS, digest, write_json
 from minifrontier.data.minifrontier1_encoding import FORMAT, INDEX
 from minifrontier.data.partitions import corpus_storage_root, open_corpus
-from minifrontier.models.minifrontier1 import MiniFrontier1Config
+from minifrontier.models.factory import mf_config
 
 DOMAINS = dict(
     zh_edu="zh_general",
@@ -157,7 +157,7 @@ def audit_image_encoding(corpus, encoded, output, config):
     if output.exists():
         raise FileExistsError("encoding audit is immutable; choose a new report")
     values = json.loads(Path(config).read_text()) if isinstance(config, (str, Path)) else config
-    model = MiniFrontier1Config(**values)
+    model = mf_config(values)
     manifest = json.loads((root / "manifest.json").read_text())
     if (
         manifest.get("format") != FORMAT

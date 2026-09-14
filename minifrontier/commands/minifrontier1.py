@@ -9,12 +9,13 @@ from pathlib import Path
 import torch
 
 from minifrontier.data.minifrontier1 import RecordDataset, make_fixture, write_json
+from minifrontier.models.factory import mf_config
 from minifrontier.models.minifrontier1 import (
-    MiniFrontier1Config,
     MiniFrontier1ForCausalLM,
-    MiniFrontier11ForCausalLM,
 )
-from minifrontier.models.minifrontier1.configuration import MF1_VERSION, MF11_VERSION
+from minifrontier.models.minifrontier1.configuration import MF1_VERSION
+from minifrontier.models.minifrontier11 import MiniFrontier11ForCausalLM
+from minifrontier.models.minifrontier11.configuration import MF11_VERSION
 from minifrontier.training.minifrontier1_optim import parameter_report
 from minifrontier.training.minifrontier1_strategy import PHASES, budget_report, phases_for
 
@@ -24,7 +25,7 @@ def quickstart(output, device="cpu", updates=8, model_version=MF1_VERSION):
 
     root = Path(output)
     manifest = make_fixture(root / "data")
-    c = MiniFrontier1Config.tiny(manifest["vocab_size"], model_version=model_version)
+    c = type(mf_config(model_version=model_version)).tiny(manifest["vocab_size"])
     write_json(root / "model.json", asdict(c))
     results = []
     args = dict(
@@ -225,15 +226,10 @@ def main(argv=None):
         args["model_version"] = {"1.0": MF1_VERSION, "1.1": MF11_VERSION}[args["model_version"]]
     if command == "params":
         version = args["model_version"]
-        c = (
-            MiniFrontier1Config(**json.loads(Path(args["config"]).read_text()))
-            if args["config"]
-            else MiniFrontier1Config.v11()
-            if version == MF11_VERSION
-            else MiniFrontier1Config()
+        c = mf_config(
+            json.loads(Path(args["config"]).read_text()) if args["config"] else None,
+            model_version=version,
         )
-        if version is not None and c.model_version != version:
-            raise ValueError("explicit model version differs from config")
         model_cls = (
             MiniFrontier11ForCausalLM
             if c.model_version == MF11_VERSION
@@ -283,7 +279,7 @@ def main(argv=None):
     elif command == "encode":
         from minifrontier.data.minifrontier1_encoding import encode_dataset
 
-        args["config"] = MiniFrontier1Config(**json.loads(Path(args["config"]).read_text()))
+        args["config"] = mf_config(json.loads(Path(args["config"]).read_text()))
         result = encode_dataset(**args)
     elif command in {"train", "benchmark"}:
         from minifrontier.training.minifrontier1 import train

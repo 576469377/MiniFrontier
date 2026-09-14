@@ -7,7 +7,6 @@ import torch
 from test_miniqwen4 import tiny_config
 from test_new_backbones import tiny_deepseek, tiny_kimi
 
-from minifrontier.models.grouped_experts import configure
 from minifrontier.models.minideepseekv4 import MiniDeepSeekV4ForCausalLM
 from minifrontier.models.minikimik3 import MiniKimiK3ForCausalLM
 from minifrontier.models.miniqwen4 import MiniQwen4ForCausalLM
@@ -41,7 +40,12 @@ def test_batched_experts_match_source_loop_and_all_parameter_gradients(family, q
         model = MiniQwen4ForCausalLM(tiny_config(vocab_size=64, mtp_enabled=True))
     alternative = copy.deepcopy(model)
     identities = {name: id(p) for name, p in alternative.named_parameters()}
-    configure(alternative, "batched")
+    from importlib import import_module
+
+    package = {"kimi": "minikimik3", "deepseek": "minideepseekv4", "qwen": "miniqwen4"}[family]
+    import_module(f"minifrontier.models.{package}.batched_experts").configure_experts(
+        alternative, "batched"
+    )
     assert identities == {name: id(p) for name, p in alternative.named_parameters()}
     assert model.state_dict().keys() == alternative.state_dict().keys()
     ids = torch.randint(10, 60, (2, 17))

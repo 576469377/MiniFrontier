@@ -495,7 +495,7 @@ class MiniQwen4ForCausalLM(nn.Module):
         self.indexer_loss_enabled = True
         self.mtp = QwenMTP(config, self.model._initialize) if config.mtp_enabled else None
         if config.expert_execution != "loop":
-            from minifrontier.models.grouped_experts import configure as configure_experts
+            from .batched_experts import configure_experts
 
             configure_experts(self, config.expert_execution)
         self._configure_training_phase(training_phase)

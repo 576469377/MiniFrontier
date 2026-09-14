@@ -146,7 +146,7 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
 
             self.qat_recipe = configure(self)
         if config.expert_execution != "loop":
-            from minifrontier.models.grouped_experts import configure as configure_experts
+            from .batched_experts import configure_experts
 
             configure_experts(self, config.expert_execution)
 

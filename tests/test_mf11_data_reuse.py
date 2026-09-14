@@ -10,21 +10,21 @@ import pytest
 import torch
 
 from minifrontier.data import sha256
-from minifrontier.data.minifrontier1 import digest
+from minifrontier.data.minifrontier1 import digest, processing_for
 from minifrontier.data.minifrontier1_components import (
     ComponentDataset,
     assemble_components,
     create_model_compatibility_view,
 )
 from minifrontier.data.minifrontier1_encoding import encode_canonical_videos
-from minifrontier.models.minifrontier1 import MiniFrontier1Config
 from minifrontier.models.minifrontier1.processing import token_metadata
+from minifrontier.models.minifrontier11 import MiniFrontier11Config
 from tests.test_mf1_canonical_media import components, corpus  # noqa: F401
 from tests.test_mf1_canonical_video import video_corpus  # noqa: F401
 
 
 def target_config(config, **overrides):
-    return MiniFrontier1Config(
+    return MiniFrontier11Config(
         **dict(
             asdict(config),
             model_version="1.1-reference-v1",
@@ -41,7 +41,9 @@ def compare_inputs(before, after, old_config, new_config):
     for key in ("sample_id", "split_group", "domain", "media_exposures"):
         assert before[key] == after[key]
     original_positions = token_metadata(before["input_ids"], old_config, before["media"])
-    reused_positions = token_metadata(after["input_ids"], new_config, after["media"])
+    reused_positions = processing_for(new_config).token_metadata(
+        after["input_ids"], new_config, after["media"]
+    )
     for key in original_positions:
         torch.testing.assert_close(original_positions[key], reused_positions[key], atol=0, rtol=0)
     for a, b in zip(before["media"], after["media"], strict=True):

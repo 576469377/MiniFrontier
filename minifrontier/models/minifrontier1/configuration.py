@@ -6,7 +6,6 @@ from types import SimpleNamespace
 from minifrontier.strict_types import validate_dataclass_payload
 
 MF1_VERSION = "1.0-reference-v1"
-MF11_VERSION = "1.1-reference-v1"
 
 
 @dataclass
@@ -103,10 +102,8 @@ class MiniFrontier1Config:
         for name in ("attention_schedule", "mrope_sections", "forbidden_action_ids"):
             setattr(self, name, tuple(getattr(self, name)))
         validate_dataclass_payload(type(self), asdict(self))
-        if self.model_version not in {MF1_VERSION, MF11_VERSION}:
+        if self.model_version != MF1_VERSION:
             raise ValueError("unknown MF1 model version")
-        if self.model_version == MF11_VERSION and (self.mtp_enabled or self.mtp_loss_coef != 0):
-            raise ValueError("MF1.1 backbone requires mtp_enabled=false and mtp_loss_coef=0")
         if len(self.attention_schedule) != self.num_hidden_layers or not set(
             self.attention_schedule
         ) <= {"kda", "csa4", "qsa_mla"}:
@@ -152,23 +149,11 @@ class MiniFrontier1Config:
         return SimpleNamespace(**asdict(self))
 
     @classmethod
-    def v11(cls, **overrides):
-        """Fresh MF1.1 architecture; never an implicit conversion of a 1.0 checkpoint."""
-        if overrides.get("model_version", MF11_VERSION) != MF11_VERSION:
-            raise ValueError("v11() cannot construct another model version")
-        return cls(
-            **dict(
-                dict(model_version=MF11_VERSION, mtp_enabled=False, mtp_loss_coef=0.0),
-                **overrides,
-            )
-        )
-
-    @classmethod
     def tiny(cls, vocab_size=320, *, model_version=MF1_VERSION):
         return cls(
             model_version=model_version,
-            mtp_enabled=model_version == MF1_VERSION,
-            mtp_loss_coef=0.1 if model_version == MF1_VERSION else 0.0,
+            mtp_enabled=True,
+            mtp_loss_coef=0.1,
             vocab_size=vocab_size,
             hidden_size=32,
             num_hidden_layers=4,

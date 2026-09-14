@@ -1,5 +1,5 @@
 # KDA projections/recurrence derive from Kimi c5d1dd4 under the Kimi K3 License.
-"""Checked thin KDA adapter; reset both recurrence and convolution at packed boundaries."""
+"""MF KDA adapter; reset recurrence and convolution at packed boundaries."""
 
 from itertools import pairwise
 from types import SimpleNamespace
@@ -8,8 +8,7 @@ from typing import Any
 import torch
 from torch import nn
 
-from minifrontier.models.minikimik3.kernels import chunk_kda, fused_recurrent_kda, reference_kda
-from minifrontier.models.minikimik3.upstream_layers import KimiDeltaAttention
+from .kda_primitives import KDAProjections, chunk_kda, fused_recurrent_kda, reference_kda
 
 
 def prefill_groups(segments):
@@ -43,7 +42,7 @@ def prefill_groups(segments):
 class KDA(nn.Module):
     def __init__(self, c):
         super().__init__()
-        self.core = KimiDeltaAttention(
+        self.core = KDAProjections(
             SimpleNamespace(
                 hidden_size=c.hidden_size,
                 rms_norm_eps=c.rms_norm_eps,

@@ -7,6 +7,7 @@ from dataclasses import asdict
 import torch
 
 from minifrontier.models.minifrontier1.moe import Router
+from minifrontier.models.minifrontier11.moe import Router as MF11Router
 from minifrontier.training.kimi_quantile_balance import QuantileHistogram
 
 
@@ -114,7 +115,7 @@ class QuantileBalance:
         self.routers = [
             (name, module, QuantileHistogram(module.correction_bias, module.top_k, bins))
             for name, module in model.named_modules()
-            if isinstance(module, Router)
+            if isinstance(module, (Router, MF11Router))
         ]
         self.warmup_updates, self.max_delta = warmup_updates, max_delta
         self.updates = 0

@@ -17,12 +17,7 @@ from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
 from minifrontier.data import sha256
 from minifrontier.data.corpus import STRATEGY_SPECIAL_TOKENS
-from minifrontier.models.minifrontier1.processing import (
-    CONTROL_VERSION,
-    PROCESSOR_VERSION,
-    process_document,
-    process_frames,
-)
+from minifrontier.models.factory import model_processing
 from minifrontier.storage import require_space
 
 SPECIAL_TOKENS = [
@@ -32,6 +27,15 @@ SPECIAL_TOKENS = [
     "<|frame|>",
     "<|time|>",
 ]
+
+
+def processing_for(config):
+    """Use the media and token processor owned by the selected MF model version."""
+    version = config.get("model_version") if isinstance(config, dict) else config.model_version
+    names = {"1.0-reference-v1": "minifrontier1", "1.1-reference-v1": "minifrontier11"}
+    if version not in names:
+        raise ValueError(f"unknown MF model version: {version}")
+    return model_processing(names[version])
 
 
 def digest(value):
@@ -148,6 +152,7 @@ def validate_record(record, root, *, allow_sources=None):
 
 def prepare_media(resource, config, root, remaining, *, file_reader=None):
     """Apply the same deterministic pixel transform in record and binary loaders."""
+    processing = processing_for(config)
     frames = []
     for uri, checksum in zip(
         resource.get("frames", [resource.get("uri")]),
@@ -158,10 +163,10 @@ def prepare_media(resource, config, root, remaining, *, file_reader=None):
         with Image.open(source) as image:
             frames.append(image.convert("RGB"))
     samples = (
-        process_document(frames[0], patch_size=config.vision_config.patch_size)
+        processing.process_document(frames[0], patch_size=config.vision_config.patch_size)
         if resource.get("representation") == "document"
         else [
-            process_frames(
+            processing.process_frames(
                 frames,
                 max_features=min(resource.get("max_features", remaining), remaining),
                 patch_size=config.vision_config.patch_size,
@@ -476,6 +481,7 @@ def make_fixture(output, *, seed=42):
             "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records)
         )
     tokenizer = train_tokenizer(splits["train"], output / "tokenizer.json", vocab_size=320)
+    processing = model_processing("minifrontier1")
     manifest = dict(
         format="mf1-native-records-v1",
         kind="mechanism_fixture",
@@ -484,8 +490,8 @@ def make_fixture(output, *, seed=42):
         media_root=".",
         tokenizer_sha256=sha256(output / "tokenizer.json"),
         vocab_size=tokenizer.get_vocab_size(),
-        control_template=CONTROL_VERSION,
-        processor=PROCESSOR_VERSION,
+        control_template=processing.CONTROL_VERSION,
+        processor=processing.PROCESSOR_VERSION,
         counts={k: len(v) for k, v in splits.items()},
         unique_media=len({m["sha256"] for rs in splits.values() for r in rs for m in r["media"]}),
         files={k: sha256(output / f"{k}.jsonl") for k in splits},

@@ -11,15 +11,19 @@ from PIL import Image
 from torch import nn
 
 from minifrontier.models.minifrontier1 import (
-    MiniFrontier1Cache,
     MiniFrontier1Config,
     MiniFrontier1ForCausalLM,
+)
+from minifrontier.models.minifrontier1.configuration import MF1_VERSION
+from minifrontier.models.minifrontier11 import (
+    MiniFrontier11Cache,
+    MiniFrontier11Config,
     MiniFrontier11ForCausalLM,
 )
-from minifrontier.models.minifrontier1.configuration import MF1_VERSION, MF11_VERSION
-from minifrontier.models.minifrontier1.modeling import MF11DecoderLayer
-from minifrontier.models.minifrontier1.processing import process_frames
-from minifrontier.models.minifrontier1.residual import SinglePassMHC
+from minifrontier.models.minifrontier11.configuration import MF11_VERSION
+from minifrontier.models.minifrontier11.modeling import MF11DecoderLayer
+from minifrontier.models.minifrontier11.processing import process_frames
+from minifrontier.models.minifrontier11.residual import SinglePassMHC
 from minifrontier.training.minifrontier1_strategy import (
     MF11_PHASES,
     PHASES,
@@ -30,7 +34,7 @@ from minifrontier.training.minifrontier1_strategy import (
 
 
 def tiny():
-    return MiniFrontier1Config.tiny(model_version=MF11_VERSION)
+    return MiniFrontier11Config.tiny()
 
 
 def test_versioned_config_preserves_legacy_serialization_and_rejects_wrong_backbone():
@@ -40,11 +44,11 @@ def test_versioned_config_preserves_legacy_serialization_and_rejects_wrong_backb
         hashlib.sha256(encoded).hexdigest()
         == "1d0caba7ccb253a4ed79f29950bb9cb76a73d8e63f348e954dce442fb93e0592"
     )
-    new = MiniFrontier1Config.v11()
+    new = MiniFrontier11Config()
     assert new.model_version == MF11_VERSION and not new.mtp_enabled and new.mtp_loss_coef == 0
     assert asdict(new).keys() == asdict(MiniFrontier1Config()).keys()
     with pytest.raises(ValueError, match="mtp_enabled"):
-        MiniFrontier1Config(model_version=MF11_VERSION)
+        MiniFrontier11Config(mtp_enabled=True)
     with pytest.raises(ValueError, match="unknown"):
         replace(old, model_version="1.2")
     with pytest.raises(ValueError, match="version differ"):
@@ -159,7 +163,7 @@ def test_native_media_gradients_cache_and_rollback(video, phase):
     model.eval()
     with torch.no_grad():
         full = model(ids, media=[span]).logits
-        cache = MiniFrontier1Cache()
+        cache = MiniFrontier11Cache()
         prefix = model(ids[:, :end], media=[span], cache=cache).logits
         saved = cache.snapshot()
         streamed = [prefix]
