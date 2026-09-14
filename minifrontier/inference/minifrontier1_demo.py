@@ -5,9 +5,12 @@ import base64
 import hashlib
 import io
 import json
+import math
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from itertools import pairwise
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -15,53 +18,93 @@ from PIL import Image
 
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import safe_text
+from minifrontier.inference.demo_web import page
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.models.minifrontier1.processing import process_frames
 from minifrontier.multimodal import move
 
-PAGE = """<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MiniFrontier1.0</title><style>body{font:16px system-ui;background:#121a29;color:#e8edf5;max-width:820px;margin:4vh auto;padding:24px}p{line-height:1.7;color:#b8c6d9}textarea,button,select,input{font:inherit;background:#203047;color:inherit;border:1px solid #56708d;border-radius:7px;padding:10px;margin:7px 0}textarea{box-sizing:border-box;width:100%;height:120px}pre{white-space:pre-wrap;background:#1b293d;padding:20px;border-radius:8px}button{cursor:pointer}label{display:block}</style>
-<h1>MiniFrontier1.0</h1><p id="status">正在读取模型状态…</p>
-<textarea id="prompt">请描述图片中的内容。</textarea>
-<label>图片（支持多张） <input id="images" type="file" accept="image/*" multiple></label>
-<label>短视频 <input id="video" type="file" accept="video/*"></label>
-<label>视频抽帧数 <select id="frames"><option>4</option><option selected>8</option><option>16</option></select></label>
-<label>回答模式 <select id="mode"><option value="direct">直接回答</option><option value="thinking">简短思考</option></select></label>
-<label>最多生成 <input id="budget" type="number" min="1" max="256" value="64"> token</label>
-<button id="prepare" onclick="prepare()">查看输入预算</button> <button id="generate" onclick="generate()" disabled>生成</button>
-<p id="plan">先查看实际使用的图片大小、帧数与上下文占用。</p><pre id="answer"></pre>
-<script>
-let payload=null;const $=id=>document.getElementById(id);
-function read(file){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(file)})}
-async function videoFrames(file,count){const v=document.createElement('video');v.muted=true;const url=URL.createObjectURL(file);try{await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=no;v.src=url});if(!Number.isFinite(v.duration)||v.duration<=0)throw Error('无法读取视频时长');const canvas=document.createElement('canvas');canvas.width=Math.min(v.videoWidth,1280);canvas.height=Math.round(v.videoHeight*canvas.width/v.videoWidth);const result=[],timestamps=[];for(let i=0;i<count;i++){const t=(i+.1)/count*v.duration;await new Promise(ok=>{v.onseeked=ok;v.currentTime=t});canvas.getContext('2d').drawImage(v,0,0,canvas.width,canvas.height);result.push(canvas.toDataURL('image/jpeg',.85));timestamps.push(t)}return{kind:'video',frames:result,timestamps}}finally{URL.revokeObjectURL(url)}}
-async function call(path,value){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});const data=await r.json();if(!r.ok)throw Error(data.error);return data}
-async function prepare(){try{$('generate').disabled=true;const media=[];for(const f of $('images').files)media.push({kind:'image',frames:[await read(f)]});if($('video').files.length)media.push(await videoFrames($('video').files[0],Number($('frames').value)));payload={prompt:$('prompt').value,mode:$('mode').value,max_new_tokens:Number($('budget').value),media};const plan=await call('/api/prepare',payload);$('plan').textContent='输入 '+plan.input_tokens+' token，其中视觉 '+plan.vision_tokens+' token；'+plan.media.map(m=>m.frames+' 帧，'+m.width+'×'+m.height+'，'+m.tokens+' 视觉 token').join('；');$('generate').disabled=false}catch(e){$('plan').textContent=e.message}}
-async function generate(){if(!payload)return;$('generate').disabled=true;try{const r=await call('/api/generate',payload);$('answer').textContent=r.text||'（模型立即结束，没有可显示的文本）';$('plan').textContent+='；生成 '+r.generated_tokens+' token，用时 '+r.seconds.toFixed(2)+' 秒'}catch(e){$('answer').textContent=e.message}finally{$('generate').disabled=false}}
-for(const id of ['prompt','images','video','frames','mode','budget'])$(id).addEventListener('input',()=>{$('generate').disabled=true;payload=null});
-fetch('/api/info').then(r=>r.json()).then(d=>{$('status').textContent=d.qualified?'已通过所绑定权重的能力验收。':'研究诊断权重：尚未通过语言、视觉和视频能力验收，输出可能无效。'});
-</script></html>"""
+PAGE = page("mf1")
+
+
+def load_demo_checkpoint(checkpoint, device):
+    """Bind display metadata to a stable file version at load time."""
+    path = Path(checkpoint).resolve()
+    before = path.stat()
+    checksum = sha256(path)
+    model, tokenizer, metadata = load_checkpoint(path, device)
+    after = path.stat()
+
+    def identity(stat):
+        return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+
+    if identity(before) != identity(after):
+        raise ValueError("加载期间检查点发生变化，请使用稳定的导出文件或重新启动")
+    if metadata["model_name"] not in {"minifrontier1", "minifrontier11"}:
+        raise ValueError("MF1 demo requires an MF1.0 or MF1.1 checkpoint")
+    details = dict(
+        name=path.name,
+        run=path.parent.name,
+        path=str(path),
+        sha256=checksum,
+        loaded_at=time.time(),
+        saved_at=after.st_mtime,
+        **metadata,
+        device=str(device),
+        parameters=sum(p.numel() for p in model.parameters() if p.is_floating_point()),
+        context_length=model.config.max_position_embeddings,
+    )
+    return model, tokenizer, details
 
 
 def prepare_request(payload, model, tokenizer):
+    if not isinstance(payload, dict):
+        raise ValueError("请求必须为 JSON 对象")
     if not isinstance(payload.get("prompt"), str) or not payload["prompt"].strip():
         raise ValueError("请输入文本问题")
     if payload.get("mode", "direct") not in {"direct", "thinking"}:
         raise ValueError("不支持此回答模式")
+    input_mode = payload.get("input_mode", "chat")
+    if input_mode not in {"chat", "completion"}:
+        raise ValueError("不支持此输入模式")
+    if input_mode == "completion" and payload.get("media"):
+        raise ValueError("文本续写不接收媒体，请切换到对话模式")
+    media = payload.get("media", [])
+    if not isinstance(media, list):
+        raise ValueError("媒体必须为列表")
     budget = payload.get("max_new_tokens", 64)
     if type(budget) is not int or not 1 <= budget <= 256:
         raise ValueError("生成预算必须为 1-256")
-    ids, plan = [1, 4], []
+    ids = [1, 4] if input_mode == "chat" else [1]
+    plan: list[dict[str, Any]] = []
     spans: list[dict[str, Any]] = []
     decoded_pixels = 0
-    for resource in payload.get("media", []):
+    for resource in media:
+        if not isinstance(resource, dict):
+            raise ValueError("每份媒体必须为对象")
         video = resource.get("kind") == "video"
+        frames = resource.get("frames", [])
         if (
             resource.get("kind") not in {"image", "video"}
-            or not 1 <= len(resource.get("frames", [])) <= 16
+            or not isinstance(frames, list)
+            or not 1 <= len(frames) <= 16
+            or any(not isinstance(frame, str) or not frame for frame in frames)
+            or (not video and len(frames) != 1)
         ):
             raise ValueError("媒体应为图片或至多 16 帧短视频")
+        if video:
+            timestamps = resource.get("timestamps")
+            if (
+                len(frames) < 2
+                or not isinstance(timestamps, list)
+                or len(timestamps) != len(frames)
+                or any(
+                    type(t) not in {int, float} or not math.isfinite(t) or t < 0 for t in timestamps
+                )
+                or any(b <= a for a, b in pairwise(timestamps))
+            ):
+                raise ValueError("视频需要对应每帧的递增时间戳")
         images, hashes = [], []
-        for encoded in resource["frames"]:
+        for encoded in frames:
             raw = base64.b64decode(encoded.split(",", 1)[-1], validate=True)
             with Image.open(io.BytesIO(raw)) as image:
                 decoded_pixels += image.width * image.height
@@ -87,40 +130,53 @@ def prepare_request(payload, model, tokenizer):
         spans.append(sample)
         plan.append(
             dict(
+                kind=resource["kind"],
+                name=str(resource.get("name", f"媒体 {len(plan) + 1}")),
+                timestamps=resource.get("timestamps", []) if video else [],
                 frames=len(images),
                 width=sample["resized_size"][0],
                 height=sample["resized_size"][1],
                 tokens=sample["feature_count"],
             )
         )
-    ids.extend(
-        [
-            *safe_text(tokenizer, payload["prompt"]),
-            2,
-            5,
-            15 if payload.get("mode") == "thinking" else 17,
-        ]
-    )
+    ids.extend(safe_text(tokenizer, payload["prompt"]))
+    if input_mode == "chat":
+        ids.extend([2, 5, 15 if payload.get("mode") == "thinking" else 17])
     if len(ids) + budget > model.config.max_position_embeddings:
         raise ValueError("输入与回答预算超过上下文，请减少媒体或文本")
+    request = dict(
+        prompt=payload["prompt"],
+        input_mode=input_mode,
+        mode=payload.get("mode", "direct") if input_mode == "chat" else None,
+        max_new_tokens=budget,
+        media=payload.get("media", []),
+    )
+    request_id = hashlib.sha256(
+        json.dumps(request, sort_keys=True, ensure_ascii=False, allow_nan=False).encode()
+    ).hexdigest()
+    if payload.get("request_id") not in {None, request_id}:
+        raise ValueError("输入已变化，请重新检查输入预算")
     return (
         torch.tensor([ids]),
         spans,
         dict(
-            input_tokens=len(ids), vision_tokens=sum(s["feature_count"] for s in spans), media=plan
+            input_tokens=len(ids),
+            vision_tokens=sum(s["feature_count"] for s in spans),
+            media=plan,
+            request_id=request_id,
+            max_new_tokens=budget,
+            context_length=model.config.max_position_embeddings,
+            remaining_tokens=model.config.max_position_embeddings - len(ids) - budget,
         ),
     )
 
 
 def serve(checkpoint, *, device="cpu", host="127.0.0.1", port=7861, allow_unqualified=False):
-    saved = torch.load(checkpoint, map_location="cpu", weights_only=True)
-    # A self-declared flag alone cannot qualify a public demo; require an evaluated export.
+    # A self-declared flag alone cannot qualify a public demo.
     qualified = False
     if not allow_unqualified:
         raise ValueError("当前 MF1 尚无能力验收发布包；诊断演示需显式 --allow-unqualified")
-    model, tokenizer, _ = load_checkpoint(checkpoint, device)
-    if saved["model_name"] != "minifrontier1":
-        raise ValueError("MF1 demo requires an MF1 checkpoint")
+    model, tokenizer, checkpoint_info = load_demo_checkpoint(checkpoint, device)
     lock = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
@@ -140,18 +196,34 @@ def serve(checkpoint, *, device="cpu", host="127.0.0.1", port=7861, allow_unqual
                 self.end_headers()
                 self.wfile.write(raw)
             elif self.path == "/api/info":
-                self.reply(dict(qualified=qualified, checkpoint_sha256=sha256(checkpoint)))
+                self.reply(
+                    dict(
+                        qualified=qualified,
+                        checkpoint_sha256=checkpoint_info["sha256"],
+                        checkpoint=checkpoint_info,
+                    )
+                )
             else:
                 self.reply(dict(error="not found"), 404)
 
         def do_POST(self):
             try:
+                if self.path not in {"/api/prepare", "/api/generate"}:
+                    self.reply(dict(error="not found"), 404)
+                    return
                 size = int(self.headers.get("Content-Length", 0))
                 if not 0 < size <= 16 * 1024**2:
                     raise ValueError("上传内容超过 16 MiB 限制")
                 payload = json.loads(self.rfile.read(size))
+                if not isinstance(payload, dict):
+                    raise ValueError("请求必须为 JSON 对象")
                 with lock:
+                    if self.path == "/api/generate" and (
+                        payload.get("checkpoint_sha256") != checkpoint_info["sha256"]
+                    ):
+                        raise ValueError("已载入的检查点版本不同，请重新检查输入预算")
                     ids, spans, plan = prepare_request(payload, model, tokenizer)
+                    plan["checkpoint_sha256"] = checkpoint_info["sha256"]
                     if self.path == "/api/prepare":
                         self.reply(plan)
                         return
@@ -163,7 +235,7 @@ def serve(checkpoint, *, device="cpu", host="127.0.0.1", port=7861, allow_unqual
                         model,
                         ids.to(device),
                         media=move(spans, device),
-                        max_new_tokens=payload["max_new_tokens"],
+                        max_new_tokens=plan["max_new_tokens"],
                         temperature=0,
                         top_p=1,
                         vocab_size=tokenizer.get_vocab_size(),
@@ -174,6 +246,23 @@ def serve(checkpoint, *, device="cpu", host="127.0.0.1", port=7861, allow_unqual
                             text=tokenizer.decode(tokens, skip_special_tokens=True),
                             generated_tokens=len(tokens),
                             seconds=time.perf_counter() - start,
+                            completed_at=time.time(),
+                            finish_reason="eos" if tokens and tokens[-1] == 2 else "length",
+                            request_id=plan["request_id"],
+                            checkpoint=checkpoint_info,
+                            plan=plan,
+                            request=dict(
+                                prompt=payload["prompt"],
+                                input_mode=payload.get("input_mode", "chat"),
+                                mode=(
+                                    payload.get("mode", "direct")
+                                    if payload.get("input_mode", "chat") == "chat"
+                                    else None
+                                ),
+                                max_new_tokens=plan["max_new_tokens"],
+                                temperature=0,
+                                top_p=1,
+                            ),
                         )
                     )
             except (ValueError, KeyError, TypeError, OSError, RuntimeError) as error:

@@ -8,12 +8,13 @@
 
 | 任务 | 指南 |
 |---|---|
-| 使用 MF1：离线示例、数据、训练、评估、导出与多媒体 Demo | [MiniFrontier1.0 全流程](minifrontier1.md) |
-| 使用 Kimi、Qwen、DeepSeek：离线 CPU / 单卡示例 | [来源模型最小示例](quickstart.md) |
+| 使用 MF1.0 / MF1.1：版本选择、数据、训练、评估、导出与多媒体 Demo | [MF1 全流程](minifrontier1.md) |
+| 使用 Kimi、Qwen、DeepSeek-V4：离线 CPU / 单卡示例 | [来源模型最小示例](quickstart.md) |
+| 使用 DeepSeek-V4.1：配置与文本训练入口 | [V4.1 模型页](../models/minideepseekv41.md) |
 
 ## 数据与后续流程
 
-数据来源说明适用于四个模型；下表的训练、后训练、草稿和实验 Demo 面向三个来源模型，MF1 的对应操作在其全流程指南中。
+数据来源与实验 Demo 共用入口；各模型的媒体支持和训练覆盖在模型页中说明。来源模型训练指南区分 V4 与 V4.1，后训练和草稿流程按版本标明支持范围；MF1 的操作在其全流程指南中。
 
 | 任务 | 指南 |
 |---|---|
@@ -21,7 +22,7 @@
 | 配置来源模型训练、阶段迁移和恢复 | [来源模型训练](training.md) |
 | 使用对话模板、多模态 rollout 和工具任务 | [来源模型后训练](posttraining-adaptation.md) |
 | 训练草稿并验证投机采样 | [来源模型草稿适应](draft-adaptation.md) |
-| 在浏览器观察来源模型的实验检查点 | [实验 Demo](demo-experiments.md) |
+| 在浏览器比较各版本的实验检查点 | [实验 Demo](demo-experiments.md) |
 
 ## 环境与运行约定
 

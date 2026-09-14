@@ -2,6 +2,8 @@
 
 本页介绍 MiniKimi-K3、MiniQwen4 和 MiniDeepSeek-V4 的数据入口、阶段迁移、恢复与推理。首次运行见[离线示例](quickstart.md)，MF1 见[独立指南](minifrontier1.md)。当前阶段、预算和工作参数统一见[预训练计划](../pretraining-plan.md)；完整后续路线见[研究方案](../training-strategies/README.md)。
 
+[MiniDeepSeek-V4.1](../models/minideepseekv41.md) 使用新的 CED/CSA2 架构与独立训练方案，不沿用本页的 V4 阶段迁移或视觉命令。通用 `quickstart` 当前仍限本页三个模型。
+
 ## 数据与配置
 
 `configs/strategies/*-v2.json` 是当前研究容量配置，默认单卡；DeepSeek 视觉阶段使用 `minideepseekv4-vision-v1.json`。`configs/` 根目录的三个模型配置用于早期文本兼容，容量与当前图文/MTP 配置不同。
@@ -60,6 +62,6 @@ uv run minifrontier generate --checkpoint /path/to/model.pt --prompt '图中有�
 uv run minifrontier demo --root outputs --device cpu
 ```
 
-第一条使用预训练文本续写，第二条使用对话模板输入图片；应选择对应阶段的检查点。浏览器默认只列出通过能力验收且绑定权重 hash 的模型，目前没有可用聊天权重。观察本地训练产物可使用[实验视图](demo-experiments.md)。
+第一条使用预训练文本续写，第二条使用对话模板输入图片；应选择对应阶段的检查点。浏览器默认列出正式训练已保存的检查点，能力状态单独显示；目前没有已验收的聊天权重。诊断实验、版本确认和结果比较见[实验 Demo](demo-experiments.md)。
 
 日志读取见[实验管理](../operations/experiment-management.md)，公开结果见[实验记录](../experiments.md)。

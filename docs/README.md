@@ -1,6 +1,6 @@
 # 文档导航
 
-MiniFrontier 文档分为模型说明、操作指南和实验记录。首次使用从[首页 CPU 示例](../README.md#快速开始)开始，可在本地完成 MF1 的数据生成、训练、恢复和推理。
+MiniFrontier 文档分为模型说明、操作指南和实验记录。当前包含六个模型版本，结构与能力状态分别记录。首次使用从[首页 CPU 示例](../README.md#快速开始)开始，可在本地完成 MF1.0 的数据生成、训练、恢复和推理。
 
 [项目首页](../README.md) · [预训练主计划](pretraining-plan.md) · [实验结果](experiments.md) · [发布范围](releases/v0.1.0.md)
 
@@ -8,11 +8,12 @@ MiniFrontier 文档分为模型说明、操作指南和实验记录。首次使�
 
 | 需要做什么 | 入口 |
 |---|---|
-| 安装并跑通融合模型的数据、训练、恢复和生成 | [MiniFrontier1.0 操作指南](guides/minifrontier1.md) |
+| 使用 MF1.0 / MF1.1 的数据、训练、恢复和生成入口 | [MF1 操作指南](guides/minifrontier1.md) |
+| 了解新增 V4.1 / MF1.1 的结构、配置和训练安排 | [V4.1 模型页](models/minideepseekv41.md)、[MF1.1 模型页](models/minifrontier11.md)、[联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md) |
 | 了解实际使用的数据、处理方法和数据许可 | [数据来源说明](guides/data-sources.md) |
-| 运行三个来源模型的离线 CPU / 3090 示例 | [来源模型最小示例](guides/quickstart.md) |
-| 查看三个来源模型的训练、后训练与草稿流程 | [训练](guides/training.md)、[后训练](guides/posttraining-adaptation.md)、[草稿](guides/draft-adaptation.md) |
-| 在浏览器中观察来源模型实验权重 | [实验 Demo](guides/demo-experiments.md) |
+| 运行 Kimi、Qwen、DeepSeek-V4 的离线 CPU / 3090 示例 | [来源模型最小示例](guides/quickstart.md) |
+| 查看来源模型训练及按版本说明的后训练、草稿流程 | [训练](guides/training.md)、[后训练](guides/posttraining-adaptation.md)、[草稿](guides/draft-adaptation.md) |
+| 在浏览器中比较各版本的实验检查点 | [实验 Demo](guides/demo-experiments.md) |
 | 阅读实验结果、查看进度或重画曲线 | [实验索引](experiments.md)、[实验管理](operations/experiment-management.md) |
 | 参与代码开发或了解分发范围 | [架构与目录](architecture.md)、[贡献指南](../CONTRIBUTING.md)、[研究预览范围](releases/v0.1.0.md) |
 
@@ -20,12 +21,14 @@ MiniFrontier 文档分为模型说明、操作指南和实验记录。首次使�
 
 | 模型展示页 | 阅读重点 | 操作入口 |
 |---|---|---|
+| [MiniFrontier1.1](models/minifrontier11.md) | MF1 注意力与视觉输入、Single-Pass mHC、Muon / Sinkhorn、关闭 MTP | [MF1 指南](guides/minifrontier1.md) |
+| [MiniDeepSeek-V4.1](models/minideepseekv41.md) | CED / CSA2、Single-Pass mHC、Engram 与直接稀疏训练 | [模型页操作入口](models/minideepseekv41.md) |
 | [MiniFrontier1.0](models/minifrontier1.md) | 原生视觉输入、16 层融合顺序、四路 GR 与 MTP 数据流 | [MF1 指南](guides/minifrontier1.md) |
 | [MiniQwen4](models/miniqwen4.md) | GDN / QSA、四路 GR 与浅层 PLE | [来源模型示例](guides/quickstart.md) |
 | [MiniKimi-K3](models/minikimik3.md) | KDA / MLA、AttnRes 与 LatentMoE | [来源模型示例](guides/quickstart.md) |
 | [MiniDeepSeek-V4](models/minideepseekv4.md) | SWA / CSA / HCA、mHC 与 hash routing | [来源模型示例](guides/quickstart.md) |
 
-模型页依次说明数据流、模块计算、配置、来源差异和验证范围。图中层号从 1 开始，参数量对应研究配置；微型示例使用更小的容量。
+模型页说明数据流、模块计算、配置、来源差异和验证范围。图中层号从 1 开始，参数量对应研究配置；微型示例使用更小的容量。MF1.0 与 MF1.1 共用包和命令，通过版本字段区分；V4 与 V4.1 保留独立实现。新增版本分别训练，旧检查点不能直接用作新结构的恢复点。
 
 ## 实验文档中的常用术语
 
@@ -43,7 +46,7 @@ MiniFrontier 文档分为模型说明、操作指南和实验记录。首次使�
 | 目录 | 保存内容 |
 |---|---|
 | [guides/](guides/README.md) | 安装、数据、训练、评估和推理步骤 |
-| [models/](models) | 四个模型的结构图、模块计算、来源与能力状态 |
+| [models/](models) | 六个版本的结构图、模块计算、来源与能力状态 |
 | [training-strategies/](training-strategies/README.md) | 按日期保存的研究方案及现行安排的差异 |
 | [experiments/](experiments.md) | 实验条件、指标、曲线和结论；不包含权重与原始语料 |
 | [audits/](audits/README.md) | 实现检查、数值对照和历史审计 |

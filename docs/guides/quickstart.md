@@ -2,6 +2,8 @@
 
 用程序生成的整数加法题，依次运行数据编码、预训练、暂停恢复、监督微调、评估和生成。模型与词表采用微型配置；安装完成后，示例无需下载语料或权重。MF1 的图像和视频示例见[独立指南](minifrontier1.md#离线最小示例)。
 
+本页 `--model all` 运行 MiniKimi-K3、MiniQwen4 和 MiniDeepSeek-V4。V4.1 使用[独立训练方案](../models/minideepseekv41.md#训练安排)，MF1.0 / MF1.1 使用 `mf1 quickstart --model-version` 入口。
+
 ## CPU
 
 在 Linux 的 Git checkout 中使用 Python 3.11+：
@@ -61,4 +63,4 @@ CUDA_VISIBLE_DEVICES=0 MINIFRONTIER_MIN_FREE_GIB=1 uv run minifrontier quickstar
 
 安装本地构建的 wheel 后，可在 checkout 外运行 `minifrontier quickstart`，并通过 CLI 显式加载其检查点。正式 `--run-kind strategy` 仍要求 Git checkout 和策略文档，详见[支持范围](../releases/v0.1.0.md)。
 
-`minifrontier demo --root outputs --device cpu` 默认只展示与权重 hash 绑定、通过能力验收的模型，当前没有这样的聊天权重。查看 quickstart 等实验检查点时使用[实验视图](demo-experiments.md)。
+`minifrontier demo --root outputs --device cpu` 默认展示正式训练已保存的检查点，能力状态单独标注。查看本页 quickstart 产物时加上 `--include-experiments`，再选择实验范围；具体操作见[实验视图](demo-experiments.md)。

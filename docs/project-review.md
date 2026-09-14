@@ -1,6 +1,8 @@
 # 三个来源模型的项目审查（2026-09-08）
 
-本轮审查确认三个来源模型已有可训练主干、原生视觉和分阶段入口；`educational-v1` 的基本对话目标失败。以下为当时的实现与实验范围，当前四模型进度见[预训练计划](pretraining-plan.md)，早期版本见[初版审查](legacy/project-review-educational-v1.md)。
+本轮审查确认三个来源模型已有可训练主干、原生视觉和分阶段入口；`educational-v1` 的基本对话目标失败。以下为当时的实现与实验范围，当前六个模型版本见[文档导航](README.md#模型结构与阅读顺序)与[预训练计划](pretraining-plan.md)，早期版本见[初版审查](legacy/project-review-educational-v1.md)。
+
+2026-09-14 新增的 [MiniDeepSeek-V4.1](models/minideepseekv41.md) 和 [MF1.1](models/minifrontier11.md) 不在本次历史审查范围内，其实现与验证结果在各自模型页记录。
 
 ## 模型与命名
 

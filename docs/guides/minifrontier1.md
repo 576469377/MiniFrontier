@@ -2,6 +2,8 @@
 
 本页介绍 `minifrontier mf1` 的数据、训练、评估、推理和导出接口。首次运行从离线示例开始，架构见[模型说明](../models/minifrontier1.md)，正式阶段与进展见[预训练计划](../pretraining-plan.md)。
 
+以下配置和训练配方以 **MF1.0** 为准。[MF1.1](../models/minifrontier11.md) 共用 `mf1` 命令，使用独立配置和数据视图；它改用 Single-Pass mHC、关闭 MTP，不支持草稿训练。两版检查点不能互换。MF1.1 的离线示例使用 `mf1 quickstart --model-version 1.1 --output outputs/mf11-quickstart --device cpu`，版本差异和正式训练入口见其模型页。
+
 命令在 Linux 仓库根目录运行，需要 Python 3.11+ 和 uv；安装步骤见[首页](../../README.md#快速开始)。使用 CUDA 时加装 `--extra training`，并选择空闲设备。训练主机应使用独立开发环境，避免 `uv sync` 调整活跃任务的依赖。
 
 ## 离线最小示例
@@ -9,7 +11,7 @@
 ```bash
 uv sync --locked --extra dev --extra monitoring
 CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MINIFRONTIER_MIN_FREE_GIB=1 \
-  uv run minifrontier mf1 quickstart --output outputs/mf1-quickstart --device cpu
+  uv run minifrontier mf1 quickstart --model-version 1.0 --output outputs/mf1-quickstart --device cpu
 uv run minifrontier mf1 generate \
   --checkpoint outputs/mf1-quickstart/sft/checkpoint.pt \
   --prompt 'Color?' --image outputs/mf1-quickstart/data/media/train-32-0.png \

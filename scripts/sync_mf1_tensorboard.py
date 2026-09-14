@@ -116,7 +116,7 @@ def directory_notifications(paths):
     read_fd, write_fd = os.pipe2(os.O_NONBLOCK | os.O_CLOEXEC)
     previous_handler = signal.signal(signal.SIGIO, lambda *_: None)
     previous_wakeup = signal.set_wakeup_fd(write_fd, warn_on_full_buffer=False)
-    watches = {}
+    watches: dict[Path, int] = {}
 
     def refresh():
         # Future phases may not have created their run/event directories yet.

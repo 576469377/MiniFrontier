@@ -79,7 +79,7 @@ def test_demo_can_compare_sft_and_dpo_and_does_not_reuse_stale_reviews(tmp_path)
             artifact=dict(size=stat.st_size, mtime_ns=stat.st_mtime_ns),
         )
     (root / "quality.json").write_text(json.dumps(quality))
-    assert checkpoints(tmp_path, "sft")["minikimik3"]["stage"] == "sft"
-    assert checkpoints(tmp_path, "dpo")["minikimik3"]["capability_status"] == "failed"
+    assert checkpoints(tmp_path, "sft")["minikimik3/run/sft"]["stage"] == "sft"
+    assert checkpoints(tmp_path, "dpo")["minikimik3/run/dpo"]["capability_status"] == "failed"
     (root / "dpo/model.pt").write_bytes(b"replacement checkpoint")
-    assert checkpoints(tmp_path, "dpo")["minikimik3"]["capability_status"] == "unassessed"
+    assert checkpoints(tmp_path, "dpo")["minikimik3/run/dpo"]["capability_status"] == "unassessed"

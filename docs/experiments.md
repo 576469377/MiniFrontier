@@ -1,23 +1,24 @@
 # 实验档案
 
-四个模型已于 2026-09-11 开始正式预训练。当前阶段、预算与执行安排见[预训练主计划](pretraining-plan.md)；本页索引历史实验、数值记录和复现方法。带日期的快照保留采集时状态，实时进度从本地训练日志读取。
+原四模型于 2026-09-11 开始正式预训练，2026-09-14 新增 [MiniDeepSeek-V4.1](models/minideepseekv41.md) 与 [MF1.1](models/minifrontier11.md) 两项独立训练。当前阶段、预算与安排见[预训练主计划](pretraining-plan.md)；本页索引实验记录和复现方法。带日期的快照保留采集时状态，实时进度从本地训练日志读取。
 
 ## 阅读顺序
 
 | 内容 | 入口 |
 | --- | --- |
-| 首版配方及选择依据 | [工作参数](experiments/2026-09-10-pretraining-cutover/working-recipes.md) |
-| 四模型正式训练进度与可重画曲线 | [2026-09-13 接续进度](experiments/2026-09-10-pretraining-cutover/formal-progress-2026-09-13.json)、[2026-09-12 首阶段曲线](experiments/2026-09-10-pretraining-cutover/formal-progress.json)；采样间隔及验证范围见各快照 |
-| 正式数据、失败修复与开训记录 | [2026-09-10—11 启动档案](experiments/2026-09-10-pretraining-cutover/execution.md) |
+| 新增 V4.1 / MF1.1 的比较条件与启动记录 | [2026-09-14 联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md)；完整训练与能力评估待完成 |
+| 原四模型配方及选择依据 | [工作参数](experiments/2026-09-10-pretraining-cutover/working-recipes.md) |
+| 原四模型正式训练快照与可重画曲线 | [2026-09-13 接续进度](experiments/2026-09-10-pretraining-cutover/formal-progress-2026-09-13.json)、[2026-09-12 首阶段曲线](experiments/2026-09-10-pretraining-cutover/formal-progress.json)；采样间隔及验证范围见各快照 |
+| 原四模型正式数据、失败修复与开训记录 | [2026-09-10—11 启动档案](experiments/2026-09-10-pretraining-cutover/execution.md) |
 | 正式训练中的数据预取、优化器与显存处理 | [2026-09-11 执行优化](audits/training-infrastructure.md) |
-| MF1 注意力、KDA、专家和数据加载优化 | [MF1 性能报告](audits/minifrontier1-execution-performance.md) |
+| MF1.0 注意力、KDA、专家和数据加载优化 | [MF1 性能报告](audits/minifrontier1-execution-performance.md) |
 | microbatch、实际全局 batch 与 128 档位分析 | [batch 边界与复核](experiments/2026-09-10-batch-frontier/README.md) |
 | Muon、AdamW、学习率与 MTP 对照 | [2026-09-10 配方快照](experiments/2026-09-10-recipe-snapshot/README.md) |
-| MF1 小配置学习与完整配置语言诊断 | [CPU 小配置](experiments/mf1-reference-v2/README.md)、[228M GPU 实验](experiments/mf1-gpu-mechanism-v1/README.md)、[语言诊断](experiments/mf1-language-performance-v1/README.md)、[后续快照](experiments/2026-09-10-mf1-update/README.md) |
+| MF1.0 小配置学习与完整配置语言诊断 | [CPU 小配置](experiments/mf1-reference-v2/README.md)、[228M GPU 实验](experiments/mf1-gpu-mechanism-v1/README.md)、[语言诊断](experiments/mf1-language-performance-v1/README.md)、[后续快照](experiments/2026-09-10-mf1-update/README.md) |
 | 早期实验与安装示例 | [2026-09-09 快照](experiments/2026-09-09-preview/README.md)、[离线示例实测](experiments/preview-quickstart/README.md) |
 | 调度、TensorBoard 与产物保留 | [实验管理](operations/experiment-management.md)、[清理记录](operations/artifact-retention.md) |
 
-旧数据上的配方对照与正式训练分别计数。公开档案提供配置、数值和曲线，训练权重尚未发布。
+旧数据上的配方对照与正式训练分别计数。新增版本复用语料时单独记录实际消费量，不将旧版学习、速度或生成结果归入新版本。公开档案提供配置、数值和曲线，训练权重尚未发布。
 
 ## 如何读结果
 
@@ -30,7 +31,7 @@
 
 ## 运行产物
 
-来源模型使用 `minifrontier train`，MF1 使用 `minifrontier mf1 train`。两类训练器的状态格式不同，读取时应按实际阶段解释。
+来源模型使用 `minifrontier train`，MF1.0 / MF1.1 使用 `minifrontier mf1 train`，通过配置与版本字段区分。两类训练器的状态格式不同，读取时应按实际模型、阶段解释。
 
 | 文件 | 用途 |
 | --- | --- |
@@ -47,7 +48,7 @@ MF1 另有 `resolved_config.json`、`optimizer_groups.json`、`router_metrics.js
 
 ## 本地状态与公开快照
 
-正式产物位于 `outputs/strategy-base-pretraining-v1/<model>/<phase>/`。`outputs/` 与 `data/` 被 Git 忽略；克隆仓库不会获得原始语料、完整日志或权重。以下命令用于已有运行记录的训练工作区；训练时保留独立源码目录，避免开发改动影响进程。
+六个版本的正式产物分别位于 `outputs/strategy-base-pretraining-v1/<model>/<phase>/`；新增模型目录名为 `minideepseekv41` 和 `minifrontier11`。`outputs/` 与 `data/` 被 Git 忽略；克隆仓库不会获得原始语料、完整日志或权重。以下命令用于已有运行记录的训练工作区；训练时保留独立源码目录，避免开发改动影响进程。
 
 ```bash
 python -m scripts.training_status --run formal

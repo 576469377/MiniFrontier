@@ -7,7 +7,7 @@
 纯推理运行以 `inference_evaluation` 登记，台账分类为 `evaluation`，保留检查点、生成 token 数和审核记录的绑定。旧检查点的训练计数不会计入这次评估的 CE、优化器更新或正式训练预算。数据或评估进程的身份在本次读取中已核实存活时，不因其等待事件、长时间未改写记录而标成过期；缺失或不匹配的进程仍明确显示未核实。
 
 ```bash
-# 四个模型的最新正式进度；历史诊断使用 --run strategy-v2
+# 六个模型版本的最新正式进度；历史诊断使用 --run strategy-v2
 python -m scripts.training_status --run formal
 # 输出 outputs/experiment-registry/current.json 和 current.md
 python -m scripts.experiment_registry
@@ -26,7 +26,7 @@ MF1 的 `budget_complete_unqualified` 在进程已退出且阶段 token 达到�
 
 ## TensorBoard
 
-四个模型统一使用 `train / eval / perf`。训练计数与验证分母分开，常规和阶段末验证分别显示。启动、QK 裁剪及缓存回收等事件保留在 JSONL，不重复画成训练曲线；具体指标见[展示说明](../audits/training-infrastructure.md#tensorboard-展示)。
+各模型统一使用 `train / eval / perf`。训练计数与验证分母分开，常规和阶段末验证分别显示。启动、QK 裁剪及缓存回收等事件保留在 JSONL，不重复画成训练曲线；具体指标见[展示说明](../audits/training-infrastructure.md#tensorboard-展示)。
 
 CE 训练统一展示 `perf/ce_per_second`；`perf/input_per_second` 取原记录，或由本步实际 input 数除以耗时计算。训练 CE/input 计数和验证 CE 分母分别对齐。索引器、偏好与 rollout 的吞吐保留原分母，模型未记录的学习率或专有指标不补造。正式看板排除失败运行，失败原因和原日志仍留在实验档案。
 

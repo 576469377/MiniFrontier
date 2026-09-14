@@ -12,6 +12,7 @@ from test_mf1_workflow import fixture_data as fixture_data
 from minifrontier.data.minifrontier1 import RecordDataset
 from minifrontier.data.minifrontier1_encoding import CompactDataset, encode_dataset
 from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
+from minifrontier.models.minifrontier1.configuration import MF1_VERSION, MF11_VERSION
 from minifrontier.training import minifrontier1 as runtime
 from minifrontier.training import validation
 from minifrontier.training.metrics import mf1_scalars
@@ -165,13 +166,14 @@ def test_native_fixed_validation_cadence_and_resume(fixture_data, tmp_path, monk
         runtime.train(**args, output=resumed, resume=resumed / "checkpoint.pt")
 
 
+@pytest.mark.parametrize("model_version", [MF1_VERSION, MF11_VERSION], ids=["mf1", "mf11"])
 def test_formal_main_automatically_requires_phase_end_inventory(
-    fixture_data, tmp_path, monkeypatch
+    fixture_data, tmp_path, monkeypatch, model_version
 ):
+    config = MiniFrontier1Config.tiny(model_version=model_version)
+    phases = runtime.phases_for(model_version)
     monkeypatch.setattr(runtime, "validate_gate", lambda *args, **kwargs: {})
-    monkeypatch.setitem(
-        runtime.PHASES["p0"], "lengths", {MiniFrontier1Config.tiny().max_position_embeddings: 1.0}
-    )
+    monkeypatch.setitem(phases["p0"], "lengths", {config.max_position_embeddings: 1.0})
     evidence = tmp_path / "evidence.json"
     evidence.write_text("{}")
     # Bypass only the separately tested admission gate to reach the actual inventory check.
@@ -180,7 +182,7 @@ def test_formal_main_automatically_requires_phase_end_inventory(
             data=fixture_data,
             output=tmp_path / "formal",
             phase="p0",
-            config=asdict(MiniFrontier1Config.tiny()),
+            config=asdict(config),
             run_kind="strategy",
             evidence=evidence,
         )
@@ -190,8 +192,9 @@ def test_formal_main_automatically_requires_phase_end_inventory(
             data=fixture_data,
             output=tmp_path / "formal",
             phase="p0",
+            config=asdict(config),
             steps=1,
-            token_budget=runtime.PHASES["p0"]["budget"],
+            token_budget=phases["p0"]["budget"],
             run_kind="strategy",
         )
 

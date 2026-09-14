@@ -123,3 +123,127 @@ def test_demo_cli_gpu_and_device_are_mutually_exclusive(monkeypatch):
     assert calls[0]["experiment_roots"] == ["single-gpu", "recipe-pilots"]
     with pytest.raises(SystemExit):
         main(["demo", "--gpu", "6", "--device", "cuda:0"])
+
+
+@pytest.mark.parametrize("family", ["minifrontier1", "minifrontier11"])
+def test_formal_lists_every_run_including_mf1_without_loading_weights(
+    tmp_path, monkeypatch, family
+):
+    monkeypatch.setattr("torch.load", lambda *a, **kw: pytest.fail("listing loaded weights"))
+    for name in ("reference", "second-seed"):
+        folder = make_run(tmp_path, name)
+        run = json.loads((folder / "run.json").read_text())
+        run["kind"] = "strategy"
+        (folder / "run.json").write_text(json.dumps(run))
+    make_run(tmp_path, "diagnostic")
+    for phase, ce, main in (("p0", 200_012_219, 200_012_219), ("p1", 31_197_392, 231_209_611)):
+        folder = tmp_path / "formal" / family / phase
+        folder.mkdir(parents=True)
+        (folder / "run.json").write_text(
+            json.dumps(
+                dict(
+                    format="mf1-run-v1",
+                    model_name=family,
+                    kind="strategy",
+                    mf1_phase=phase,
+                    token_budget=200_000_000 if phase == "p0" else 800_000_000,
+                    unit="ce_tokens",
+                )
+            )
+        )
+        (folder / "status.json").write_text(
+            json.dumps(
+                dict(
+                    step=100,
+                    stage="pretrain",
+                    mf1_phase=phase,
+                    state="budget_complete_unqualified" if phase == "p0" else "running",
+                    ledger=dict(ce_tokens=ce, phase_tokens=ce, main_ce_tokens=main),
+                )
+            )
+        )
+        (folder / "checkpoint.pt").write_bytes(b"MF1 fixture")
+    found = checkpoints(tmp_path, "formal")
+    assert len(found) == 4
+    assert set(found) == {m["id"] for m in found.values()}
+    assert all(m["kind"] == "strategy" for m in found.values())
+    mf1 = found[f"formal/{family}/p1"]
+    assert mf1["model_name"] == family
+    assert mf1["ce_tokens"] == mf1["phase_tokens"] == 31_197_392
+    assert mf1["main_ce_tokens"] == 231_209_611
+    assert mf1["token_budget"] == mf1["ce_token_budget"] == 800_000_000
+    assert mf1["version"].startswith("stat-v1:")
+    assert not checkpoints(tmp_path, "accepted")
+
+
+def test_latest_keeps_educational_runs_and_stat_version_detects_same_size_replacement(tmp_path):
+    folder = make_run(tmp_path, "lesson")
+    (folder / "run.json").write_text(
+        json.dumps(
+            dict(
+                kind="educational",
+                model_name="minikimik3",
+                stage="pretrain",
+            )
+        )
+    )
+    assert not checkpoints(tmp_path, "formal")
+    first = checkpoints(tmp_path, "latest")
+    key = next(iter(first))
+    path = folder / "checkpoint.pt"
+    old_stat = path.stat()
+    replacement = folder / "replacement.pt"
+    replacement.write_bytes(b"x" * old_stat.st_size)
+    os.utime(replacement, ns=(old_stat.st_atime_ns, old_stat.st_mtime_ns))
+    replacement.replace(path)
+    assert checkpoints(tmp_path, "latest")[key]["version"] != first[key]["version"]
+
+
+def test_v41_formal_checkpoint_keeps_its_model_identity(tmp_path, monkeypatch):
+    monkeypatch.setattr("torch.load", lambda *a, **kw: pytest.fail("listing loaded weights"))
+    folder = tmp_path / "formal" / "minideepseekv41" / "D1"
+    folder.mkdir(parents=True)
+    (folder / "run.json").write_text(
+        json.dumps(dict(kind="strategy", model_name="minideepseekv41", stage="pretrain"))
+    )
+    (folder / "status.json").write_text(json.dumps(dict(step=100, state="running")))
+    (folder / "checkpoint.pt").write_bytes(b"V4.1 fixture")
+    entry = checkpoints(tmp_path, "formal")["formal/minideepseekv41/D1"]
+    assert entry["model_name"] == "minideepseekv41"
+    assert entry["name"] == "MiniDeepSeek-V4.1"
+    assert entry["stage"] == "pretrain" and entry["step"] == 100
+
+
+def test_mf1_posttraining_metadata_tracks_its_budget_and_excludes_frozen_draft(tmp_path):
+    for phase in ("rl", "teacher", "opd", "dpo", "draft"):
+        folder = tmp_path / "mf1-posttraining" / phase
+        folder.mkdir(parents=True)
+        (folder / "run.json").write_text(
+            json.dumps(
+                dict(
+                    format="mf1-posttrain-v1",
+                    kind="strategy",
+                    phase=phase,
+                    token_budget=1000,
+                )
+            )
+        )
+        (folder / "status.json").write_text(
+            json.dumps(
+                dict(
+                    state="running",
+                    phase=phase,
+                    step=2,
+                    ledger=dict(generated_tokens=100, response_positions=75),
+                )
+            )
+        )
+        (folder / "checkpoint.pt").write_bytes(b"posttraining metadata fixture")
+    found = checkpoints(tmp_path, "formal")
+    assert len(found) == 4 and all(row["model_name"] == "minifrontier1" for row in found.values())
+    assert {row["stage"] for row in found.values()} == {"rl", "teacher", "opd", "dpo"}
+    dpo = found["mf1-posttraining/dpo"]
+    assert dpo["budget_unit"] == "response_positions" and dpo["phase_tokens"] == 75
+    assert dpo["ce_tokens"] is None and dpo["ce_token_budget"] is None
+    assert found["mf1-posttraining/rl"]["phase_tokens"] == 100
+    assert len(checkpoints(tmp_path, "rl")) == 1

@@ -1,4 +1,4 @@
-"""Shared checkpoint loading and generation for all four models."""
+"""Shared checkpoint loading and generation for the registered model versions."""
 
 from __future__ import annotations
 
@@ -43,7 +43,10 @@ def generate_ids(
     finished = torch.zeros(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
     all_ids = input_ids
     cache: Any = None
-    if use_cache and model.__class__.__name__ in {"MiniFrontier1ForCausalLM", "MiniFrontier11ForCausalLM"}:
+    if use_cache and model.__class__.__name__ in {
+        "MiniFrontier1ForCausalLM",
+        "MiniFrontier11ForCausalLM",
+    }:
         from minifrontier.models.minifrontier1 import MiniFrontier1Cache
 
         cache = MiniFrontier1Cache()
@@ -186,11 +189,16 @@ def respond(
     if images:
         from minifrontier.multimodal import prepare_record
 
+        model_type = type(model).__name__
         family = {
             "MiniKimiK3ForCausalLM": "minikimik3",
             "MiniQwen4ForCausalLM": "miniqwen4",
             "MiniDeepSeekV4ForCausalLM": "minideepseekv4",
-        }[type(model).__name__]
+        }.get(model_type)
+        if family is None:
+            raise ValueError(
+                f"native image generation is not supported by this entry point for {model_type}"
+            )
         if "<|image|>" not in prompt:
             prompt = "<|image|>" * len(images) + "\n" + prompt
         native = prepare_record(

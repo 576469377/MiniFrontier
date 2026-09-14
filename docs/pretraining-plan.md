@@ -1,6 +1,6 @@
 # 基础预训练计划
 
-更新：2026-09-14。本页维护各模型的阶段、数据、预算和转换要求。最近进度见[9 月 13 日快照](experiments/2026-09-10-pretraining-cutover/formal-progress-2026-09-13.json)，实时状态按[实验管理](operations/experiment-management.md)读取。每次运行使用独立保存的配置、数据清单和源码副本。
+更新：2026-09-14。本页维护各模型的阶段、数据、预算和转换要求。原四模型的历史进度见[9 月 13 日快照](experiments/2026-09-10-pretraining-cutover/formal-progress-2026-09-13.json)，六个版本的实时状态按[实验管理](operations/experiment-management.md)读取。每次运行使用独立保存的配置、数据清单和源码副本。
 
 新增 MiniDeepSeek-V4.1 与 MF1.1 两条独立实验，方法取舍、配置及资源安排集中在 [V4.1 / MF1.1 联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md)。新增预算为 5.5B 主 CE，MF1.1 索引器 40M input 另计；两个版本均从随机初始化开始，已有四模型的预算与运行保持独立。
 
@@ -21,14 +21,14 @@
 
 ## 1. 当前任务
 
-四模型均在正式训练。K1、D1、P0 已完成，各自进入 K2、D2、P1；Qwen 已进入 Q2。后续阶段按各自进度接续。
+六个版本均已启动正式预训练。原版 Kimi、DeepSeek-V4、MF1.0 分别进入 K2、D2、P1，Qwen 已进入 Q2；新增 V4.1 和 MF1.1 从各自首阶段开始。下表为本页更新时的阶段记录，后续按各自进度接续。
 
 | 主线 | 当前阶段 | 下一项交付 |
 |---|---|---|
 | Kimi | K2 正式训练中，阶段预算 1.2B CE | 持续固定验证，记录图像、双页和视频消费 |
 | Qwen | Q2 正式训练中，阶段预算 1.2B CE | 跟踪长序列与多模态验证，后接 Q3 索引器阶段 |
-| DeepSeek | D2 正式训练中，阶段预算 500M CE | 持续固定验证，准备后续索引器阶段 |
-| MF1 | P1 正式训练中，阶段预算 800M CE | 跟踪新视频、图像课程与分域损失；后接索引器阶段 |
+| DeepSeek-V4 | D2 正式训练中，阶段预算 500M CE | 持续固定验证，准备后续索引器阶段 |
+| MF1.0 | P1 正式训练中，阶段预算 800M CE | 跟踪新视频、图像课程与分域损失；后接索引器阶段 |
 | DeepSeek-V4.1 | D1 正式训练中，阶段预算 250M CE | 跟踪直接稀疏预训练、Engram 与新版优化器 |
 | MF1.1 | P0 正式训练中，阶段预算 200M CE | 跟踪 single-pass mHC 与新版优化器；P1 已有兼容数据视图 |
 
@@ -125,12 +125,14 @@ M 表示百万，B 表示十亿。主 CE 是参与主语言损失的预测位置
 | MiniQwen4 | Q1 0.3B → Q2 1.2B → Q3 indexer → Q4 1B → Q5 0.5B | 3B | 首版 20M input；原方案范围 20–60M |
 | MiniDeepSeek-V4 | D1 0.25B → D2 0.5B → D3 indexer → D4 1.5B → D5 0.25B | 2.5B | 首版 10M input；原方案范围 10–30M |
 | MiniFrontier1.0 | P0 0.2B → P1 0.8B → indexer → P2 1.4B → P3 0.6B | 3B | 40M input |
+| MiniDeepSeek-V4.1 | D1 0.25B → D2 0.5B → D3 1.5B → D4 0.25B；全程直接稀疏 | 2.5B | 无独立阶段，联合训练索引器 |
+| MiniFrontier1.1 | P0 0.2B → P1 0.8B → indexer → P2 1.4B → P3 0.6B | 3B | 40M input |
 
-DeepSeek 本轮是文本模型。Vision-Exp 后续独立训练、评估和计费，不计入本轮文本完成度。
+六版本合计 **16B 主 CE**，各自独立计量；这不是去重语料规模。两版 DeepSeek 本轮均训练文本，后续视觉训练与评估单列，不计入文本完成度。V4.1 与 MF1.1 的架构及版本边界分别见[模型页](models/minideepseekv41.md)和 [MF1.1 说明](models/minifrontier11.md)。
 
 ### 3.2 首阶段执行配置
 
-batch 是每次优化更新的非 padding input token 目标；microbatch 是一次前后向的样本数上限。样本长度不同，实际累积次数也不同。以下值来自已启动的正式运行。
+batch 是每次优化更新的非 padding input token 目标；microbatch 是一次前后向的样本数上限。样本长度不同，实际累积次数也不同。以下保留原四模型首阶段的启动配置；新增版本的参数、优化器和日程见[联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md#预训练安排)。
 
 | 模型 | 浮点参数量 | 全局 input 目标 | microbatch | 优化器与峰值 LR |
 |---|---:|---:|---:|---|

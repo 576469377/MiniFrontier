@@ -6,9 +6,11 @@ MiniDeepSeek-V4 将 DeepSeek-V4 缩小为文本研究模型，采用 SWA 局部�
 |---|---|
 | 参数量 | **244M**（243,983,472 个浮点参数，含文本 MTP） |
 | 输入 | 当前配置为文本；[视觉扩展另列](#文本-mtp-与独立视觉阶段) |
-| 训练阶段 | 已启动 **D1 文本预训练**；[阶段进度](../pretraining-plan.md) |
+| 训练阶段 | 文本预训练进行中；[阶段进度](../pretraining-plan.md) |
 
 模型从随机初始化开始训练，尚无通过能力验收的公开聊天权重。
+
+本文介绍 V4 实验。[MiniDeepSeek-V4.1](minideepseekv41.md) 是独立的新版本，采用 CED、CSA2、Single-Pass mHC 与 Engram，并关闭主干 MTP；两个版本分别训练，检查点不能直接互换。
 
 [运行示例](../guides/quickstart.md) · [文本研究配置](../../configs/strategies/minideepseekv4-v2.json) · [实现代码](../../minifrontier/models/minideepseekv4/modeling.py) · [固定上游源码](../../third_party/upstream/deepseek-v4-60d8d70) · [配置细节](#当前研究配置) · [验证范围](#实现验证与训练状态)
 

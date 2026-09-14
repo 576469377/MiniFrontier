@@ -6,9 +6,11 @@ MiniFrontier1.0（MF1）是本项目设计的原生多模态模型：以 KDA 累
 |---|---|
 | 参数量 | **228M**（228,235,809，含视觉和一个 MTP） |
 | 输入 | 文本、图像、采样视频帧；不包含音频 |
-| 训练阶段 | 已启动 **P0 图文联合预训练**；[阶段进度](../pretraining-plan.md) |
+| 训练阶段 | 图文联合预训练进行中；[阶段进度](../pretraining-plan.md) |
 
 主干与视觉编码器均从随机初始化训练，尚无通过能力验收的公开聊天权重。
+
+本文及本页三张结构图描述 **MF1.0**。[MF1.1](minifrontier11.md) 保留注意力、专家与视觉结构，改用 Single-Pass mHC 和新优化器，并关闭 MTP。两者独立训练；旧权重与新结构不兼容。
 
 [运行最小示例](../guides/minifrontier1.md#离线最小示例) · [228M 配置](../../configs/minifrontier1/model_228m_native.json) · [实现代码](../../minifrontier/models/minifrontier1/modeling.py) · [实验记录](../experiments.md) · [参数明细](#参数和训练阶段) · [验证范围](#实现实验与能力状态)
 
@@ -123,7 +125,7 @@ QSA-MLA 的时间/高度/宽度三轴 RoPE 分别占 **8/12/12 维**（配置 `[
 
 ### MTP 辅助预测
 
-MF1 当前只有 **一个** MTP（Multi-Token Prediction）模块。主分支用位置 `t` 的最终状态预测 `x[t+1]`；MTP 再接收真实的 `x[t+1]` 嵌入，预测 `x[t+2]`。
+MF1.0 配置只有 **一个** MTP（Multi-Token Prediction）模块。主分支用位置 `t` 的最终状态预测 `x[t+1]`；MTP 再接收真实的 `x[t+1]` 嵌入，预测 `x[t+2]`。
 
 ```mermaid
 flowchart TD

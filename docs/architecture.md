@@ -1,31 +1,40 @@
 # 架构与目录
 
-MiniFrontier 按模型、数据、训练、评估和推理划分代码。MF1 与三个来源模型遵循相同目录规则，通过 [models/factory.py](../minifrontier/models/factory.py) 构造。[configs/models.json](../configs/models.json) 记录模型入口及能力字段；实际训练进度见[预训练主计划](pretraining-plan.md)。
+MiniFrontier 按模型、数据、训练、评估和推理划分代码。当前六个模型版本由 [models/factory.py](../minifrontier/models/factory.py) 统一构造，分布在五个模型目录中：MF1.0 与 MF1.1 共用一个包，通过配置和模型类区分版本。[configs/models.json](../configs/models.json) 记录入口与能力字段；实际训练进度见[预训练主计划](pretraining-plan.md)。
 
 ## 模型与流程
 
-模型结构详解：[MF1 总图、单层、注意力与 MTP](models/minifrontier1.md#模型结构) · [Kimi 官方图与 Mini 适配](models/minikimik3.md#模型结构) · [Qwen 官方图与 Mini 适配](models/miniqwen4.md#模型结构) · [DeepSeek 官方图与 Mini 适配](models/minideepseekv4.md#模型结构)。本页侧重工程目录，张量形状、层序和模块计算见对应模型页。
+模型结构详解：[MF1.0](models/minifrontier1.md) · [MF1.1](models/minifrontier11.md) · [Kimi](models/minikimik3.md) · [Qwen](models/miniqwen4.md) · [DeepSeek-V4](models/minideepseekv4.md) · [DeepSeek-V4.1](models/minideepseekv41.md)。本页说明工程目录，层序、张量形状和模块计算见对应模型页。
 
 | 路径 | 职责 |
 |---|---|
-| `minifrontier/models/minifrontier1/` | KDA / CSA / QSA-MLA、四流 GR、LatentMoE、lookup、随机 ViT、MTP、缓存与草稿 |
+| `minifrontier/models/minifrontier1/` | MF1.0 / MF1.1 共用 KDA / CSA / QSA-MLA、LatentMoE、lookup、ViT、媒体处理与缓存；1.0 使用四流 GR 和 MTP，1.1 使用 Single-Pass mHC，关闭 MTP，尚无草稿实现 |
 | `minifrontier/models/miniqwen4/` | 固定 Qwen 计算与原生视觉、PLE/GDN/QSA、四流 MTP 和缓存 |
 | `minifrontier/models/minikimik3/` | 固定 Kimi decoder、KDA/MLA、LatentMoE、AttnRes、原生视觉与 MTP |
 | `minifrontier/models/minideepseekv4/` | 固定 DeepSeek block、压缩注意力、MoE/mHC、视觉迁移、MTP 与 DSpark |
-| `minifrontier/data/` | 四个模型的数据来源、清洗、分组、tokenizer、媒体和训练编码；`text.py` 保留旧文本流程，`corpus.py` 管理来源与去重，`pretraining.py` 构造/合并候选切片，`evaluation.py` 准备固定评测排除清单，`minifrontier1*.py` 执行融合数据规则 |
-| `minifrontier/training/` | 四个模型的训练、恢复与后训练；`runtime.py` 等共用基础能力，`minifrontier1*.py` 保存融合配方差异，与已有模型专用优化器并列 |
+| `minifrontier/models/minideepseekv41/` | CED、CSA2、Single-Pass mHC、Engram 与前缀重算缓存；CSA2 与 mHC 位于 `models/deepseek_v41_layers.py`，MF1.1 复用其中的 mHC |
+| `minifrontier/data/` | 各模型的数据来源、清洗、分组、tokenizer、媒体和训练编码；`text.py` 保留旧文本流程，`corpus.py` 管理来源与去重，`pretraining.py` 构造/合并候选切片，`evaluation.py` 准备固定评测排除清单，`minifrontier1*.py` 执行融合数据规则 |
+| `minifrontier/training/` | 各版本的训练、恢复与后训练入口；`runtime.py` 等共用基础能力，`minifrontier1*.py` 保存融合配方差异，`v41_optim.py` 提供 V4.1 / MF1.1 的 Muon / Sinkhorn 更新 |
 | `minifrontier/evaluation/` | 独立生成评测、视觉/时序对照；训练中的验证损失仍由训练器调用 |
-| `minifrontier/inference/` | `runtime.py` 统一加载四模型权重并生成；`demo.py` 负责来源模型实验页，`minifrontier1*.py` 负责融合媒体生成、导出和 Demo |
-| `minifrontier/commands/` | 命令编排和离线示例；`minifrontier1.py` 承接现有 `mf1` 子命令，`quickstart.py` 承接三个来源模型最小示例 |
+| `minifrontier/inference/` | `runtime.py` 统一加载六版本权重；`demo.py` 与 `web/` 提供六版本文本比较页，`minifrontier1*.py` 提供 MF1.0 / MF1.1 原生媒体生成、导出和独立 Demo |
+| `minifrontier/commands/` | 命令编排和离线示例；通用 `quickstart` 支持 Kimi / Qwen / DeepSeek-V4，独立 `mf1 quickstart` 用 `--model-version 1.0` 或 `1.1` 选择融合版本 |
 | `minifrontier/cli.py` | 顶层命令解析与委派，保留已有用户命令 |
 | `configs/minifrontier1/` | 融合配置、各阶段预算、数据/教师/评测规则及来源映射 |
-| `configs/strategies/` | 三个来源模型机器计划与策略配置 |
+| `configs/strategies/` | 四个来源模型的机器计划与策略配置 |
 
-训练器分别管理模型的阶段累计与恢复。MF1 在 indexer 阶段暂存主干优化器状态；三个来源模型通过显式 `pretraining-program` 按参数名继承状态。三个来源模型的普通 `--init` 路径新建优化器与计数，详见[状态继承表](experiments/2026-09-10-pretraining-cutover/working-recipes.md#显式阶段状态)。操作命令见[指南](guides/README.md)。
+训练器分别管理模型的阶段累计与恢复。MF1 两个版本均保留 dense → indexer → sparse 课程，在 indexer 阶段暂存主干优化器状态；来源模型通过显式 `pretraining-program` 按参数名继承状态，普通 `--init` 路径新建优化器与计数。旧三模型的接续实例见[状态继承表](experiments/2026-09-10-pretraining-cutover/working-recipes.md#显式阶段状态)，新版本安排见[V4.1 / MF1.1 方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md)。操作命令见[指南](guides/README.md)。
+
+MF1.1 保留 MF1.0 的图像、视频、控制 token 与媒体缓存协议。复用编码数据时，新视图绑定原始文件及两份配置，只允许版本与 MTP 字段变化；旧权重不能直接恢复到新 mHC 架构。
+
+MiniDeepSeek-V4.1 的当前正式流程是纯文本稀疏预训练。视觉模块已有前后向测试，但数据编码、文本到视觉的权重迁移和图像推理入口尚未接通。其缓存保存完整前缀，每步重新计算，供一致性检查和参考生成使用；不代表增量 KV 加速。
 
 ## 扩展与迁移约定
 
-1. 新模型结构放入 `models/<完整模型名>/`；专用的数据、训练和推理逻辑放入对应功能目录，使用完整模型名前缀。
+模型专有实现主要由对应模型目录维护；公共模块通过导入复用。当前 V4.1 的 CSA2 与 mHC 放在 `models/deepseek_v41_layers.py`，MF1.1 从中复用 mHC。具体目录以本版本的代码入口为准。
+
+`factory.py`、`common.py`、`cache_utils.py`、`grouped_experts.py` 分别处理模型分派、统一输出与批次校验、缓存事务和多模型专家执行。目录调整需同步导入、文档引用、许可说明和安装包检查。
+
+1. 独立模型结构放入 `models/<完整模型名>/`；兼容处理流程的版本可共用模型包，用明确的配置和类名隔离。专用的数据、训练和推理逻辑放入对应功能目录。
 2. `commands/` 和浏览器服务负责组合模块。模型计算、数据处理与训练算法保持独立，可直接调用和测试。
 3. 复用检查点、随机状态、存储和分布计算模块；不同训练器的损失与阶段状态分别定义，共用实现前检查行为一致性。
 4. 根包仅保留入口及硬件、存储、来源等跨功能模块。扩展既有功能目录，避免新增包含整套流程的模型专属根目录或版本化副本。

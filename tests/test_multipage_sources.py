@@ -83,6 +83,7 @@ def test_bounded_build_pins_source_and_cannot_overwrite(tmp_path, tokenizer, mon
     monkeypatch.setattr(
         "minifrontier.storage.shutil.disk_usage", lambda _: SimpleNamespace(free=200 * 1024**3)
     )
+
     def rows(name, **kwargs):
         assert kwargs["specification"]["revision"] == source.SOURCE["revision"]
         assert kwargs["specification"]["network_byte_budget"] > 0

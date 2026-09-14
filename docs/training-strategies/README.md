@@ -12,20 +12,19 @@
 |---|---|---|
 | [01 · Kimi，2026-09-08](2026-09-08/01-MiniKimi-K3-全流程训练与结构改造方案.md) | 联合预训练、视觉、MTP 与后训练路线 | [模型说明](../models/minikimik3.md) |
 | [02 · Qwen，2026-09-08](2026-09-08/02-MiniQwen4-全流程训练与结构改造方案.md) | dense/indexer/sparse 阶段及多模态改造 | [模型说明](../models/miniqwen4.md) |
-| [03 · DeepSeek，2026-09-08](2026-09-08/03-MiniDeepSeek-V4-全流程训练与结构改造方案.md) | 文本优先训练、视觉迁移与草稿路线 | [模型说明](../models/minideepseekv4.md) |
-| [04 · MF1，2026-09-09](2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md) | 原生多模态融合结构与全流程设计 | [结构图与状态](../models/minifrontier1.md) |
+| [03 · DeepSeek-V4，2026-09-08](2026-09-08/03-MiniDeepSeek-V4-全流程训练与结构改造方案.md) | 文本优先训练、视觉迁移与草稿路线 | [模型说明](../models/minideepseekv4.md) |
+| [04 · MF1.0，2026-09-09](2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md) | 原生多模态融合结构与全流程设计 | [结构图与状态](../models/minifrontier1.md) |
 | [05 · 四模型执行方案，2026-09-10](2026-09-10/05-four-model-pretraining-execution-plan.md) | 当时的数据、资源、测速和阶段安排 | [预训练主计划](../pretraining-plan.md) |
 | [06 · 初始化复核，2026-09-10](2026-09-10/06-recipe-initialization-review.md) | 配方初始化、恢复与阶段继承检查 | [工作配方与继承规则](../experiments/2026-09-10-pretraining-cutover/working-recipes.md) |
+| [07 · V4.1 / MF1.1，2026-09-14](2026-09-14/07-v41-mf11-implementation-and-training.md) | 新版结构、融合取舍、独立训练与数据复用 | [V4.1](../models/minideepseekv41.md)、[MF1.1](../models/minifrontier11.md) |
 
-| [07 · V4.1 / MF1.1，2026-09-14](2026-09-14/07-v41-mf11-implementation-and-training.md) | 官方新版方法、融合取舍、单卡训练与数据复用 | [预训练主计划](../pretraining-plan.md) |
-
-截至 2026-09-12，四个模型首阶段均已启动，完整训练与能力验收尚未完成；实际预算和进度在主计划及实验记录维护。
+目前六个模型版本均已启动正式预训练，完整训练与能力评估尚未完成。2026-09-14 新增的 V4.1 与 MF1.1 独立训练、分别计量；原四模型的结果继续保留其版本归属。实际预算和阶段安排见[主计划](../pretraining-plan.md)。
 
 ## 阅读时需要更新的假设
 
 - **设计稿与实现：** 参数估算、目录、MF1 YAML 和结构草图以当前模型页及[架构说明](../architecture.md)为准。
 - **早期执行安排：** 20M pilot、50+200 测量、额外 seed 和双机资源安排已调整；当日速度、磁盘与待清理项保留为快照。后续数据、审核和依赖条件见主计划。
-- **目标与能力：** 5B 文本、1.5M 图片、视频、8K 上下文及多教师描述目标规模。实际数据量见[数据指南](../guides/data-sources.md)；量化、DDP 和长上下文的限制见对应操作指南，MF1 INT8 CUDA 专家路径仍有已知问题。
+- **目标与能力：** 5B 文本、1.5M 图片、视频、8K 上下文及多教师描述目标规模。实际数据量见[数据指南](../guides/data-sources.md)；量化、DDP 和长上下文的限制见对应操作指南，MF1.0 INT8 CUDA 专家路径仍有已知问题。
 - **状态继承：** 来源模型的 program 阶段继承已补齐。普通 `--init` 不能替代该路径，数据绑定和恢复规则见[训练指南](../guides/training.md#保存恢复与评估)。
 
 ## 原文与复现

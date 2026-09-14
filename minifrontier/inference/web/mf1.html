@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MiniFrontier · MF1 媒体检查</title>
+<style><!--STYLE--></style>
+<style>
+.mf1 dl{margin:0}
+.mf1 dt{color:var(--muted,#65757e);font-size:12px;margin-top:16px}
+.mf1 dd{margin:5px 0;overflow-wrap:anywhere}
+.mf1 fieldset{border:0;padding:0;margin:0;min-width:0}
+.mf1 #controls{display:grid;gap:20px}
+.mf1 #controls .field{margin:0}
+.mf1 #controls + .button-row{margin-top:22px}
+.mf1 #mode-hint{margin-top:8px}
+.mf1 #media-fields{display:grid;gap:16px}
+.mf1 #media-fields input{width:100%;box-sizing:border-box}
+.mf1 textarea{min-height:155px}
+.mf1 .media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px;margin:12px 0}
+.mf1 figure{margin:0;min-width:0}
+.mf1 figure img{width:100%;height:100px;object-fit:contain;background:#edf1f3;border-radius:8px}
+.mf1 figcaption{font-size:11px;line-height:1.5;overflow-wrap:anywhere;margin-top:4px}
+.mf1 #answer{margin-top:14px}
+.mf1 .result-card+.result-card{margin-top:16px}
+.mf1 .result-meta>div{min-width:0}
+.mf1 .result-meta .hint{overflow-wrap:anywhere;margin-top:4px}
+.mf1 .result-prompt{white-space:pre-wrap}
+.mf1 .result-output{white-space:pre-wrap;overflow-wrap:anywhere}
+.mf1 .request-json{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;margin-top:12px}
+.mf1 .identity-hash{font-size:11px;overflow-wrap:anywhere}
+.mf1 progress{width:100%;height:8px;accent-color:#087f8c}
+.mf1 .inspector p{line-height:1.7}
+.mf1 #result-count{white-space:nowrap}
+.mf1 #status{min-height:24px}
+.mf1 [hidden]{display:none!important}
+@media(max-width:760px){.mf1 #media-fields .field-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body class="mf1">
+<header class="app-header"><div class="brand"><span class="brand-mark" aria-hidden="true">MF</span><div><p class="eyebrow">MiniFrontier / Local inference</p><h1>MF1 媒体检查</h1></div></div><div class="header-meta"><span class="badge" id="model-state">读取检查点…</span><span id="device" class="muted"></span></div></header>
+<div class="workspace">
+<aside class="sidebar"><details id="checkpoint-panel" class="panel collapsible-panel" open>
+<summary class="panel-heading"><h2>已载入检查点</h2></summary>
+<div class="panel-body"><p class="hint">本服务固定使用启动时载入的版本。训练保存新权重后，此处不会自动切换。</p><dl id="checkpoint-info"></dl><details><summary>文件与校验值</summary><p id="checkpoint-path" class="identity-hash"></p><p id="checkpoint-sha" class="identity-hash"></p></details><button id="retry-info" class="secondary" hidden>重新读取状态</button></div>
+</details></aside>
+<main class="main-panel">
+<section class="panel">
+<div class="panel-heading"><div><span class="eyebrow">输入</span><h2>检查文本与媒体生成</h2></div></div>
+<div class="panel-body">
+<fieldset id="controls" disabled>
+<div><div class="field-grid">
+<label class="field">输入方式<select id="input-mode"><option value="completion">文本续写</option><option value="chat">对话与媒体</option></select></label>
+<label class="field">回答模式<select id="mode"><option value="direct">直接回答</option><option value="thinking">思考后回答</option></select></label>
+</div>
+<p class="hint" id="mode-hint">预训练检查点可先检查文本续写。</p></div>
+<label class="field" for="prompt">提示词<textarea id="prompt" placeholder="输入一段待续写的文本，或描述要检查的问题。">人工智能是一种</textarea></label>
+<fieldset id="media-fields"><div class="field-grid">
+<label class="field">图片（支持多张）<input id="images" type="file" accept="image/*" multiple></label>
+<label class="field">视频<input id="video" type="file" accept="video/*"></label>
+</div><label class="field">采样帧数<select id="frames"><option>4</option><option selected>8</option><option>16</option></select></label></fieldset>
+<div class="button-row"><button id="clear-media" type="button" class="secondary">移除媒体</button><span id="media-summary" class="muted">未选择媒体</span></div>
+<div class="field-grid"><label class="field">最多生成 token<input id="budget" type="number" min="1" max="256" value="64"></label><div class="field"><span>采样方式</span><p class="hint">贪心生成 · temperature 0 · top-p 1</p></div></div>
+</fieldset>
+<div class="button-row"><button id="prepare" class="secondary" disabled>检查输入预算</button><button id="generate" class="primary" disabled>生成</button></div>
+<p id="status" class="status" role="status" aria-live="polite">正在读取检查点信息…</p>
+</div>
+</section>
+<section class="panel"><div class="panel-heading"><h2>生成记录</h2><span id="result-count" class="muted">0 次</span><button id="clear-results" class="secondary" disabled>清空记录</button></div><div class="panel-body"><p class="hint">仅保留本页最近 8 次结果，刷新即清空；记录不保存媒体文件。</p><div id="answer" aria-live="polite"><p class="empty-state">输入预算检查通过后，即可生成。</p></div></div></section>
+</main>
+<aside class="inspector"><details id="budget-panel" class="panel collapsible-panel" open><summary class="panel-heading"><h2>输入预算</h2></summary><div class="panel-body"><p id="plan" class="muted">尚未检查。修改输入后需要重新检查。</p><progress id="usage" value="0" max="1" hidden></progress><div id="media-preview" class="media-grid"></div><p id="preview-note" class="hint" hidden>缩略图展示所选图片与实际采样帧；标注尺寸为模型处理后的大小。视频只输入这些帧。</p></div></details></aside>
+</div>
+<script><!--SCRIPT--></script>
+</body>
+</html>

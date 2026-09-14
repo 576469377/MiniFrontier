@@ -1,6 +1,6 @@
 # 脚本导航
 
-本目录提供 Git checkout 中的观测、调度、诊断和开发工具，命令在仓库根目录执行。日常训练与推理使用 CLI，见[MF1 指南](../docs/guides/minifrontier1.md)或[来源模型最小示例](../docs/guides/quickstart.md)；wheel 的支持范围见[版本说明](../docs/releases/v0.1.0.md#分发支持范围)。
+本目录提供 Git checkout 中的观测、调度、诊断和开发工具，命令在仓库根目录执行。日常训练与推理使用 CLI，见[MF1 指南](../docs/guides/minifrontier1.md)、[来源模型最小示例](../docs/guides/quickstart.md)及新增 [V4.1 模型页](../docs/models/minideepseekv41.md)；wheel 的支持范围见[版本说明](../docs/releases/v0.1.0.md#分发支持范围)。
 
 [返回文档导航](../docs/README.md) · [实验管理](../docs/operations/experiment-management.md) · [当前训练计划](../docs/pretraining-plan.md)
 
@@ -8,11 +8,11 @@
 
 | 用途 | 脚本 |
 |---|---|
-| 正式训练进度 | [`training_status.py`](training_status.py) 默认显示四模型正式训练；`--run strategy-v2` 查历史诊断 |
+| 正式训练进度 | [`training_status.py`](training_status.py) 默认显示六个模型版本的正式训练；`--run strategy-v2` 查历史诊断 |
 | 实验台账与用途核对 | [`experiment_registry.py`](experiment_registry.py) 读取 `configs/experiments.json` |
 | 单卡独占队列 | [`run_exclusive_gpu_queue.py`](run_exclusive_gpu_queue.py) 按计划、前驱证据和设备状态派发；见[队列说明](../docs/operations/exclusive-gpu-queue.md) |
 | 数据准备的依赖接续 | [`pretraining_data_events.py`](pretraining_data_events.py) 监听完成/退出事件，执行已登记回调 |
-| 四模型 TensorBoard 视图 | [`sync_mf1_tensorboard.py`](sync_mf1_tensorboard.py) 从原日志生成独立视图，支持文件事件同步 |
+| 按模型与阶段组织 TensorBoard 视图 | [`sync_mf1_tensorboard.py`](sync_mf1_tensorboard.py) 按登记的运行从原日志生成独立视图，支持文件事件同步 |
 | 等待可用设备 | [`wait_for_gpus.py`](wait_for_gpus.py) |
 | 媒体迁移 | [`relocate_native_media.py`](relocate_native_media.py) 重建媒体路径与字节索引，记录迁移前后校验值 |
 | 公开数值与曲线 | [`export_experiments.py`](export_experiments.py)、[`plot_experiments.py`](plot_experiments.py) |
@@ -23,7 +23,7 @@
 
 ## 诊断与历史复现
 
-按要检查的模型或机制选择工具。诊断和 GPU 短测使用独立预算，结果按各自配置与检查点解释。
+按要检查的模型或机制选择工具。下表 MF1 专项脚本及旧实验记录主要对应 MF1.0；使用其他版本前先核对脚本接受的配置与入口。诊断和 GPU 短测使用独立预算，结果按各自配置与检查点解释。
 
 | 用途 | 脚本与记录 |
 |---|---|

@@ -4,7 +4,7 @@
 
 ## 首阶段正式预训练
 
-四个模型的首阶段已绑定数据和冻结 tokenizer，共用同一文本划分。来源模型使用 64K 词表，MF1 使用 32K；视觉模型另行绑定图像组件。各阶段的数据供给与后续补充见[预训练计划](../pretraining-plan.md#data)。
+原四模型于 2026-09-11 启动的首阶段共用冻结文本划分。来源模型使用 64K 词表，MF1.0 使用 32K；视觉模型另行绑定图像组件。以下库存对应该次数据版本，各阶段的后续供给见[预训练计划](../pretraining-plan.md#data)。
 
 首阶段冻结文本包含 **396,842 篇训练文档、3,737 篇验证文档、4,432 篇测试文档**。训练划分在 64K 词表下约为 **5.33 亿 CE token**，在 MF1 词表下约为 **5.70 亿**；两者是同一语料的不同编码库存，不能相加或视为训练进度。重复采样会消耗训练预算，但不会增加独立样本数。
 
@@ -21,9 +21,15 @@
 
 读取与筛选规则见[文本](../../minifrontier/data/public_sources.py)、[数学与合并](../../minifrontier/data/pretraining.py)、[代码](../../minifrontier/data/code_sources.py)和[视觉](../../minifrontier/data/visual_sources.py)实现；组件构造记录见[执行档案](../experiments/2026-09-10-pretraining-cutover/execution.md)。
 
+## 新增模型的数据复用
+
+2026-09-14 新增的 [MiniDeepSeek-V4.1](../models/minideepseekv41.md) 与 [MF1.1](../models/minifrontier11.md) 复用已有数据来源、划分、tokenizer 和评测排除规则。V4.1 首阶段使用 64K 词表训练文本，视觉暖身和联合训练另列；MF1.1 使用原 MF1 的 32K 词表与媒体编码，从 P0 开始联合训练。
+
+MF1.1 通过绑定新模型配置的数据视图读取原 token、像素和元数据，并校验原文件身份。两个新版本分别记录训练消费量；复用或重复采样不计为新增独立语料。具体配置、数据绑定与阶段比例见[联合方案](../training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md#数据与复现)。
+
 ## 后续阶段增量
 
-2026-09-12 合并后的文本有 484,918 篇训练文档，64K/MF1 词表分别编码为约 676.9M/723.3M CE；DeepSeek D2 已使用该版本。旧验证与测试记录保留，新增来源按组去重后纳入后续阶段。
+2026-09-12 合并后的文本有 484,918 篇训练文档，64K/MF1 词表分别编码为约 676.9M/723.3M CE；MiniDeepSeek-V4 的 D2 已使用该版本。旧验证与测试记录保留，新增来源按组去重后纳入后续阶段。
 
 | 来源 | 数据与当前状态 | 来源条款 |
 |---|---|---|
@@ -66,8 +72,8 @@ Docmatix 的问答由上游模型生成，不标为人工标注。当前读取�
 
 | 数据 | 用途与记录 |
 |---|---|
-| 本项目生成的算术、色块图像和视频帧 | 离线示例验证训练、恢复和媒体输入；MF1 默认生成 32 条算术、32 条图像和 8 条视频训练记录。[小配置学习实验](../experiments/mf1-reference-v2/README.md)单独记录其留出结果。 |
-| 中英文教育文本与生成媒体的小切片 | MF1 两组各 500K CE 的 228M 机制实验；[manifest](../experiments/mf1-gpu-mechanism-v1/data-manifest.json)保存抽样与划分。后续基础问答诊断见[语言实验档案](../experiments/mf1-language-performance-v1/README.md)。 |
+| 本项目生成的算术、色块图像和视频帧 | 离线示例验证训练、恢复和媒体输入；MF1 默认生成 32 条算术、32 条图像和 8 条视频训练记录。[MF1.0 小配置学习实验](../experiments/mf1-reference-v2/README.md)单独记录其留出结果。 |
+| 中英文教育文本与生成媒体的小切片 | MF1.0 两组各 500K CE 的 228M 机制实验；[manifest](../experiments/mf1-gpu-mechanism-v1/data-manifest.json)保存抽样与划分。后续基础问答诊断见[语言实验档案](../experiments/mf1-language-performance-v1/README.md)。 |
 | [MiniMind 数据集](https://huggingface.co/datasets/jingyaogong/minimind_dataset)，`312afb4f76391145c6902f765bb51691c09a12f5` | 早期文本预训练、SFT 和偏好训练，结果见[失败复盘](../training-failure-v1.md)。数据卡列出 Apache-2.0 和 CC-BY-NC-2.0，需按文件核对条款。 |
 | [SmolLM-Corpus / Python-Edu](https://huggingface.co/datasets/HuggingFaceTB/smollm-corpus/blob/3ba9d605774198c5868892d7a8deda78031a781f/README.md) | 早期代码配方试验。上游要求参照 The Stack v2；本地索引缺逐仓库许可，记录为 `original-license-unresolved`，未用于本轮正式代码训练。 |
 | 96 张 ALLaVA 图片 | 早期 Kimi/Qwen 图文流程诊断，不代表首阶段正式视觉库存。 |

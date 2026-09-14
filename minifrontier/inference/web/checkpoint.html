@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>检查点测试 · MiniFrontier</title>
+  <style><!--STYLE--></style>
+</head>
+<body class="checkpoint">
+  <header class="app-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">MF</span><div><p class="eyebrow">MiniFrontier / Local inference</p><h1>检查点测试</h1></div></div>
+    <div class="header-meta"><span><span class="device-dot" aria-hidden="true"></span><span id="device">正在读取设备…</span></span><span class="badge">本地推理</span></div>
+  </header>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="检查点选择">
+      <section class="panel">
+        <div class="panel-heading"><h2>检查点</h2><button id="refresh" class="secondary small-button" type="button">刷新</button></div>
+        <div class="panel-body">
+          <label class="field" for="stage">运行范围<select id="stage"><option value="formal">正式训练</option><option value="latest">全部训练与教学</option><option value="pretrain">预训练</option><option value="dense_distill">稠密蒸馏</option><option value="sparse_cpt">稀疏续训</option><option value="sft">SFT</option><option value="dpo">DPO</option><option value="grpo">GRPO</option><option value="rl">RL</option><option value="teacher">教师蒸馏</option><option value="mopd">MOPD</option><option value="opd">OPD</option><option value="accepted">通过能力验收</option></select></label>
+          <label class="field" for="family">模型<select id="family"><option value="all">全部模型</option><option value="minifrontier11">MiniFrontier1.1</option><option value="minifrontier1">MiniFrontier1.0</option><option value="minikimik3">MiniKimi-K3</option><option value="miniqwen4">MiniQwen4</option><option value="minideepseekv41">MiniDeepSeek-V4.1</option><option value="minideepseekv4">MiniDeepSeek-V4</option></select></label>
+          <label class="visually-hidden" for="search">搜索运行名称</label><input id="search" type="search" placeholder="搜索运行名称…" autocomplete="off">
+          <p id="list-status" class="status" role="status" aria-live="polite"></p>
+        </div>
+        <p id="scope" class="list-caption">正在读取检查点…</p>
+        <div id="models" class="run-list" role="group" aria-label="可用检查点" aria-busy="true"></div>
+      </section>
+      <p class="footer-note">每个运行显示最新保存的权重。刷新后可读取新版本；训练进度以保存记录为准。</p>
+    </aside>
+
+    <div class="main-panel">
+      <p id="checkpoint-notice" class="notice" role="status" hidden></p>
+      <section class="panel" aria-labelledby="input-heading">
+        <div class="panel-heading"><h2 id="input-heading">测试输入</h2><span class="badge">单次生成</span></div>
+        <div class="presets" aria-label="测试样例"><button class="preset" data-preset="zh" type="button">中文续写</button><button class="preset" data-preset="en" type="button">英文续写</button><button class="preset" data-preset="code" type="button">代码补全</button><button class="preset" data-preset="chat" type="button">问答示例</button></div>
+        <div class="panel-body">
+          <label class="visually-hidden" for="prompt">测试文本</label><textarea id="prompt" placeholder="输入要续写的文本或测试问题…" spellcheck="false">人工智能是一种</textarea>
+          <div class="input-footer"><div class="selection-summary"><strong id="selected-summary">请选择检查点</strong><small id="mode-summary">预训练适合文本续写；后训练可使用对话模板。</small></div><button id="send" class="primary" type="button" disabled>生成</button></div>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="comparison" class="stack" aria-labelledby="comparison-heading" hidden>
+        <div class="results-heading"><h2 id="comparison-heading">结果对比</h2><button id="close-comparison" class="secondary small-button" type="button">关闭对比</button></div>
+        <p id="comparison-note" class="hint"></p><div id="comparison-grid" class="comparison-grid"></div>
+      </section>
+
+      <div class="results-heading"><h2>生成记录 <span id="result-count" class="badge">0</span></h2><div class="results-toolbar"><button id="compare" class="secondary small-button" type="button" disabled>对比（0/2）</button><button id="export" class="secondary small-button" type="button" disabled>导出 JSON</button><button id="clear" class="secondary small-button" type="button" disabled>清空</button></div></div>
+      <div id="empty" class="empty-state"><svg class="empty-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="5" width="24" height="22" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="m10 12 4 4-4 4m8 0h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><strong>还没有生成记录</strong><p>选择检查点并输入文本，结果会附带本次使用的权重和参数。</p></div>
+      <div id="results" class="results" aria-label="生成记录"></div>
+      <p class="footer-note">最近 20 条记录仅保留在当前页面，刷新页面后清除。可复用输入测试其他权重，勾选两条结果进行对比。</p>
+    </div>
+
+    <aside class="inspector" aria-label="权重详情和生成参数">
+      <details id="weight-panel" class="panel collapsible-panel" open><summary class="panel-heading"><h2>当前权重</h2><span id="capability" class="badge">未选择</span></summary><div class="panel-body" id="checkpoint-details"><p class="hint">选择左侧检查点查看详情。</p></div></details>
+      <details id="settings-panel" class="panel collapsible-panel" open><summary class="panel-heading"><h2>生成参数</h2></summary><div class="panel-body">
+        <label class="field" for="mode">输入模式<select id="mode"><option value="auto">自动选择</option><option value="completion">文本续写</option><option value="chat">对话模板</option></select></label>
+        <label class="field" for="length">最大生成 token<input id="length" type="number" min="1" max="256" step="1" value="64" required></label>
+        <div class="field-grid"><label class="field" for="temperature">Temperature<input id="temperature" type="number" min="0" max="2" step="0.1" value="0" required></label><label class="field" for="top-p">Top-p<input id="top-p" type="number" min="0.01" max="1" step="0.01" value="1" required></label></div>
+        <label class="field" for="seed" style="margin-top:14px">随机种子<input id="seed" type="number" min="0" max="4294967295" step="1" value="0" required></label>
+        <p class="hint">Temperature 为 0 时采用贪心解码，Top-p 和种子不生效；大于 0 时采样。固定条件便于比较检查点。</p>
+        <button id="reset-settings" type="button" class="secondary small-button" style="margin-top:12px">重置参数</button>
+      </div></details>
+      <p class="footer-note">MF1 文本权重可在此测试。图片和视频输入使用 <code>mf1 demo</code> 媒体页面。</p>
+    </aside>
+  </main>
+  <noscript>此页面需要启用 JavaScript。</noscript>
+  <script><!--SCRIPT--></script>
+</body>
+</html>

@@ -29,6 +29,20 @@ def test_loaded_template_is_used_automatically_for_inference(tokenizer, monkeypa
     assert respond(model, tokenizer, "Hello") == "Hi"
 
 
+@pytest.mark.parametrize("model_type", ["MiniDeepSeekV41ForCausalLM", "UnknownCausalLM"])
+def test_unsupported_image_model_has_explicit_error(tokenizer, monkeypatch, model_type):
+    from minifrontier.inference.runtime import respond
+
+    # No real weights or image decoding are needed to exercise the CLI dispatch.
+    model = type(model_type, (torch.nn.Linear,), {})(1, 1)
+    monkeypatch.setattr(
+        "minifrontier.multimodal.prepare_record",
+        lambda *args, **kwargs: pytest.fail("unsupported model reached image processing"),
+    )
+    with pytest.raises(ValueError, match=f"native image generation.*{model_type}"):
+        respond(model, tokenizer, "Describe this image", images=["unused.png"])
+
+
 def test_controlled_prefix_matches_sft_and_only_assistant_structure_has_loss(tokenizer):
     turns = [dict(role="user", content="What is 2 plus 3?")]
     prefix, prompt_labels = chat_tokens(

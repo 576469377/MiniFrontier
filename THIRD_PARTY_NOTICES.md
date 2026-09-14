@@ -85,7 +85,8 @@ the repository's training strategy; the three text-MTP initializations and rank-
 mini adaptation do not claim released flagship training weights or hyperparameters.
 The optional padded expert implementation preserves each source component's
 activation and route weighting; its Kimi-derived computation retains the Kimi
-K3 license. It remains disabled in the strategy configurations.
+K3 license. Execution mode is model- and configuration-specific; the current
+MiniDeepSeek-V4.1 configuration enables batched experts.
 
 The strategy data builder records pinned source and item provenance. Its Python-Edu
 pilot retrieves code blobs from Software Heritage and checks each content SHA1;

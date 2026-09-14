@@ -50,7 +50,7 @@ minifrontier = "minifrontier.cli:main"
 include = ["minifrontier*"]
 
 [tool.setuptools.package-data]
-minifrontier = ["py.typed"]
+minifrontier = ["py.typed", "inference/web/*.html", "inference/web/*.css", "inference/web/*.js"]
 
 [tool.setuptools.data-files]
 "share/minifrontier/configs" = ["configs/models.json", "configs/miniqwen4.json", "configs/minikimik3.json", "configs/minideepseekv4.json", "configs/minifrontier1.json", "configs/minideepseekv41.json", "configs/minifrontier11.json"]
