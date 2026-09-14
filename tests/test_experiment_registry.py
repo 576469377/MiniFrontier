@@ -15,6 +15,43 @@ def write(path, value):
     path.write_text(json.dumps(value))
 
 
+@pytest.mark.parametrize("model", ["minideepseekv41", "minifrontier11", "minifrontier1"])
+@pytest.mark.parametrize("explicit", [False, True])
+def test_versioned_formal_ids_and_mf_input_batch_semantics(tmp_path, model, explicit):
+    target = tmp_path / "outputs/strategy-base-pretraining-v1" / model / "P0"
+    run = dict(kind="strategy", input_batch_tokens=16384)
+    if explicit:
+        run["model_name"] = model
+    write(target / "run.json", run)
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["model"] == model
+    assert entry["input_batch_policy"] == (
+        "mf1_whole_example" if model.startswith("minifrontier1") else "legacy_whole_microbatch"
+    )
+
+
+def test_formal_queue_dictionary_state_registers_new_first_phase(tmp_path):
+    target = tmp_path / "outputs/strategy-base-pretraining-v1/minifrontier11/P0"
+    controller = tmp_path / "outputs/strategy-v41-mf11-v1/queue"
+    job = dict(
+        id="minifrontier11-p0",
+        model="minifrontier11",
+        phase="p0",
+        gpu_id=5,
+        random_initialization=True,
+        output=str(target),
+    )
+    write(controller / "queue-plan.json", dict(workspace=str(tmp_path), jobs=[job]))
+    write(
+        controller / "queue.json",
+        dict(updated_at=time.time(), jobs={job["id"]: dict(state="waiting_binding", gpu_id=5)}),
+    )
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["model"] == "minifrontier11"
+    assert entry["state"] == "waiting_binding" and entry["gpu_id"] == 5
+    assert entry["trial"] == "minifrontier11-p0"
+
+
 def test_qualification_dispatch_is_not_an_additional_training_run(tmp_path):
     target = tmp_path / "outputs/strategy-pretraining-start/admission"
     write(target / "run.json", dict(kind="pretraining_qualification_dispatch"))

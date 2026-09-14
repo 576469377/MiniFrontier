@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "model": "minideepseekv41",
+  "source_document": "docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md",
+  "source_document_sha256": "ccf02ffdb7b45466a0181a2ac76db0010610329867563499f7f21805362c5210",
+  "config": "configs/minideepseekv41.json",
+  "gpu_ids": [
+    3
+  ],
+  "training_dtype": "bf16",
+  "optimizer_state_dtype": "fp32",
+  "min_disk_free_gib": 80,
+  "performance": {
+    "continuous_main_phases": "observe_during_training",
+    "additional_standalone_runs_required": false
+  },
+  "validation": {
+    "source_holdout_min_fraction": 0.005,
+    "periodic_ce_tokens": 1000000,
+    "phase_end_ce_tokens": 5000000,
+    "sealed_test": true
+  },
+  "text_mixture_tokens": {
+    "zh_edu": 0.4,
+    "en_edu": 0.25,
+    "code": 0.2,
+    "verified_math_science": 0.1,
+    "dialogue": 0.05
+  },
+  "phases": [
+    {
+      "id": "D1",
+      "objective": "ce_tokens",
+      "budget_min": 250000000,
+      "budget_max": 250000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        512,
+        1024
+      ],
+      "attention_phase": "sparse_pretrain",
+      "depends_on": [],
+      "budget_scope": "main",
+      "required_evidence": []
+    },
+    {
+      "id": "D2",
+      "objective": "ce_tokens",
+      "budget_min": 500000000,
+      "budget_max": 500000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024,
+        2048
+      ],
+      "attention_phase": "sparse_pretrain",
+      "depends_on": [
+        "D1"
+      ],
+      "budget_scope": "main",
+      "required_evidence": []
+    },
+    {
+      "id": "D3",
+      "objective": "ce_tokens",
+      "budget_min": 1500000000,
+      "budget_max": 1500000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        2048,
+        4096
+      ],
+      "attention_phase": "sparse_pretrain",
+      "depends_on": [
+        "D2"
+      ],
+      "budget_scope": "main",
+      "required_evidence": []
+    },
+    {
+      "id": "D4",
+      "objective": "ce_tokens",
+      "budget_min": 250000000,
+      "budget_max": 250000000,
+      "image_occurrences": 0,
+      "video_examples": 0,
+      "sequence_lengths": [
+        1024,
+        2048,
+        4096
+      ],
+      "attention_phase": "sparse_pretrain",
+      "depends_on": [
+        "D3"
+      ],
+      "budget_scope": "main",
+      "required_evidence": []
+    }
+  ],
+  "execution_program": {
+    "id": "v41-mf11-base-pretraining-2026-09-14",
+    "document": "docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md",
+    "models": {
+      "minideepseekv41": {
+        "main_ce": 2500000000,
+        "training_recipe": {
+          "version": 1,
+          "status": "frozen",
+          "seed": 42,
+          "optimizer": "v41_muon_sinkhorn",
+          "global_input_tokens": 32768,
+          "initial_microbatch_candidate": 16,
+          "weight_decay": 0.1,
+          "adam_eps": 1e-20,
+          "clip_grad": 1.0,
+          "router_bias_rate": 0.001,
+          "config": "configs/minideepseekv41.json",
+          "phases": [
+            {
+              "id": "D1",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 250000000,
+              "mtp_loss_coef": 0.0,
+              "sequence_lengths": [
+                512,
+                1024
+              ],
+              "peak_lr": {
+                "muon": 0.00026,
+                "adam": 0.00026,
+                "indexer": 0.00026,
+                "vision": 0.0001,
+                "projector": 0.00026
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 12500000,
+                "decay_start": 1550000000,
+                "end": 2225000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            },
+            {
+              "id": "D2",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 500000000,
+              "mtp_loss_coef": 0.0,
+              "sequence_lengths": [
+                1024,
+                2048
+              ],
+              "peak_lr": {
+                "muon": 0.00026,
+                "adam": 0.00026,
+                "indexer": 0.00026,
+                "vision": 0.0001,
+                "projector": 0.00026
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 12500000,
+                "decay_start": 1550000000,
+                "end": 2225000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            },
+            {
+              "id": "D3",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 1500000000,
+              "mtp_loss_coef": 0.0,
+              "sequence_lengths": [
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.00026,
+                "adam": 0.00026,
+                "indexer": 0.00026,
+                "vision": 0.0001,
+                "projector": 0.00026
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 12500000,
+                "decay_start": 1550000000,
+                "end": 2225000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            },
+            {
+              "id": "D4",
+              "stage": "pretrain",
+              "unit": "ce_tokens",
+              "budget": 250000000,
+              "mtp_loss_coef": 0.0,
+              "sequence_lengths": [
+                1024,
+                2048,
+                4096
+              ],
+              "peak_lr": {
+                "muon": 0.00026,
+                "adam": 0.00026,
+                "indexer": 0.00026,
+                "vision": 0.0001,
+                "projector": 0.00026
+              },
+              "schedule": {
+                "axis": "main_ce",
+                "start": 0,
+                "warmup_tokens": 12500000,
+                "decay_start": 1550000000,
+                "end": 2225000000,
+                "final_factor": 0.1
+              },
+              "image_occurrences": 0,
+              "video_examples": 0
+            }
+          ],
+          "bindings": {
+            "D1": {
+              "data_sha256": "160cf1e554d17101687047362a73e3e3baf7c0d68f1b3473b0dcae70c92cd365",
+              "config_sha256": "87fd516d9b7df2f8bd9422ff924345e3403c369074482e62674ad6d9181d2aac",
+              "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
+              "batch_size": 16,
+              "sequence_length": 1024
+            }
+          }
+        }
+      },
+      "minifrontier11": {
+        "main_ce": 3000000000,
+        "indexer_input_tokens": 40000000,
+        "config": "configs/minifrontier11.json",
+        "phase_resolver": "minifrontier.training.minifrontier1_strategy:phases_for(1.1-reference-v1)"
+      }
+    }
+  }
+}

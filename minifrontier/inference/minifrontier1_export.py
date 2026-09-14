@@ -88,7 +88,10 @@ def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_
     if output.exists():
         raise FileExistsError("export is immutable; choose a fresh directory")
     saved = torch.load(checkpoint, map_location="cpu", weights_only=True)
-    if saved["model_name"] != "minifrontier1" or dtype not in {"float32", "bfloat16"}:
+    if saved["model_name"] not in {"minifrontier1", "minifrontier11"} or dtype not in {
+        "float32",
+        "bfloat16",
+    }:
         raise ValueError("invalid MF1 export family or dtype")
     source = Path(checkpoint).parent / "tokenizer.json"
     if sha256(source) != saved["tokenizer_sha256"]:
@@ -96,7 +99,7 @@ def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_
     output.mkdir(parents=True)
     licenses = export_licenses(output)
     shutil.copyfile(source, output / "tokenizer.json")
-    model = build_model("minifrontier1", saved["config"], phase=saved["phase"])
+    model = build_model(saved["model_name"], saved["config"], phase=saved["phase"])
     model.load_state_dict(saved["model"])
     model.eval()
     modules = quantize_experts(model, group_size) if int8 else []
@@ -109,6 +112,7 @@ def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_
                 key in name
                 for key in ("norm", "A_log", "dt_bias", "correction_bias", "scales", "eta")
             )
+            and not (saved["model_name"] == "minifrontier11" and "_mhc." in name)
             else value
             for name, value in state.items()
         }
@@ -168,7 +172,12 @@ def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_
         ),
     )
     (output / "MODEL_CARD.md").write_text(
-        "# MiniFrontier1.0 local export\n\nThis is an unqualified research artifact, not a released chat model.\n\nSee manifest.json for source/checkpoint/tokenizer hashes, storage format and license scope.\n"
+        (
+            "# MiniFrontier1.1 local export\n\n"
+            if saved["model_name"] == "minifrontier11"
+            else "# MiniFrontier1.0 local export\n\n"
+        )
+        + "This is an unqualified research artifact, not a released chat model.\n\nSee manifest.json for source/checkpoint/tokenizer hashes, storage format and license scope.\n"
     )
     return report
 
@@ -180,7 +189,9 @@ def load_export(path, device="cpu"):
     saved = torch.load(path, map_location="cpu", weights_only=True)
     if sha256(path.parent / "tokenizer.json") != saved["tokenizer_sha256"]:
         raise ValueError("export tokenizer differs from model")
-    model = build_model("minifrontier1", saved["config"], phase=saved["phase"])
+    if saved["model_name"] not in {"minifrontier1", "minifrontier11"}:
+        raise ValueError("invalid MF1 export family")
+    model = build_model(saved["model_name"], saved["config"], phase=saved["phase"])
     quant = saved.get("quantization", {})
     if quant.get("kind") == "int8-experts-reference":
         modules = quantize_experts(model, quant["group_size"])

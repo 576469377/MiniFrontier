@@ -22,20 +22,22 @@
 MiniFrontier 以 **MiniFrontier1.0（MF1）** 为主线，提供小规模模型的结构实现、数据处理、训练、恢复、评估和推理工具。MF1 将递推注意力、历史压缩、稀疏检索和潜在空间专家组合为一个 **228M 参数的原生多模态模型**；三个来源模型保留独立结构，供源码对照和实验。
 
 > [!NOTE]
-> 当前为 **v0.1.0 研究预览**。截至 2026-09-12，四个模型均已启动首阶段正式预训练；完整训练和能力评估尚未完成，仓库不附带聊天权重。训练安排见[预训练主计划](docs/pretraining-plan.md)。
+> 当前为 **v0.1.0 研究预览**。截至 2026-09-14，原四个模型均已进入第二阶段正式预训练；完整训练和能力评估尚未完成，仓库不附带聊天权重。训练安排见[预训练主计划](docs/pretraining-plan.md)。
 
 ## 模型家族
 
-四个模型均从随机初始化开始训练。点击模型名称查看结构图、模块计算、配置与实现代码。
+各版本从随机初始化开始训练。点击模型名称查看结构图、模块计算、配置与实现代码。
 
 | 模型 | 研究配置 | 输入接口 | 主要结构 |
 |:---|---:|:---|:---|
+| [MiniFrontier1.1](docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md) | 211M | 文本、图像、视频帧 | MF1 注意力组合、Single-Pass mHC、Muon / Sinkhorn；主干无 MTP |
+| [MiniDeepSeek-V4.1](docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md) | 242M | 首阶段文本；原生视觉后续单列 | CED / CSA2、Single-Pass mHC、Engram；直接稀疏预训练 |
 | **[MiniFrontier1.0](docs/models/minifrontier1.md)** | **228M** | 文本、图像、视频帧 | KDA / CSA / QSA-MLA、四路 GR、LatentMoE、lookup |
 | [MiniQwen4](docs/models/miniqwen4.md) | 513M | 文本、图像、视频帧 | GDN / QSA、四路 GR、PLE、MoE |
 | [MiniKimi-K3](docs/models/minikimik3.md) | 205M | 文本、图像、视频帧 | KDA / MLA、AttnRes、LatentMoE |
 | [MiniDeepSeek-V4](docs/models/minideepseekv4.md) | 244M | 文本；视觉扩展单列 | SWA / CSA / HCA、mHC、MoE（浅层 hash 路由） |
 
-参数量包含 MTP，前三个模型还包含视觉编码器。输入接口的训练覆盖与评估状态在各模型页单列。MF1 结构图按本地实现绘制；三个来源模型附[官方报告图及出处](docs/assets/upstream/README.md)。
+原四模型参数量包含 MTP；MF1.0、Qwen 和 Kimi 还包含视觉编码器。新两版本主干均不含 MTP，MF1.1 包含视觉编码器。输入接口的训练覆盖与评估状态在各模型页单列。MF1 结构图按本地实现绘制；三个来源模型附[官方报告图及出处](docs/assets/upstream/README.md)。
 
 <details>
 <summary><b>参数统计、配置与命名</b></summary>
@@ -52,6 +54,8 @@ MiniFrontier 以 **MiniFrontier1.0（MF1）** 为主线，提供小规模模型�
 MiniFrontier1.0 的组合方案由本项目设计；MiniQwen4 的名称来自所参考源码中的 `qwen4_exp` 模块。各模型的来源版本与修改对应关系见[第三方说明](THIRD_PARTY_NOTICES.md)和[MF1 来源映射](configs/minifrontier1/source-map.json)。
 
 </details>
+
+新版变化与取舍集中在 [V4.1 / MF1.1 联合方案](docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md)。MF1.1 复用 MF1 包内的配置、数据和训练入口，通过明确版本选择新结构。下图与快速开始继续对应 MF1.0。
 
 ## MF1 架构
 

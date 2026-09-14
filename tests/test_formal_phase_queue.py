@@ -83,6 +83,59 @@ def test_mf1_budget_completion_is_not_mistaken_for_missing_chat_qualification():
     assert not queue.phase_finished(dict(state="paused", ledger=dict(phase_tokens=10)), 10)
 
 
+def initial_fixture(tmp_path, model="minideepseekv41", phase="D1"):
+    spec, job = fixture(tmp_path)
+    for key in ("parent_status", "parent_checkpoint", "parent_ce"):
+        spec.pop(key)
+    spec.update(id=f"{model}-{phase}", model=model, phase=phase, random_initialization=True)
+    job.pop("parent_checkpoint_sha256")
+    job.update(model=model, phase=phase, random_initialization=True)
+    command = job["command"]
+    del command[3:5]
+    command[command.index("--pretraining-phase") + 1] = phase
+    if model == "minifrontier11":
+        command[command.index("--pretraining-phase")] = "--phase"
+    return spec, job
+
+
+@pytest.mark.parametrize("model,phase", [("minideepseekv41", "D1"), ("minifrontier11", "p0")])
+def test_initial_phase_requires_own_random_publication_without_parent(tmp_path, model, phase):
+    spec, job = initial_fixture(tmp_path, model, phase)
+    assert queue.phase_ready(spec) == ("waiting_binding", None)
+    write(Path(spec["launch_file"]), job)
+    assert queue.phase_ready(spec)[0] == "ready"
+    job["random_initialization"] = False
+    write(Path(spec["launch_file"]), job)
+    with pytest.raises(ValueError, match="bind random initialization"):
+        queue.phase_ready(spec)
+
+
+@pytest.mark.parametrize("flag", ["--init", "--resume", "--init=old.pt", "--resume=old.pt"])
+def test_initial_phase_rejects_weight_inheritance(tmp_path, flag):
+    spec, job = initial_fixture(tmp_path)
+    job["command"].append(flag)
+    write(Path(spec["launch_file"]), job)
+    with pytest.raises(ValueError, match="bind random initialization"):
+        queue.phase_ready(spec)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        dict(phase="D2"),
+        dict(model="unknown"),
+        dict(parent_ce=0),
+        dict(parent_status="old.json"),
+        dict(random_initialization="true"),
+    ],
+)
+def test_initial_phase_rejects_later_phases_implicit_flags_and_parents(tmp_path, change):
+    spec, _ = initial_fixture(tmp_path)
+    spec.update(change)
+    with pytest.raises(ValueError, match=r"first phase|explicit boolean"):
+        queue.phase_ready(spec)
+
+
 def test_formal_successor_runs_once_and_respects_single_gpu_environment(tmp_path, monkeypatch):
     spec, job = fixture(tmp_path)
     write(Path(spec["parent_status"]), dict(state="complete", token_ledger=dict(ce_tokens=10)))
@@ -117,6 +170,42 @@ def test_formal_successor_runs_once_and_respects_single_gpu_environment(tmp_path
     env = json.loads((Path(spec["output"]) / "environment.json").read_text())
     assert env["CUDA_VISIBLE_DEVICES"] == "GPU-7" and "HTTPS_PROXY" not in env
     assert env["NO_PROXY"] == "*" and env["MINIFRONTIER_MIN_FREE_GIB"] == "80"
+    assert queue.execute_phases(path) == 0
+    assert json.loads((tmp_path / "queue.json").read_text())["jobs"] == state["jobs"]
+
+
+def test_initial_phase_cpu_dispatch_runs_once_without_a_parent(tmp_path, monkeypatch):
+    spec, job = initial_fixture(tmp_path, "minifrontier11", "p0")
+    result = dict(state="budget_complete_unqualified", ledger=dict(phase_tokens=20))
+    job["command"][2] = (
+        "from pathlib import Path; "
+        f"p=Path({spec['output']!r}); p.mkdir(); "
+        f"(p/'status.json').write_text({json.dumps(result)!r})"
+    )
+    write(Path(spec["launch_file"]), job)
+    path = tmp_path / "plan.json"
+    write(
+        path,
+        dict(
+            kind="formal_pretraining_phase_queue",
+            workspace=str(tmp_path),
+            controller_sha256=queue.sha256(queue.__file__),
+            main_budget_eligible=True,
+            allowed_gpu_ids=[7],
+            notification_backend="dnotify",
+            jobs=[spec],
+        ),
+    )
+    monkeypatch.setattr(queue, "query_gpus", lambda: [gpu()])
+    monkeypatch.setattr(queue, "compute_apps", lambda: {})
+    monkeypatch.setattr(queue, "source_check", lambda *a: None)
+    monkeypatch.setattr(queue, "require_space", lambda *a, **k: None)
+    assert queue.execute_phases(path) == 0
+    state = json.loads((tmp_path / "queue.json").read_text())
+    job_state = state["jobs"][spec["id"]]
+    assert job_state["state"] == "complete"
+    assert job_state["random_initialization"] is True
+    assert job_state["parent_checkpoint_sha256"] is None
     assert queue.execute_phases(path) == 0
     assert json.loads((tmp_path / "queue.json").read_text())["jobs"] == state["jobs"]
 

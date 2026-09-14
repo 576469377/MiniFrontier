@@ -27,7 +27,11 @@ def make_optimizer(
     rates = dict(matrix=lr, embedding=lr, vision=vision_lr, scalar=scalar_lr, indexer=indexer_lr)
     decay = dict(matrix=0.1, embedding=0.01, vision=0.1, scalar=0.0, indexer=0.01)
     named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
-    if kind == "muon":
+    if kind == "v41_muon_sinkhorn":
+        from minifrontier.training.v41_optim import make_optimizer as make_v41_optimizer
+
+        opt = make_v41_optimizer(model, lr=lr, vision_lr=vision_lr)
+    elif kind == "muon":
         from minifrontier.training.semantic_optim import SemanticOptimizer
 
         specs = {}
@@ -98,7 +102,7 @@ def make_optimizer(
             eps=1e-8,
         )
     else:
-        raise ValueError("MF1 optimizer must be adamw or muon")
+        raise ValueError("MF1 optimizer must be adamw, muon or v41_muon_sinkhorn")
     owned = [id(p) for g in opt.param_groups for p in g["params"]]
     if len(owned) != len(set(owned)) or set(owned) != {id(p) for _, p in named}:
         raise ValueError("every trainable parameter must occur exactly once in the optimizer")
@@ -206,6 +210,8 @@ def parameter_report(model, optimizer=None):
             if name.startswith(("embed_tokens.", "lm_head."))
             else "gr"
             if "_gr." in name
+            else "mhc"
+            if "_mhc." in name or name.startswith("final_norm.")
             else "moe"
             if ".moe." in name
             else "kda"
@@ -243,7 +249,9 @@ def parameter_report(model, optimizer=None):
         + sum(table.embedding_dim for table in lookup_tables)
     )
     return dict(
-        model="MiniFrontier1.0",
+        model="MiniFrontier1.1"
+        if model.config.model_version == "1.1-reference-v1"
+        else "MiniFrontier1.0",
         config=asdict(model.config),
         total=total,
         trainable=trainable,

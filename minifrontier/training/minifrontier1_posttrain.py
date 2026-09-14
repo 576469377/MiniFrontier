@@ -12,7 +12,8 @@ import torch
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import RecordDataset, encode_record, safe_text, write_json
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
-from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM
+from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM, MiniFrontier11ForCausalLM
+from minifrontier.models.minifrontier1.configuration import MF11_VERSION
 from minifrontier.models.minifrontier1.draft import MF1Draft
 from minifrontier.multimodal import move
 from minifrontier.training.deepseek_opd import full_vocab_reverse_kl
@@ -22,6 +23,7 @@ from minifrontier.training.minifrontier1_strategy import (
     PHASES,
     TEACHER_SLOTS,
     bindings,
+    phases_for,
     validate_gate,
 )
 from minifrontier.training.posttrain import dpo_loss, grouped_advantages, token_log_probs
@@ -294,6 +296,7 @@ def train_post(
 ):
     if phase not in {"rl", "teacher", "opd", "draft", "dpo"}:
         raise ValueError("posttrain phase must be rl, teacher, opd, draft or dpo")
+    requested_steps = steps
     steps = (
         steps if steps is not None else (2 if run_kind == "acceptance" else PHASES[phase]["budget"])
     )
@@ -318,15 +321,22 @@ def train_post(
     torch.manual_seed(seed)
     random.seed(seed)
     model, tokenizer, _ = load_checkpoint(checkpoint, device)
-    if type(model) is not MiniFrontier1ForCausalLM:
+    if type(model) not in {MiniFrontier1ForCausalLM, MiniFrontier11ForCausalLM}:
         raise ValueError("posttraining requires an MF1 checkpoint")
+    phases = phases_for(model.config.model_version)
+    if requested_steps is None and run_kind == "strategy":
+        steps = phases[phase]["budget"]
+    if phase == "draft" and model.config.model_version == MF11_VERSION:
+        raise ValueError(
+            "MF1.1 has no pretrained MTP; a separately trained drafter is not implemented"
+        )
     base = torch.load(checkpoint, map_location="cpu", weights_only=True)
     dataset = RecordDataset(data, "train", model.config)
     if base["tokenizer_sha256"] != dataset.manifest["tokenizer_sha256"]:
         raise ValueError("posttraining dataset/tokenizer mismatch")
     bound = bindings(model.config, data, checkpoint)
     if run_kind == "strategy":
-        if token_budget != PHASES[phase]["budget"] or evidence is None:
+        if token_budget != phases[phase]["budget"] or evidence is None:
             raise ValueError("formal posttraining needs its planned token budget and stage gate")
         validate_gate(phase, json.loads(Path(evidence).read_text()), bound, dataset.manifest, base)
     elif run_kind != "acceptance" or (token_budget is not None and token_budget > 2_000_000):
@@ -394,7 +404,11 @@ def train_post(
             ):
                 p.requires_grad_(False)
         opt = make_optimizer(
-            model, lr=3e-6 if phase == "opd" else 1e-6, scalar_lr=1e-6, vision_lr=1e-6
+            model,
+            lr=3e-6 if phase == "opd" else 1e-6,
+            scalar_lr=1e-6,
+            vision_lr=1e-6,
+            kind="v41_muon_sinkhorn" if model.config.model_version == MF11_VERSION else "adamw",
         )
     run = dict(
         format="mf1-posttrain-v1",
@@ -410,7 +424,11 @@ def train_post(
         teacher_registry_sha256=sha256(teacher_registry) if teacher_registry else None,
         teacher_slot=teacher_slot,
         teacher=teacher_entry,
-        mtp="frozen" if phase != "draft" else "draft_only",
+        mtp="absent"
+        if model.config.model_version == MF11_VERSION
+        else "frozen"
+        if phase != "draft"
+        else "draft_only",
     )
     ledger = dict(
         generated_tokens=0, response_positions=0, optimizer_updates=0, zero_variance_groups=0
@@ -583,7 +601,7 @@ def train_post(
             output / "status.json",
             dict(
                 state="budget_complete_unqualified"
-                if (token_budget is not None and ledger[PHASES[phase]["unit"]] >= token_budget)
+                if (token_budget is not None and ledger[phases[phase]["unit"]] >= token_budget)
                 else "updates_complete_unqualified"
                 if step + 1 == steps
                 else "running",

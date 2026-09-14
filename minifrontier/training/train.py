@@ -36,7 +36,11 @@ from minifrontier.training.runtime import (
 
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--model", required=True, choices=["miniqwen4", "minikimik3", "minideepseekv4"])
+    p.add_argument(
+        "--model",
+        required=True,
+        choices=["miniqwen4", "minikimik3", "minideepseekv4", "minideepseekv41"],
+    )
     p.add_argument("--config")
     p.add_argument("--data", required=True)
     p.add_argument("--output", required=True)
@@ -128,7 +132,7 @@ def parser():
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument(
         "--optimizer",
-        choices=["auto", "adamw", "qwen_muon", "kimi_muon", "deepseek_muon"],
+        choices=["auto", "adamw", "qwen_muon", "kimi_muon", "deepseek_muon", "v41_muon_sinkhorn"],
         default="auto",
     )
     p.add_argument("--adam-eps", type=float, default=1e-8)
@@ -245,7 +249,9 @@ def main(argv=None):
     if args.init_transition != "exact" and not (args.init or args.resume):
         raise ValueError("an initialization transition requires a preceding checkpoint")
     if args.visual_warmup and (
-        args.model != "minideepseekv4" or args.stage != "pretrain" or not (args.init or args.resume)
+        args.model not in {"minideepseekv4", "minideepseekv41"}
+        or args.stage != "pretrain"
+        or not (args.init or args.resume)
     ):
         raise ValueError(
             "visual warmup requires DeepSeek continued PT from a text/vision checkpoint"
@@ -307,10 +313,11 @@ def run(args, rank, world, device):
     )
     if program:
         program.validate_parent(args, saved)
+    initial_phase = "sparse_pretrain" if args.model == "minideepseekv41" else "dense_pretrain"
     phase = (
         args.stage
         if args.stage in {"dense_distill", "sparse_cpt"}
-        else (saved.get("phase", "dense_pretrain") if saved else "dense_pretrain")
+        else (saved.get("phase", initial_phase) if saved else initial_phase)
     )
     if args.run_kind == "strategy":
         from .strategy_gate import validate_runtime
@@ -340,6 +347,10 @@ def run(args, rank, world, device):
             )
     config = args.config or (saved["config"] if saved else None)
     model = build_model(args.model, config, phase=phase).to(device)
+    if args.model == "minideepseekv41" and saved is None:
+        from tokenizers import Tokenizer
+
+        model.bind_tokenizer(Tokenizer.from_file(str(data_dir / "tokenizer.json")))
     if program and model.config.mtp_loss_coef != program.phase["mtp_loss_coef"]:
         raise ValueError("model MTP coefficient differs from pretraining phase")
     if data_manifest["tokenizer"]["vocab_size"] > model.config.vocab_size:
@@ -375,6 +386,7 @@ def run(args, rank, world, device):
             "miniqwen4": "qwen_muon",
             "minikimik3": "kimi_muon",
             "minideepseekv4": "deepseek_muon",
+            "minideepseekv41": "v41_muon_sinkhorn",
         }[args.model]
     if optimizer_kind == "qwen_muon":
         if args.model != "miniqwen4":
@@ -383,6 +395,14 @@ def run(args, rank, world, device):
 
         optimizer = MiniQwen4Optimizer(
             model, lr=args.muon_lr, adam_lr=args.lr, weight_decay=args.weight_decay
+        )
+    elif optimizer_kind == "v41_muon_sinkhorn":
+        if args.model != "minideepseekv41":
+            raise ValueError("native V4.1 optimizer requires MiniDeepSeek-V4.1")
+        from .v41_optim import make_optimizer
+
+        optimizer = make_optimizer(
+            model, lr=args.lr, weight_decay=args.weight_decay, eps=args.adam_eps
         )
     elif optimizer_kind in {"kimi_muon", "deepseek_muon"}:
         if optimizer_kind == "kimi_muon":
@@ -1284,8 +1304,10 @@ def run(args, rank, world, device):
                 factor = 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * cooldown))
         for group in optimizer.param_groups:
             group["lr"] = (
-                args.muon_lr if optimizer_kind in {"qwen_muon", "kimi_muon"} else args.lr
-            ) * factor
+                (args.muon_lr if optimizer_kind in {"qwen_muon", "kimi_muon"} else args.lr)
+                * factor
+                * group.get("lr_scale", 1.0)
+            )
             if optimizer_kind in {"qwen_muon", "kimi_muon", "deepseek_muon"}:
                 group["adam_lr"] = args.lr * factor
             if "visual_base_lr" in group:
@@ -1385,7 +1407,7 @@ def run(args, rank, world, device):
                         weighted = weighted + scaled_ce(
                             _auxiliary.mtp_aux_loss, _auxiliary.mtp_aux_count, denominator, world
                         )
-                    if args.model == "minideepseekv4":
+                    if args.model in {"minideepseekv4", "minideepseekv41"}:
                         seq = model.config.sequence_balance_coef * _auxiliary.aux_loss
                         auxiliary = auxiliary - seq
                         weighted = weighted + scaled_ce(

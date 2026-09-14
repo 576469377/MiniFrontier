@@ -196,7 +196,14 @@ def formal_status(root, proc_root=Path("/proc")):
             dict(disk_free_gib=round(shutil.disk_usage(root).free / 1024**3, 2), reserve_gib=80)
         )
     )
-    for family in ("minikimik3", "miniqwen4", "minideepseekv4", "minifrontier1"):
+    for family in (
+        "minikimik3",
+        "miniqwen4",
+        "minideepseekv4",
+        "minifrontier1",
+        "minideepseekv41",
+        "minifrontier11",
+    ):
         candidates = [
             p for p in (root / "strategy-base-pretraining-v1" / family).glob("*") if p.is_dir()
         ]

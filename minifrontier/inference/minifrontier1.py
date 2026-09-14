@@ -11,6 +11,7 @@ from PIL import Image
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import safe_text
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
+from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM, MiniFrontier11ForCausalLM
 from minifrontier.models.minifrontier1.processing import process_frames
 from minifrontier.multimodal import move
 
@@ -64,7 +65,7 @@ def respond(
     draft_steps=4,
 ):
     model, tokenizer, _ = load_checkpoint(checkpoint, device)
-    if model.__class__.__name__ != "MiniFrontier1ForCausalLM":
+    if type(model) not in {MiniFrontier1ForCausalLM, MiniFrontier11ForCausalLM}:
         raise ValueError("mf1 generate requires a MiniFrontier1 checkpoint")
     times = json.loads(timestamps) if isinstance(timestamps, str) else timestamps
     ids, media = prepare_prompt(
@@ -80,6 +81,10 @@ def respond(
     start = time.perf_counter()
     stats = None
     if draft_checkpoint:
+        if model.mtp is None:
+            raise ValueError(
+                "this backbone has no MTP; a separately trained MF1.1 drafter is not implemented"
+            )
         from minifrontier.models.minifrontier1.draft import MF1Draft
         from minifrontier.speculative import generate_speculative
 

@@ -9,17 +9,22 @@ from pathlib import Path
 import torch
 
 from minifrontier.data.minifrontier1 import RecordDataset, make_fixture, write_json
-from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
+from minifrontier.models.minifrontier1 import (
+    MiniFrontier1Config,
+    MiniFrontier1ForCausalLM,
+    MiniFrontier11ForCausalLM,
+)
+from minifrontier.models.minifrontier1.configuration import MF1_VERSION, MF11_VERSION
 from minifrontier.training.minifrontier1_optim import parameter_report
-from minifrontier.training.minifrontier1_strategy import PHASES, budget_report
+from minifrontier.training.minifrontier1_strategy import PHASES, budget_report, phases_for
 
 
-def quickstart(output, device="cpu", updates=8):
+def quickstart(output, device="cpu", updates=8, model_version=MF1_VERSION):
     from minifrontier.training.minifrontier1 import train
 
     root = Path(output)
     manifest = make_fixture(root / "data")
-    c = MiniFrontier1Config.tiny(manifest["vocab_size"])
+    c = MiniFrontier1Config.tiny(manifest["vocab_size"], model_version=model_version)
     write_json(root / "model.json", asdict(c))
     results = []
     args = dict(
@@ -71,7 +76,9 @@ def main(argv=None):
     params = commands.add_parser("params")
     params.add_argument("--config")
     params.add_argument("--output")
-    commands.add_parser("recipe")
+    params.add_argument("--model-version", choices=["1.0", "1.1"])
+    recipe = commands.add_parser("recipe")
+    recipe.add_argument("--model-version", choices=["1.0", "1.1"], default="1.0")
     fixture = commands.add_parser("prepare-fixture")
     fixture.add_argument("--output", required=True)
     fixture.add_argument("--seed", type=int, default=42)
@@ -94,11 +101,17 @@ def main(argv=None):
     q.add_argument("--output", required=True)
     q.add_argument("--device", default="cpu")
     q.add_argument("--updates", type=int, default=8)
+    q.add_argument("--model-version", choices=["1.0", "1.1"], default="1.0")
     t = commands.add_parser("train")
     t.add_argument("--data", required=True)
     t.add_argument("--output", required=True)
     t.add_argument("--phase", choices=list(PHASES), default="pilot")
     t.add_argument("--config")
+    t.add_argument(
+        "--model-version",
+        choices=["1.0", "1.1"],
+        help="version must match config or parent checkpoint",
+    )
     t.add_argument("--device", default="cpu")
     t.add_argument("--steps", type=int)
     t.add_argument("--token-budget", type=int)
@@ -113,7 +126,7 @@ def main(argv=None):
     t.add_argument("--evidence")
     t.add_argument("--diagnostic-attention", choices=["dense_pretrain"])
     t.add_argument("--stop-after-updates", type=int)
-    t.add_argument("--optimizer-kind", choices=["adamw", "muon"], default="adamw")
+    t.add_argument("--optimizer-kind", choices=["adamw", "muon", "v41_muon_sinkhorn"], default=None)
     t.add_argument("--lr", type=float)
     t.add_argument("--vision-lr", type=float)
     t.add_argument("--save-every", type=int, default=100)
@@ -208,19 +221,34 @@ def main(argv=None):
     qualify.add_argument("--limit", type=int, default=64)
     args = vars(parser.parse_args(argv))
     command = args.pop("command")
+    if args.get("model_version") is not None:
+        args["model_version"] = {"1.0": MF1_VERSION, "1.1": MF11_VERSION}[args["model_version"]]
     if command == "params":
+        version = args["model_version"]
         c = (
             MiniFrontier1Config(**json.loads(Path(args["config"]).read_text()))
             if args["config"]
+            else MiniFrontier1Config.v11()
+            if version == MF11_VERSION
             else MiniFrontier1Config()
         )
+        if version is not None and c.model_version != version:
+            raise ValueError("explicit model version differs from config")
+        model_cls = (
+            MiniFrontier11ForCausalLM
+            if c.model_version == MF11_VERSION
+            else MiniFrontier1ForCausalLM
+        )
         with torch.device("meta"):
-            model = MiniFrontier1ForCausalLM(c)
+            model = model_cls(c)
         result = parameter_report(model)
         if args["output"]:
             write_json(args["output"], result)
     elif command == "recipe":
-        result = dict(budget_report(), phases=PHASES)
+        version = args["model_version"]
+        result = dict(budget_report(version), phases=phases_for(version))
+        if version == MF11_VERSION:
+            result.update(model_version=version, model_name="minifrontier11", draft_supported=False)
     elif command == "prepare-fixture":
         result = make_fixture(**args)
     elif command == "prepare-data":

@@ -34,7 +34,9 @@ def inspect_current_models(
     expected = {"miniqwen4", "minikimik3", "minideepseekv4"}
     if manifest.get("scope") == "source_reproductions_and_fusion":
         expected.add("minifrontier1")
-    if set(manifest.get("models", {})) != expected:
+    actual = set(manifest.get("models", {}))
+    optional = {"minideepseekv41", "minifrontier11"}
+    if not expected <= actual or actual - expected - optional:
         raise ValueError("catalog model set differs from its declared source/fusion scope")
     from minifrontier.models.factory import build_model, model_classes
 

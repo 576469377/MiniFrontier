@@ -98,7 +98,10 @@ def collect(workspace):
                 queue_name = str(queue_root.relative_to(root))
                 plan = read_json(plan_path)
                 state = read_json(queue_root / "queue.json")
-                states = {j["id"]: j for j in state.get("jobs", [])}
+                jobs_state = state.get("jobs", [])
+                states = (
+                    jobs_state if isinstance(jobs_state, dict) else {j["id"]: j for j in jobs_state}
+                )
                 for job in plan.get("jobs", []):
                     try:
                         relative_path = Path(job["output"]).relative_to(
@@ -312,10 +315,21 @@ def collect(workspace):
                 model = next(
                     (
                         name
-                        for name in ("miniqwen4", "minikimik3", "minideepseekv4")
+                        for name in (
+                            "miniqwen4",
+                            "minikimik3",
+                            "minideepseekv41",
+                            "minideepseekv4",
+                            "minifrontier11",
+                            "minifrontier1",
+                        )
                         if name in relative
                     ),
-                    "minifrontier1" if "mf1" in relative else "unknown",
+                    "minifrontier11"
+                    if "mf11" in relative
+                    else "minifrontier1"
+                    if "mf1" in relative
+                    else "unknown",
                 )
             if kind == "data_construction":
                 model = "shared-corpus"
@@ -339,9 +353,12 @@ def collect(workspace):
                 seed=run.get("seed"),
                 batch=run.get("batch_size"),
                 input_batch_target=run.get("input_batch_tokens"),
-                input_batch_policy=run.get("input_batch_policy", "legacy_whole_microbatch")
-                if model != "minifrontier1"
-                else "mf1_whole_example",
+                input_batch_policy=run.get(
+                    "input_batch_policy",
+                    "mf1_whole_example"
+                    if model in {"minifrontier1", "minifrontier11"}
+                    else "legacy_whole_microbatch",
+                ),
                 input_batch_schedule=run.get("input_batch_schedule"),
                 lr_schedule=run.get("schedule"),
                 warmup_tokens=run.get("warmup_tokens"),

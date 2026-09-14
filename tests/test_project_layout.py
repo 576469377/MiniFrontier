@@ -14,7 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_public_catalog_and_packaged_configuration_paths():
     assert default_manifest_path() == ROOT / "configs/models.json"
     result = inspect_current_models(default_manifest_path())
-    assert set(result) == {"miniqwen4", "minikimik3", "minideepseekv4", "minifrontier1"}
+    assert set(result) == {
+        "miniqwen4",
+        "minikimik3",
+        "minideepseekv4",
+        "minifrontier1",
+        "minideepseekv41",
+        "minifrontier11",
+    }
     config = tomllib.loads((ROOT / "pyproject.toml").read_text())
     assert config["project"]["readme"] == "README.md"
     for filenames in config["tool"]["setuptools"]["data-files"].values():
@@ -42,7 +49,13 @@ def test_repository_has_only_current_model_packages():
         for p in (ROOT / "minifrontier/models").iterdir()
         if p.is_dir() and p.name != "__pycache__"
     }
-    assert folders == {"miniqwen4", "minikimik3", "minideepseekv4", "minifrontier1"}
+    assert folders == {
+        "miniqwen4",
+        "minikimik3",
+        "minideepseekv4",
+        "minifrontier1",
+        "minideepseekv41",
+    }
     # Historical documentation is retained as evidence; executable retired
     # model packages/configurations must still stay out of current entry points.
     assert (ROOT / "docs/training-failure-v1.md").is_file()
@@ -55,6 +68,8 @@ def test_repository_has_only_current_model_packages():
         "miniqwen4.json",
         "minikimik3.json",
         "minideepseekv4.json",
+        "minideepseekv41.json",
+        "minifrontier11.json",
         "minifrontier1.json",
         "minifrontier1",
     }

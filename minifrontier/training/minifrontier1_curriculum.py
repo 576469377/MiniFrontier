@@ -4,11 +4,12 @@ from typing import Any
 
 import torch
 
-from minifrontier.training.minifrontier1_strategy import PHASES
+from minifrontier.models.minifrontier1.configuration import MF1_VERSION
+from minifrontier.training.minifrontier1_strategy import phases_for
 
 
-def context_length(phase, rng, phase_ce, maximum):
-    schedule = PHASES[phase].get("lengths", {maximum: 1.0})
+def context_length(phase, rng, phase_ce, maximum, *, model_version=MF1_VERSION):
+    schedule = phases_for(model_version)[phase].get("lengths", {maximum: 1.0})
     lengths, weights = [], []
     for length, weight in schedule.items():
         if length <= maximum:

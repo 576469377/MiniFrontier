@@ -14,11 +14,121 @@ from tokenizers import Tokenizer
 from minifrontier.data import sha256
 from minifrontier.data.media_cache import validate_policy
 from minifrontier.data.minifrontier1 import digest, write_json
-from minifrontier.data.minifrontier1_encoding import FORMAT, CompactDataset
+from minifrontier.data.minifrontier1_encoding import (
+    FORMAT,
+    CompactDataset,
+    processing_reuse_contract,
+)
 from minifrontier.models.minifrontier1.processing import PROCESSOR_VERSION
 from minifrontier.storage import require_space
 
 COMPONENT_FORMAT = "mf1-compact-components-v1"
+
+
+def _resolved_components(root, manifest):
+    references = []
+    for original in manifest["components"]:
+        reference = dict(original, path=str((root / original["path"]).resolve()))
+        if "media_access" in original:
+            reference["media_access"] = dict(
+                original["media_access"],
+                cache_dir=str((root / original["media_access"]["cache_dir"]).resolve()),
+            )
+        references.append(reference)
+    return references
+
+
+def _reuse_source_config(root, manifest, config):
+    binding = manifest.get("model_compatibility")
+    if binding is None:
+        return None
+    source = (root / binding["source_manifest"]["path"]).resolve()
+    if sha256(source) != binding["source_manifest"]["sha256"]:
+        raise ValueError("data reuse source manifest changed")
+    original = json.loads(source.read_text())
+    source_config = binding["source_config"]
+    contract = processing_reuse_contract(source_config, config)
+    if (
+        original.get("format") != COMPONENT_FORMAT
+        or original.get("model_compatibility") is not None
+        or original["config_sha256"] != digest(source_config)
+        or binding["source_config_sha256"] != original["config_sha256"]
+        or binding["target_config_sha256"] != digest(asdict(config))
+        or digest(binding["target_config"]) != digest(asdict(config))
+        or binding["processing_contract_sha256"] != digest(contract)
+        or _resolved_components(root, manifest) != _resolved_components(source.parent, original)
+        or any(
+            manifest.get(key) != original.get(key)
+            for key in ("splits", "kind", "processor_version", "tokenizer_sha256", "sample_order")
+        )
+    ):
+        raise ValueError("data reuse bindings differ from the immutable source composition")
+    return source_config
+
+
+def create_model_compatibility_view(source, output, source_config, target_config):
+    """Write one unadmitted metadata view; share original shards, tokenizer and pixels."""
+    source, output = Path(source).resolve(), Path(output).resolve()
+    if output.exists():
+        raise FileExistsError("choose a new immutable data view directory")
+    original = json.loads((source / "manifest.json").read_text())
+    contract = processing_reuse_contract(source_config, target_config)
+    if (
+        original.get("format") != COMPONENT_FORMAT
+        or original.get("model_compatibility") is not None
+        or original["config_sha256"] != digest(source_config)
+        or original["processor_version"] != PROCESSOR_VERSION
+        or sha256(source / "tokenizer.json") != original["tokenizer_sha256"]
+    ):
+        raise ValueError("source composition config, processor or tokenizer differs")
+    references = _resolved_components(source, original)
+    for reference in references:
+        root = Path(reference["path"])
+        if sha256(root / "manifest.json") != reference["manifest_sha256"]:
+            raise ValueError("source component manifest changed")
+        child = json.loads((root / "manifest.json").read_text())
+        if (
+            child.get("format") != FORMAT
+            or child["config_sha256"] != digest(source_config)
+            or child["processor_version"] != PROCESSOR_VERSION
+            or child["tokenizer_sha256"] != original["tokenizer_sha256"]
+        ):
+            raise ValueError("source component processing identity differs")
+        reference["path"] = os.path.relpath(root, output)
+        if "media_access" in reference:
+            policy = reference["media_access"]
+            policy["cache_dir"] = os.path.relpath(policy["cache_dir"], output)
+    manifest = dict(
+        original,
+        config_sha256=digest(asdict(target_config)),
+        components=references,
+        formal_admission=False,
+        main_budget_eligible=False,
+        admission_scope="processing-compatible candidate; new training admission required",
+        model_compatibility=dict(
+            source_manifest=dict(
+                path=os.path.relpath(source / "manifest.json", output),
+                sha256=sha256(source / "manifest.json"),
+            ),
+            source_config=source_config,
+            source_config_sha256=digest(source_config),
+            target_config=asdict(target_config),
+            target_config_sha256=digest(asdict(target_config)),
+            processing_contract_sha256=digest(contract),
+            source_formal_admission=original.get("formal_admission", False),
+            payload_files_copied=0,
+            raw_media_copied=False,
+        ),
+    )
+    # Drop source admission details; the source manifest remains hash-bound above.
+    for key in ("parent_candidate", "human_review_completed"):
+        manifest.pop(key, None)
+    _reuse_source_config(output, manifest, target_config)
+    require_space(output, len(json.dumps(manifest).encode()) + 64 * 1024)
+    output.mkdir(parents=True)
+    os.link(source / "tokenizer.json", output / "tokenizer.json")
+    write_json(output / "manifest.json", manifest)
+    return manifest
 
 
 def assemble_components(components, output, config, *, media_access=None):
@@ -167,6 +277,7 @@ class ComponentDataset:
             or sha256(self.root / "tokenizer.json") != self.manifest["tokenizer_sha256"]
         ):
             raise ValueError("composition config, processor or tokenizer differs")
+        source_config = _reuse_source_config(self.root, self.manifest, config)
         self.tokenizer = Tokenizer.from_file(str(self.root / "tokenizer.json"))
         self.datasets = []
         for reference in self.manifest["components"]:
@@ -176,7 +287,9 @@ class ComponentDataset:
             policy = reference.get("media_access")
             if policy is not None:
                 policy = dict(policy, cache_dir=str((self.root / policy["cache_dir"]).resolve()))
-            dataset = CompactDataset(path, split, config, media_access=policy)
+            dataset = CompactDataset(
+                path, split, config, media_access=policy, source_config=source_config
+            )
             if dataset.manifest["tokenizer_sha256"] != self.manifest["tokenizer_sha256"]:
                 raise ValueError("component tokenizer differs from composition")
             self.datasets.append(dataset)
@@ -220,3 +333,22 @@ class ComponentDataset:
     def ce_count_at(self, index, start=0, capacity=None):
         dataset, index = self._locate(index)
         return dataset.ce_count_at(index, start, capacity)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    from minifrontier.models.minifrontier1 import MiniFrontier1Config
+
+    parser = argparse.ArgumentParser(description="Create an immutable MF1.1 data reuse view")
+    parser.add_argument("--source", required=True)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--source-config", required=True, help="Original full resolved config JSON")
+    parser.add_argument("--config", required=True, help="Target MF1.1 config JSON")
+    args = parser.parse_args()
+    create_model_compatibility_view(
+        args.source,
+        args.output,
+        json.loads(Path(args.source_config).read_text()),
+        MiniFrontier1Config(**json.loads(Path(args.config).read_text())),
+    )

@@ -55,6 +55,10 @@ def optimizer_groups(model, optimizer):
         "betas",
         "eps",
         "momentum",
+        "kind",
+        "lr_scale",
+        "sinkhorn_iterations",
+        "sinkhorn_threshold",
     )
     return [
         dict(
@@ -106,6 +110,7 @@ class PretrainingProgram:
             "minikimik3": "kimi_muon",
             "miniqwen4": "qwen_muon",
             "minideepseekv4": "deepseek_muon",
+            "minideepseekv41": "v41_muon_sinkhorn",
         }[args.model]
         if self.recipe["optimizer"] != native_optimizer:
             raise ValueError("base program requires the selected model-specific optimizer")
@@ -138,7 +143,7 @@ class PretrainingProgram:
             if any(not math.isfinite(v) or v <= 0 for v in phase["peak_lr"].values()):
                 raise ValueError("pretraining peak rates must be finite and positive")
             if (
-                args.model == "minideepseekv4"
+                args.model in {"minideepseekv4", "minideepseekv41"}
                 and phase["peak_lr"]["muon"] != phase["peak_lr"]["adam"]
             ):
                 raise ValueError("DeepSeek backbone Muon and Adam rates must remain shared")
@@ -283,7 +288,9 @@ class PretrainingProgram:
                 if name.startswith("vision.")
                 else None
             )
-            group["lr"] = (peaks["muon"] if rate is None else rate) * factor
+            group["lr"] = (
+                (peaks["muon"] if rate is None else rate) * factor * group.get("lr_scale", 1.0)
+            )
             group["adam_lr"] = (peaks["adam"] if rate is None else rate) * factor
         return factor
 

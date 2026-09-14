@@ -7,6 +7,14 @@ from pathlib import Path
 
 
 def model_classes(name):
+    if name == "minifrontier11":
+        from .minifrontier1 import MiniFrontier1Config, MiniFrontier11ForCausalLM
+
+        return MiniFrontier1Config, MiniFrontier11ForCausalLM
+    if name == "minideepseekv41":
+        from .minideepseekv41 import MiniDeepSeekV41Config, MiniDeepSeekV41ForCausalLM
+
+        return MiniDeepSeekV41Config, MiniDeepSeekV41ForCausalLM
     if name == "minifrontier1":
         from .minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
 
@@ -26,7 +34,9 @@ def model_classes(name):
     raise ValueError(f"unknown model: {name}")
 
 
-def build_model(name, values=None, *, phase="dense_pretrain"):
+def build_model(name, values=None, *, phase=None):
+    if phase is None:
+        phase = "sparse_pretrain" if name == "minideepseekv41" else "dense_pretrain"
     config_cls, cls = model_classes(name)
     if values is None:
         if name == "minifrontier1":

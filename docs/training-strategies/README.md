@@ -1,6 +1,6 @@
 # 研究方案
 
-这里保留六份历史设计与执行方案，适合追溯设计依据。实际操作从[预训练主计划](../pretraining-plan.md)和[操作指南](../guides/README.md)进入。
+这里保留历史设计依据与版本升级方案。实际操作从[预训练主计划](../pretraining-plan.md)和[操作指南](../guides/README.md)进入。
 
 [返回文档导航](../README.md) · [实验记录](../experiments.md) · [原文保留规则](#原文与复现)
 
@@ -16,6 +16,8 @@
 | [04 · MF1，2026-09-09](2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md) | 原生多模态融合结构与全流程设计 | [结构图与状态](../models/minifrontier1.md) |
 | [05 · 四模型执行方案，2026-09-10](2026-09-10/05-four-model-pretraining-execution-plan.md) | 当时的数据、资源、测速和阶段安排 | [预训练主计划](../pretraining-plan.md) |
 | [06 · 初始化复核，2026-09-10](2026-09-10/06-recipe-initialization-review.md) | 配方初始化、恢复与阶段继承检查 | [工作配方与继承规则](../experiments/2026-09-10-pretraining-cutover/working-recipes.md) |
+
+| [07 · V4.1 / MF1.1，2026-09-14](2026-09-14/07-v41-mf11-implementation-and-training.md) | 官方新版方法、融合取舍、单卡训练与数据复用 | [预训练主计划](../pretraining-plan.md) |
 
 截至 2026-09-12，四个模型首阶段均已启动，完整训练与能力验收尚未完成；实际预算和进度在主计划及实验记录维护。
 

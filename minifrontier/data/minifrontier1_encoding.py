@@ -34,6 +34,29 @@ from minifrontier.models.minifrontier1.processing import PROCESSOR_VERSION, toke
 from minifrontier.storage import require_space
 
 
+def processing_reuse_contract(source_config, target_config):
+    """Conservatively permit only the declared MF1.0 -> MF1.1 architecture changes.
+
+    Everything except version and MTP switches remains identical, including
+    tokenizer IDs, context/media bounds, vision geometry and position encoding.
+    JSON roundtrips normalize tuples without changing the old config's hash.
+    """
+    source = json.loads(json.dumps(source_config))
+    target = json.loads(json.dumps(asdict(target_config)))
+    if (source.get("model_version"), target.get("model_version")) != (
+        "1.0-reference-v1",
+        "1.1-reference-v1",
+    ):
+        raise ValueError("data reuse requires the explicit MF1.0 to MF1.1 version pair")
+    architecture_only = {"model_version", "mtp_enabled", "mtp_loss_coef"}
+    before = {k: v for k, v in source.items() if k not in architecture_only}
+    after = {k: v for k, v in target.items() if k not in architecture_only}
+    if before != after:
+        changed = sorted(k for k in before.keys() | after.keys() if before.get(k) != after.get(k))
+        raise ValueError(f"data processing contract differs: {changed}")
+    return dict(version="mf1-processing-reuse-v1", unchanged_config=before)
+
+
 def encode_dataset(data, output, config, *, max_gib=16, compact=False, shard_tokens=64_000_000):
     if compact:
         return encode_compact_dataset(
@@ -937,12 +960,16 @@ def _encode_compact_items(
 class CompactDataset:
     """Bound token and index mappings separately; validate immutable files once per identity."""
 
-    def __init__(self, root, split, config, *, media_access=None):
+    def __init__(self, root, split, config, *, media_access=None, source_config=None):
         self.root, self.config = Path(root).resolve(), config
         self.manifest = json.loads((self.root / "manifest.json").read_text())
+        expected_config = digest(asdict(config))
+        if source_config is not None:
+            processing_reuse_contract(source_config, config)
+            expected_config = digest(source_config)
         if (
             self.manifest.get("format") != FORMAT
-            or self.manifest["config_sha256"] != digest(asdict(config))
+            or self.manifest["config_sha256"] != expected_config
             or self.manifest["processor_version"] != PROCESSOR_VERSION
         ):
             raise ValueError("compact data config/processor identity differs")

@@ -42,6 +42,11 @@ Source: [DeepSeek-V4-Flash, 60d8d70770c6776ff598c94bb586a859a38244f1](https://hu
 
 The [snapshot](third_party/upstream/deepseek-v4-60d8d70) retains the inference source and original [MIT LICENSE](third_party/upstream/deepseek-v4-60d8d70/LICENSE), copyright 2023 DeepSeek. The local unquantized expert and compressor are checked against that source. `upstream_layers.py`, `attention.py` and `kernels.py` preserve attribution for source-derived training adaptations; no complete V4 training fidelity is implied.
 
+## DeepSeek-V4.1
+
+Source: [DeepSeek-V4.1-Flash, dba1be0a40aa45a94ad051997016db3960a90277](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/tree/dba1be0a40aa45a94ad051997016db3960a90277/inference).
+The [pinned snapshot](third_party/upstream/deepseek-v4.1-dba1be0/source.json) retains the original MIT license and per-file hashes. `minideepseekv41/` and `deepseek_v41_layers.py` adapt its CED/CSA2, Single-Pass mHC and Engram computation for differentiable mini training. MF1.1 reuses the mHC layer while retaining the existing MF1 components and their respective terms. The V4.1 optimizer follows the published report; its local training implementation is not the unpublished upstream trainer. No flagship weights or complete technical-report PDF are distributed.
+
 ## Architecture figure excerpts
 
 Architecture figure excerpts in `docs/assets/upstream/` are attributed to the Kimi Team / Moonshot AI, Qwen Team, and DeepSeek-AI. They are limited excerpts from their technical reports, used for architecture explanation and comparison. Original rights are retained; these report figures are not relicensed under MiniFrontier's Apache-2.0 license. Source-code licenses listed above do not automatically cover separately published reports. Exact report revisions, figure/page numbers and extraction records are in the [figure attribution index](docs/assets/upstream/README.md).

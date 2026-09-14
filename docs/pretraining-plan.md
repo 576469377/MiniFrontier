@@ -1,8 +1,10 @@
-# 四模型基础预训练计划
+# 基础预训练计划
 
-更新：2026-09-13。本页维护四模型的阶段、数据、预算和转换要求。最近进度见[9 月 13 日快照](experiments/2026-09-10-pretraining-cutover/formal-progress-2026-09-13.json)，实时状态按[实验管理](operations/experiment-management.md)读取。每次运行使用独立保存的配置、数据清单和源码副本。
+更新：2026-09-14。本页维护各模型的阶段、数据、预算和转换要求。最近进度见[9 月 13 日快照](experiments/2026-09-10-pretraining-cutover/formal-progress-2026-09-13.json)，实时状态按[实验管理](operations/experiment-management.md)读取。每次运行使用独立保存的配置、数据清单和源码副本。
 
-本轮目标是完成 MiniKimi-K3、MiniQwen4、MiniDeepSeek-V4 和 MiniFrontier1.0 的基础预训练，共 **10.5B 主 CE token**，索引器训练另计。四个首阶段均已从随机初始化开训。SFT、RL、教师蒸馏、草稿加速和 QAT 在基础模型训练后推进。
+新增 MiniDeepSeek-V4.1 与 MF1.1 两条独立实验，方法取舍、配置及资源安排集中在 [V4.1 / MF1.1 联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md)。新增预算为 5.5B 主 CE，MF1.1 索引器 40M input 另计；两个版本均从随机初始化开始，已有四模型的预算与运行保持独立。
+
+原四模型目标是完成 MiniKimi-K3、MiniQwen4、MiniDeepSeek-V4 和 MiniFrontier1.0 的基础预训练，共 **10.5B 主 CE token**，索引器训练另计。四个首阶段均已从随机初始化开训。SFT、RL、教师蒸馏、草稿加速和 QAT 在基础模型训练后推进。
 
 ## 目录
 
@@ -19,12 +21,12 @@
 
 ## 1. 当前任务
 
-四模型均在正式训练。K1、D1、P0 已完成，各自进入 K2、D2、P1；Qwen 继续 Q1。后续阶段按各自进度接续。
+四模型均在正式训练。K1、D1、P0 已完成，各自进入 K2、D2、P1；Qwen 已进入 Q2。后续阶段按各自进度接续。
 
 | 主线 | 当前阶段 | 下一项交付 |
 |---|---|---|
 | Kimi | K2 正式训练中，阶段预算 1.2B CE | 持续固定验证，记录图像、双页和视频消费 |
-| Qwen | Q1 训练中，阶段预算 300M CE | Q2 数据已齐，事件脚本等待 Q1 完成，随后绑定实际父检查点并自动接续 |
+| Qwen | Q2 正式训练中，阶段预算 1.2B CE | 跟踪长序列与多模态验证，后接 Q3 索引器阶段 |
 | DeepSeek | D2 正式训练中，阶段预算 500M CE | 持续固定验证，准备后续索引器阶段 |
 | MF1 | P1 正式训练中，阶段预算 800M CE | 跟踪新视频、图像课程与分域损失；后接索引器阶段 |
 

@@ -32,16 +32,14 @@
         "cache_snapshot_rollback"
       ],
       "missing": [
-        "formal_training_data_admission",
-        "recipe_pilot_selection",
         "base_and_posttraining_quality_gates",
         "qualified_domain_teachers",
         "draft_training_and_speculative_speed_acceptance"
       ],
       "strategy_config": "strategies/miniqwen4-v2.json",
-      "training_ready_scope": "engineering entry points; formal data and capability gates pending",
+      "training_ready_scope": "training entry points in use; full base training and capability evaluation incomplete",
       "release_status": "v0.1.0_research_preview",
-      "trained_status": "diagnostics_and_recipe_pilots_only",
+      "trained_status": "base_pretraining_in_progress",
       "usable_chat_checkpoint": false
     },
     "minikimik3": {
@@ -53,8 +51,6 @@
       "gpus_per_model": 1,
       "source_revision": "c5d1dd4c428bd1ce8b88c5044f3b6ccde9e3b721",
       "missing": [
-        "formal_training_data_admission",
-        "recipe_pilot_selection",
         "base_and_posttraining_quality_gates",
         "qualified_domain_teachers",
         "draft_training_and_speculative_speed_acceptance",
@@ -83,9 +79,9 @@
         "native_image_prefill",
         "cache_snapshot_rollback"
       ],
-      "training_ready_scope": "engineering entry points; formal data and capability gates pending",
+      "training_ready_scope": "training entry points in use; full base training and capability evaluation incomplete",
       "release_status": "v0.1.0_research_preview",
-      "trained_status": "diagnostics_and_recipe_pilots_only",
+      "trained_status": "base_pretraining_in_progress",
       "usable_chat_checkpoint": false
     },
     "minideepseekv4": {
@@ -97,8 +93,6 @@
       "gpus_per_model": 1,
       "source_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
       "missing": [
-        "formal_training_data_admission",
-        "recipe_pilot_selection",
         "base_and_posttraining_quality_gates",
         "qualified_domain_teachers",
         "draft_training_and_speculative_speed_acceptance",
@@ -129,9 +123,9 @@
         "native_image_prefill",
         "cache_snapshot_rollback"
       ],
-      "training_ready_scope": "engineering entry points; formal data and capability gates pending",
+      "training_ready_scope": "training entry points in use; full base training and capability evaluation incomplete",
       "release_status": "v0.1.0_research_preview",
-      "trained_status": "diagnostics_and_recipe_pilots_only",
+      "trained_status": "base_pretraining_in_progress",
       "usable_chat_checkpoint": false
     },
     "minifrontier1": {
@@ -141,10 +135,10 @@
       "source_revision": "minifrontier1-native-fusion-v1",
       "status": "native_fusion_reference_implemented",
       "training_ready": true,
-      "training_ready_scope": "CPU reference and diagnostic workflows; formal data, 3090 profiling and quality gates pending",
+      "training_ready_scope": "training entry points in use; full base training and capability evaluation incomplete",
       "gpus_per_model": 1,
       "usable_chat_checkpoint": false,
-      "trained_status": "mechanism_checks_only",
+      "trained_status": "base_pretraining_in_progress",
       "training_components": [
         "native_vision",
         "short_video_frames",
@@ -172,6 +166,62 @@
         "trained_language_and_visual_quality",
         "qualified_teachers",
         "draft_speedup"
+      ]
+    },
+    "minideepseekv41": {
+      "display_name": "MiniDeepSeek-V4.1",
+      "implementation": "minideepseekv41",
+      "config": "minideepseekv41.json",
+      "source_revision": "dba1be0a40aa45a94ad051997016db3960a90277",
+      "status": "implemented_cpu_regression_verified",
+      "training_ready": true,
+      "training_ready_scope": "text backbone first; native vision warmup separately scheduled",
+      "gpus_per_model": 1,
+      "usable_chat_checkpoint": false,
+      "trained_status": "not_started",
+      "training_module": "minifrontier.models.minideepseekv41.MiniDeepSeekV41ForCausalLM",
+      "training_components": [
+        "pretrain",
+        "checkpoint_resume",
+        "held_out_validation",
+        "single_pass_mhc",
+        "v41_muon_sinkhorn"
+      ],
+      "inference_components": [
+        "exact_prefix_cache"
+      ],
+      "missing": [
+        "complete_base_training",
+        "capability_evaluation",
+        "independent_draft_training"
+      ]
+    },
+    "minifrontier11": {
+      "display_name": "MiniFrontier1.1",
+      "implementation": "minifrontier11",
+      "config": "minifrontier11.json",
+      "source_revision": "minifrontier11-single-pass-mhc-dba1be0-v1",
+      "status": "implemented_cpu_regression_verified",
+      "training_ready": true,
+      "training_ready_scope": "native multimodal fusion, versioned within the MF1 package",
+      "gpus_per_model": 1,
+      "usable_chat_checkpoint": false,
+      "trained_status": "not_started",
+      "training_module": "minifrontier.models.minifrontier1.MiniFrontier11ForCausalLM",
+      "training_components": [
+        "pretrain",
+        "checkpoint_resume",
+        "held_out_validation",
+        "single_pass_mhc",
+        "v41_muon_sinkhorn"
+      ],
+      "inference_components": [
+        "incremental_text_and_media_cache"
+      ],
+      "missing": [
+        "complete_base_training",
+        "capability_evaluation",
+        "independent_draft_training"
       ]
     }
   }

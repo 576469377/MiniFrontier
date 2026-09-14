@@ -17,7 +17,12 @@ import torch
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import digest, write_json
 from minifrontier.data.minifrontier1_encoding import evaluation_items, open_dataset
-from minifrontier.models.minifrontier1 import MiniFrontier1Config, MiniFrontier1ForCausalLM
+from minifrontier.models.minifrontier1 import (
+    MiniFrontier1Config,
+    MiniFrontier1ForCausalLM,
+    MiniFrontier11ForCausalLM,
+)
+from minifrontier.models.minifrontier1.configuration import MF11_VERSION
 from minifrontier.models.minifrontier1.mtp import mtp_targets
 from minifrontier.models.minifrontier1.processing import CONTROL_VERSION, token_metadata
 from minifrontier.multimodal import move
@@ -34,11 +39,12 @@ from minifrontier.training.minifrontier1_optim import (
     parameter_report,
 )
 from minifrontier.training.minifrontier1_strategy import (
-    PHASES,
     SFT_MIX,
     TEXT_MIX,
     VISION_MIX,
     bindings,
+    model_name_for,
+    phases_for,
     scheduler_factor,
     validate_gate,
 )
@@ -331,6 +337,7 @@ def train(
     output,
     phase="pilot",
     config=None,
+    model_version=None,
     device="cpu",
     steps=None,
     token_budget=None,
@@ -342,7 +349,7 @@ def train(
     run_kind="acceptance",
     evidence=None,
     stop_after_updates=None,
-    optimizer_kind="adamw",
+    optimizer_kind=None,
     lr=None,
     vision_lr=None,
     save_every=100,
@@ -390,8 +397,34 @@ def train(
     pretraining_eval = pretraining_eval or (
         run_kind == "strategy" and phase in {"p0", "p1", "p2", "p3"}
     )
+    saved = (
+        torch.load(resume or init, weights_only=True, map_location="cpu")
+        if resume or init
+        else None
+    )
+    values = json.loads(Path(config).read_text()) if isinstance(config, (str, Path)) else config
+    c = (
+        MiniFrontier1Config(**(values or cast(dict, saved)["config"]))
+        if values or saved
+        else MiniFrontier1Config.v11()
+        if model_version == MF11_VERSION
+        else MiniFrontier1Config()
+    )
+    if model_version is not None and c.model_version != model_version:
+        raise ValueError("explicit model version differs from config or parent checkpoint")
+    phases = phases_for(c.model_version)
+    model_name = model_name_for(c.model_version)
+    optimizer_kind = optimizer_kind or (
+        "v41_muon_sinkhorn" if c.model_version == MF11_VERSION else "adamw"
+    )
+    if (
+        run_kind == "strategy"
+        and c.model_version == MF11_VERSION
+        and optimizer_kind != "v41_muon_sinkhorn"
+    ):
+        raise ValueError("formal MF1.1 requires its versioned v41_muon_sinkhorn optimizer recipe")
     if steps is None and token_budget is None:
-        token_budget = PHASES[phase]["budget"]
+        token_budget = phases[phase]["budget"]
     if run_kind == "acceptance" and (
         steps is None
         or not 1 <= steps <= 10000
@@ -404,7 +437,7 @@ def train(
         stop_after_updates is not None and stop_after_updates < 1
     ):
         raise ValueError("budgets/stop point must be positive")
-    if run_kind == "strategy" and token_budget != PHASES[phase]["budget"]:
+    if run_kind == "strategy" and token_budget != phases[phase]["budget"]:
         raise ValueError("formal stage budget must match the frozen plan")
     if run_kind == "strategy" and steps is not None:
         raise ValueError("formal stages end at their token budget; use stop_after_updates to pause")
@@ -423,17 +456,6 @@ def train(
         raise FileExistsError(
             "run already has a recoverable checkpoint; choose --resume or a new output"
         )
-    saved = (
-        torch.load(resume or init, weights_only=True, map_location="cpu")
-        if resume or init
-        else None
-    )
-    values = json.loads(Path(config).read_text()) if isinstance(config, (str, Path)) else config
-    c = (
-        MiniFrontier1Config(**(values or cast(dict, saved)["config"]))
-        if values or saved
-        else MiniFrontier1Config()
-    )
     dataset, validation = open_dataset(data, "train", c), open_dataset(data, "val", c)
     if not len(dataset) or not len(validation):
         raise ValueError("training and held-out validation must both be nonempty")
@@ -445,7 +467,7 @@ def train(
         if phase == "sft":
             weights = SFT_MIX
         else:
-            visual = PHASES[phase].get("visual_ce", 0.20)
+            visual = phases[phase].get("visual_ce", 0.20)
             vision_mix = dict(VISION_MIX, caption=0.35, video=0.0) if phase == "p0" else VISION_MIX
             weights = {
                 **{k: v * (1 - visual) for k, v in TEXT_MIX.items()},
@@ -469,7 +491,7 @@ def train(
     evaluation_length = (
         max(
             length
-            for length in PHASES[phase].get("lengths", {c.max_position_embeddings: 1})
+            for length in phases[phase].get("lengths", {c.max_position_embeddings: 1})
             if length <= c.max_position_embeddings
         )
         if production_path
@@ -480,11 +502,14 @@ def train(
         if pretraining_eval
         else None
     )
-    attention = diagnostic_attention or PHASES[phase]["attention"]
-    model = MiniFrontier1ForCausalLM(c, attention).to(device)
+    attention = diagnostic_attention or phases[phase]["attention"]
+    model_cls = (
+        MiniFrontier11ForCausalLM if c.model_version == MF11_VERSION else MiniFrontier1ForCausalLM
+    )
+    model = model_cls(c, attention).to(device)
     if saved:
         if (
-            saved["model_name"] != "minifrontier1"
+            saved["model_name"] != model_name
             or cast(dict, saved)["config"] != asdict(c)
             or saved["tokenizer_sha256"] != bound["tokenizer_sha256"]
         ):
@@ -511,14 +536,14 @@ def train(
     ]
     run = dict(
         format="mf1-run-v1",
-        model_name="minifrontier1",
+        model_name=model_name,
         kind=run_kind,
         mf1_phase=phase,
         **bound,
         seed=seed,
         steps=steps,
         token_budget=token_budget,
-        unit=PHASES[phase]["unit"],
+        unit=phases[phase]["unit"],
         input_batch_tokens=input_batch_tokens,
         batch_size=batch_size,
         optimizer_kind=optimizer_kind,
@@ -528,7 +553,7 @@ def train(
         diagnostic_attention=diagnostic_attention,
     )
     if performance_only:
-        largest_context = max(n for n in PHASES[phase]["lengths"] if n <= c.max_position_embeddings)
+        largest_context = max(n for n in phases[phase]["lengths"] if n <= c.max_position_embeddings)
         run.update(
             main_budget_eligible=False,
             formal_admission=False,
@@ -634,7 +659,13 @@ def train(
         nonlocal producer_tokens
         window, inputs = [], 0
         capacity = (
-            context_length(phase, sampler.rng, producer_tokens, c.max_position_embeddings)
+            context_length(
+                phase,
+                sampler.rng,
+                producer_tokens,
+                c.max_position_embeddings,
+                model_version=c.model_version,
+            )
             if production_path
             else None
         )
@@ -702,7 +733,7 @@ def train(
         continuous_states.update(_optimizer_named(model, opt))
         artifact = dict(
             format="mf1-checkpoint-v1",
-            model_name="minifrontier1",
+            model_name=model_name,
             config=asdict(c),
             phase=attention,
             stage="sft"
@@ -810,7 +841,7 @@ def train(
                 )
                 raise ValueError("acceptance would exceed its 2M actual-token limit")
             mtp_count = 0
-            for item in window:
+            for item in window if c.mtp_enabled else ():
                 metadata = token_metadata(
                     item["input_ids"], c, item.get("media"), segment_ids=item.get("segment_ids")
                 )
@@ -829,6 +860,7 @@ def train(
                     if phase == "indexer"
                     else ledger["phase_tokens"] + ce_count,
                     ledger["main_ce_tokens"] + ce_count,
+                    model_version=c.model_version,
                 )
             )
             for group in opt.param_groups:

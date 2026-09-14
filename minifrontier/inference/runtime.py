@@ -43,7 +43,7 @@ def generate_ids(
     finished = torch.zeros(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
     all_ids = input_ids
     cache: Any = None
-    if use_cache and model.__class__.__name__ == "MiniFrontier1ForCausalLM":
+    if use_cache and model.__class__.__name__ in {"MiniFrontier1ForCausalLM", "MiniFrontier11ForCausalLM"}:
         from minifrontier.models.minifrontier1 import MiniFrontier1Cache
 
         cache = MiniFrontier1Cache()
@@ -59,6 +59,10 @@ def generate_ids(
         from minifrontier.models.minideepseekv4 import MiniDeepSeekV4Cache
 
         cache = MiniDeepSeekV4Cache()
+    elif use_cache and model.__class__.__name__ == "MiniDeepSeekV41ForCausalLM":
+        from minifrontier.models.minideepseekv41 import MiniDeepSeekV41Cache
+
+        cache = MiniDeepSeekV41Cache()
     current = all_ids
     for _ in range(max_new_tokens):
         # On-policy behavior must use the caller's training precision. Forcing

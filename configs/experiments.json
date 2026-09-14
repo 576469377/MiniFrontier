@@ -1272,12 +1272,12 @@
       "retirement_candidate_count": 20,
       "retirement_candidate_gib": 51.58,
       "candidates_executed": true,
-      "new_total_gib": 105,
+      "new_total_gib": 132,
       "category_limits_gib": {
         "canonical_text": 15,
-        "token_metadata_cache": 15,
+        "token_metadata_cache": 24,
         "media_cache": 25,
-        "training_weights": 38,
+        "training_weights": 56,
         "temporary_atomic": 10,
         "logs": 2
       },
@@ -1292,7 +1292,8 @@
         "bytes": 8841651207,
         "remaining_text_encoded_cache_bytes": 8769396904,
         "receipt": "docs/experiments/2026-09-10-pretraining-cutover/encoded-cache-retirement.json"
-      }
+      },
+      "allocation_updated": "2026-09-14: reuse encoded data; reserve two new versioned formal checkpoint streams"
     },
     "production_blockers": [
       "training_loss_mask_causality_media_gradient_errors",
@@ -1457,6 +1458,21 @@
       "auxiliary_storage_io_allowed": true,
       "auxiliary_training_allowed": false,
       "auxiliary_new_jobs_scope": "GPU training and heavy data producers; lightweight file-serving processes are storage I/O and permitted."
+    }
+  },
+  "version_extensions": {
+    "v41_mf11": {
+      "date": "2026-09-14",
+      "plan": "docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md",
+      "execution_program": "configs/strategies/minideepseekv41-plan.json",
+      "models": [
+        "minideepseekv41",
+        "minifrontier11"
+      ],
+      "main_ce": 5500000000,
+      "indexer_input_tokens": 40000000,
+      "one_task_per_gpu": true,
+      "existing_runs_unchanged": true
     }
   }
 }

@@ -1,0 +1,225 @@
+{
+  "repository": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+  "revision": "dba1be0a40aa45a94ad051997016db3960a90277",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "DeepSeek_V41_Tech_Report.pdf",
+      "sha256": "ba68e2e40408125ae6d2f63a9a241b61c73910691c74ec1a2a7023c851eac08d",
+      "bytes": 1809802,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/DeepSeek_V41_Tech_Report.pdf",
+      "distributed": false
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040",
+      "bytes": 1084,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/LICENSE",
+      "distributed": true
+    },
+    {
+      "path": "README.md",
+      "sha256": "347c9db4e5506acb531cbc3b724407ab88e9af8781679152f0823d7bac16d251",
+      "bytes": 13110,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/README.md",
+      "distributed": true
+    },
+    {
+      "path": "config.json",
+      "sha256": "8be45ce0476004a3f529fd896115a4a2e800a129ad2d3ec05b16050f52e21879",
+      "bytes": 3311,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/config.json",
+      "distributed": true
+    },
+    {
+      "path": "encoding/README.md",
+      "sha256": "a2f0fc3baea318c9cfbceca68cbfe50d37cf7da6605ace887f33148bcff7e3ae",
+      "bytes": 12120,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/README.md",
+      "distributed": true
+    },
+    {
+      "path": "encoding/encoding.py",
+      "sha256": "502bdaec8a3fd88ebc24c4721a7038fbe42f2063c664638127056107920035c1",
+      "bytes": 37316,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/encoding.py",
+      "distributed": true
+    },
+    {
+      "path": "encoding/test_encoding.py",
+      "sha256": "4a470892dad828459958cebfad55da598aafcb7a5878764ccbfc3ab060399d06",
+      "bytes": 19371,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/test_encoding.py",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_input_1.json",
+      "sha256": "6a5a86694e47169c8f0c9243a7e24cc5db05447be0d3d3a9891034e913c518de",
+      "bytes": 2761,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_input_1.json",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_input_2.json",
+      "sha256": "fd985cda88e8640b8e2404d8e659f7006cad204eb41f73c9e6662b1f218c01aa",
+      "bytes": 527,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_input_2.json",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_input_3.json",
+      "sha256": "4207613f15c79b95ad92074bdb8b2b81c5ce9cfdf15b7a67f58ded6bb3ec4fa5",
+      "bytes": 2554,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_input_3.json",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_input_4.json",
+      "sha256": "4c3890a7bc042ec6396d98d024a39a73cdcffbe1d0253e852da0c35e65296f3e",
+      "bytes": 712,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_input_4.json",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_input_5.json",
+      "sha256": "88289b0aac8d650aa55c4ffeb392818fff3a0ac83c2293ddfd90546804d5e5c4",
+      "bytes": 1143,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_input_5.json",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_output_1.txt",
+      "sha256": "91f79aa955717b414a82aabfb38bcd83ab5a998bd47db89d2a26338e8d3de550",
+      "bytes": 2476,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_output_1.txt",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_output_2.txt",
+      "sha256": "9fa162587b73ab9b315be5c88d433f9e0e681b4b36926952f289099ed9bc1dab",
+      "bytes": 294,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_output_2.txt",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_output_3.txt",
+      "sha256": "cf2b801d0738c88abb691bf4a096000c0e0737faab8a54a4ba5243c5513a3711",
+      "bytes": 2481,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_output_3.txt",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_output_4.txt",
+      "sha256": "94433b68370dcc69fa61efc5011b5d0e28685e4716fee1ee77fbbfc0c9935b54",
+      "bytes": 574,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_output_4.txt",
+      "distributed": true
+    },
+    {
+      "path": "encoding/tests/test_output_5.txt",
+      "sha256": "4d673091746553d1cb2e40a3fc01dc09a7c53c40627096a3e49c97a269a81f64",
+      "bytes": 408,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/encoding/tests/test_output_5.txt",
+      "distributed": true
+    },
+    {
+      "path": "inference/README.md",
+      "sha256": "2834402823199ee24e9a42bdf36a0fc6daf94448f444cb062c042a057a798f1c",
+      "bytes": 2029,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/README.md",
+      "distributed": true
+    },
+    {
+      "path": "inference/config.json",
+      "sha256": "2e84f45cf1dac8c7fcbb200e96667d4b913275690668ed496f24c7747207a809",
+      "bytes": 1982,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/config.json",
+      "distributed": true
+    },
+    {
+      "path": "inference/convert.py",
+      "sha256": "035028340479145594a81d6084a8424e57363adf83c0d5983914783d95614d76",
+      "bytes": 9458,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/convert.py",
+      "distributed": true
+    },
+    {
+      "path": "inference/engram.py",
+      "sha256": "11f35ecbead8150c35aa002b3d180ef290b05a25afe883a11884f94d476d3897",
+      "bytes": 8138,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/engram.py",
+      "distributed": true
+    },
+    {
+      "path": "inference/examples/example.txt",
+      "sha256": "8456a2f1d5a15b7aa1f697567e34f79af0522fb694df7ac789dae9853fff165d",
+      "bytes": 332,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/examples/example.txt",
+      "distributed": true
+    },
+    {
+      "path": "inference/examples/example_harmony.json",
+      "sha256": "44ae84a3cbd360b1b8d303ed4006756afb77e5d014c4abb7c61ff9b9a094f6ea",
+      "bytes": 2156,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/examples/example_harmony.json",
+      "distributed": true
+    },
+    {
+      "path": "inference/generate.py",
+      "sha256": "8668d67f7d108e32b90d50cb0d8606889ceb2219bfe95741d84e22f70768e9f0",
+      "bytes": 8722,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/generate.py",
+      "distributed": true
+    },
+    {
+      "path": "inference/image_processor.py",
+      "sha256": "482759e3bcc4e9bb5ee582b244cc563f5d0e163d8b48dda91ebb7106e62f9272",
+      "bytes": 7699,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/image_processor.py",
+      "distributed": true
+    },
+    {
+      "path": "inference/kernel.py",
+      "sha256": "1236c3507019ed176f5dba5e04bcea58867cf654818c6cf138ed4845398c2455",
+      "bytes": 23790,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/kernel.py",
+      "distributed": true
+    },
+    {
+      "path": "inference/model.py",
+      "sha256": "4e9ae23620edc8028ccc5d5fef552ab7fdc7dcd6f79608754fe9f67644056f65",
+      "bytes": 61549,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/model.py",
+      "distributed": true
+    },
+    {
+      "path": "inference/requirements.txt",
+      "sha256": "171eebfbfb7ad4d98c0ec6631b1ae91df730ca8bcdc27611856523b2768fb1d0",
+      "bytes": 97,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/requirements.txt",
+      "distributed": true
+    },
+    {
+      "path": "inference/run.sh",
+      "sha256": "91eddd7895f9fcd9bace53c21128c506e741e770f3c1a02464eff51f60401dfb",
+      "bytes": 1759,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/run.sh",
+      "distributed": true
+    },
+    {
+      "path": "inference/vision.py",
+      "sha256": "5d49edc196a4ef22384abe76d35a40098cbe1e74b586c8f66a2edff4f076b26c",
+      "bytes": 4457,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/inference/vision.py",
+      "distributed": true
+    },
+    {
+      "path": "tokenizer_config.json",
+      "sha256": "6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547",
+      "bytes": 801,
+      "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/tokenizer_config.json",
+      "distributed": true
+    }
+  ],
+  "weights_downloaded": false
+}

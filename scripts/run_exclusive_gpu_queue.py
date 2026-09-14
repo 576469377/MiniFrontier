@@ -170,10 +170,28 @@ def phase_finished(record, budget):
 
 
 def phase_ready(spec):
-    """Load a published phase command only after its exact parent has finished."""
-    parent = read_json(spec["parent_status"])
-    if not phase_finished(parent, spec["parent_ce"]):
-        return "waiting_parent", None
+    """Load a bound random first phase or an exact completed-parent continuation."""
+    initial = spec.get("random_initialization", False)
+    if type(initial) is not bool:
+        raise ValueError("random_initialization must be an explicit boolean")
+    if initial:
+        first_phases = {
+            "minikimik3": "K1",
+            "miniqwen4": "Q1",
+            "minideepseekv4": "D1",
+            "minideepseekv41": "D1",
+            "minifrontier1": "p0",
+            "minifrontier11": "p0",
+        }
+        if first_phases.get(spec["model"]) != spec["phase"] or any(
+            spec.get(key) is not None
+            for key in ("parent_status", "parent_checkpoint", "parent_ce", "parent_identity")
+        ):
+            raise ValueError("random initialization requires a first phase without a parent")
+    else:
+        parent = read_json(spec["parent_status"])
+        if not phase_finished(parent, spec["parent_ce"]):
+            return "waiting_parent", None
     publication = Path(spec["launch_file"])
     if not publication.exists():
         return "waiting_binding", None
@@ -184,15 +202,32 @@ def phase_ready(spec):
         raise ValueError("published phase identity differs from queue")
     if Path(job["output"]).resolve() != Path(spec["output"]).resolve():
         raise ValueError("published output differs from queue")
-    parent_checkpoint = Path(spec["parent_checkpoint"]).resolve()
-    if sha256(parent_checkpoint) != job["parent_checkpoint_sha256"]:
-        raise ValueError("published phase refers to another parent checkpoint")
     command = job["command"]
-    phase_flag = "--phase" if spec["model"] == "minifrontier1" else "--pretraining-phase"
+    if initial:
+        if (
+            job.get("random_initialization") is not True
+            or job.get("parent_checkpoint_sha256") is not None
+            or any(
+                arg == flag or arg.startswith(flag + "=")
+                for arg in command
+                for flag in ("--init", "--resume")
+            )
+        ):
+            raise ValueError("first phase publication must bind random initialization")
+    else:
+        parent_checkpoint = Path(spec["parent_checkpoint"]).resolve()
+        if sha256(parent_checkpoint) != job["parent_checkpoint_sha256"]:
+            raise ValueError("published phase refers to another parent checkpoint")
+        if (
+            "--init" not in command
+            or Path(command[command.index("--init") + 1]).resolve() != parent_checkpoint
+        ):
+            raise ValueError("phase must initialize from the declared complete parent")
+    phase_flag = (
+        "--phase" if spec["model"] in {"minifrontier1", "minifrontier11"} else "--pretraining-phase"
+    )
     if (
-        "--init" not in command
-        or Path(command[command.index("--init") + 1]).resolve() != parent_checkpoint
-        or "--resume" in command
+        "--resume" in command
         or any(
             "torchrun" in arg or "nproc_per_node" in arg or "torch.distributed.run" in arg
             for arg in command
@@ -204,7 +239,7 @@ def phase_ready(spec):
         or "--run-kind" not in command
         or command[command.index("--run-kind") + 1] != "strategy"
     ):
-        raise ValueError("phase must initialize from the declared complete parent on one GPU")
+        raise ValueError("phase command must match its formal single-GPU publication")
     if not job.get("inputs") or not job.get("source"):
         raise ValueError("phase command needs frozen source and input identities")
     job["publication_sha256"] = sha256(publication)
@@ -212,7 +247,7 @@ def phase_ready(spec):
 
 
 def execute_phases(plan_path):
-    """Dispatch formal successors on file/PID events, with no timer polling.
+    """Dispatch formal first phases and successors on file/PID events.
 
     Data preparation publishes each immutable launch file after its bindings and
     parent evidence exist. The trainer independently validates stage inheritance.
@@ -242,7 +277,8 @@ def execute_phases(plan_path):
         state = dict(plan_sha256=identity, jobs={j["id"]: dict(state="pending") for j in specs})
     tasks = {
         j["id"]: dict(
-            run=j["parent_status"], files=[j["launch_file"], str(output / "dispatch-wakeup.json")]
+            run=j["launch_file"] if j.get("random_initialization") is True else j["parent_status"],
+            files=[j["launch_file"], str(output / "dispatch-wakeup.json")],
         )
         for j in specs
     }
@@ -373,7 +409,8 @@ def execute_phases(plan_path):
                         record.update(
                             state="launching",
                             publication_sha256=job["publication_sha256"],
-                            parent_checkpoint_sha256=job["parent_checkpoint_sha256"],
+                            parent_checkpoint_sha256=job.get("parent_checkpoint_sha256"),
+                            random_initialization=spec.get("random_initialization", False),
                             gpu_id=index,
                         )
                         save()

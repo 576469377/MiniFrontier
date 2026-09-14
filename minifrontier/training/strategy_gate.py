@@ -21,7 +21,13 @@ def initial_start_authorized(evidence, *, model, phase, data_sha256, config_sha2
     This is permission to start learning, not a passing performance or capability
     result. Runtime correctness, immutable inputs and later phase gates still apply.
     """
-    first_phases = {"minifrontier1": "p0", "minikimik3": "K1", "miniqwen4": "Q1"}
+    first_phases = {
+        "minifrontier1": "p0",
+        "minifrontier11": "p0",
+        "minideepseekv41": "D1",
+        "minikimik3": "K1",
+        "miniqwen4": "Q1",
+    }
     report = _bound_report(evidence.get("initial_training_authorization", {}))
     expected = dict(
         model=model,

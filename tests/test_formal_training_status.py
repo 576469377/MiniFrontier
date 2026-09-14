@@ -155,10 +155,38 @@ def test_process_matching_uses_output_and_proc_absence_is_unknown(tmp_path, caps
     formal_status(tmp_path / "outputs", proc_root=proc)
     rows = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
     assert rows[0]["reserve_gib"] == 80
-    assert len(rows) == 5
+    assert len(rows) == 7
     actual = next(r for r in rows if r.get("model") == "minideepseekv4")
     assert actual["state"] == "running" and actual["pids"] == [123]
     assert all(r["state"] == "not_started" for r in rows[1:] if r is not actual)
+
+
+@pytest.mark.parametrize("model,mf1", [("minideepseekv41", False), ("minifrontier11", True)])
+def test_new_version_status_preserves_distinct_identity_and_live_metrics(
+    tmp_path, capsys, model, mf1
+):
+    path = write_run(tmp_path, model, mf1=mf1)
+    proc = tmp_path / "proc"
+    (proc / "123").mkdir(parents=True)
+    prefix = (
+        b"python\0-m\0minifrontier\0mf1\0train\0"
+        if mf1
+        else b"python\0-m\0minifrontier.training.train\0"
+    )
+    (proc / "123/cmdline").write_bytes(prefix + b"--output\0" + str(path).encode() + b"\0")
+    formal_status(tmp_path / "outputs", proc_root=proc)
+    rows = [json.loads(line) for line in capsys.readouterr().out.splitlines()][1:]
+    current = next(row for row in rows if row["model"] == model)
+    assert current["state"] == "running" and current["ce_tokens"] == 1000
+    assert current["phase"] == ("p0" if mf1 else "D1")
+    assert {row["model"] for row in rows} == {
+        "minikimik3",
+        "miniqwen4",
+        "minideepseekv4",
+        "minifrontier1",
+        "minideepseekv41",
+        "minifrontier11",
+    }
 
 
 def test_partial_status_json_does_not_discard_valid_training_log(tmp_path):
