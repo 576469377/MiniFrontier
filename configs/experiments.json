@@ -1472,7 +1472,38 @@
       "main_ce": 5500000000,
       "indexer_input_tokens": 40000000,
       "one_task_per_gpu": true,
-      "existing_runs_unchanged": true
+      "existing_runs_unchanged": true,
+      "status": "both_first_phases_training",
+      "snapshot_unix": 1789376752.9627898,
+      "runs": {
+        "minideepseekv41": {
+          "output": "outputs/strategy-base-pretraining-v1/minideepseekv41/D1-recovery-mb8",
+          "phase": "D1",
+          "source_commit": "95fd1ffa7d9e723ecb29b168b00d11ec7cd3dcbd",
+          "state": "training",
+          "step": 20,
+          "main_ce_tokens": 663629,
+          "microbatch": 8,
+          "random_initialization": true
+        },
+        "minifrontier11": {
+          "output": "outputs/strategy-base-pretraining-v1/minifrontier11/P0",
+          "phase": "P0",
+          "source_commit": "95fd1ffa7d9e723ecb29b168b00d11ec7cd3dcbd",
+          "state": "training",
+          "step": 15,
+          "main_ce_tokens": 206509,
+          "microbatch": 8,
+          "random_initialization": true
+        }
+      },
+      "initial_oom": {
+        "model": "minideepseekv41",
+        "microbatch": 16,
+        "optimizer_updates": 0,
+        "action": "retry microbatch 8; global input target 32768 unchanged"
+      },
+      "unapplied_execution_fix": "Shared mHC FP32 contraction avoids the expanded hc-squared tensor in current source; running jobs retain 95fd1ff until a separately bound later phase."
     }
   }
 }

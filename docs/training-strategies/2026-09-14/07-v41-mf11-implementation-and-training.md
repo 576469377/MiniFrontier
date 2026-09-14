@@ -38,7 +38,7 @@ MF1.1 保留 dense → indexer → sparse。当前 QSA/CSA 的离散 top-k 不�
 | MiniDeepSeek-V4.1 | D1：250M 文本 CE，直接 sparse，最长 1024 | D2 500M → D3 1.5B → D4 250M；合计 2.5B | 后续视觉暖身和联合训练单列，不混入文本完成度 |
 | MF1.1 | P0：200M CE，20% 视觉 CE；512/1024 长度权重 90%/10% | P1 800M → P2 1.4B → P3 600M；合计 3B | P1 后训练 indexer 40M input；SFT/RL 等另计 |
 
-MiniDeepSeek-V4.1：64K tokenizer，全局 input 目标 32,768，初始 microbatch 16，seed 42。Muon/Adam 峰值 LR 共用 `2.6e-4`；前 12.5M 主 CE warmup，保持到 1.55B，1.55–2.225B cosine 降至 0.1 倍，随后保持。该比例参照报告的 warmup/保持/冷却/末期保持形状，并按本地预算缩小；不照搬官方约 100.6M token 的更新 batch。
+MiniDeepSeek-V4.1：64K tokenizer，全局 input 目标 32,768，执行 microbatch 8，seed 42。Muon/Adam 峰值 LR 共用 `2.6e-4`；前 12.5M 主 CE warmup，保持到 1.55B，1.55–2.225B cosine 降至 0.1 倍，随后保持。该比例参照报告的 warmup/保持/冷却/末期保持形状，并按本地预算缩小；不照搬官方约 100.6M token 的更新 batch。
 
 MF1.1：32K tokenizer，全局 input 目标 16,384，初始 microbatch 8，seed 42。主干峰值 LR `3e-4`、视觉 `1e-4`；保留 MF1 的 2M warmup、2.4B 后 600M 冷却，以便在相同课程下观察结构与优化器升级。参数量由配置实例化统计，配置见 [MiniDeepSeek-V4.1](../../../configs/minideepseekv41.json) 和 [MF1.1](../../../configs/minifrontier11.json)。
 
@@ -69,6 +69,12 @@ MF1.1 从 P0 开始训练现有 ViT 和主干；保持已有图像控制 token�
 目录约定：模型实现仅新增 `models/minideepseekv41/`；MF1.1 仍在 `models/minifrontier1/`，共用层与优化器各一份。正文仅此联合方案，入口维护在[预训练主计划](../../pretraining-plan.md)。本地绑定与队列集中在 `outputs/strategy-v41-mf11-v1/`，正式训练沿用 `outputs/strategy-base-pretraining-v1/`。
 
 不复制语料或下载旗舰权重。编码缓存维持 24 GiB 上限；本机至少保留 80 GiB 空闲，正式权重预算调整为 56 GiB。保留最新可恢复 checkpoint 与确需的阶段父产物；只有完成引用核对后才清理中间权重。外部文件传输使用直连，不通过代理。
+
+## 启动记录
+
+两项首阶段均已于 2026-09-14 完成正式优化更新，训练源码为 `95fd1ff`。MiniDeepSeek-V4.1 首次 microbatch 16 在首步反向 OOM，优化更新为 0；改为 8 后重新从随机初始化训练，全局 input 32,768 不变。MF1.1 使用 microbatch 8。固定起点验证的实际监督量分别为 1,000,320 和 1,000,915 CE。
+
+排查发现 mHC 广播归约会展开四路残差的平方维度。当前源码已改为禁用 autocast 的 FP32 矩阵收缩，前向及反向经过官方公式对照；计算公式不变，归约舍入可能略有差异。这项修复尚未进入上述两项冻结运行，后续阶段独立绑定后使用。
 
 ## 后续判断
 

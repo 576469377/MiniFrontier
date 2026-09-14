@@ -55,6 +55,8 @@ MiniFrontier1.0 的组合方案由本项目设计；MiniQwen4 的名称来自所
 
 </details>
 
+2026-09-14：MiniDeepSeek-V4.1 的 D1（250M CE）和 MF1.1 的 P0（200M CE）已启动正式训练；完整预算分别为 2.5B 和 3B，尚无能力结论。
+
 新版变化与取舍集中在 [V4.1 / MF1.1 联合方案](docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md)。MF1.1 复用 MF1 包内的配置、数据和训练入口，通过明确版本选择新结构。下图与快速开始继续对应 MF1.0。
 
 ## MF1 架构

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "model": "minideepseekv41",
   "source_document": "docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md",
-  "source_document_sha256": "ccf02ffdb7b45466a0181a2ac76db0010610329867563499f7f21805362c5210",
+  "source_document_sha256": "4862fcccbbee46f7f1a1f133f5a824e0b550a7bf5c8818da79245667ce0f946b",
   "config": "configs/minideepseekv41.json",
   "gpu_ids": [
     3
@@ -112,7 +112,7 @@
           "seed": 42,
           "optimizer": "v41_muon_sinkhorn",
           "global_input_tokens": 32768,
-          "initial_microbatch_candidate": 16,
+          "initial_microbatch_candidate": 8,
           "weight_decay": 0.1,
           "adam_eps": 1e-20,
           "clip_grad": 1.0,
@@ -238,10 +238,11 @@
               "data_sha256": "160cf1e554d17101687047362a73e3e3baf7c0d68f1b3473b0dcae70c92cd365",
               "config_sha256": "87fd516d9b7df2f8bd9422ff924345e3403c369074482e62674ad6d9181d2aac",
               "tokenizer_sha256": "63cd7d78c3d14e6156a07f2ac675f834e6569b731511c29e64f586a5e72b10b0",
-              "batch_size": 16,
+              "batch_size": 8,
               "sequence_length": 1024
             }
-          }
+          },
+          "microbatch_status": "16 OOM before first optimizer update; formal run uses 8 with unchanged global input 32768"
         }
       },
       "minifrontier11": {

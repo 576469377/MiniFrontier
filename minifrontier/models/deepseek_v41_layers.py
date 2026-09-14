@@ -110,7 +110,11 @@ class SinglePassHC(nn.Module):
     @staticmethod
     def combine(output: Tensor, stream: Tensor, post: Tensor, comb: Tensor) -> Tensor:
         # Upstream comb indexes [source stream, destination stream].
-        residual = (comb.float()[..., None] * stream.float().unsqueeze(-2)).sum(-3)
+        # Contract without materializing [B,T,hc,hc,dim] (512 MiB at 16x1024x4x512).
+        # Autocast must not turn this FP32 residual reduction into BF16. GEMM
+        # reduction order may differ from the reference multiply/sum by roundoff.
+        with torch.autocast(stream.device.type, enabled=False):
+            residual = torch.einsum("...ij,...id->...jd", comb.float(), stream.float())
         return (residual + post[..., None] * output.float().unsqueeze(-2)).to(output.dtype)
 
 

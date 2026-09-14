@@ -265,19 +265,29 @@ def official_method(class_name, method_name):
     return namespace[method_name]
 
 
-def test_single_pass_post_matches_pinned_official_method():
+@pytest.mark.parametrize("streams", [2, 4])
+def test_single_pass_post_matches_pinned_official_method(streams):
     post = official_method("Block", "hc_post")
-    stream, output = torch.randn(2, 5, 2, 32), torch.randn(2, 5, 32)
-    coefficients = torch.randn(2, 5, 2, 2)
-    gate = torch.randn(2, 5, 2)
-    torch.testing.assert_close(
-        SinglePassHC.combine(output, stream, gate, coefficients),
-        post(None, output, stream, gate, coefficients),
-    )
+    stream = torch.randn(2, 5, streams, 32, requires_grad=True)
+    output = torch.randn(2, 5, 32, requires_grad=True)
+    coefficients = torch.randn(2, 5, streams, streams, requires_grad=True)
+    gate = torch.randn(2, 5, streams, requires_grad=True)
+    actual = SinglePassHC.combine(output, stream, gate, coefficients)
+    reference = post(None, output, stream, gate, coefficients)
+    torch.testing.assert_close(actual, reference, atol=2e-6, rtol=2e-5)
+    inputs = (stream, output, coefficients, gate)
+    expected_grads = torch.autograd.grad(reference.square().sum(), inputs)
+    actual_grads = torch.autograd.grad(actual.square().sum(), inputs)
+    for a, b in zip(actual_grads, expected_grads, strict=True):
+        torch.testing.assert_close(a, b, atol=2e-5, rtol=2e-5)
     with torch.autocast("cpu", dtype=torch.bfloat16):
         mixed = SinglePassHC.combine(output.to(torch.bfloat16), stream, gate, coefficients)
         expected = post(None, output.to(torch.bfloat16), stream, gate, coefficients)
-    torch.testing.assert_close(mixed, expected, atol=0, rtol=0)
+    torch.testing.assert_close(mixed, expected, atol=1e-5, rtol=0.008)
+    actual_grads = torch.autograd.grad(mixed.float().square().sum(), inputs)
+    expected_grads = torch.autograd.grad(expected.float().square().sum(), inputs)
+    for a, b in zip(actual_grads, expected_grads, strict=True):
+        torch.testing.assert_close(a, b, atol=2e-3, rtol=0.01)
 
 
 def test_compressor_matches_pinned_official_forward_and_backward():
