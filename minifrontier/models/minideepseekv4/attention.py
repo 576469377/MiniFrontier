@@ -19,8 +19,16 @@ from .kernels import rotary
 from .upstream_layers import Linear, RMSNorm, precompute_freqs_cis
 
 
-def _dense_attention(q, kv, mask, sink, *, recompute=False, chunk_size=128):
-    """Keep complete key support while bounding score/probability temporaries."""
+def _dense_attention(
+    q, kv, mask, sink, *, recompute=False, chunk_size=128, window_size=None, compress_ratio=0
+):
+    """Keep every visible key while bounding score/probability temporaries.
+
+    With the standard causal window, an entire query chunk cannot see raw keys
+    outside its window union or compressed blocks beyond its last query. Omit
+    only those always-masked columns before the products. Custom image-visible
+    masks leave ``window_size`` unset and retain their complete key support.
+    """
 
     def attend(queries, keys, allowed, sink_logits):
         logits = torch.einsum("bthd,bcd->bhtc", queries.float(), keys.float())
@@ -31,7 +39,19 @@ def _dense_attention(q, kv, mask, sink, *, recompute=False, chunk_size=128):
 
     chunks = []
     for start in range(0, q.shape[1], chunk_size):
-        args = (q[:, start : start + chunk_size], kv, mask[:, start : start + chunk_size], sink)
+        stop = min(start + chunk_size, q.shape[1])
+        keys, allowed = kv, mask[:, start:stop]
+        if window_size is not None:
+            begin = max(0, start - window_size + 1)
+            keys = kv[:, begin:stop]
+            allowed = allowed[..., begin:stop]
+            if compress_ratio and kv.shape[1] > q.shape[1]:
+                end = q.shape[1] + stop // compress_ratio
+                keys = torch.cat((keys, kv[:, q.shape[1] : end]), dim=1)
+                allowed = torch.cat(
+                    (allowed, mask[:, start:stop, q.shape[1] : end]), dim=-1
+                )
+        args = (q[:, start:stop], keys, allowed, sink)
         chunks.append(
             checkpoint(attend, *args, use_reentrant=False)
             if recompute and q.shape[1] > chunk_size
@@ -212,7 +232,13 @@ class Attention(nn.Module):
             initialize_state(self, self.decode_state, x, raw_kv, compressed)
         if self.training_phase == "dense_pretrain":
             out = _dense_attention(
-                q, kv, mask, self.attn_sink, recompute=self.training and torch.is_grad_enabled()
+                q,
+                kv,
+                mask,
+                self.attn_sink,
+                recompute=self.training and torch.is_grad_enabled(),
+                window_size=self.window_size if self.image_visible is None else None,
+                compress_ratio=self.compress_ratio,
             )
             return self._output(out, freqs, b, length)
         logits = torch.einsum("bthd,bcd->bhtc", q.float(), kv.float()) * self.head_dim**-0.5

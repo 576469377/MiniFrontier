@@ -78,6 +78,8 @@ class KimiVision(nn.Module):
         )
 
     def forward(self, patches, grid_thw):
+        # SDPA consumes host slice boundaries; keep the small integer grid on CPU.
+        grid_thw = grid_thw.cpu()
         if grid_thw.ndim != 2 or grid_thw.shape[1] != 3 or not grid_thw.numel():
             raise ValueError("MoonViT needs nonempty [segments,3] grids")
         if (grid_thw <= 0).any() or (grid_thw[:, 0] > 4).any() or (grid_thw[:, 1:] % 2).any():
@@ -93,10 +95,11 @@ class KimiVision(nn.Module):
         freqs = self.encoder.rope_2d.get_freqs_cis(grid_thw, h.device)
         lengths = grid_thw.prod(-1)
         cu = torch.cat((lengths.new_zeros(1), lengths)).cumsum(0, dtype=torch.int32)
+        max_seqlen = int(lengths.max())
         for block in self.encoder.blocks:
             if self.training and self.config.gradient_checkpointing:
-                h = checkpoint(block, h, cu, int(lengths.max()), freqs, use_reentrant=False)
+                h = checkpoint(block, h, cu, max_seqlen, freqs, use_reentrant=False)
             else:
-                h = block(h, cu, int(lengths.max()), freqs)
+                h = block(h, cu, max_seqlen, freqs)
         h = self.encoder.final_layernorm(h)
         return self.merger(tpool_patch_merger(h, grid_thw, (2, 2)))

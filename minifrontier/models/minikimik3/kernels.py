@@ -81,7 +81,7 @@ def reference_kda(q, k, v, g, beta, A_log, dt_bias, lower_bound=-5.0, **kwargs):
 def chunk_kda(**kwargs):
     kwargs.pop("transpose_state_layout", None)
     if kwargs["q"].is_cuda:
-        from fla.ops.kda import chunk_kda as fused
+        from fla.ops.kda import chunk_kda as fused  # type: ignore[import-untyped]
 
         return fused(**kwargs, state_v_first=True)
     return reference_kda(**kwargs)
@@ -90,7 +90,7 @@ def chunk_kda(**kwargs):
 def fused_recurrent_kda(**kwargs):
     kwargs.pop("transpose_state_layout", None)
     if kwargs["q"].is_cuda:
-        from fla.ops.kda import fused_recurrent_kda as fused
+        from fla.ops.kda import fused_recurrent_kda as fused  # type: ignore[import-untyped]
 
         return fused(**kwargs, state_v_first=True)
     return reference_kda(**kwargs)

@@ -140,6 +140,14 @@ def test_real_ce_evaluation_batches_and_recovery_do_not_change_training(
         (1, "periodic", 127),
         (2, "phase_end", 381),
     ]
+    recovered_events = [
+        json.loads(line) for line in (recovered / "metrics.jsonl").read_text().splitlines()
+    ]
+    assert [
+        (v["step"], v["evaluation_scope"])
+        for v in recovered_events
+        if v["event"] == "validation"
+    ] == [(v["step"], v["evaluation_scope"]) for v in evaluations]
     for value in evaluations:
         assert (
             sum(d["ce_tokens"] for d in value["per_domain"].values()) == value["supervised_tokens"]

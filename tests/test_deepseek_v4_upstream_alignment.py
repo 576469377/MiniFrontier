@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from minifrontier.models.minideepseekv4.expert import ClampedSwiGLU
+from minifrontier.models.minideepseekv4.upstream_layers import Block
 
 
 def upstream_expert():
@@ -59,3 +60,36 @@ def test_expert_forward_and_all_gradients(dtype, weighted):
     for a, b in pairs:
         assert a is not None and torch.isfinite(a).all()
         torch.testing.assert_close(a, b, atol=0, rtol=0)
+
+
+@pytest.mark.parametrize("streams", [2, 4])
+@pytest.mark.parametrize("autocast", [False, True])
+def test_hc_post_contraction_matches_official_forward_and_backward(streams, autocast):
+    path = Path(__file__).resolve().parents[1] / "third_party/upstream/deepseek-v4-60d8d70/model.py"
+    source = path.read_bytes()
+    assert hashlib.sha256(source).hexdigest() == (
+        "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71"
+    )
+    cls = next(node for node in ast.parse(source).body if getattr(node, "name", None) == "Block")
+    method = next(node for node in cls.body if getattr(node, "name", None) == "hc_post")
+    namespace = {"torch": torch}
+    exec(compile(ast.Module(body=[method], type_ignores=[]), str(path), "exec"), namespace)
+    official = namespace["hc_post"]
+    torch.manual_seed(491)
+    dtype = torch.bfloat16 if autocast else torch.float32
+    output = torch.randn(2, 5, 32, dtype=dtype, requires_grad=True)
+    residual = torch.randn(2, 5, streams, 32, dtype=dtype, requires_grad=True)
+    post = torch.randn(2, 5, streams, requires_grad=True)
+    comb = torch.randn(2, 5, streams, streams, requires_grad=True)
+    with torch.autocast("cpu", dtype=torch.bfloat16, enabled=autocast):
+        expected = official(None, output, residual, post, comb)
+        actual = Block.hc_post(None, output, residual, post, comb)
+    assert actual.dtype == dtype
+    tolerance = dict(atol=1e-5, rtol=0.008) if autocast else dict(atol=2e-6, rtol=2e-5)
+    torch.testing.assert_close(actual, expected, **tolerance)
+    inputs = (output, residual, post, comb)
+    original_grads = torch.autograd.grad(expected.float().square().sum(), inputs)
+    actual_grads = torch.autograd.grad(actual.float().square().sum(), inputs)
+    grad_tolerance = dict(atol=2e-3, rtol=0.01) if autocast else dict(atol=2e-5, rtol=2e-5)
+    for a, b in zip(actual_grads, original_grads, strict=True):
+        torch.testing.assert_close(a, b, **grad_tolerance)

@@ -1,11 +1,7 @@
-"""New source-only Qwen text backbone, separate from the retired experiment.
+"""Qwen text backbone with staged QSA, MTP and native multimodal training.
 
-The text stack retains the published sparse computation; the LM adapter adds
-the report's full-attention stage, untied head and source router auxiliary loss.
-MTP and native multimodal training remain pending. QSA objectives implement
-indexer-only dense distillation and joint sparse CPT. The cache adapter
-supports unpadded no-grad text inference, not the entire HF generation API.
-No historical model is used as a fallback for missing features.
+The adapter adds full-attention pretraining, an untied LM head and the source
+router loss. Its cache supports unpadded no-grad text inference.
 """
 
 from __future__ import annotations
@@ -461,9 +457,8 @@ class MiniQwen4LMOutput:
 class MiniQwen4ForCausalLM(nn.Module):
     """Source text model + the published untied LM head and router auxiliary loss.
 
-    Text pretraining, indexer phase transitions and downstream stages are
-    executable through the shared trainer. MTP and native multimodal training
-    remain outside the implemented text lifecycle.
+    Text and multimodal pretraining, MTP and indexer phase transitions use the
+    shared trainer. Router-only prepasses preserve its accumulation-window loss.
     """
 
     training_ready = True
@@ -494,10 +489,9 @@ class MiniQwen4ForCausalLM(nn.Module):
         self.indexer_kl_coef = indexer_kl_coef
         self.indexer_loss_enabled = True
         self.mtp = QwenMTP(config, self.model._initialize) if config.mtp_enabled else None
-        if config.expert_execution != "loop":
-            from .batched_experts import configure_experts
+        from .batched_experts import configure_experts
 
-            configure_experts(self, config.expert_execution)
+        configure_experts(self, config.expert_execution)
         self._configure_training_phase(training_phase)
 
     def _configure_training_phase(self, phase: str) -> None:
@@ -521,7 +515,23 @@ class MiniQwen4ForCausalLM(nn.Module):
         # A phase boundary must not reuse gradients from the previous objective.
         if self.mtp is not None and self.config.mtp_loss_coef == 0:
             self.mtp.requires_grad_(False)
+        self.set_dense_attention_backend(getattr(self, "dense_attention_backend", "eager"))
         self.zero_grad(set_to_none=True)
+
+    def set_dense_attention_backend(self, backend: str) -> None:
+        """Select a runtime kernel without changing the checkpoint configuration.
+
+        Eager remains the default. SDPA is used only during dense pretraining;
+        subsequent QSA phases need the eager attention probabilities for KL.
+        """
+        from .attention import configure_dense_attention
+
+        if backend not in {"eager", "sdpa"}:
+            raise ValueError("dense attention backend must be eager or sdpa")
+        configure_dense_attention(
+            self, backend if self.training_phase == "dense_pretrain" else "eager"
+        )
+        self.dense_attention_backend = backend
 
     def transition_training_phase(self, phase: str) -> None:
         """Monotonic stages; caller must rebuild DDP and optimizer afterwards.
@@ -548,9 +558,20 @@ class MiniQwen4ForCausalLM(nn.Module):
         media=None,
         return_hidden=False,
         return_logits=True,
+        router_prepass=False,
     ) -> MiniQwen4LMOutput:
         from minifrontier.training.losses import causal_lm_loss, chunked_linear_ce
 
+        if router_prepass and (
+            torch.is_grad_enabled()
+            or cache is not None
+            or labels is None
+            or return_logits
+            or self.training_phase != "dense_pretrain"
+        ):
+            raise ValueError(
+                "router prepass requires no_grad, labels, dense_pretrain, no cache and return_logits=False"
+            )
         if cache is not None and labels is not None:
             raise ValueError("cached LM inference does not accept training labels")
         if media and cache is not None and cache.length:
@@ -591,12 +612,16 @@ class MiniQwen4ForCausalLM(nn.Module):
         hidden, routers = result[:2]
         indexer_loss = result[2] if phase is not None else None
         logits = self.lm_head(hidden) if return_logits else None
-        aux = normalized_router_loss(
-            routers,
-            self.config.num_experts,
-            self.config.num_experts_per_tok,
-            attention_mask,
-            getattr(self, "router_window_frequency", None),
+        aux = (
+            hidden.new_zeros(())
+            if router_prepass
+            else normalized_router_loss(
+                routers,
+                self.config.num_experts,
+                self.config.num_experts_per_tok,
+                attention_mask,
+                getattr(self, "router_window_frequency", None),
+            )
         )
         if not isinstance(aux, Tensor):
             raise RuntimeError("upstream router auxiliary loss did not return a tensor")
@@ -614,12 +639,13 @@ class MiniQwen4ForCausalLM(nn.Module):
             targets = labels
             if attention_mask is not None:
                 targets = labels.masked_fill(~attention_mask.bool(), -100)
-            lm_loss = (
-                causal_lm_loss(logits, targets)
-                if logits is not None
-                else chunked_linear_ce(hidden, self.lm_head.weight, targets)
-            )
-            loss = lm_loss + self.router_aux_loss_coef * aux
+            if not router_prepass:
+                lm_loss = (
+                    causal_lm_loss(logits, targets)
+                    if logits is not None
+                    else chunked_linear_ce(hidden, self.lm_head.weight, targets)
+                )
+                loss = lm_loss + self.router_aux_loss_coef * aux
         if indexer_loss is not None:
             if self.training_phase == "dense_distill":
                 loss = self.indexer_kl_coef * indexer_loss
@@ -645,6 +671,18 @@ class MiniQwen4ForCausalLM(nn.Module):
             predicted, _, mtp_router, mtp_kl = self.mtp(
                 result[3], self.model.embed_tokens(shifted), valid, positions + 1
             )
+            if router_prepass:
+                # Keep the exact MTP inputs, decoder and router hooks. The
+                # frequency collector does not consume either vocabulary loss.
+                return MiniQwen4LMOutput(
+                    None,
+                    None,
+                    None,
+                    aux,
+                    routers,
+                    hidden_states=hidden if return_hidden else None,
+                    multistream_hidden=result[3] if return_hidden else None,
+                )
             mtp_aux_count = int(valid.sum())
             mtp_aux = self.router_aux_loss_coef * normalized_router_loss(
                 (mtp_router,),

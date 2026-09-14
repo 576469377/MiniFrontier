@@ -60,9 +60,8 @@ def rope(x, positions, dim, theta=10000.0):
         angle = angle.unsqueeze(-2)
     pairs = x[..., -dim:].float().unflatten(-1, (-1, 2))
     a, b = pairs.unbind(-1)
-    rotated = torch.stack(
-        (a * angle.cos() - b * angle.sin(), a * angle.sin() + b * angle.cos()), -1
-    ).flatten(-2)
+    cosine, sine = angle.cos(), angle.sin()
+    rotated = torch.stack((a * cosine - b * sine, a * sine + b * cosine), -1).flatten(-2)
     return torch.cat((x[..., :-dim], rotated.to(x.dtype)), -1)
 
 
@@ -78,11 +77,8 @@ def mrope(x, positions, sections, theta):
     while angle.ndim < x.ndim:
         angle = angle.unsqueeze(-2)
     a, b = x.float().unflatten(-1, (-1, 2)).unbind(-1)
-    return (
-        torch.stack((a * angle.cos() - b * angle.sin(), a * angle.sin() + b * angle.cos()), -1)
-        .flatten(-2)
-        .to(x.dtype)
-    )
+    cosine, sine = angle.cos(), angle.sin()
+    return torch.stack((a * cosine - b * sine, a * sine + b * cosine), -1).flatten(-2).to(x.dtype)
 
 
 class BlockIndexer(nn.Module):

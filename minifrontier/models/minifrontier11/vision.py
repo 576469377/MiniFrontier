@@ -41,6 +41,9 @@ class NativeVision(nn.Module):
 
     def forward(self, patches, grid_thw):
         c = self.config
+        # SDPA segmentation and shape checks only need host integer metadata.
+        # Copy it once, rather than synchronizing inside every checkpointed ViT block.
+        grid_thw = grid_thw.cpu()
         if (
             grid_thw.ndim != 2
             or grid_thw.shape[-1] != 3
@@ -52,7 +55,7 @@ class NativeVision(nn.Module):
         if patches.numel() != int(grid_thw.prod(-1).sum()) * 3 * 2 * c.patch_size**2:
             raise ValueError("patch count/shape disagrees with Conv3D grid")
         h = self.patch_embed(patches)
-        positions = get_vision_position_ids(grid_thw, 2)
+        positions = get_vision_position_ids(grid_thw, 2).to(h.device)
         cu = get_vision_cu_seqlens(grid_thw)
         rotary = self.rotary_pos_emb(h, positions)
         for block in self.blocks:

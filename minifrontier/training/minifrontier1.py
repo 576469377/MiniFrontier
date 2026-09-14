@@ -688,8 +688,9 @@ def train(
         return (window, inputs, capacity, ce_count), sampler.state_dict()
 
     prefetch = None
-    if prefetch_enabled():
-        if phase not in {"pilot", "p0", "p1", "p3"}:
+    prefetch_supported = phase in {"pilot", "p0", "p1", "p3"}
+    if prefetch_enabled(default=run_kind == "strategy" and prefetch_supported):
+        if not prefetch_supported:
             raise ValueError("MF1 lookahead is limited to phases with producer-owned sampling RNG")
         prefetch = OrderedPrefetch(produce_window, sampler.state_dict())
 

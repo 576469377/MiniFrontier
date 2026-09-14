@@ -480,9 +480,9 @@ class Qwen4ExpVisionAttention(nn.Module):
             )
         else:
             # Other implementations: Process each chunk separately
-            lengths = cu_seqlens[1:] - cu_seqlens[:-1]
+            lengths = (cu_seqlens[1:] - cu_seqlens[:-1]).tolist()
             splits = [
-                torch.split(tensor, lengths.tolist(), dim=2)
+                torch.split(tensor, lengths, dim=2)
                 for tensor in (query_states, key_states, value_states)
             ]
 

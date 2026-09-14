@@ -66,7 +66,8 @@ import torch.nn.functional as F
 
 def segmented_sdpa(q, k, v, q_cu_seqlens=None, k_cu_seqlens=None, **kwargs):
     pieces = []
-    for start, end in zip(q_cu_seqlens[:-1].tolist(), q_cu_seqlens[1:].tolist()):
+    boundaries = q_cu_seqlens.tolist()
+    for start, end in zip(boundaries[:-1], boundaries[1:]):
         out = F.scaled_dot_product_attention(
             q[start:end].transpose(0, 1),
             k[start:end].transpose(0, 1),

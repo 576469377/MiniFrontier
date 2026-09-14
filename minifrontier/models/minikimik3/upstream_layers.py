@@ -740,10 +740,22 @@ class KimiSparseMoeBlock(nn.Module):
 
     def moe_infer(self, x, topk_ids, topk_weight):
         result = torch.zeros_like(x, dtype=torch.float32)
+        # Stable grouping preserves torch.where's token/slot order within each expert.
+        # Only the small count vector crosses to CPU; no per-expert CUDA nonzero sync.
+        flat_ids = topk_ids.flatten()
+        order = flat_ids.argsort(stable=True)
+        tokens, slots = order // topk_ids.shape[1], order % topk_ids.shape[1]
+        counts = flat_ids.new_zeros(len(self.experts))
+        counts.scatter_add_(0, flat_ids, torch.ones_like(flat_ids))
+        counts = counts.tolist()
+        start = 0
         for i, expert in enumerate(self.experts):
-            token, slot = torch.where(topk_ids == i)
+            end = start + counts[i]
+            token, slot = tokens[start:end], slots[start:end]
+            # Keep empty expert calls: zero gradients must remain zero, not None.
             value = expert(x[token]).float() * topk_weight[token, slot, None]
             result = result.index_add(0, token, value)
+            start = end
         return result.to(x.dtype)
 
 

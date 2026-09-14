@@ -279,9 +279,11 @@ class Block(nn.Module):
         self, x: torch.Tensor, residual: torch.Tensor, post: torch.Tensor, comb: torch.Tensor
     ):
         # x: [b,s,d], residual: [b,s,hc,d], post: [b,s,hc], comb: [b,s,hc,hc], y: [b,s,hc,d]
-        y = post.unsqueeze(-1) * x.unsqueeze(-2) + torch.sum(
-            comb.unsqueeze(-1) * residual.unsqueeze(-2), dim=2
-        )
+        # Preserve the FP32 source-to-destination reduction without allocating
+        # [b,s,hc,hc,d] (512 MiB at 8x2048x4x512). Only reduction roundoff differs.
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            mixed = torch.einsum("...ij,...id->...jd", comb.float(), residual.float())
+        y = post.unsqueeze(-1) * x.unsqueeze(-2) + mixed
         return y.type_as(x)
 
     def forward(

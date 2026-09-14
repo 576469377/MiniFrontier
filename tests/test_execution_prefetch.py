@@ -10,6 +10,20 @@ from minifrontier.multimodal import TrainingBatch
 from minifrontier.training.execution_upgrade import resume_matches
 from minifrontier.training.mixture import TokenMixtureCursor
 from minifrontier.training.prefetch import OrderedPrefetch, native_window
+from minifrontier.training.prefetch import enabled as prefetch_enabled
+
+
+def test_prefetch_default_respects_explicit_override(monkeypatch):
+    monkeypatch.delenv("MINIFRONTIER_PREFETCH_WINDOWS", raising=False)
+    assert not prefetch_enabled()
+    assert prefetch_enabled(default=True)
+    monkeypatch.setenv("MINIFRONTIER_PREFETCH_WINDOWS", "0")
+    assert not prefetch_enabled(default=True)
+    monkeypatch.setenv("MINIFRONTIER_PREFETCH_WINDOWS", "1")
+    assert prefetch_enabled(default=False)
+    monkeypatch.setenv("MINIFRONTIER_PREFETCH_WINDOWS", "2")
+    with pytest.raises(ValueError, match="must be 0 or 1"):
+        prefetch_enabled(default=True)
 
 
 def test_native_lookahead_discards_unconsumed_window_on_resume():

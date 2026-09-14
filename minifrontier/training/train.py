@@ -347,6 +347,8 @@ def run(args, rank, world, device):
             )
     config = args.config or (saved["config"] if saved else None)
     model = build_model(args.model, config, phase=phase).to(device)
+    if args.model == "miniqwen4" and phase == "dense_pretrain" and device.type == "cuda":
+        model.set_dense_attention_backend("sdpa")
     if args.model == "minideepseekv41" and saved is None:
         from tokenizers import Tokenizer
 
@@ -783,15 +785,16 @@ def run(args, rank, world, device):
     from .prefetch import enabled as prefetch_enabled
 
     prefetch = None
-    if prefetch_enabled():
-        if not (
-            world == 1
-            and args.stage == "pretrain"
-            and args.input_batch_tokens
-            and args.input_batch_policy == "sample-bounded"
-            and not batch_schedule
-            and (args.media_mixture or args.token_mixture)
-        ):
+    prefetch_supported = bool(
+        world == 1
+        and args.stage == "pretrain"
+        and args.input_batch_tokens
+        and args.input_batch_policy == "sample-bounded"
+        and not batch_schedule
+        and (args.media_mixture or args.token_mixture)
+    )
+    if prefetch_enabled(default=args.run_kind == "strategy" and prefetch_supported):
+        if not prefetch_supported:
             raise ValueError(
                 "prefetch requires single-rank fixed-target pretraining with a resumable mixture"
             )
@@ -1115,9 +1118,14 @@ def run(args, rank, world, device):
             step=first_step,
             parameters=sum(p.numel() for p in model.parameters() if p.is_floating_point()),
             world_size=world,
+            data_prefetch_windows=int(prefetch is not None),
+            dense_attention_backend=getattr(model, "dense_attention_backend", None),
         )
     )
-    evaluate(first_step, final=finished(first_step))
+    # Exact continuation already binds the validation selection. Keep its token
+    # cadence instead of repeating a full held-out pass at an arbitrary restart.
+    if not (args.resume and ce_validation and first_step > 0) or finished(first_step):
+        evaluate(first_step, final=finished(first_step))
     model.train()
     step = first_step
     empty_windows = 0
@@ -1338,6 +1346,7 @@ def run(args, rank, world, device):
                             attention_mask=local_x.ne(0),
                             labels=local_y,
                             return_logits=False,
+                            router_prepass=phase == "dense_pretrain",
                             **prepass.extras,
                         )
             restore_rng(before, device)

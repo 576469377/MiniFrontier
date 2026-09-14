@@ -9,8 +9,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 
-def enabled():
-    value = os.environ.get("MINIFRONTIER_PREFETCH_WINDOWS", "0")
+def enabled(*, default=False):
+    value = os.environ.get("MINIFRONTIER_PREFETCH_WINDOWS", "1" if default else "0")
     if value not in {"0", "1"}:
         raise ValueError("MINIFRONTIER_PREFETCH_WINDOWS must be 0 or 1")
     return value == "1"
