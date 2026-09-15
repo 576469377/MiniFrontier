@@ -15,7 +15,7 @@ from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any
 
-from scripts.training_status import latest_train, read_json
+from scripts.training_status import latest_train, read_json, reverse_metrics
 
 
 def experiment_id(host, relative):
@@ -77,6 +77,53 @@ def data_operation_state(target, run, host):
         return "running" if matches else "unverified_process_identity"
     except (OSError, KeyError, ValueError):
         return "interrupted_without_final_status"
+
+
+def resumed_queue_worker(target, queued, state, train):
+    """Verify resumed updates and the queue's current local process, not its old PID."""
+    paused_step, latest_step = state.get("step"), train.get("step")
+    if (
+        queued.get("state") != "running"
+        or type(paused_step) is not int
+        or type(latest_step) is not int
+        or latest_step <= paused_step
+    ):
+        return False
+    # A newly started worker with only older train rows has not resumed updates.
+    for row in reverse_metrics(target / "metrics.jsonl"):
+        if row.get("event") == "train" or "train_lm_loss" in row:
+            break
+        if row.get("event") in {"start", "paused", "complete", "completed"}:
+            return False
+    else:
+        return False
+    try:
+        # Older MF trainers have no start event. A new live PID must not inherit
+        # progress left by a previous worker that exited before its next save.
+        if not 0 < float(queued["started_at"]) < (target / "metrics.jsonl").stat().st_mtime:
+            return False
+        identity = queued["identity"]
+        pid, started = identity["pid"], identity["start_ticks"]
+        if type(pid) is not int or type(started) is not int or queued.get("pid") != pid:
+            return False
+        proc = Path(f"/proc/{pid}")
+
+        def matches():
+            fields = (proc / "stat").read_text().rsplit(") ", 1)[1].split()
+            return fields[0] not in {"Z", "X"} and int(fields[19]) == started
+
+        if not matches():
+            return False
+        command = queued["command"]
+        actual = (proc / "cmdline").read_bytes().split(b"\0")[:-1]
+        if not command or actual != [str(arg).encode() for arg in command]:
+            return False
+        output = Path(command[command.index("--output") + 1])
+        if not output.is_absolute():
+            output = (proc / "cwd").resolve(strict=True) / output
+        return output.resolve() == target.resolve() and matches()
+    except (OSError, KeyError, ValueError, IndexError, TypeError):
+        return False
 
 
 def collect(workspace):
@@ -212,6 +259,15 @@ def collect(workspace):
                 or parent_case_state
                 or "unverified"
             )
+            if (
+                host == "local"
+                and kind == "training"
+                and status == "paused"
+                and state.get("state") == "paused"
+                and not interruption
+                and resumed_queue_worker(target, queued, state, train)
+            ):
+                status = "running"
             operation_process_verified = False
             if kind == "data_construction" and not data_audit and status == "unverified":
                 status = data_operation_state(target, run, host)
@@ -343,6 +399,7 @@ def collect(workspace):
                 comparison_group=experiment.get("comparison_group"),
                 kind=kind,
                 state=status,
+                recorded_state=state.get("state"),
                 trainer_state=state.get("state"),
                 supervisor_state=supervisor.get("state"),
                 queue=binding.get("queue"),

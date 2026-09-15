@@ -296,6 +296,105 @@ def test_supervisor_resumed_training_overrides_old_paused_checkpoint(tmp_path):
     assert entry["state"] == "running" and entry["ce_tokens"] == 20
 
 
+@pytest.fixture
+def resumed_formal_trial(tmp_path):
+    target = tmp_path / "outputs/strategy-base-pretraining-v1/miniqwen4/Q2"
+    controller = tmp_path / "outputs/strategy-formal-queue"
+    command = [sys.executable, "-c", "import time; time.sleep(60)", "--output", str(target)]
+    started_at = time.time()
+    process = subprocess.Popen(command)
+    with open(f"/proc/{process.pid}/stat") as stat_file:
+        fields = stat_file.read().rsplit(") ", 1)[1].split()
+    queued = dict(
+        state="running",
+        pid=process.pid,
+        started_at=started_at,
+        identity=dict(pid=process.pid, start_ticks=int(fields[19])),
+        command=command,
+    )
+    write(target / "run.json", dict(kind="strategy", model_name="miniqwen4"))
+    write(target / "status.json", dict(state="paused", step=10, token_ledger=dict(ce_tokens=100)))
+    write(
+        controller / "queue-plan.json",
+        dict(workspace=str(tmp_path), jobs=[dict(id="q2", output=str(target))]),
+    )
+    write(controller / "queue.json", dict(updated_at=time.time(), jobs={"q2": queued}))
+    (target / "metrics.jsonl").write_text(
+        json.dumps(dict(event="train", step=11, token_ledger=dict(ce_tokens=110))) + "\n"
+    )
+    # Keep chronology explicit on filesystems with coarsely updated mtimes.
+    os.utime(target / "metrics.jsonl", (started_at + 1, started_at + 1))
+    try:
+        yield target, controller, queued, process
+    finally:
+        if process.poll() is None:
+            process.terminate()
+        process.wait(timeout=5)
+
+
+def test_live_resumed_queue_worker_overrides_paused_status_without_rewriting_it(
+    tmp_path, resumed_formal_trial
+):
+    target, controller, _, _ = resumed_formal_trial
+    original = {
+        path: path.read_bytes() for path in (target / "status.json", controller / "queue.json")
+    }
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["state"] == "running" and entry["ce_tokens"] == 110
+    assert entry["recorded_state"] == entry["trainer_state"] == "paused"
+    assert all(path.read_bytes() == content for path, content in original.items())
+
+
+@pytest.mark.parametrize("mismatch", ["start_ticks", "command", "output", "dead"])
+def test_paused_status_requires_the_current_queue_process_identity(
+    tmp_path, resumed_formal_trial, mismatch
+):
+    _, controller, queued, process = resumed_formal_trial
+    if mismatch == "start_ticks":
+        queued["identity"]["start_ticks"] += 1
+    elif mismatch == "command":
+        queued["command"] = [*queued["command"], "wrong"]
+    elif mismatch == "output":
+        plan = json.loads((controller / "queue-plan.json").read_text())
+        plan["jobs"][0]["output"] += "-different"
+        write(controller / "queue-plan.json", plan)
+    else:
+        process.terminate()
+        process.wait(timeout=5)
+    write(controller / "queue.json", dict(updated_at=time.time(), jobs={"q2": queued}))
+    entry = next(
+        row for row in collect(tmp_path)["experiments"] if row["trainer_state"] == "paused"
+    )
+    assert entry["state"] == entry["recorded_state"] == "paused"
+
+
+@pytest.mark.parametrize(
+    "metrics",
+    [
+        [dict(event="train", step=10)],
+        [dict(event="train", step=11), dict(event="start", step=10)],
+    ],
+)
+def test_live_worker_without_new_training_updates_remains_paused(
+    tmp_path, resumed_formal_trial, metrics
+):
+    target, _, _, _ = resumed_formal_trial
+    (target / "metrics.jsonl").write_text("".join(json.dumps(row) + "\n" for row in metrics))
+    assert collect(tmp_path)["experiments"][0]["state"] == "paused"
+
+
+def test_new_worker_without_start_event_cannot_inherit_old_unsaved_progress(
+    tmp_path, resumed_formal_trial
+):
+    target, _, queued, _ = resumed_formal_trial
+    metrics = target / "metrics.jsonl"
+    metrics.write_text(json.dumps(dict(train_lm_loss=1.0, step=11, ce_tokens=110)) + "\n")
+    older = queued["started_at"] - 1
+    os.utime(metrics, (older, older))
+    entry = collect(tmp_path)["experiments"][0]
+    assert entry["state"] == entry["recorded_state"] == "paused"
+
+
 def test_remote_data_requires_fresh_remote_observation_and_keeps_candidate_counts(tmp_path):
     run = tmp_path / "outputs/remote-test/outputs/strategy-pretraining-media-v1"
     write(run / "run.json", dict(kind="data_construction", pid=12345, data_output="data/media"))

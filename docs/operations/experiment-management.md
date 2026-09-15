@@ -18,11 +18,15 @@ python -m scripts.export_experiments --workspace "$PWD" \
   --output docs/experiments/YYYY-MM-DD-review --registry-only
 ```
 
-正式状态命令结合最新 JSONL 和本地训练进程显示进度，优先于保存检查点时的滞后状态。没有进程可见性时报告 `unknown`；ETA 仅涵盖当前阶段的更新时间，验证、存盘和后续阶段另计。
+正式状态命令结合最新 JSONL 和本地训练进程显示进度，优先于保存检查点时的滞后状态。没有进程可见性时报告 `unknown`；ETA 仅涵盖当前阶段的更新时间，验证、存盘和后续阶段另计。 实验台账也核对本机续训进程：只有队列身份与实际命令一致、训练步超过暂停步且日志晚于当前进程启动，才将旧暂停快照显示为 `running`；`recorded_state` 保留历史值。
 
 MF1 的 `budget_complete_unqualified` 在进程已退出且阶段 token 达到预算时显示为 `completed`，`recorded_state` 保留原值；能力是否通过仍须单独判断。
 
-执行优化使用新的干净源码副本，从完整检查点续训；保留原始证据，并记录恢复步数与运行环境。`MINIFRONTIER_CE_CHUNK_SIZE` 控制完整词表损失的位置分块，默认 128；`MINIFRONTIER_MF_DENSE_PREFILL=trimmed` 启用 MF 稠密注意力的不可见键裁剪，默认 `reference`。DeepSeek 的 `MINIFRONTIER_SPARSE_ATTENTION_BACKEND=chunked` 是省显存选项，本次实测较慢，正式训练继续用 `reference`。选项不自动沿用到新阶段，发布后继任务时应依据对应配置的测量结果记录选择，见[执行对照](../audits/training-infrastructure.md#2026-09-15-执行算子复核)。
+已绑定源码的训练切换执行后端时，使用新的干净源码副本，从包含模型、优化器、RNG 和采样器状态的完整检查点续训。保存 `execution_only_resume` 证据，说明计算配方未变，记录数值对照、源码身份和恢复步数；不要改写运行中的冻结源码。
+
+`MINIFRONTIER_CE_CHUNK_SIZE` 控制完整词表损失的位置分块，默认 128；`MINIFRONTIER_MF_DENSE_PREFILL=trimmed` 启用 MF 稠密注意力的不可见键裁剪，默认 `reference`。DeepSeek 的 `MINIFRONTIER_SPARSE_ATTENTION_BACKEND=chunked` 是省显存选项，本次实测较慢，正式训练继续用 `reference`。选项不自动沿用到新阶段，发布后继任务时应依据对应配置的测量结果记录选择，见[执行对照](../audits/training-infrastructure.md#2026-09-15-执行算子复核)。
+
+MiniQwen 的 `MINIFRONTIER_QWEN_EXPERT_BACKEND=loop|batched` 选择逐专家或按专家负载分桶的批量计算，保留路由规则、参数布局和加权精度；未设置时沿用模型配置。分桶不丢弃 token，重复专家路由回退到循环实现。GEMM 分组存在浮点舍入差异，数值与完整窗口对照见[后续复核](../audits/training-infrastructure.md#2026-09-15-完整窗口与候选复核)。
 
 重复刷新受文件锁保护。台账包含来源模型、MF1、历史诊断、本机队列及已经同步的远端记录；不会扫描实验代码目录。迁移后遗留的空白等待记录合并到实际远端运行，已产生结果的独立运行保留各自编号。缺少完成证据或记录过期时显示 `unverified` / `unverified_stale`，不能根据目录存在推断正在训练。
 
