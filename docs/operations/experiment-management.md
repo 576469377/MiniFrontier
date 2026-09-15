@@ -30,6 +30,8 @@ MF1 的 `budget_complete_unqualified` 在进程已退出且阶段 token 达到�
 
 CE 训练统一展示 `perf/ce_per_second`；`perf/input_per_second` 取原记录，或由本步实际 input 数除以耗时计算。训练 CE/input 计数和验证 CE 分母分别对齐。索引器、偏好与 rollout 的吞吐保留原分母，模型未记录的学习率或专有指标不补造。正式看板排除失败运行，失败原因和原日志仍留在实验档案。
 
+DeepSeek-V4 D3 以 `train/input_tokens` 跟踪 10M input 预算，以 `perf/input_per_second` 观察速度。`train/loss` 是索引器蒸馏 KL，`train/lm_loss` 是冻结主干的语言损失观察；本阶段 `train/ce_tokens` 为 0、累计 `train/main_ce_tokens` 不增长均属正常，不能据此判断停训。
+
 [`sync_mf1_tensorboard.py`](../../scripts/sync_mf1_tensorboard.py)兼容四个训练器，从原始 JSONL 和 event 文件生成独立视图，保留 step 与 wall time。脚本名称为兼容已有服务保留。注册表为以下对象的列表，`source` 指向训练目录，`publish` 可选，用于建立展示链接：
 
 ```json
@@ -55,7 +57,7 @@ UV_PROJECT_ENVIRONMENT=outputs/envs/monitoring uv run --no-sync tensorboard \
   --host 127.0.0.1 --port 6008 --reload_interval 5 --samples_per_plugin=scalars=1000000
 ```
 
-Linux 事件模式等待文件写入，`--interval` 合并短时间内的更新；未开始的阶段先监听已有父目录，创建后自动监听其日志目录，无需预建训练目录。普通 `--watch` 为兼容的轮询模式。半行 JSON 等待写完后读取；源日志被截断或替换时停止并报错，需新建视图。原始日志、事件和检查点均不改写。
+Linux 事件模式等待文件写入，`--interval` 合并短时间内的更新；已登记但未开始的阶段先监听已有父目录，创建后自动监听其日志目录，无需预建训练目录。注册表仅在启动时读取；新增阶段须更新注册表，并用新的视图目录重启同步器。普通 `--watch` 为兼容的轮询模式。半行 JSON 等待写完后读取；源日志被截断或替换时停止并报错，需新建视图。原始日志、事件和检查点均不改写。
 
 `--samples_per_plugin=scalars=1000000` 将每条曲线的展示上限从默认 1,000 点提高到 100 万点，足以覆盖本轮各阶段的预计记录量；该版本设为 `0` 会返回空曲线。展示上限不影响原日志。移除失败运行需同时更新注册表、移除展示链接，并重启 TensorBoard 清除旧标签缓存；训练进程继续运行。
 

@@ -20,6 +20,8 @@ python -m scripts.run_exclusive_gpu_queue --plan /path/to/queue-plan.json
 
 队列按顺序等待前置结果及可用 GPU。设备锁在创建 CUDA 上下文之前取得，并由启动的工作进程继承。调度器退出不会终止训练；以相同计划重启时，通过 PID 与启动时间识别原进程，避免重复启动。已有输出不会被覆盖，失败任务需检查原因后显式恢复。
 
+正式阶段通过 `parent_unit` 和 `phase_unit` 分别声明前驱与当前阶段的预算单位，默认 `ce_tokens`。索引器阶段使用 `input_tokens`，不能用主 CE 判断其完成。兼容字段 `parent_ce`、`phase_ce` 保存对应单位的预算数值；例如 D3→D4 的前驱为 10M input，当前阶段为 1.5B CE。阶段结束须同时满足完成状态、实际预算和完整父检查点要求。
+
 正式训练的磁盘保留量为 80 GiB，完整规则见[主计划](../pretraining-plan.md#resources)。显存准入要求为任务预计用量加 1 GiB 上下文余量和声明的设备保留量。任务启动后立即登记设备占用，避免在下一次 `nvidia-smi` 更新前重复分配同一张卡。
 
 遗留上下文例外只适用于已核实的 GPU UUID 与宿主 PID，仍须满足剩余显存要求。宿主 PID 与容器内 PID 的含义不同，发送信号前须在实际进程命名空间内确认身份。
