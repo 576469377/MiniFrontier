@@ -69,14 +69,28 @@ class LoopQwenExperts(Qwen4ExpTextExperts):
 
 
 class BatchedQwenExperts(LoopQwenExperts):
-    """Padded GEMMs with Qwen's route order, multiplication dtype and reductions.
+    """Count-bucketed GEMMs with Qwen's route order, dtype and reductions.
 
-    GEMM batching can change floating-point rounding. Empty, duplicate and highly
-    skewed routes retain the loop; no route is truncated to fit a capacity.
+    Each nonempty expert gets a power-of-two capacity, with less than twice the
+    routed rows allocated overall. Duplicate routes retain the exact loop.
+    GEMM batching can change floating-point rounding; no token is discarded.
     """
+
+    execution_stats_enabled = False
+
+    def _record_execution(self, backend, routes, capacities=(), members=()):
+        if self.execution_stats_enabled:
+            self.last_execution = {
+                "backend": backend,
+                "routed_assignments": routes,
+                "packed_assignments": sum(c * n for c, n in zip(capacities, members, strict=True)),
+                "bucket_capacities": tuple(capacities),
+                "bucket_expert_counts": tuple(members),
+            }
 
     def forward(self, hidden_states, top_k_index, top_k_weights):
         if top_k_index.numel() == 0:
+            self._record_execution("empty_loop", 0)
             return super().forward(hidden_states, top_k_index, top_k_weights)
         tokens, top_k = top_k_index.shape
         with torch.no_grad():
@@ -87,23 +101,48 @@ class BatchedQwenExperts(LoopQwenExperts):
             ascending = top_k_index.argsort(dim=-1, stable=True)
             sorted_ids = top_k_index.gather(1, ascending)
             duplicate = (sorted_ids[:, 1:] == sorted_ids[:, :-1]).any()
-            # One bounded host transfer decides both allocation and fallback.
+            # One bounded host transfer determines buckets and duplicate fallback.
             totals = torch.cat((counts, duplicate.to(counts.dtype).reshape(1))).tolist()
-            capacity = max(totals[:-1])
-        if totals[-1] or self.num_experts * capacity > 4 * ids.numel():
+        if totals[-1]:
+            self._record_execution("duplicate_loop", ids.numel())
             return super().forward(hidden_states, top_k_index, top_k_weights)
-        expert_ids = ids[order]
-        offsets = counts.cumsum(0) - counts
-        slots = torch.arange(ids.numel(), device=ids.device) - offsets[expert_ids]
-        packed = hidden_states.new_zeros(self.num_experts, capacity, self.hidden_dim)
-        packed[expert_ids, slots] = hidden_states[order % tokens]
-        gate, up = torch.bmm(packed, self.gate_up_proj.transpose(1, 2)).chunk(2, -1)
-        values = torch.bmm(self.act_fn(gate) * up, self.down_proj.transpose(1, 2))
-        values = values[expert_ids, slots]
-        # Do not promote to float: two BF16 operands must multiply in BF16 before
-        # conversion to the accumulator, just as in the source expert loop.
-        values = values * top_k_weights.transpose(0, 1).reshape(-1)[order, None]
-        route_values = values.new_zeros(ids.numel(), self.hidden_dim).index_copy(0, order, values)
+        buckets: dict[int, list[tuple[int, int, int]]] = {}
+        offset = 0
+        for expert, count in enumerate(totals[:-1]):
+            if count:
+                capacity = 1 << (count - 1).bit_length()
+                buckets.setdefault(capacity, []).append((expert, offset, count))
+            offset += count
+        route_values = None
+        flat_weights = top_k_weights.transpose(0, 1).reshape(-1)
+        for capacity, members in sorted(buckets.items()):
+            expert_ids = ids.new_tensor([expert for expert, _, _ in members])
+            sizes = ids.new_tensor([count for _, _, count in members])
+            route_count = sum(count for _, _, count in members)
+            positions = torch.cat([order[start : start + count] for _, start, count in members])
+            local_experts = torch.repeat_interleave(
+                torch.arange(len(members), device=ids.device), sizes, output_size=route_count
+            )
+            starts = torch.repeat_interleave(
+                sizes.cumsum(0) - sizes, sizes, output_size=route_count
+            )
+            slots = torch.arange(route_count, device=ids.device) - starts
+            packed = hidden_states.new_zeros(len(members), capacity, self.hidden_dim)
+            packed[local_experts, slots] = hidden_states[positions % tokens]
+            gate_up = self.gate_up_proj.index_select(0, expert_ids)
+            down = self.down_proj.index_select(0, expert_ids)
+            gate, up = torch.bmm(packed, gate_up.transpose(1, 2)).chunk(2, -1)
+            values = torch.bmm(self.act_fn(gate) * up, down.transpose(1, 2))
+            # Preserve BF16 * BF16 rounding before accumulator conversion.
+            values = values[local_experts, slots] * flat_weights[positions, None]
+            if route_values is None:
+                route_values = values.new_zeros(ids.numel(), self.hidden_dim)
+            # Buckets own disjoint route rows; no earlier value is read here.
+            route_values.index_copy_(0, positions, values)
+        assert route_values is not None
+        self._record_execution(
+            "bucketed", ids.numel(), sorted(buckets), [len(buckets[c]) for c in sorted(buckets)]
+        )
         route_values = route_values.view(top_k, tokens, self.hidden_dim).transpose(0, 1)
         ordered = route_values.gather(1, ascending[..., None].expand(-1, -1, self.hidden_dim)).to(
             hidden_states.dtype

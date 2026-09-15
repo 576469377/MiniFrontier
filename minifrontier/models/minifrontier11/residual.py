@@ -48,7 +48,8 @@ def _sinkhorn_coefficients(mixed, scale, base, mult, eps, iters):
 def _compiled_sinkhorn():
     # Compile only coefficient elementwise/reduction work, not the model or GEMM.
     # Static shapes avoid Inductor's symbolic-stride failure in this reduction
-    # graph. No autotuning search, CUDA graphs, or fast-math approximation.
+    # graph. Preserve eager rounding: no FMA contraction, and round FP32
+    # divisions rather than Triton's default approximate division.
     return torch.compile(
         _sinkhorn_coefficients,
         fullgraph=True,
@@ -58,6 +59,8 @@ def _compiled_sinkhorn():
             "max_autotune": False,
             "triton.cudagraphs": False,
             "use_fast_math": False,
+            "emulate_precision_casts": True,
+            "eager_numerics.division_rounding": True,
         },
     )
 

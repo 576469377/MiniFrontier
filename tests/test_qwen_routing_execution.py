@@ -213,13 +213,10 @@ def test_batched_bf16_accumulator_and_checkpoint_gradients(weight_dtype):
         torch.testing.assert_close(parameter.grad, old.grad, rtol=0, atol=0)
 
 
-@pytest.mark.parametrize("reason", ["duplicate", "skewed", "empty", "no_slots"])
+@pytest.mark.parametrize("reason", ["duplicate", "empty", "no_slots"])
 def test_batched_unsafe_or_empty_routes_use_the_exact_loop(reason, monkeypatch):
     module, x, ids, weights = expert_case("duplicate" if reason == "duplicate" else "random")
-    if reason == "skewed":
-        ids = torch.zeros(len(x), 1, dtype=torch.long)
-        weights = torch.ones_like(ids, dtype=torch.float32, requires_grad=True)
-    elif reason == "empty":
+    if reason == "empty":
         x = x.detach()[:0].requires_grad_()
         ids = ids[:0]
         weights = weights.detach()[:0].requires_grad_()
@@ -266,15 +263,77 @@ def test_batched_gemms_pack_source_slot_major_rows_without_changing_parameters(m
         return bmm(left, right)
 
     monkeypatch.setattr(torch, "bmm", capture)
+    module.execution_stats_enabled = True
     module(x, ids, weights)
-    assert len(calls) == 2
-    for expert in range(module.num_experts):
-        _, tokens = torch.where(ids.transpose(0, 1).eq(expert))
-        torch.testing.assert_close(calls[0][expert, : len(tokens)], x[tokens], rtol=0, atol=0)
-        assert not torch.count_nonzero(calls[0][expert, len(tokens) :])
+    counts = ids.flatten().bincount(minlength=module.num_experts).tolist()
+    capacities = sorted({1 << (count - 1).bit_length() for count in counts if count})
+    assert len(calls) == 2 * len(capacities)
+    assert module.last_execution["backend"] == "bucketed"
+    assert module.last_execution["packed_assignments"] < 2 * ids.numel()
+    for packed, capacity in zip(calls[::2], capacities, strict=True):
+        experts = [
+            expert
+            for expert, count in enumerate(counts)
+            if count and 1 << (count - 1).bit_length() == capacity
+        ]
+        for local, expert in enumerate(experts):
+            _, tokens = torch.where(ids.transpose(0, 1).eq(expert))
+            torch.testing.assert_close(packed[local, : len(tokens)], x[tokens], rtol=0, atol=0)
+            assert not torch.count_nonzero(packed[local, len(tokens) :])
     configure_experts(module, "loop")
     assert type(module) is LoopQwenExperts
     assert all(parameter is original[name] for name, parameter in module.named_parameters())
+
+
+@pytest.mark.parametrize("autocast", [False, True])
+@pytest.mark.parametrize("pattern", ["single_expert", "padding_like"])
+def test_bucketed_extreme_skew_uses_gemms_without_dropping_routes(autocast, pattern, monkeypatch):
+    torch.manual_seed(1509)
+    module = BatchedQwenExperts(tiny_config(num_experts=64).upstream_config())
+    with torch.no_grad():
+        for parameter in module.parameters():
+            parameter.normal_(0, 0.1)
+    if pattern == "single_expert":
+        ids = torch.zeros(257, 1, dtype=torch.long)
+    else:
+        ids = torch.tensor(
+            [[60, 59, 58, 57]] * 240 + [torch.randperm(64)[:4].tolist() for _ in range(17)]
+        )
+    x = torch.randn(len(ids), module.hidden_dim, requires_grad=True)
+    weights = torch.randn(ids.shape).softmax(-1)
+    weights = weights.to(torch.bfloat16 if autocast else torch.float32).requires_grad_()
+    reference = copy.deepcopy(module)
+    old_x = x.detach().clone().requires_grad_()
+    old_weights = weights.detach().clone().requires_grad_()
+    module.execution_stats_enabled = True
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("skewed nonduplicate routes must execute bucketed GEMMs")
+
+    monkeypatch.setattr(LoopQwenExperts, "forward", forbidden)
+    with torch.autocast("cpu", dtype=torch.bfloat16, enabled=autocast):
+        actual = module(x, ids, weights)
+        expected = reference.reference(old_x, ids, old_weights)
+    gradient = torch.randn_like(actual)
+    actual.backward(gradient)
+    expected.backward(gradient)
+    pairs = [(actual, expected), (x.grad, old_x.grad), (weights.grad, old_weights.grad)]
+    pairs.extend(
+        (p.grad, q.grad) for p, q in zip(module.parameters(), reference.parameters(), strict=True)
+    )
+    for value, old in pairs:
+        torch.testing.assert_close(
+            value, old, rtol=0 if autocast else 2e-5, atol=0 if autocast else 2e-6
+        )
+    stats = module.last_execution
+    assert stats["backend"] == "bucketed"
+    assert stats["routed_assignments"] == ids.numel()
+    assert ids.numel() <= stats["packed_assignments"] < 2 * ids.numel()
+    unused = torch.ones(module.num_experts, dtype=torch.bool)
+    unused[ids.unique()] = False
+    for parameter in module.parameters():
+        assert parameter.grad is not None
+        assert not torch.count_nonzero(parameter.grad[unused])
 
 
 def reference_fixed_frequency_loss(routers, experts, top_k, valid_mask, frequency):

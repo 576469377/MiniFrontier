@@ -113,6 +113,8 @@ def test_compile_is_lazy_cached_and_excludes_autotuning(monkeypatch):
             "max_autotune": False,
             "triton.cudagraphs": False,
             "use_fast_math": False,
+            "emulate_precision_casts": True,
+            "eager_numerics.division_rounding": True,
         }
     finally:
         residual._compiled_sinkhorn.cache_clear()
