@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Publish the September 15 six-model training snapshot and the completed September 14 diagnostic across 13 fixed checkpoints; document persistent generation repetition and the limits of cache/source comparisons.
+- Batch Qwen experts by load and trim masked MF attention, with numerical comparisons and measured scope. Retain reference MF1.1 mixing after rejecting the compiled candidate's gradient differences. Recognize resumed training workers in experiment status.
 - Add MiniDeepSeek-V4.1 (242M): causal encoder/decoder, CSA2 sharing, Single-Pass mHC, Engram and sparse text pretraining. Add MF1.1 (211M): versioned mHC and optimizer changes with native media, without MTP.
 - Document all six model versions, add V4.1 and MF1.1 architecture diagrams, and distinguish their training plans and validation scope from earlier results.
 - Extend the checkpoint browser to all six versions and the media page to both MF1 versions. Add version-bound generation, saved request parameters, output history, comparisons and JSON export; bundle the browser assets in wheel and sdist.

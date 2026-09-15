@@ -6,11 +6,14 @@
 
 | 内容 | 入口 |
 | --- | --- |
-| 新增 V4.1 / MF1.1 的比较条件与启动记录 | [2026-09-14 联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md)；完整训练与能力评估待完成 |
+| 六模型正式训练进度与阶段接续 | [2026-09-15 训练快照](experiments/formal-progress-2026-09-15/README.md)、[预训练主计划](pretraining-plan.md#execution)；快照保留采集时间，后续安排在计划中维护 |
+| 原四模型的固定检查点生成诊断 | [2026-09-14 诊断报告](experiments/checkpoint-diagnostics-2026-09-14/README.md)；13 份检查点，未覆盖 V4.1 / MF1.1 |
+| V4.1 / MF1.1 的比较条件与初始配方 | [2026-09-14 联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md)；完整训练与能力评估待完成 |
 | 原四模型配方及选择依据 | [工作参数](experiments/2026-09-10-pretraining-cutover/working-recipes.md) |
 | 原四模型正式训练快照与可重画曲线 | [2026-09-13 接续进度](experiments/2026-09-10-pretraining-cutover/formal-progress-2026-09-13.json)、[2026-09-12 首阶段曲线](experiments/2026-09-10-pretraining-cutover/formal-progress.json)；采样间隔及验证范围见各快照 |
 | 原四模型正式数据、失败修复与开训记录 | [2026-09-10—11 启动档案](experiments/2026-09-10-pretraining-cutover/execution.md) |
-| 正式训练中的数据预取、优化器与显存处理 | [2026-09-11 执行优化](audits/training-infrastructure.md) |
+| 正式训练的数据预取、优化器、显存与阶段接续 | [执行审计](audits/training-infrastructure.md)，按日期保留各次变更与恢复记录 |
+| Qwen 专家分桶与 MF1.1 候选的实际窗口对照 | [2026-09-15 完整窗口复核](audits/training-infrastructure.md#2026-09-15-完整窗口与候选复核)；区分前反向测量、正式吞吐观察与未采用候选 |
 | MF1.0 注意力、KDA、专家和数据加载优化 | [MF1 性能报告](audits/minifrontier1-execution-performance.md) |
 | microbatch、实际全局 batch 与 128 档位分析 | [batch 边界与复核](experiments/2026-09-10-batch-frontier/README.md) |
 | Muon、AdamW、学习率与 MTP 对照 | [2026-09-10 配方快照](experiments/2026-09-10-recipe-snapshot/README.md) |
@@ -26,6 +29,8 @@
 - **损失下降**：在相同验证成员、分词器与监督规则下比较学习进度。不同模型的 NLL 不作能力排名。
 - **生成能力**：检查完整输出及独立任务。训练题记忆、有限梯度和低 NLL 都不能单独证明模型能正常对话。
 - **吞吐**：先核对 CE/input 分母、全局 batch、模态、精度、测量窗口及共卡时段。合成计算速度与实际训练端到端速度分别报告。
+
+9 月 14 日的[检查点诊断](experiments/checkpoint-diagnostics-2026-09-14/README.md)仍观察到重复和语义错误；采样只能缓解部分重复，训练成因尚未定位。该报告评估的是当天固定的原四模型权重，不是六模型当前检查点的能力验收。
 
 早期模型记忆训练题但未通过留出题的结果，见[配方快照](experiments/2026-09-10-recipe-snapshot/README.md)；更早的语言退化见[失败复盘](training-failure-v1.md)。
 
@@ -55,7 +60,7 @@ python -m scripts.training_status --run formal
 python -m scripts.experiment_registry
 ```
 
-台账包含父任务、数据准备、评估与训练阶段，记录条数不等于独立实验数。具体状态语义、事件接续和 TensorBoard 操作见[实验管理](operations/experiment-management.md)。
+台账包含父任务、数据准备、评估与训练阶段，记录条数不等于独立实验数。恢复后的运行状态结合实际进程、输出目录与新训练记录判断，保留原保存状态；不能只凭旧的 `paused` 字段认定任务已停止。具体状态语义、事件接续和 TensorBoard 操作见[实验管理](operations/experiment-management.md)。
 
 导出前核对配置、命令、seed、运行身份、实际预算、指标和曲线是否完整。保留失败与主动停止状态，明确标记缺失的历史校验值。
 

@@ -1,0 +1,391 @@
+{
+  "schema_version": 1,
+  "experiment": "checkpoint-diagnostics-2026-09-14",
+  "scope": {
+    "captured_at": "2026-09-14T09:09:04.771837+00:00",
+    "snapshot_files_written_from": "2026-09-14T09:09:39.150509+00:00",
+    "snapshot_files_written_until": "2026-09-14T09:22:55.463831+00:00",
+    "started_at": "2026-09-14T09:14:59.528334+00:00",
+    "finished_at": "2026-09-14T16:19:31.114048+00:00",
+    "device": "NVIDIA GeForce RTX 3090",
+    "precision_note": "bf16 means CUDA BF16 autocast; fp32 means BF16 autocast disabled, with the same model operators; TF32 disabled",
+    "models": [
+      "minideepseekv4",
+      "minikimik3",
+      "miniqwen4",
+      "minifrontier1"
+    ],
+    "excluded_models": [
+      "minideepseekv41",
+      "minifrontier11"
+    ],
+    "historical_deepseek_step_7700_available": false,
+    "latest_label_scope": "latest at capture, not latest at report publication"
+  },
+  "counts": {
+    "checkpoints": 13,
+    "worker_jobs": 18,
+    "completed_worker_jobs": 18,
+    "main_generations": 1885,
+    "training_source_generations": 64,
+    "total_generations": 1949,
+    "sampler_parity_cases": 36,
+    "sampler_parity_identical": 36
+  },
+  "evaluation": {
+    "prompt_count": 32,
+    "max_new_tokens": 96,
+    "precision": "bf16",
+    "use_cache": true,
+    "repetition_penalty": false,
+    "greedy": {
+      "temperature": 0,
+      "top_p": 1,
+      "seed": 0,
+      "cases_per_checkpoint": 32
+    },
+    "sample": {
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "seeds": [
+        0,
+        17,
+        42
+      ],
+      "cases_per_checkpoint": 96
+    },
+    "main_extra_generations_per_checkpoint": {
+      "original_prompt_greedy_bf16_cache_256": 1,
+      "diagnostic_greedy_bf16_full_48": 8,
+      "diagnostic_greedy_fp32_full_48": 4,
+      "diagnostic_greedy_fp32_cache_48": 4
+    },
+    "severe_repetition_definition": "longest identical token run >= 8 OR (generated token count >= 24 AND repeated_4gram_fraction >= 0.5)",
+    "repeated_4gram_definition": "1 - number of unique contiguous token 4-grams / number of contiguous token 4-grams; 0 when no 4-grams",
+    "reference_bpb_definition": "sum reference token negative log likelihood / (ln(2) * total reference UTF-8 bytes)",
+    "reference_prompt_count": 32,
+    "reference_total_utf8_bytes": 1057,
+    "reference_tokenization": "reference encoded separately, appended after BOS plus encoded prompt",
+    "interpretation": "Repetition is a heuristic, not semantic accuracy. Fixed reference continuations are not a capability benchmark.",
+    "probes_file": "probes.json",
+    "probes_sha256": "35b729e20cd579f3fe3ef6feb370587196ee94ee5e2cb1c12a02341a3cd41c80"
+  },
+  "checkpoints": [
+    {
+      "checkpoint_id": "minideepseekv4/D1-step0006032-previous_best",
+      "model": "minideepseekv4",
+      "stage": "pretrain",
+      "step": 6032,
+      "role": "previous_best",
+      "weights_sha256": "26b5c0417320ca05eb51c1a3962e3586e3d3a3d23bf01cf4f1051703383d4894",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 31,
+      "sample_cases": 96,
+      "sample_severe_repetition": 44,
+      "reference_bpb": 1.5699071732858307,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "minideepseekv4/D1-step0007540-previous_final",
+      "model": "minideepseekv4",
+      "stage": "pretrain",
+      "step": 7540,
+      "role": "previous_final",
+      "weights_sha256": "13564218aa6dcf600d2b66b82d093b55392e0ce86e31e4a1ace04c065028b7bf",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 29,
+      "sample_cases": 96,
+      "sample_severe_repetition": 39,
+      "reference_bpb": 1.5005108671152074,
+      "reference_bytes": 1057,
+      "eos_terminations": 1
+    },
+    {
+      "checkpoint_id": "minideepseekv4/D2-step0010452-current_best",
+      "model": "minideepseekv4",
+      "stage": "pretrain",
+      "step": 10452,
+      "role": "current_best",
+      "weights_sha256": "1712b87a24fb425c20c43f694412db95c656e8893faefddb52acdbce3e423b14",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 26,
+      "sample_cases": 96,
+      "sample_severe_repetition": 37,
+      "reference_bpb": 1.3836652612100466,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "minideepseekv4/D2-step0011600-latest",
+      "model": "minideepseekv4",
+      "stage": "pretrain",
+      "step": 11600,
+      "role": "latest",
+      "weights_sha256": "2a84cba57fe3459915705c1afd03ed2ef0873c3554833ab785b316c0b1dc8764",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 27,
+      "sample_cases": 96,
+      "sample_severe_repetition": 31,
+      "reference_bpb": 1.4696084915385643,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "minifrontier1/P0-step0014599-previous_final",
+      "model": "minifrontier1",
+      "stage": "pretrain",
+      "step": 14599,
+      "role": "previous_final",
+      "weights_sha256": "50e8a1a346678fe40340b6f921d13d44ad799834d6c0df100b3a19d10da68d75",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 31,
+      "sample_cases": 96,
+      "sample_severe_repetition": 26,
+      "reference_bpb": 1.597911245977026,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "minifrontier1/P1-step0013100-latest",
+      "model": "minifrontier1",
+      "stage": "pretrain",
+      "step": 13100,
+      "role": "latest",
+      "weights_sha256": "0d740f3dddb00d684bea99f4f21d21c4ec126d9c6f92b7ed5486bbcd92e307a3",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 28,
+      "sample_cases": 96,
+      "sample_severe_repetition": 28,
+      "reference_bpb": 1.4314748803808446,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "minikimik3/K1-step0004853-previous_best",
+      "model": "minikimik3",
+      "stage": "pretrain",
+      "step": 4853,
+      "role": "previous_best",
+      "weights_sha256": "6f45252810aa956e4e785934f34375679bd8dfa0d9c2ea214400242174bf6256",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 32,
+      "sample_cases": 96,
+      "sample_severe_repetition": 48,
+      "reference_bpb": 1.5819674195800975,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "minikimik3/K1-step0006471-previous_final",
+      "model": "minikimik3",
+      "stage": "pretrain",
+      "step": 6471,
+      "role": "previous_final",
+      "weights_sha256": "87887be84aab3df17d6844027332b9c699a96871521585c37966d6ce000f67ec",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 30,
+      "sample_cases": 96,
+      "sample_severe_repetition": 52,
+      "reference_bpb": 1.5377819869059328,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "minikimik3/K2-recovery-mb16-step0004824-current_best",
+      "model": "minikimik3",
+      "stage": "pretrain",
+      "step": 4824,
+      "role": "current_best",
+      "weights_sha256": "94283dbd8ab18104ace2a818c4ec724af4701d0197fe08be4f5dd20f3b08d7f5",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 32,
+      "sample_cases": 96,
+      "sample_severe_repetition": 55,
+      "reference_bpb": 1.5069523121543706,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "minikimik3/K2-recovery-mb16-step0006000-latest",
+      "model": "minikimik3",
+      "stage": "pretrain",
+      "step": 6000,
+      "role": "latest",
+      "weights_sha256": "c122b78a47f15fb05a288a38159dc764b00ec70ef3497337a846558c549aa908",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 32,
+      "sample_cases": 96,
+      "sample_severe_repetition": 48,
+      "reference_bpb": 1.4748912608222078,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "miniqwen4/Q1-step0015634-previous_best",
+      "model": "miniqwen4",
+      "stage": "pretrain",
+      "step": 15634,
+      "role": "previous_best",
+      "weights_sha256": "0045fb5257f350dcff3ccf7562a1af1ca61ac90296d5254e55ae020663dae79d",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 31,
+      "sample_cases": 96,
+      "sample_severe_repetition": 62,
+      "reference_bpb": 1.5541752256097667,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "miniqwen4/Q1-step0018760-previous_final",
+      "model": "miniqwen4",
+      "stage": "pretrain",
+      "step": 18760,
+      "role": "previous_final",
+      "weights_sha256": "887881a55e22a6f18e74f3d317b0de5cfb80cb339e2b407b9edd1e7f1723c2a8",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 32,
+      "sample_cases": 96,
+      "sample_severe_repetition": 69,
+      "reference_bpb": 1.5553212040993212,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    },
+    {
+      "checkpoint_id": "miniqwen4/Q2-step0000600-latest",
+      "model": "miniqwen4",
+      "stage": "pretrain",
+      "step": 600,
+      "role": "latest",
+      "weights_sha256": "d07f8901a06a54c9cb123085bd1c9667536a5b6bfa6426d87eb6166b388640f7",
+      "main_generations": 145,
+      "greedy_cases": 32,
+      "greedy_severe_repetition": 29,
+      "sample_cases": 96,
+      "sample_severe_repetition": 43,
+      "reference_bpb": 1.5803143682237388,
+      "reference_bytes": 1057,
+      "eos_terminations": 0
+    }
+  ],
+  "middle_dot": {
+    "main_cases_with_middle_dot": 3,
+    "longest_consecutive_middle_dots": 1
+  },
+  "cache_teacher_forced": [
+    {
+      "model": "minideepseekv4",
+      "precision": "bf16",
+      "cases": 16,
+      "positions": 240,
+      "top1_matches": 238,
+      "max_logit_absolute_error": 2.19140625,
+      "all_finite": true
+    },
+    {
+      "model": "minideepseekv4",
+      "precision": "fp32",
+      "cases": 16,
+      "positions": 240,
+      "top1_matches": 240,
+      "max_logit_absolute_error": 1.7642974853515625e-05,
+      "all_finite": true
+    },
+    {
+      "model": "minifrontier1",
+      "precision": "bf16",
+      "cases": 8,
+      "positions": 120,
+      "top1_matches": 118,
+      "max_logit_absolute_error": 1.03125,
+      "all_finite": true
+    },
+    {
+      "model": "minifrontier1",
+      "precision": "fp32",
+      "cases": 8,
+      "positions": 120,
+      "top1_matches": 120,
+      "max_logit_absolute_error": 0.011675149202346802,
+      "all_finite": true
+    },
+    {
+      "model": "minikimik3",
+      "precision": "bf16",
+      "cases": 16,
+      "positions": 240,
+      "top1_matches": 237,
+      "max_logit_absolute_error": 1.0,
+      "all_finite": true
+    },
+    {
+      "model": "minikimik3",
+      "precision": "fp32",
+      "cases": 16,
+      "positions": 240,
+      "top1_matches": 240,
+      "max_logit_absolute_error": 0.2770109176635742,
+      "all_finite": true
+    },
+    {
+      "model": "miniqwen4",
+      "precision": "bf16",
+      "cases": 12,
+      "positions": 180,
+      "top1_matches": 179,
+      "max_logit_absolute_error": 0.40625,
+      "all_finite": true
+    },
+    {
+      "model": "miniqwen4",
+      "precision": "fp32",
+      "cases": 12,
+      "positions": 180,
+      "top1_matches": 180,
+      "max_logit_absolute_error": 4.1961669921875e-05,
+      "all_finite": true
+    }
+  ],
+  "cache_generation_prefixes": {
+    "compared_tokens_per_pair": 48,
+    "by_precision": {
+      "bf16": {
+        "pairs": 104,
+        "identical_pairs": 86
+      },
+      "fp32": {
+        "pairs": 52,
+        "identical_pairs": 52
+      }
+    },
+    "fp32_full_cases": 52,
+    "fp32_full_severe_repetition": 39
+  },
+  "source_comparison": {
+    "checkpoints": 4,
+    "first_step_logit_pairs": 48,
+    "first_step_logit_identical_pairs": 48,
+    "first_step_logit_positions": 48,
+    "matched_generation_prefix_pairs": 48,
+    "identical_generation_prefix_pairs": 48,
+    "compared_generation_tokens": 2304,
+    "scope": "Saved Demo and training source versions only; first-step logit comparisons and matching 48-token greedy prefixes."
+  },
+  "conclusion": {
+    "training_root_cause_identified": false,
+    "quality_passed": null,
+    "raw_weights_and_large_logs_published": false
+  }
+}

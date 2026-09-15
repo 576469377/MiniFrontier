@@ -1,0 +1,194 @@
+[
+  {
+    "id": "zh_science_exact",
+    "domain": "zh",
+    "prompt": "植物通过光合作用将光能转化为化学能。在这个过程中，",
+    "reference": "植物吸收二氧化碳和水，利用光能合成有机物，并释放氧气。"
+  },
+  {
+    "id": "zh_science_ascii_comma",
+    "domain": "zh",
+    "prompt": "植物通过光合作用将光能转化为化学能。在这个过程中,",
+    "reference": "植物吸收二氧化碳和水，利用光能合成有机物，并释放氧气。"
+  },
+  {
+    "id": "zh_science_no_comma",
+    "domain": "zh",
+    "prompt": "植物通过光合作用将光能转化为化学能。在这个过程中",
+    "reference": "，植物吸收二氧化碳和水，并释放氧气。"
+  },
+  {
+    "id": "zh_science_newline",
+    "domain": "zh",
+    "prompt": "植物通过光合作用将光能转化为化学能。在这个过程中，\n",
+    "reference": "植物吸收二氧化碳和水，合成有机物并释放氧气。"
+  },
+  {
+    "id": "zh_science_short",
+    "domain": "zh",
+    "prompt": "植物通过光合作用，把阳光、水和二氧化碳转化为",
+    "reference": "有机物，并释放氧气。"
+  },
+  {
+    "id": "zh_spring",
+    "domain": "zh",
+    "prompt": "春天来了，公园里的树木开始发芽。清晨，",
+    "reference": "阳光洒在草地上，鸟儿在枝头鸣叫。"
+  },
+  {
+    "id": "zh_library",
+    "domain": "zh",
+    "prompt": "图书馆里十分安静，小明找到一本书，",
+    "reference": "坐在窗边认真地读了起来。"
+  },
+  {
+    "id": "zh_rain",
+    "domain": "zh",
+    "prompt": "天空渐渐变暗，乌云遮住了太阳。不一会儿，",
+    "reference": "雨点落了下来，行人纷纷撑起雨伞。"
+  },
+  {
+    "id": "zh_water",
+    "domain": "zh",
+    "prompt": "在标准大气压下，水加热到一百摄氏度时会",
+    "reference": "沸腾，逐渐变成水蒸气。"
+  },
+  {
+    "id": "zh_ai",
+    "domain": "zh",
+    "prompt": "人工智能是一种",
+    "reference": "让计算机执行通常需要人类智能的任务的技术。"
+  },
+  {
+    "id": "zh_factual",
+    "domain": "zh",
+    "prompt": "中国的首都是",
+    "reference": "北京。"
+  },
+  {
+    "id": "zh_dialogue_text",
+    "domain": "zh",
+    "prompt": "问：为什么下雨后地面会湿？\n答：",
+    "reference": "因为雨水落到地面上，使地面变湿。"
+  },
+  {
+    "id": "en_station",
+    "domain": "en",
+    "prompt": "The train arrived at the station just before sunrise. Outside the window,",
+    "reference": " the sky was beginning to brighten."
+  },
+  {
+    "id": "en_science",
+    "domain": "en",
+    "prompt": "Water can exist as a solid, a liquid, or a gas. When ice is heated,",
+    "reference": " it melts and becomes liquid water."
+  },
+  {
+    "id": "en_plant",
+    "domain": "en",
+    "prompt": "Plants use sunlight to make food through photosynthesis. During this process,",
+    "reference": " they absorb carbon dioxide and release oxygen."
+  },
+  {
+    "id": "en_library",
+    "domain": "en",
+    "prompt": "She opened the book and began to read. The first chapter",
+    "reference": " described a quiet village beside a river."
+  },
+  {
+    "id": "code_add",
+    "domain": "code",
+    "prompt": "def add(a, b):\n    \"\"\"Return the sum of a and b.\"\"\"\n    ",
+    "reference": "return a + b"
+  },
+  {
+    "id": "code_square",
+    "domain": "code",
+    "prompt": "def square(x):\n    ",
+    "reference": "return x * x"
+  },
+  {
+    "id": "code_even",
+    "domain": "code",
+    "prompt": "def is_even(n):\n    ",
+    "reference": "return n % 2 == 0"
+  },
+  {
+    "id": "code_list",
+    "domain": "code",
+    "prompt": "numbers = [1, 2, 3]\nprint(sum(numbers))\n# Output:",
+    "reference": " 6"
+  },
+  {
+    "id": "math_zh",
+    "domain": "math",
+    "prompt": "一个盒子里有2个红球和3个蓝球，一共有",
+    "reference": "5个球。"
+  },
+  {
+    "id": "math_en",
+    "domain": "math",
+    "prompt": "A box contains 2 red balls and 3 blue balls. There are",
+    "reference": " 5 balls in total."
+  },
+  {
+    "id": "math_equation",
+    "domain": "math",
+    "prompt": "2 + 3 =",
+    "reference": " 5"
+  },
+  {
+    "id": "math_sequence",
+    "domain": "math",
+    "prompt": "2, 4, 6, 8,",
+    "reference": " 10, 12, 14"
+  },
+  {
+    "id": "copy_city",
+    "domain": "copy",
+    "prompt": "Name: River\nCity: Beijing\nName: River\nCity:",
+    "reference": " Beijing"
+  },
+  {
+    "id": "copy_zh",
+    "domain": "copy",
+    "prompt": "姓名：小林\n城市：北京\n姓名：小林\n城市：",
+    "reference": "北京"
+  },
+  {
+    "id": "json_prefix",
+    "domain": "structure",
+    "prompt": "The following is a JSON object with a name and an age:\n{\"name\": \"Lin\", \"age\":",
+    "reference": " 20}"
+  },
+  {
+    "id": "list_prefix",
+    "domain": "structure",
+    "prompt": "一年有四个季节：\n1. 春季\n2.",
+    "reference": " 夏季\n3. 秋季\n4. 冬季"
+  },
+  {
+    "id": "translation",
+    "domain": "language",
+    "prompt": "中文：今天天气很好。\nEnglish:",
+    "reference": " The weather is nice today."
+  },
+  {
+    "id": "definition",
+    "domain": "zh",
+    "prompt": "光合作用是指",
+    "reference": "植物利用光能，将二氧化碳和水转化为有机物的过程。"
+  },
+  {
+    "id": "punctuation_control",
+    "domain": "zh",
+    "prompt": "植物需要阳光和水才能生长，因为",
+    "reference": "阳光为光合作用提供能量，水参与植物的代谢过程。"
+  },
+  {
+    "id": "eos_short",
+    "domain": "copy",
+    "prompt": "问题：1加1等于几？\n答案：",
+    "reference": "2。"
+  }
+]

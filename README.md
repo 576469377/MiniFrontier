@@ -147,11 +147,15 @@ uv run minifrontier mf1 demo --checkpoint outputs/mf1-export/model.pt \
 
 ## 实验与路线图
 
+[2026-09-15 训练快照](docs/experiments/formal-progress-2026-09-15/README.md)：DeepSeek-V4 已完成 D3 索引器训练并进入 D4，DeepSeek-V4.1 已完成 D1 并进入 D2；其余四个版本继续各自的预训练。当前阶段、数据与接续条件统一见[预训练主计划](docs/pretraining-plan.md#execution)。
+
 | 范围 | 实现与训练状态 | 记录 |
 |:---|:---|:---|
 | 架构与流程 | 已实现六个模型版本；各版本的流程验证与限制在模型页单列 | [代码结构](docs/architecture.md)、[最小示例](docs/guides/quickstart.md) |
 | 小规模实验 | 完成部分配方比较及 MF1.0 机制学习；结果包含失败和停止项 | [实验档案](docs/experiments.md) |
-| 正式预训练 | 六个版本分别训练；Kimi 2B、Qwen 3B、DeepSeek 各版文本 2.5B、MF1 各版 3B 主 CE token | [阶段、数据与配方](docs/pretraining-plan.md) |
+| 检查点诊断 | 原四模型的 13 份固定检查点完成生成对照，仍有重复和语义错误；未覆盖新增两版 | [9 月 14 日诊断报告](docs/experiments/checkpoint-diagnostics-2026-09-14/README.md) |
+| 训练执行 | Qwen 专家分桶已通过实际采样窗口对照并用于正式训练；MF1.1 融合候选因梯度差异未采用 | [完整窗口与数值复核](docs/audits/training-infrastructure.md#2026-09-15-完整窗口与候选复核) |
+| 正式预训练 | 六版分别计量，共 16B 主 CE token；Kimi 2B、Qwen 3B、DeepSeek 各版 2.5B、MF1 各版 3B | [阶段、数据与配方](docs/pretraining-plan.md) |
 | 后训练与权重 | 已有部分版本的 SFT、RL、教师与草稿接口；新增版本的覆盖单列，正式后训练与公开权重待完成 | [后训练指南](docs/guides/posttraining-adaptation.md)、[发布范围](docs/releases/v0.1.0.md) |
 
 <details>
@@ -171,7 +175,7 @@ uv run minifrontier mf1 demo --checkpoint outputs/mf1-export/model.pt \
 
 </details>
 
-后续按各模型计划完成基础预训练、索引器训练和能力评估，再推进后训练与权重发布。CE 预算只统计参与主语言损失的位置，索引器及辅助目标另计。
+后续按各模型计划完成剩余基础预训练、索引器安排和能力评估，再推进后训练与权重发布。CE 预算只统计参与主语言损失的位置，索引器及辅助目标另计；生成诊断与执行提速均不作为能力验收。
 
 ## 文档与开发
 

@@ -9,12 +9,14 @@ MiniFrontier 文档分为模型说明、操作指南和实验记录。当前包�
 | 需要做什么 | 入口 |
 |---|---|
 | 使用 MF1.0 / MF1.1 的数据、训练、恢复和生成入口 | [MF1 操作指南](guides/minifrontier1.md) |
-| 了解新增 V4.1 / MF1.1 的结构、配置和训练安排 | [V4.1 模型页](models/minideepseekv41.md)、[MF1.1 模型页](models/minifrontier11.md)、[联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md) |
+| 了解 V4.1 / MF1.1 的结构、配置和版本关系 | [V4.1 模型页](models/minideepseekv41.md)、[MF1.1 模型页](models/minifrontier11.md)、[联合方案](training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md) |
 | 了解实际使用的数据、处理方法和数据许可 | [数据来源说明](guides/data-sources.md) |
 | 运行 Kimi、Qwen、DeepSeek-V4 的离线 CPU / 3090 示例 | [来源模型最小示例](guides/quickstart.md) |
 | 查看来源模型训练及按版本说明的后训练、草稿流程 | [训练](guides/training.md)、[后训练](guides/posttraining-adaptation.md)、[草稿](guides/draft-adaptation.md) |
 | 在浏览器中比较各版本的实验检查点 | [实验 Demo](guides/demo-experiments.md) |
-| 阅读实验结果、查看进度或重画曲线 | [实验索引](experiments.md)、[实验管理](operations/experiment-management.md) |
+| 查看六模型当前阶段、恢复状态与历史曲线 | [预训练主计划](pretraining-plan.md#execution)、[实验索引](experiments.md)、[实验管理](operations/experiment-management.md) |
+| 复查固定检查点的重复生成与采样对照 | [9 月 14 日诊断报告](experiments/checkpoint-diagnostics-2026-09-14/README.md)，覆盖原四模型 |
+| 核对执行优化的数值差异与性能测量范围 | [执行审计](audits/training-infrastructure.md#2026-09-15-完整窗口与候选复核) |
 | 参与代码开发或了解分发范围 | [架构与目录](architecture.md)、[贡献指南](../CONTRIBUTING.md)、[研究预览范围](releases/v0.1.0.md) |
 
 ## 模型结构与阅读顺序
@@ -28,7 +30,7 @@ MiniFrontier 文档分为模型说明、操作指南和实验记录。当前包�
 | [MiniKimi-K3](models/minikimik3.md) | KDA / MLA、AttnRes 与 LatentMoE | [来源模型示例](guides/quickstart.md) |
 | [MiniDeepSeek-V4](models/minideepseekv4.md) | SWA / CSA / HCA、mHC 与 hash routing | [来源模型示例](guides/quickstart.md) |
 
-模型页说明数据流、模块计算、配置、来源差异和验证范围。图中层号从 1 开始，参数量对应研究配置；微型示例使用更小的容量。MF1.0 与 MF1.1 共用包和命令，通过版本字段区分；V4 与 V4.1 保留独立实现。新增版本分别训练，旧检查点不能直接用作新结构的恢复点。
+模型页说明数据流、模块计算、配置、来源差异和验证范围。图中层号从 1 开始，参数量对应研究配置；微型示例使用更小的容量。MF1.0 与 MF1.1 使用独立模型包，保留共用的 `mf1` 命令并按版本分派；V4 与 V4.1 也分别实现和训练。旧检查点不能直接用作新结构的恢复点。
 
 ## 实验文档中的常用术语
 
