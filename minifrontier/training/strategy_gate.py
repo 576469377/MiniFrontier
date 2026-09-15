@@ -103,6 +103,7 @@ def continuous_phase_profile(plan, phase, phases):
 
     Main CE phases keep the same attention regime. A frozen indexer phase may
     opt in separately, retaining both its gradient and dense-teacher reports.
+    Returning to sparse main training requires its own conversion report and opt-in.
     The argument validator still requires the bound continuous program path.
     """
     dependencies = phase["depends_on"]
@@ -126,7 +127,18 @@ def continuous_phase_profile(plan, phase, phases):
         and {"indexer_only_gradients", "dense_teacher_quality"}
         <= set(phase.get("required_evidence", []))
     )
-    return main or indexer
+    sparse_conversion = (
+        plan.get("performance", {}).get("continuous_sparse_conversion_phases")
+        == "observe_during_training"
+        and parent["budget_scope"] == "indexer"
+        and parent["objective"] == "input_tokens"
+        and parent["attention_phase"] == "dense_distill"
+        and phase["budget_scope"] == "main"
+        and phase["objective"] == "ce_tokens"
+        and phase["attention_phase"] == "sparse_cpt"
+        and "dense_sparse_conversion" in phase.get("required_evidence", [])
+    )
+    return main or indexer or sparse_conversion
 
 
 def check(plan_path, phase_id, evidence_path, *, data, config, output):

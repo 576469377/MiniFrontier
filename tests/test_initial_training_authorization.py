@@ -106,11 +106,21 @@ def test_continuous_main_phase_observation_does_not_skip_attention_conversion():
     assert not continuous_phase_profile(plan, phases["D4"], phases)
     phases["D2"]["attention_phase"] = "sparse_cpt"
     assert not continuous_phase_profile(plan, phases["D3"], phases)
+    plan["performance"]["continuous_sparse_conversion_phases"] = "observe_during_training"
+    phases["D4"]["depends_on"] = ["D3"]
+    assert not continuous_phase_profile(plan, phases["D4"], phases)
+    phases["D4"]["required_evidence"] = ["dense_sparse_conversion"]
+    assert continuous_phase_profile(plan, phases["D4"], phases)
+    phases["D3"]["objective"] = "ce_tokens"
+    assert not continuous_phase_profile(plan, phases["D4"], phases)
+    phases["D3"]["objective"] = "input_tokens"
+    phases["D4"]["depends_on"] = ["D2", "D3"]
+    assert not continuous_phase_profile(plan, phases["D4"], phases)
 
 
-@pytest.mark.parametrize("indexer", [False, True])
+@pytest.mark.parametrize("continuation", ["main", "indexer", "sparse_conversion"])
 def test_continuation_still_requires_parent_quality_and_current_data(
-    tmp_path, monkeypatch, indexer
+    tmp_path, monkeypatch, continuation
 ):
     from minifrontier.training import strategy_gate
 
@@ -141,13 +151,21 @@ def test_continuation_still_requires_parent_quality_and_current_data(
         ],
     )
     plan_path = tmp_path / "plan.json"
-    if indexer:
+    if continuation == "indexer":
         plan["performance"]["continuous_indexer_phases"] = "observe_during_training"
         plan["phases"][1].update(
             budget_scope="indexer",
             objective="input_tokens",
             attention_phase="dense_distill",
             required_evidence=["indexer_only_gradients", "dense_teacher_quality"],
+        )
+    elif continuation == "sparse_conversion":
+        plan["performance"]["continuous_sparse_conversion_phases"] = "observe_during_training"
+        plan["phases"][0].update(
+            budget_scope="indexer", objective="input_tokens", attention_phase="dense_distill"
+        )
+        plan["phases"][1].update(
+            attention_phase="sparse_cpt", required_evidence=["dense_sparse_conversion"]
         )
     plan_path.write_text(json.dumps(plan))
     data = tmp_path / "data"
@@ -181,7 +199,7 @@ def test_continuation_still_requires_parent_quality_and_current_data(
             phase_end_validation_ce_tokens=5000000,
         ),
     )
-    if indexer:
+    if continuation != "main":
         evidence["reports"] = {}
         for name in plan["phases"][1]["required_evidence"]:
             report_path = tmp_path / f"{name}.json"
@@ -203,11 +221,13 @@ def test_continuation_still_requires_parent_quality_and_current_data(
     result = check()
     assert result["allowed"] and result["profile_during_formal_updates"]
     assert not result["independent_production_qualification_passed"]
-    if indexer:
+    if continuation != "main":
         evidence["data_audit"]["phase_end_validation_ce_tokens"] = 4999999
         assert any("validation is smaller" in e for e in check()["errors"])
         evidence["data_audit"]["phase_end_validation_ce_tokens"] = 5000000
         for name, path in evidence["reports"].items():
+            Path(path).unlink()
+            assert any(name in e for e in check()["errors"])
             Path(path).write_text(json.dumps(dict(source_commit="current", passed=False)))
             assert any(name in e for e in check()["errors"])
             Path(path).write_text(json.dumps(dict(source_commit="wrong", passed=True)))
