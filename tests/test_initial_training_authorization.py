@@ -7,6 +7,36 @@ from minifrontier.data import sha256
 from minifrontier.training.strategy_gate import continuous_phase_profile, initial_start_authorized
 
 
+def test_manual_review_waiver_can_bind_pretraining_indexer_but_not_posttraining(tmp_path):
+    from minifrontier.training.strategy_gate import _human_review_waived
+
+    path = tmp_path / "waiver.json"
+    path.write_text(
+        json.dumps(
+            dict(
+                kind="maintainer_human_review_waiver",
+                status="authorized",
+                scope="learning_project_pretraining_manual_review_only",
+                human_review_completed=False,
+                authorization=dict(user_statement="Skip manual review for this learning project."),
+                bindings=[dict(model="minideepseekv4", phase="D3", data_sha256="data")],
+            )
+        )
+    )
+    evidence = dict(human_review_waiver=dict(path=str(path), sha256=sha256(path)))
+    phase = dict(
+        id="D3", budget_scope="indexer", objective="input_tokens", attention_phase="dense_distill"
+    )
+    assert _human_review_waived(evidence, "minideepseekv4", phase, "data")
+    assert not _human_review_waived(evidence, "minideepseekv4", phase, "other")
+    assert not _human_review_waived(
+        evidence, "minideepseekv4", dict(phase, budget_scope="posttraining"), "data"
+    )
+    assert not _human_review_waived(
+        evidence, "minideepseekv4", dict(phase, attention_phase="sft"), "data"
+    )
+
+
 def test_initial_permission_is_bound_and_never_qualifies_a_later_phase(tmp_path):
     prior = tmp_path / "prior.json"
     prior.write_text(json.dumps({"historical_result": "retained"}))
@@ -79,7 +109,9 @@ def test_continuous_main_phase_observation_does_not_skip_attention_conversion():
 
 
 @pytest.mark.parametrize("indexer", [False, True])
-def test_continuation_still_requires_parent_quality_and_current_data(tmp_path, monkeypatch, indexer):
+def test_continuation_still_requires_parent_quality_and_current_data(
+    tmp_path, monkeypatch, indexer
+):
     from minifrontier.training import strategy_gate
 
     document = tmp_path / "strategy.md"

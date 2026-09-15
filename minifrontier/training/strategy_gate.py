@@ -59,7 +59,14 @@ def _human_review_waived(evidence, model, phase, data_sha256):
         and report.get("scope") == "learning_project_pretraining_manual_review_only"
         and report.get("human_review_completed") is False
         and bool(report.get("authorization", {}).get("user_statement"))
-        and phase["budget_scope"] == "main"
+        and (
+            phase["budget_scope"] == "main"
+            or (
+                phase["budget_scope"] == "indexer"
+                and phase.get("objective") == "input_tokens"
+                and phase.get("attention_phase") == "dense_distill"
+            )
+        )
         and dict(model=model, phase=phase["id"], data_sha256=data_sha256)
         in report.get("bindings", [])
     )
