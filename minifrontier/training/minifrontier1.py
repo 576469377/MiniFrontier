@@ -4,6 +4,7 @@ import contextlib
 import copy
 import json
 import math
+import os
 import random
 import shutil
 import time
@@ -499,6 +500,8 @@ def train(
         MiniFrontier11ForCausalLM if c.model_version == MF11_VERSION else MiniFrontier1ForCausalLM
     )
     model = model_cls(c, attention).to(device)
+    if isinstance(model, MiniFrontier11ForCausalLM):
+        model.set_mhc_backend(os.environ.get("MINIFRONTIER_MHC_BACKEND", "reference"))
     if saved:
         if (
             saved["model_name"] != model_name
@@ -802,6 +805,16 @@ def train(
         last_evaluation = (step, final, metrics)
         return metrics
 
+    record(
+        dict(
+            event="start",
+            step=step,
+            main_ce_tokens=ledger["main_ce_tokens"],
+            ce_chunk_size=int(os.environ.get("MINIFRONTIER_CE_CHUNK_SIZE", "128")),
+            mhc_backend=getattr(model, "mhc_backend", None),
+            dense_prefill_backend=os.environ.get("MINIFRONTIER_MF_DENSE_PREFILL", "reference"),
+        )
+    )
     try:
         model.train()
         if ce_validation is not None and step == 0 and not finished():

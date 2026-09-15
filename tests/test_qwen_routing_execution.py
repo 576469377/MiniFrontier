@@ -6,8 +6,13 @@ import pytest
 import torch
 import torch.nn.functional as F
 from test_miniqwen4 import tiny_config
+from torch.utils.checkpoint import checkpoint
 
-from minifrontier.models.miniqwen4.batched_experts import LoopQwenExperts
+from minifrontier.models.miniqwen4.batched_experts import (
+    BatchedQwenExperts,
+    LoopQwenExperts,
+    configure_experts,
+)
 from minifrontier.training.qwen_balance import normalized_router_loss
 
 
@@ -81,6 +86,38 @@ def test_empty_routes_do_not_create_parameter_or_input_gradients():
     assert all(parameter.grad is None for parameter in module.parameters())
 
 
+@pytest.mark.parametrize("autocast", [False, True])
+def test_unbound_expert_views_keep_gradients_during_checkpoint_replay(autocast):
+    module, x, ids, weights = expert_case("collapsed")
+    reference = copy.deepcopy(module)
+    old_x = x.detach().clone().requires_grad_()
+    old_weights = weights.detach().clone().requires_grad_()
+    with torch.autocast("cpu", dtype=torch.bfloat16, enabled=autocast):
+        actual = checkpoint(module, x, ids, weights, use_reentrant=False)
+        expected = checkpoint(reference.reference, old_x, ids, old_weights, use_reentrant=False)
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    gradient = torch.randn_like(actual)
+    actual.backward(gradient)
+    expected.backward(gradient)
+    torch.testing.assert_close(x.grad, old_x.grad, rtol=0, atol=0)
+    torch.testing.assert_close(weights.grad, old_weights.grad, rtol=0, atol=0)
+    for parameter, old_parameter in zip(module.parameters(), reference.parameters(), strict=True):
+        torch.testing.assert_close(parameter.grad, old_parameter.grad, rtol=0, atol=0)
+
+
+def test_expert_gradients_are_joined_once_per_parameter():
+    calls = []
+    for optimized in (False, True):
+        module, x, ids, weights = expert_case("random")
+        forward = module if optimized else module.reference
+        with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU]) as profile:
+            forward(x, ids, weights).sum().backward()
+        calls.append({item.key: item.count for item in profile.key_averages()})
+    assert calls[0]["aten::select_backward"] == 2 * ids.unique().numel()
+    assert calls[1].get("aten::select_backward", 0) == 0
+    assert calls[1]["UnbindBackward0"] == 2
+
+
 def test_grouping_retains_expert_and_slot_major_projection_rows(monkeypatch):
     module, x, ids, weights = expert_case("random")
     rows = []
@@ -111,6 +148,133 @@ def test_stable_grouping_has_no_dynamic_nonzero_or_bincount():
     assert calls[1].get("aten::nonzero", 0) == 0
     assert calls[1].get("aten::bincount", 0) == 0
     assert calls[1].get("aten::one_hot", 0) == 0
+
+
+@pytest.mark.parametrize("autocast", [False, True])
+@pytest.mark.parametrize("weight_dtype", [torch.float32, torch.bfloat16])
+@pytest.mark.parametrize("pattern", ["random", "collapsed", "single"])
+def test_batched_experts_match_projection_precision_and_all_gradients(
+    autocast, weight_dtype, pattern
+):
+    module, x, ids, weights = expert_case(pattern)
+    reference = copy.deepcopy(module)
+    configure_experts(module, "batched")
+    old_x = x.detach().clone().requires_grad_()
+    weights = weights.detach().to(weight_dtype).requires_grad_()
+    old_weights = weights.detach().clone().requires_grad_()
+    with torch.autocast("cpu", dtype=torch.bfloat16, enabled=autocast):
+        actual = module(x, ids, weights)
+        expected = reference.reference(old_x, ids, old_weights)
+    gradient = torch.randn_like(actual)
+    actual.backward(gradient)
+    expected.backward(gradient)
+    pairs = [(actual, expected), (x.grad, old_x.grad), (weights.grad, old_weights.grad)]
+    pairs.extend(
+        (p.grad, old.grad)
+        for p, old in zip(module.parameters(), reference.parameters(), strict=True)
+    )
+    for value, old in pairs:
+        # CPU BF16 GEMMs retain these fixtures exactly. FP32 batched GEMMs have
+        # small reduction-order differences, including padding in weight gradients.
+        torch.testing.assert_close(
+            value, old, rtol=0 if autocast else 1e-6, atol=0 if autocast else 2e-7
+        )
+    unused = torch.ones(module.num_experts, dtype=torch.bool)
+    unused[ids.unique()] = False
+    for parameter in module.parameters():
+        assert parameter.grad is not None
+        assert not torch.count_nonzero(parameter.grad[unused])
+
+
+@pytest.mark.parametrize("weight_dtype", [torch.float32, torch.bfloat16])
+def test_batched_bf16_accumulator_and_checkpoint_gradients(weight_dtype):
+    module, x, ids, weights = expert_case("random")
+    reference = copy.deepcopy(module)
+    configure_experts(module, "batched")
+    x = x.detach().bfloat16().requires_grad_()
+    old_x = x.detach().clone().requires_grad_()
+    weights = weights.detach().to(weight_dtype).requires_grad_()
+    old_weights = weights.detach().clone().requires_grad_()
+    with torch.autocast("cpu", dtype=torch.bfloat16):
+        actual = checkpoint(module, x, ids, weights, use_reentrant=False)
+        expected = checkpoint(reference.reference, old_x, ids, old_weights, use_reentrant=False)
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    gradient = torch.randn_like(actual)
+    actual.backward(gradient)
+    expected.backward(gradient)
+    # Packed input-gradient scatter changes the sum order for BF16 leaf inputs;
+    # routing, forward accumulator and parameter-gradient fixtures remain exact.
+    difference = (x.grad.float() - old_x.grad.float()).double()
+    scale = old_x.grad.double()
+    assert difference.norm() <= 0.006 * scale.norm()
+    assert difference.abs().max() <= 0.015 * scale.abs().max()
+    torch.testing.assert_close(weights.grad, old_weights.grad, rtol=0, atol=0)
+    for parameter, old in zip(module.parameters(), reference.parameters(), strict=True):
+        torch.testing.assert_close(parameter.grad, old.grad, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("reason", ["duplicate", "skewed", "empty", "no_slots"])
+def test_batched_unsafe_or_empty_routes_use_the_exact_loop(reason, monkeypatch):
+    module, x, ids, weights = expert_case("duplicate" if reason == "duplicate" else "random")
+    if reason == "skewed":
+        ids = torch.zeros(len(x), 1, dtype=torch.long)
+        weights = torch.ones_like(ids, dtype=torch.float32, requires_grad=True)
+    elif reason == "empty":
+        x = x.detach()[:0].requires_grad_()
+        ids = ids[:0]
+        weights = weights.detach()[:0].requires_grad_()
+    elif reason == "no_slots":
+        ids = ids[:, :0]
+        weights = weights.detach()[:, :0].requires_grad_()
+    reference = copy.deepcopy(module)
+    configure_experts(module, "batched")
+    old_x = x.detach().clone().requires_grad_()
+    old_weights = weights.detach().clone().requires_grad_()
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("fallback must not allocate or run padded GEMMs")
+
+    monkeypatch.setattr(torch, "bmm", forbidden)
+    with torch.autocast("cpu", dtype=torch.bfloat16):
+        actual = module(x, ids, weights)
+        expected = reference.reference(old_x, ids, old_weights)
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    if actual.requires_grad:
+        gradient = torch.randn_like(actual)
+        actual.backward(gradient)
+        expected.backward(gradient)
+    for value, old in [
+        (x, old_x),
+        (weights, old_weights),
+        *zip(module.parameters(), reference.parameters(), strict=True),
+    ]:
+        assert (value.grad is None) == (old.grad is None)
+        torch.testing.assert_close(value.grad, old.grad, rtol=0, atol=0)
+
+
+def test_batched_gemms_pack_source_slot_major_rows_without_changing_parameters(monkeypatch):
+    module, x, ids, weights = expert_case("random")
+    original = dict(module.named_parameters())
+    configure_experts(module, "batched")
+    assert isinstance(module, BatchedQwenExperts)
+    assert all(parameter is original[name] for name, parameter in module.named_parameters())
+    calls = []
+    bmm = torch.bmm
+
+    def capture(left, right):
+        calls.append(left.detach().clone())
+        return bmm(left, right)
+
+    monkeypatch.setattr(torch, "bmm", capture)
+    module(x, ids, weights)
+    assert len(calls) == 2
+    for expert in range(module.num_experts):
+        _, tokens = torch.where(ids.transpose(0, 1).eq(expert))
+        torch.testing.assert_close(calls[0][expert, : len(tokens)], x[tokens], rtol=0, atol=0)
+        assert not torch.count_nonzero(calls[0][expert, len(tokens) :])
+    configure_experts(module, "loop")
+    assert type(module) is LoopQwenExperts
+    assert all(parameter is original[name] for name, parameter in module.named_parameters())
 
 
 def reference_fixed_frequency_loss(routers, experts, top_k, valid_mask, frequency):

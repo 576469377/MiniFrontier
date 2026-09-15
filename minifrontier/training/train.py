@@ -351,6 +351,12 @@ def run(args, rank, world, device):
     if args.model == "miniqwen4" and phase == "dense_pretrain" and device.type == "cuda":
         model.set_dense_attention_backend("sdpa")
         model.set_gdn_backend("fla" if find_spec("fla") is not None else "torch")
+        from minifrontier.models.miniqwen4.batched_experts import configure_experts
+
+        model.expert_execution_backend = os.environ.get(
+            "MINIFRONTIER_QWEN_EXPERT_BACKEND", model.config.expert_execution
+        )
+        configure_experts(model, model.expert_execution_backend)
     if args.model == "minideepseekv4" and phase == "sparse_cpt" and device.type == "cuda":
         model.set_sparse_attention_backend(
             os.environ.get("MINIFRONTIER_SPARSE_ATTENTION_BACKEND", "reference")
@@ -1134,6 +1140,7 @@ def run(args, rank, world, device):
             gdn_backend=getattr(model, "gdn_backend", None),
             sparse_attention_backend=getattr(model, "sparse_attention_backend", None),
             ce_chunk_size=int(os.environ.get("MINIFRONTIER_CE_CHUNK_SIZE", "128")),
+            expert_execution_backend=getattr(model, "expert_execution_backend", None),
         )
     )
     # Exact continuation already binds the validation selection. Keep its token

@@ -96,6 +96,15 @@ class MiniFrontier11ForCausalLM(nn.Module):
                     parameter.mul_((2 * c.num_hidden_layers) ** -0.5)
         self.set_phase(training_phase)
 
+    def set_mhc_backend(self, backend: str) -> None:
+        """Opt in to CUDA coefficient fusion; CPU and checkpoints keep the reference."""
+        if backend not in {"reference", "compiled"}:
+            raise ValueError("mHC backend must be reference or compiled")
+        self.mhc_backend = backend
+        for module in self.modules():
+            if isinstance(module, SinglePassMHC):
+                module.backend = backend
+
     @torch.no_grad()
     def _initialize(self, module):
         c = self.config

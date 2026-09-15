@@ -1,5 +1,7 @@
 """MF1.1-owned single-pass mHC, copied from DeepSeek-V4.1 dba1be0 equations."""
 
+from functools import lru_cache
+
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -28,6 +30,64 @@ from torch import Tensor, nn
 # Computation below derives from inference/model.py Block, dba1be0.
 
 
+def _sinkhorn_coefficients(mixed, scale, base, mult, eps, iters):
+    """Keep the complete FP32 coefficient equations in a small compilable graph."""
+    mixed, scale, base = mixed.float(), scale.float(), base.float()
+    pre = (mixed[..., :mult] * scale[0] + base[:mult]).sigmoid() + eps
+    post = 2 * (mixed[..., mult : 2 * mult] * scale[1] + base[mult : 2 * mult]).sigmoid()
+    comb = (mixed[..., 2 * mult :] * scale[2] + base[2 * mult :]).unflatten(-1, (mult, mult))
+    comb = comb.softmax(-1) + eps
+    comb = comb / (comb.sum(-2, keepdim=True) + eps)
+    for _ in range(iters - 1):
+        comb = comb / (comb.sum(-1, keepdim=True) + eps)
+        comb = comb / (comb.sum(-2, keepdim=True) + eps)
+    return pre, post, comb
+
+
+@lru_cache(maxsize=1)
+def _compiled_sinkhorn():
+    # Compile only coefficient elementwise/reduction work, not the model or GEMM.
+    # Static shapes avoid Inductor's symbolic-stride failure in this reduction
+    # graph. No autotuning search, CUDA graphs, or fast-math approximation.
+    return torch.compile(
+        _sinkhorn_coefficients,
+        fullgraph=True,
+        dynamic=False,
+        options={
+            "compile_threads": 1,
+            "max_autotune": False,
+            "triton.cudagraphs": False,
+            "use_fast_math": False,
+        },
+    )
+
+
+def _tiled_sinkhorn_coefficients(mixed, scale, base, mult, eps, iters):
+    """Use one static kernel shape for all batch/context and tail lengths."""
+    flat = mixed.reshape(-1, mixed.shape[-1])
+    if not flat.shape[0]:
+        return _sinkhorn_coefficients(mixed, scale, base, mult, eps, iters)
+    compiled = _compiled_sinkhorn()
+    pieces: tuple[list[Tensor], list[Tensor], list[Tensor]] = ([], [], [])
+    tile_size = 2048
+    for start in range(0, flat.shape[0], tile_size):
+        tile = flat[start : start + tile_size]
+        count = tile.shape[0]
+        if count < tile_size:
+            tile = F.pad(tile, (0, 0, 0, tile_size - count))
+        coefficients = compiled(tile, scale, base, mult, eps, iters)
+        for parts, coefficient in zip(pieces, coefficients, strict=True):
+            # Coefficients are independent across positions. Padding contributes
+            # neither output nor parameter gradients after this slice.
+            parts.append(coefficient[:count])
+    prefix = mixed.shape[:-1]
+    return (
+        torch.cat(pieces[0], dim=0).reshape(*prefix, mult),
+        torch.cat(pieces[1], dim=0).reshape(*prefix, mult),
+        torch.cat(pieces[2], dim=0).reshape(*prefix, mult, mult),
+    )
+
+
 def single_pass_coefficients(
     stream: Tensor,
     projection: Tensor,
@@ -38,6 +98,7 @@ def single_pass_coefficients(
     norm_eps: float,
     eps: float,
     iters: int,
+    backend: str = "reference",
 ) -> tuple[Tensor, Tensor, Tensor]:
     """FP32 coefficient projection and the official Sinkhorn split."""
     x = stream.flatten(-2).float()
@@ -45,16 +106,12 @@ def single_pass_coefficients(
         mixed = F.linear(x, projection.float()) * torch.rsqrt(
             x.square().mean(-1, keepdim=True) + norm_eps
         )
-    scale, base = scale.float(), base.float()
-    pre = (mixed[..., :mult] * scale[0] + base[:mult]).sigmoid() + eps
-    post = 2 * (mixed[..., mult : 2 * mult] * scale[1] + base[mult : 2 * mult]).sigmoid()
-    comb = (mixed[..., 2 * mult :] * scale[2] + base[2 * mult :]).unflatten(-1, (mult, mult))
-    comb = comb.softmax(-1) + eps
-    comb = comb / (comb.sum(-2, keepdim=True) + eps)
-    for _ in range(iters - 1):
-        comb = comb / (comb.sum(-1, keepdim=True) + eps)
-        comb = comb / (comb.sum(-2, keepdim=True) + eps)
-    return pre, post, comb
+    coefficients = (
+        _tiled_sinkhorn_coefficients
+        if backend == "compiled" and mixed.is_cuda
+        else _sinkhorn_coefficients
+    )
+    return coefficients(mixed, scale, base, mult, eps, iters)
 
 
 class SinglePassMHC(nn.Module):
@@ -72,6 +129,7 @@ class SinglePassMHC(nn.Module):
         self.norm_eps = config.rms_norm_eps
         self.sinkhorn_iters = 20
         self.eps = 1e-6
+        self.backend = "reference"
         count = (2 + self.streams) * self.streams
         self.fn = nn.Parameter(torch.empty(count, self.streams * config.hidden_size))
         self.base = nn.Parameter(torch.zeros(count))
@@ -92,6 +150,7 @@ class SinglePassMHC(nn.Module):
             norm_eps=self.norm_eps,
             eps=self.eps,
             iters=self.sinkhorn_iters,
+            backend=self.backend,
         )
 
     @staticmethod
