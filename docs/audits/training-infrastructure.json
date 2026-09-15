@@ -1374,5 +1374,172 @@
       "lost_optimizer_updates": 0,
       "status": "corrected_both_mf_runs_continuing"
     }
+  },
+  "phase_continuation_2026_09_15": {
+    "model": "minideepseekv4",
+    "seed": 42,
+    "d3": {
+      "status": "completed",
+      "source": {
+        "commit": "a82ade11eefe4e5a738e7857316ea11e0b0d6bbe",
+        "dirty": false,
+        "implementation_sha256": "48ebfa6e5df7cf653075bb894b205854757b9d71f00c091c37b4c3ab0904a444"
+      },
+      "stage": "dense_distill",
+      "budget": {
+        "unit": "input_tokens",
+        "target": 10000000,
+        "scope": "indexer_only"
+      },
+      "final": {
+        "optimizer_updates": 299,
+        "input_tokens": 10031719,
+        "ce_tokens": 0,
+        "main_ce_tokens": 750033445,
+        "skipped_windows": 0
+      },
+      "checkpoint_sha256": "00def611c365eeb6e526b34308e1bbe17dd5389219099cf160675a8a1a319a2c",
+      "fixed_validation": {
+        "contexts": 32,
+        "observations": 4,
+        "selection_sha256": "62046ef53db896c37fe4f131e3f2bcda016e87007685f82a73b3f01805428b5c",
+        "logged_loss_denominator": "ce_tokens",
+        "ce_tokens_per_observation": 31539,
+        "first": {
+          "step": 0,
+          "indexer_kl": 0.714613079529573,
+          "lm_nll": 2.6123872540031043
+        },
+        "final": {
+          "step": 299,
+          "indexer_kl": 0.12551465417448343,
+          "lm_nll": 2.6123872540031043
+        },
+        "interpretation": "The recorded loss is indexer KL, aggregated by the evaluator with CE weights. The fixed main-LM NLL is unchanged. Training consumes input tokens, not main CE; the 2.5B main-CE budget is unchanged."
+      },
+      "finite_logged_updates": true,
+      "indexer_gradients_nonzero": true,
+      "capability_status": "unassessed"
+    },
+    "d4_conversion": {
+      "evaluation_source": {
+        "commit": "c43b294a3c8991c228f90d57c5d8fcbb30a5f03e",
+        "dirty": false,
+        "implementation_sha256": "b9166e5099946c6a032b96b18c6964510525d86eb951a36487850c38c7658213"
+      },
+      "parent_checkpoint_sha256": "00def611c365eeb6e526b34308e1bbe17dd5389219099cf160675a8a1a319a2c",
+      "selection_sha256": "c3d01206d35ed4e5d807894da80f410075924a192f0431f7af85f4bea28306c6",
+      "seconds": 12.698657371103764,
+      "passed_local_guard": true,
+      "split": "val",
+      "context_length": 2048,
+      "microbatch": 1,
+      "attention": {
+        "dense_phase": "dense_distill",
+        "sparse_phase": "sparse_cpt",
+        "index_topk": 8,
+        "window_size": 128,
+        "context_length": 2048,
+        "dtype": "FP32 weights with BF16 autocast"
+      },
+      "metrics": {
+        "zh_edu": {
+          "contexts": 2,
+          "ce_tokens": 2561,
+          "dense_nll": 4.072926633574915,
+          "sparse_nll": 4.1164162893492655,
+          "relative_nll_change": 0.010677741016949849
+        },
+        "en_edu": {
+          "contexts": 2,
+          "ce_tokens": 2765,
+          "dense_nll": 3.3873846246364105,
+          "sparse_nll": 3.432182650022869,
+          "relative_nll_change": 0.013224959770036904
+        },
+        "code": {
+          "contexts": 2,
+          "ce_tokens": 3230,
+          "dense_nll": 1.2540231495449787,
+          "sparse_nll": 1.2780333902075565,
+          "relative_nll_change": 0.01914656892202493
+        },
+        "verified_math_science": {
+          "contexts": 1,
+          "ce_tokens": 1680,
+          "dense_nll": 3.167353868484497,
+          "sparse_nll": 3.1951286792755127,
+          "relative_nll_change": 0.008769089891526693
+        },
+        "dialogue": {
+          "contexts": 1,
+          "ce_tokens": 1064,
+          "dense_nll": 2.166536331176758,
+          "sparse_nll": 2.2455127239227295,
+          "relative_nll_change": 0.03645283562038193
+        },
+        "overall": {
+          "contexts": 8,
+          "ce_tokens": 11300,
+          "dense_nll": 2.785285621607198,
+          "sparse_nll": 2.8245324525790934,
+          "relative_nll_change": 0.014090774270126172
+        }
+      },
+      "local_thresholds": {
+        "overall_relative_nll_regression_max": 0.05,
+        "per_domain_relative_nll_regression_max": 0.1
+      },
+      "same_checkpoint": true,
+      "no_parameter_or_buffer_updates": true,
+      "training_updates": 0,
+      "capture_quality_measured": false,
+      "scope": "Eight fixed held-out contexts, 11300 CE targets, with CE-weighted overall and domain NLL. The 5% overall and 10% per-domain limits are local continuation choices, not official thresholds or a capability pass. Each domain has only one or two contexts; no full-validation conclusion or confidence interval is established. Captured teacher attention mass and top-k recall were not measured; indexer KL does not replace them."
+    },
+    "evidence_sha256": {
+      "d3_run": "79808a635d11b84173f04233de8072d652f263fe3df58c54dc4b865a971a25e9",
+      "d3_status": "5d4b0d804a3df190a68d8f3c4325297bbe920867a6dc1e7786d1555bf199b564",
+      "d3_metrics": "67b9aa3146904dbd6e798d6c6a8c6e688023804be161f8c7f38a4eb0ce6d5e73",
+      "parent_quality": "fdf0a946dd3687982f2f77f1be6971d329ff2f4a968ea9503c1490cce124be0a",
+      "dense_sparse_conversion": "44336aad083fdc109378a475d7b82576993e8c86c7f8e851f2fc2e94ce910027"
+    },
+    "d4_execution": {
+      "state": "formal_training_updating",
+      "source_commit": "c43b294a3c8991c228f90d57c5d8fcbb30a5f03e",
+      "budget_ce": 1500000000,
+      "sequence_length": 2048,
+      "global_input_tokens": 32768,
+      "microbatch": 4,
+      "max_data_epochs": 3,
+      "initial_microbatch8_failure": {
+        "cause": "CUDA OOM during backward before the first optimizer update",
+        "optimizer_updates": 0,
+        "checkpoint_created": false,
+        "peak_allocated_gib_at_oom": 20.83,
+        "requested_allocation_gib": 1.25
+      },
+      "recovery": "Initialize from the unchanged complete D3 checkpoint; only reduce microbatch and accumulate more microbatches. Preserve model, data, global input budget, learning-rate schedule, optimizer moments and RNG. Conversion report is reused; floating-point reductions are not claimed bitwise identical.",
+      "first_update": {
+        "step": 1,
+        "lm_loss": 3.227029323577881,
+        "loss": 4.389819622039795,
+        "grad_norm": 1.3282140493392944,
+        "main_ce_tokens": 750067330,
+        "token_ledger": {
+          "ce_tokens": 33885,
+          "input_tokens": 33920,
+          "response_tokens": 0,
+          "optimizer_updates": 1,
+          "skipped_windows": 0,
+          "image_occurrences": 0,
+          "video_examples": 0,
+          "video_frames": 0,
+          "image_features": 0
+        },
+        "peak_allocated_mib": 19276.62890625,
+        "micro_batches": 9,
+        "input_batch_actual": 33920
+      }
+    }
   }
 }
