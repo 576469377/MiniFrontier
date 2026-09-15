@@ -145,7 +145,7 @@ def test_continuation_still_requires_parent_quality_and_current_data(tmp_path, m
             sealed_test=True,
             readable_200_passed=True,
             minimum_source_holdout_fraction=0.01,
-            periodic_validation_ce_tokens=5000000 if indexer else 1000000,
+            periodic_validation_ce_tokens=1000000,
             phase_end_validation_ce_tokens=5000000,
         ),
     )
@@ -172,6 +172,9 @@ def test_continuation_still_requires_parent_quality_and_current_data(tmp_path, m
     assert result["allowed"] and result["profile_during_formal_updates"]
     assert not result["independent_production_qualification_passed"]
     if indexer:
+        evidence["data_audit"]["phase_end_validation_ce_tokens"] = 4999999
+        assert any("validation is smaller" in e for e in check()["errors"])
+        evidence["data_audit"]["phase_end_validation_ce_tokens"] = 5000000
         for name, path in evidence["reports"].items():
             Path(path).write_text(json.dumps(dict(source_commit="current", passed=False)))
             assert any(name in e for e in check()["errors"])

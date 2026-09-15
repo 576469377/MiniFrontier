@@ -204,7 +204,14 @@ def check(plan_path, phase_id, evidence_path, *, data, config, output):
             errors.append(f"some source has less than {100 * holdout_target:g}% group holdout")
         base_pretraining = phase["budget_scope"] == "main"
         minimum_periodic = 1_000_000 if base_pretraining else 5_000_000
-        if audit.get("periodic_validation_ce_tokens", 0) < minimum_periodic:
+        validation_inventory = audit.get("periodic_validation_ce_tokens", 0)
+        if phase["budget_scope"] == "indexer":
+            # The same admitted holdout can come from the dense parent's final
+            # evaluation. Its inventory is separate from sampled indexer KL.
+            validation_inventory = max(
+                validation_inventory, audit.get("phase_end_validation_ce_tokens", 0)
+            )
+        if validation_inventory < minimum_periodic:
             errors.append(f"periodic validation is smaller than {minimum_periodic} CE tokens")
         if base_pretraining and audit.get("phase_end_validation_ce_tokens", 0) < 5_000_000:
             errors.append("phase-end pretraining validation is smaller than 5M CE tokens")

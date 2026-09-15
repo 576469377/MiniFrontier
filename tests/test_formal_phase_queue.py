@@ -83,6 +83,28 @@ def test_mf1_budget_completion_is_not_mistaken_for_missing_chat_qualification():
     assert not queue.phase_finished(dict(state="paused", ledger=dict(phase_tokens=10)), 10)
 
 
+@pytest.mark.parametrize(
+    "ledger,unit,expected",
+    [
+        (dict(input_tokens=10, ce_tokens=0), "input_tokens", True),
+        (dict(input_tokens=9, ce_tokens=100), "input_tokens", False),
+        (dict(phase_tokens=100, ce_tokens=100), "input_tokens", False),
+        (dict(input_tokens=100, ce_tokens=9), "ce_tokens", False),
+        (dict(input_tokens=100, ce_tokens=0), "ce_tokens", False),
+        (dict(phase_tokens=10, ce_tokens=0), "phase_tokens", True),
+        (dict(input_tokens=100, ce_tokens=100), "phase_tokens", False),
+    ],
+)
+def test_completion_requires_the_declared_token_unit(ledger, unit, expected):
+    assert queue.phase_finished(dict(state="complete", token_ledger=ledger), 10, unit) is expected
+    assert not queue.phase_finished(dict(state="paused", token_ledger=ledger), 10, unit)
+
+
+def test_unknown_token_unit_is_rejected():
+    with pytest.raises(ValueError, match="phase unit"):
+        queue.phase_finished(dict(state="complete", token_ledger=dict(ce_tokens=100)), 10, "tokens")
+
+
 def initial_fixture(tmp_path, model="minideepseekv41", phase="D1"):
     spec, job = fixture(tmp_path)
     for key in ("parent_status", "parent_checkpoint", "parent_ce"):
@@ -136,10 +158,30 @@ def test_initial_phase_rejects_later_phases_implicit_flags_and_parents(tmp_path,
         queue.phase_ready(spec)
 
 
-def test_formal_successor_runs_once_and_respects_single_gpu_environment(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "phase,parent_unit,phase_unit",
+    [("D2", None, None), ("D3", "ce_tokens", "input_tokens"), ("D4", "input_tokens", "ce_tokens")],
+)
+def test_formal_successor_runs_once_and_respects_single_gpu_environment(
+    tmp_path, monkeypatch, phase, parent_unit, phase_unit
+):
     spec, job = fixture(tmp_path)
-    write(Path(spec["parent_status"]), dict(state="complete", token_ledger=dict(ce_tokens=10)))
-    result = dict(state="complete", token_ledger=dict(ce_tokens=20))
+    spec.update(id=phase, phase=phase)
+    job["phase"] = phase
+    job["command"][job["command"].index("--pretraining-phase") + 1] = phase
+    if parent_unit is not None:
+        spec.update(parent_unit=parent_unit, phase_unit=phase_unit)
+    parent_ledger = dict(ce_tokens=10, input_tokens=0)
+    if parent_unit == "input_tokens":
+        # A D3 parent can complete without adding any main LM CE tokens.
+        parent_ledger = dict(ce_tokens=0, input_tokens=10)
+    write(Path(spec["parent_status"]), dict(state="complete", token_ledger=parent_ledger))
+    result = dict(
+        state="complete",
+        token_ledger=dict(ce_tokens=0, input_tokens=20)
+        if phase_unit == "input_tokens"
+        else dict(ce_tokens=20),
+    )
     script = (
         "import json,os; from pathlib import Path; "
         f"p=Path({spec['output']!r}); p.mkdir(); "
@@ -166,7 +208,7 @@ def test_formal_successor_runs_once_and_respects_single_gpu_environment(tmp_path
     monkeypatch.setattr(queue, "require_space", lambda *a, **k: None)
     assert queue.execute_phases(path) == 0
     state = json.loads((tmp_path / "queue.json").read_text())
-    assert state["jobs"]["D2"]["state"] == "complete"
+    assert state["jobs"][phase]["state"] == "complete"
     env = json.loads((Path(spec["output"]) / "environment.json").read_text())
     assert env["CUDA_VISIBLE_DEVICES"] == "GPU-7" and "HTTPS_PROXY" not in env
     assert env["NO_PROXY"] == "*" and env["MINIFRONTIER_MIN_FREE_GIB"] == "80"

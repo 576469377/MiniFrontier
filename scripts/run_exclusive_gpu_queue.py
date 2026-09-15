@@ -161,12 +161,17 @@ def completed(job):
     return True
 
 
-def phase_finished(record, budget):
+def phase_finished(record, budget, unit="ce_tokens"):
+    """Check the declared budget axis; retain the legacy MF phase CE ledger."""
+    if unit not in ("ce_tokens", "input_tokens", "phase_tokens"):
+        raise ValueError("phase unit must be ce_tokens, input_tokens or phase_tokens")
     ledger = record.get("token_ledger", record.get("ledger", {}))
-    return (
-        record.get("state") in {"complete", "budget_complete_unqualified"}
-        and ledger.get("phase_tokens", ledger.get("ce_tokens", 0)) >= budget
+    tokens = (
+        ledger.get("phase_tokens", ledger.get("ce_tokens", 0))
+        if unit == "ce_tokens"
+        else ledger.get(unit, 0)
     )
+    return record.get("state") in {"complete", "budget_complete_unqualified"} and tokens >= budget
 
 
 def phase_ready(spec):
@@ -190,7 +195,7 @@ def phase_ready(spec):
             raise ValueError("random initialization requires a first phase without a parent")
     else:
         parent = read_json(spec["parent_status"])
-        if not phase_finished(parent, spec["parent_ce"]):
+        if not phase_finished(parent, spec["parent_ce"], spec.get("parent_unit", "ce_tokens")):
             return "waiting_parent", None
     publication = Path(spec["launch_file"])
     if not publication.exists():
@@ -266,6 +271,10 @@ def execute_phases(plan_path):
         raise ValueError("phase job IDs and outputs must be unique")
     if any(j["gpu_id"] not in plan["allowed_gpu_ids"] for j in specs):
         raise ValueError("phase requests an undeclared GPU")
+    for spec in specs:
+        for key in ("parent_unit", "phase_unit"):
+            if spec.get(key, "ce_tokens") not in ("ce_tokens", "input_tokens", "phase_tokens"):
+                raise ValueError(f"{key} must be ce_tokens, input_tokens or phase_tokens")
     lock = (output / "controller.lock").open("a")
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     path = output / "queue.json"
@@ -337,7 +346,10 @@ def execute_phases(plan_path):
                     result = read_json(Path(spec["output"]) / "status.json")
                     record.update(
                         state="complete"
-                        if code in (None, 0) and phase_finished(result, spec["phase_ce"])
+                        if code in (None, 0)
+                        and phase_finished(
+                            result, spec["phase_ce"], spec.get("phase_unit", "ce_tokens")
+                        )
                         else "failed",
                         exit_code=code,
                         finished_at=time.time(),
