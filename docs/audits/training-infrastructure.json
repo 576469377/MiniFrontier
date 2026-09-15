@@ -1541,5 +1541,446 @@
         "input_batch_actual": 33920
       }
     }
+  },
+  "execution_2026_09_15": {
+    "status": "five_execution_upgrades_verified_in_formal_updates; v41_D2_recovered_and_continuing",
+    "scope": "Short comparisons with zero optimizer updates. Operator gains and synthetic full-model forward/backward timings are not formal training throughput.",
+    "artifacts": [
+      {
+        "path": "outputs/strategy-pretraining-infra-upgrade-v3/before.json",
+        "sha256": "7e4ad7329af0277aaac5c16923df63436838a8514f35f75e111b94f7981f7551"
+      },
+      {
+        "path": "outputs/strategy-pretraining-infra-upgrade-v3/benchmark-result.json",
+        "sha256": "b4dc0d0a0c4cc72d7f0494e84ff7c9c00df4b377501b8caf5a3f96724f4eeeac"
+      },
+      {
+        "path": "outputs/strategy-pretraining-infra-upgrade-v3/mf-gpu-verification.json",
+        "sha256": "48bcf62a077788e24690744cf93b153315d40e9c9cf4f1199a8b8ec89b7cdb3c"
+      },
+      {
+        "path": "outputs/strategy-pretraining-infra-upgrade-v3/qwen-routing-gpu.json",
+        "sha256": "1163263db5e15dbfd02aba9c46e4082bcf1ca436dd0c01cfd5e2ee45e2e3fc15"
+      },
+      {
+        "path": "outputs/strategy-pretraining-infra-upgrade-v3/after.json",
+        "sha256": "2c76d534e47e2ad0931d7fe42a06984908370f1ac464dd5c6ab1f9b309750562"
+      }
+    ],
+    "baseline": {
+      "observed_utc": "2026-09-15T11:48:32.530043+00:00",
+      "aggregation": "Median of the last 100 logged training updates per model; different real data windows.",
+      "records": [
+        {
+          "model": "minideepseekv4",
+          "phase": "D4",
+          "samples": 100,
+          "step_range": [
+            500,
+            995
+          ],
+          "ce_tokens_per_second": 2042.864499034681,
+          "step_seconds": 16.454342926852405,
+          "foreground_data_wait_seconds": 0.008203749544918537,
+          "foreground_wait_fraction": 0.0004985765509682284,
+          "micro_batches": 8.0
+        },
+        {
+          "model": "minikimik3",
+          "phase": "K2",
+          "samples": 100,
+          "step_range": [
+            12505,
+            13000
+          ],
+          "ce_tokens_per_second": 2429.3027194761808,
+          "step_seconds": 12.737698245793581,
+          "foreground_data_wait_seconds": 0.005821633152663708,
+          "foreground_wait_fraction": 0.0004570396503611795,
+          "micro_batches": 4.0
+        },
+        {
+          "model": "miniqwen4",
+          "phase": "Q2",
+          "samples": 100,
+          "step_range": [
+            6235,
+            6730
+          ],
+          "ce_tokens_per_second": 1157.9313983863922,
+          "step_seconds": 14.024938846938312,
+          "foreground_data_wait_seconds": 0.002120313234627247,
+          "foreground_wait_fraction": 0.00015118163849178694,
+          "micro_batches": 4.0
+        },
+        {
+          "model": "minifrontier1",
+          "phase": "p1",
+          "samples": 100,
+          "step_range": [
+            24936,
+            25035
+          ],
+          "ce_tokens_per_second": 2198.308474270175,
+          "step_seconds": 6.233012326993048,
+          "foreground_data_wait_seconds": 0.02427357342094183,
+          "foreground_wait_fraction": 0.0038943567167068274,
+          "micro_batches": 3.0
+        },
+        {
+          "model": "minideepseekv41",
+          "phase": "D1",
+          "samples": 100,
+          "step_range": [
+            7040,
+            7535
+          ],
+          "ce_tokens_per_second": 2935.3125411081164,
+          "step_seconds": 11.215703927911818,
+          "foreground_data_wait_seconds": 0.004463230259716511,
+          "foreground_wait_fraction": 0.00039794472896249964,
+          "micro_batches": 6.0
+        },
+        {
+          "model": "minifrontier11",
+          "phase": "p0",
+          "samples": 100,
+          "step_range": [
+            8721,
+            8820
+          ],
+          "ce_tokens_per_second": 1383.7508669008705,
+          "step_seconds": 9.931478633545339,
+          "foreground_data_wait_seconds": 0.0004533641040325165,
+          "foreground_wait_fraction": 4.564920499362486e-05,
+          "micro_batches": 6.0
+        }
+      ],
+      "limitations": "V4.1 baseline is completed D1, not its newly resumed stage. Prefetched data waiting excludes overlapping background work.",
+      "interpretation": "Foreground waits below 0.4% and contemporaneous CPU/disk observations without saturation favor execution kernels/recomputation/synchronization as the immediate bottleneck; this is not a universal exclusion of I/O limits."
+    },
+    "deepseek_full_model": {
+      "source_commit": "408e3bc",
+      "reference_source": {
+        "commit": "c43b294a3c8991c228f90d57c5d8fcbb30a5f03e",
+        "dirty": false,
+        "implementation_sha256": "b9166e5099946c6a032b96b18c6964510525d86eb951a36487850c38c7658213"
+      },
+      "checkpoint_sha256": "d24ff5398d09cdcb2dc2dd8d5cdcc67e77e2ae80ce85e569459712f210c6df15",
+      "checkpoint_step": 1038,
+      "seed": 42,
+      "shape": [
+        4,
+        2048
+      ],
+      "precision": "FP32 parameters with BF16 autocast",
+      "method": "Same checkpoint and GPU, synthetic full valid contexts; one warmup and two timed forward/backward calls per backend; median.",
+      "reference_seconds": [
+        4.23131849989295,
+        2.148769747465849,
+        2.4733569007366896
+      ],
+      "chunked_seconds": [
+        2.6336028426885605,
+        2.7020977903157473,
+        2.6429385002702475
+      ],
+      "reference_median_seconds": 2.3110633241012692,
+      "chunked_median_seconds": 2.6725181452929974,
+      "chunked_slowdown_fraction": 0.1564019546423685,
+      "reference_steady_peak_allocated_mib": 17958.15673828125,
+      "chunked_steady_peak_allocated_mib": 7644.48876953125,
+      "chunked_first_call_peak_allocated_mib": 15018.36181640625,
+      "loss_absolute_difference": 0.00077056884765625,
+      "gradient_error": {
+        "relative_l2": 0.010713532567024231,
+        "maximum_absolute": 0.020763278007507324,
+        "finite": true
+      },
+      "decision": "Reference remains default; chunked is explicit opt-in for memory savings and is not deployed as a speed optimization."
+    },
+    "ce_operator": {
+      "shape": [
+        1,
+        4096,
+        512,
+        65536
+      ],
+      "seed": 42,
+      "method": "Same head inputs/weights, one warmup and two measured forward/backward calls; one in eleven labels masked.",
+      "reference_chunk_positions": 128,
+      "selected_chunk_positions": 512,
+      "reference_seconds": [
+        0.0610491968691349,
+        0.058144571259617805,
+        0.057447921484708786
+      ],
+      "selected_seconds": [
+        0.04156523942947388,
+        0.04172491654753685,
+        0.04189346171915531
+      ],
+      "reference_median_seconds": 0.057796246372163296,
+      "selected_median_seconds": 0.04180918913334608,
+      "time_reduction_fraction": 0.27661064934689505,
+      "added_peak_allocated_mib": 264.5283203125,
+      "gradient_error": {
+        "relative_l2": 0.0012084133923053741,
+        "maximum_absolute": 7.62939453125e-06,
+        "finite": true
+      },
+      "decision": "Select 512 positions; unchanged vocabulary, targets, formula and loss denominator; BF16 accumulation is tolerance-based, not bitwise identical."
+    },
+    "mf_operators": {
+      "source": {
+        "commit": "408e3bc357962c56174149dc25fcf256c069e177",
+        "dirty": true,
+        "implementation_sha256": "0190a3a0b86cbb88349d3a53fa04d781b5a8f64dd08b6876e2790ffb8be57684"
+      },
+      "batch_size": 4,
+      "length": 2048,
+      "warmup": 1,
+      "measured": 2,
+      "aggregation": "median",
+      "dtype": "FP32 parameters / BF16 autocast",
+      "scope": "Random same-weight CSA/QSA modules with formal model dimensions; packed/media metadata. No model checkpoint loading, optimizer, training update or throughput extrapolation.",
+      "records": [
+        {
+          "operator": "minifrontier1/csa",
+          "reference_seconds": [
+            0.04633861593902111,
+            0.0445539616048336
+          ],
+          "trimmed_seconds": [
+            0.03125879913568497,
+            0.026917511597275734
+          ],
+          "reference_median_seconds": 0.04544628877192736,
+          "trimmed_median_seconds": 0.02908815536648035,
+          "operator_speedup": 1.562364068788537,
+          "output_relative_l2": 0.0012614125153049827,
+          "input_gradient_relative_l2": 0.005653584375977516,
+          "maximum_parameter_gradient_relative_l2": 0.007824028842151165,
+          "configuration_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8"
+        },
+        {
+          "operator": "minifrontier1/qsa_mla",
+          "reference_seconds": [
+            0.05896418169140816,
+            0.05277484469115734
+          ],
+          "trimmed_seconds": [
+            0.03319239243865013,
+            0.03439159505069256
+          ],
+          "reference_median_seconds": 0.05586951319128275,
+          "trimmed_median_seconds": 0.033791993744671345,
+          "operator_speedup": 1.6533358053220166,
+          "output_relative_l2": 0.0,
+          "input_gradient_relative_l2": 0.00017076247604563832,
+          "maximum_parameter_gradient_relative_l2": 0.0010870987316593528,
+          "configuration_sha256": "0bc8c8e692c806f2deba628256dd6c96c959bf8196f28551d8761e9027626ef8"
+        },
+        {
+          "operator": "minifrontier11/csa",
+          "reference_seconds": [
+            0.04383916035294533,
+            0.05224008113145828
+          ],
+          "trimmed_seconds": [
+            0.032042039558291435,
+            0.02581162378191948
+          ],
+          "reference_median_seconds": 0.048039620742201805,
+          "trimmed_median_seconds": 0.028926831670105457,
+          "operator_speedup": 1.6607287410549194,
+          "output_relative_l2": 0.0012614125153049827,
+          "input_gradient_relative_l2": 0.005653635133057833,
+          "maximum_parameter_gradient_relative_l2": 0.007824028842151165,
+          "configuration_sha256": "6d1ad99e700291653e10771a49faca277ff9d3b56d9d5d413691077007987b12"
+        },
+        {
+          "operator": "minifrontier11/qsa_mla",
+          "reference_seconds": [
+            0.051695169880986214,
+            0.05222535319626331
+          ],
+          "trimmed_seconds": [
+            0.03297066688537598,
+            0.03312225453555584
+          ],
+          "reference_median_seconds": 0.051960261538624763,
+          "trimmed_median_seconds": 0.03304646071046591,
+          "operator_speedup": 1.5723396824207805,
+          "output_relative_l2": 0.0,
+          "input_gradient_relative_l2": 0.00016623898409307003,
+          "maximum_parameter_gradient_relative_l2": 0.0010627862066030502,
+          "configuration_sha256": "6d1ad99e700291653e10771a49faca277ff9d3b56d9d5d413691077007987b12"
+        }
+      ],
+      "decision": "Select per-query-chunk trimming of keys that are invisible to every query in that chunk; retain packed/media visibility and numerical tolerance."
+    },
+    "qwen_expert_operator": {
+      "shape": {
+        "batch": 8,
+        "sequence": 2048,
+        "tokens": 16384,
+        "hidden": 512,
+        "experts": 64,
+        "top_k": 4,
+        "moe_intermediate_size": 192
+      },
+      "seed": 1509,
+      "precision": "FP32 parameters/inputs; BF16 router weights and BF16 autocast",
+      "routing": "seeded synthetic top-k softmax routes with no duplicate expert per token",
+      "warmup_iterations": 1,
+      "measured_iterations": 3,
+      "timing_aggregation": "median",
+      "timing_scope": "synchronized wall time including routing host waits; forward/backward only",
+      "reference_forward_backward_ms": [
+        84.06903594732285,
+        70.07907517254353,
+        68.19679215550423
+      ],
+      "optimized_forward_backward_ms": [
+        68.14235262572765,
+        66.68007373809814,
+        66.33906811475754
+      ],
+      "reference_median_ms": 70.07907517254353,
+      "optimized_median_ms": 66.68007373809814,
+      "operator_speedup": 1.0509747701809053,
+      "numerical_pass": true,
+      "output_bitwise_equal": true,
+      "loss_bitwise_equal": true,
+      "gradient_comparison": {
+        "relative_l2": 0.0,
+        "max_abs": 0.0,
+        "bitwise_equal": true,
+        "finite": true
+      },
+      "decision": "Select stable grouped routing indices; no end-to-end throughput claim."
+    },
+    "deployment_observations": {
+      "observed_utc": "2026-09-15T12:16:59.585663+00:00",
+      "source_commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+      "source_base_commit": "0e7fe74c2f8fa39f030ff6066c9aa90a18542151",
+      "recipe_documents": "The frozen execution release retains the V4.1/MF1.1 documents bound by the running recipes.",
+      "scope": "up to 50 logged updates after each execution resume; V4.1 uses only D2 logs; distinct data windows, not a controlled end-to-end benchmark",
+      "records": [
+        {
+          "model": "minideepseekv4",
+          "phase": "D4",
+          "source_commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "action": "complete_checkpoint_execution_resume",
+          "resume_step": 1038,
+          "latest_step": 1065,
+          "logged_updates": 6,
+          "step_range": [
+            1040,
+            1065
+          ],
+          "ce_tokens_per_second": 2140.5425172881737,
+          "step_seconds": 15.585199032910168,
+          "micro_batches": 7.5,
+          "ce_chunk_size": 512,
+          "mf_dense_prefill": null
+        },
+        {
+          "model": "minikimik3",
+          "phase": "K2",
+          "source_commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "action": "complete_checkpoint_execution_resume",
+          "resume_step": 13105,
+          "latest_step": 13120,
+          "logged_updates": 3,
+          "step_range": [
+            13110,
+            13120
+          ],
+          "ce_tokens_per_second": 2479.5552389954782,
+          "step_seconds": 12.621785318478942,
+          "micro_batches": 4,
+          "ce_chunk_size": 512,
+          "mf_dense_prefill": null
+        },
+        {
+          "model": "miniqwen4",
+          "phase": "Q2",
+          "source_commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "action": "complete_checkpoint_execution_resume",
+          "resume_step": 6821,
+          "latest_step": 6835,
+          "logged_updates": 3,
+          "step_range": [
+            6825,
+            6835
+          ],
+          "ce_tokens_per_second": 1160.4769123684816,
+          "step_seconds": 13.81747717782855,
+          "micro_batches": 4,
+          "ce_chunk_size": 512,
+          "mf_dense_prefill": null
+        },
+        {
+          "model": "minifrontier1",
+          "phase": "P1",
+          "source_commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "action": "complete_checkpoint_execution_resume",
+          "resume_step": 25224,
+          "latest_step": 25273,
+          "logged_updates": 49,
+          "step_range": [
+            25225,
+            25273
+          ],
+          "ce_tokens_per_second": 2224.9742456264976,
+          "step_seconds": 6.112441757693887,
+          "micro_batches": 3,
+          "ce_chunk_size": 512,
+          "mf_dense_prefill": "trimmed"
+        },
+        {
+          "model": "minideepseekv41",
+          "phase": "D2",
+          "source_commit": "3fd51a672113c97661a89615432cb601d11b61ee",
+          "action": "D1_complete_state_to_D2_microbatch4_recovery",
+          "resume_step": 0,
+          "latest_step": 50,
+          "logged_updates": 11,
+          "step_range": [
+            1,
+            50
+          ],
+          "ce_tokens_per_second": 1489.7406715319098,
+          "step_seconds": 22.113641602918506,
+          "micro_batches": 7,
+          "ce_chunk_size": 128,
+          "mf_dense_prefill": null
+        },
+        {
+          "model": "minifrontier11",
+          "phase": "P0",
+          "source_commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "action": "complete_checkpoint_execution_resume",
+          "resume_step": 8948,
+          "latest_step": 8977,
+          "logged_updates": 29,
+          "step_range": [
+            8949,
+            8977
+          ],
+          "ce_tokens_per_second": 1371.7726082480644,
+          "step_seconds": 9.938045427203178,
+          "micro_batches": 6,
+          "ce_chunk_size": 512,
+          "mf_dense_prefill": "trimmed"
+        }
+      ],
+      "free_disk_gib": 104.17610931396484,
+      "disk_reserve_gib": 80,
+      "calculation_scope": "Same loss definitions, batch targets, model and optimizer state; BF16 floating-point differences documented above. No claim of bitwise full training or changed learning quality."
+    },
+    "benchmark_training_updates": 0
   }
 }

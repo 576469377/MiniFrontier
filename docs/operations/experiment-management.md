@@ -22,6 +22,8 @@ python -m scripts.export_experiments --workspace "$PWD" \
 
 MF1 的 `budget_complete_unqualified` 在进程已退出且阶段 token 达到预算时显示为 `completed`，`recorded_state` 保留原值；能力是否通过仍须单独判断。
 
+执行优化使用新的干净源码副本，从完整检查点续训；保留原始证据，并记录恢复步数与运行环境。`MINIFRONTIER_CE_CHUNK_SIZE` 控制完整词表损失的位置分块，默认 128；`MINIFRONTIER_MF_DENSE_PREFILL=trimmed` 启用 MF 稠密注意力的不可见键裁剪，默认 `reference`。DeepSeek 的 `MINIFRONTIER_SPARSE_ATTENTION_BACKEND=chunked` 是省显存选项，本次实测较慢，正式训练继续用 `reference`。选项不自动沿用到新阶段，发布后继任务时应依据对应配置的测量结果记录选择，见[执行对照](../audits/training-infrastructure.md#2026-09-15-执行算子复核)。
+
 重复刷新受文件锁保护。台账包含来源模型、MF1、历史诊断、本机队列及已经同步的远端记录；不会扫描实验代码目录。迁移后遗留的空白等待记录合并到实际远端运行，已产生结果的独立运行保留各自编号。缺少完成证据或记录过期时显示 `unverified` / `unverified_stale`，不能根据目录存在推断正在训练。
 
 ## TensorBoard
