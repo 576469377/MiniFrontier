@@ -205,6 +205,17 @@ class MiniDeepSeekV4ForCausalLM(nn.Module):
                     p.requires_grad_(False)
         self.zero_grad(set_to_none=True)
 
+    def set_sparse_attention_backend(self, backend: str) -> None:
+        """Select sparse execution without changing model parameters or the recipe."""
+        if backend not in {"reference", "chunked"}:
+            raise ValueError("sparse attention backend must be reference or chunked")
+        self.sparse_attention_backend = backend
+        for raw_layer in self.layers:
+            layer = cast(Block, raw_layer)
+            layer.attn.sparse_attention_backend = backend
+        if self.mtp is not None:
+            self.mtp.block.attn.sparse_attention_backend = backend
+
     @staticmethod
     def _block(layer, h, input_ids, valid_mask, sequence_balance_enabled, image_visible):
         layer.ffn.gate.valid_mask = valid_mask

@@ -351,6 +351,10 @@ def run(args, rank, world, device):
     if args.model == "miniqwen4" and phase == "dense_pretrain" and device.type == "cuda":
         model.set_dense_attention_backend("sdpa")
         model.set_gdn_backend("fla" if find_spec("fla") is not None else "torch")
+    if args.model == "minideepseekv4" and phase == "sparse_cpt" and device.type == "cuda":
+        model.set_sparse_attention_backend(
+            os.environ.get("MINIFRONTIER_SPARSE_ATTENTION_BACKEND", "chunked")
+        )
     if args.model == "minideepseekv41" and saved is None:
         from tokenizers import Tokenizer
 
@@ -1128,6 +1132,7 @@ def run(args, rank, world, device):
             data_prefetch_windows=int(prefetch is not None),
             dense_attention_backend=getattr(model, "dense_attention_backend", None),
             gdn_backend=getattr(model, "gdn_backend", None),
+            sparse_attention_backend=getattr(model, "sparse_attention_backend", None),
         )
     )
     # Exact continuation already binds the validation selection. Keep its token

@@ -48,9 +48,7 @@ def _dense_attention(
             if compress_ratio and kv.shape[1] > q.shape[1]:
                 end = q.shape[1] + stop // compress_ratio
                 keys = torch.cat((keys, kv[:, q.shape[1] : end]), dim=1)
-                allowed = torch.cat(
-                    (allowed, mask[:, start:stop, q.shape[1] : end]), dim=-1
-                )
+                allowed = torch.cat((allowed, mask[:, start:stop, q.shape[1] : end]), dim=-1)
         args = (q[:, start:stop], keys, allowed, sink)
         chunks.append(
             checkpoint(attend, *args, use_reentrant=False)
@@ -58,6 +56,70 @@ def _dense_attention(
             else attend(*args)
         )
     return torch.cat(chunks, dim=1)
+
+
+def _sparse_attention(
+    q,
+    kv,
+    mask,
+    sink,
+    scores,
+    query_valid,
+    *,
+    recompute=False,
+    chunk_size=128,
+    window_size=None,
+    compress_ratio=4,
+):
+    """Tile sparse attention and its detached teacher, preserving the full KL support."""
+
+    def attend(queries, keys, allowed, sink_logits, index_scores, support, raw_count):
+        logits = torch.einsum("bthd,bcd->bhtc", queries.float(), keys.float())
+        logits = (logits * queries.shape[-1] ** -0.5).masked_fill(~allowed[:, None], float("-inf"))
+        sinks = sink_logits.view(1, -1, 1, 1).expand(queries.shape[0], -1, queries.shape[1], 1)
+        probs = torch.cat((logits, sinks), dim=-1).softmax(-1)[..., :-1]
+        target = probs[..., raw_count:].detach().sum(dim=1)
+        # Omitted future columns have exactly zero teacher probability. Restore
+        # their positions before the original target normalization and KL sum.
+        target = F.pad(target, (0, support.shape[-1] - target.shape[-1])) * support
+        target = target / target.sum(-1, keepdim=True).clamp_min(1e-12)
+        logp = index_scores.masked_fill(~support, torch.finfo(index_scores.dtype).min).log_softmax(
+            -1
+        )
+        kl = (target * (target.clamp_min(1e-12).log() - logp)).sum(-1)
+        out = torch.einsum("bhtc,bcd->bthd", probs.to(keys.dtype), keys)
+        return out, kl
+
+    chunks, losses = [], []
+    length = q.shape[1]
+    for start in range(0, length, chunk_size):
+        stop = min(start + chunk_size, length)
+        keys, allowed, raw_count = kv, mask[:, start:stop], length
+        if window_size is not None:
+            begin = max(0, start - window_size + 1)
+            end = length + stop // compress_ratio
+            keys = torch.cat((kv[:, begin:stop], kv[:, length:end]), dim=1)
+            allowed = torch.cat((allowed[..., begin:stop], allowed[..., length:end]), dim=-1)
+            raw_count = stop - begin
+        args = (
+            q[:, start:stop],
+            keys,
+            allowed,
+            sink,
+            scores[:, start:stop],
+            mask[:, start:stop, length:],
+            raw_count,
+        )
+        out, kl = (
+            checkpoint(attend, *args, use_reentrant=False)
+            if recompute and length > chunk_size
+            else attend(*args)
+        )
+        chunks.append(out)
+        losses.append(kl)
+    per_query = torch.cat(losses, dim=1)
+    valid = torch.ones_like(per_query, dtype=torch.bool) if query_valid is None else query_valid
+    return torch.cat(chunks, dim=1), (per_query * valid).sum() / valid.sum().clamp_min(1)
 
 
 class Compressor(nn.Module):
@@ -136,6 +198,7 @@ class Attention(nn.Module):
         self.compress_ratio = args.compress_ratios[layer_id]
         self.index_topk = args.index_topk
         self.training_phase = "dense_pretrain"
+        self.sparse_attention_backend = "reference"
         self.indexer_loss_enabled = True
         self.attn_sink = nn.Parameter(torch.zeros(args.n_heads))
         self.wq_a, self.q_norm = (
@@ -230,7 +293,23 @@ class Attention(nn.Module):
             from .incremental import initialize_state
 
             initialize_state(self, self.decode_state, x, raw_kv, compressed)
-        if self.training_phase == "dense_pretrain":
+        chunked_sparse = (
+            self.training_phase == "sparse_cpt" and self.sparse_attention_backend == "chunked"
+        )
+        if chunked_sparse and scores is not None and self.indexer_loss_enabled:
+            out, self.indexer_loss = _sparse_attention(
+                q,
+                kv,
+                mask,
+                self.attn_sink,
+                scores,
+                self.query_valid,
+                recompute=self.training and torch.is_grad_enabled(),
+                window_size=self.window_size if self.image_visible is None else None,
+                compress_ratio=self.compress_ratio,
+            )
+            return self._output(out, freqs, b, length)
+        if self.training_phase == "dense_pretrain" or chunked_sparse:
             out = _dense_attention(
                 q,
                 kv,

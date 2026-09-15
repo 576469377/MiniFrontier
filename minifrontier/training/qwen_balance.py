@@ -16,9 +16,9 @@ def normalized_router_loss(routers, experts, top_k, valid_mask=None, frequency=N
         from minifrontier.models.miniqwen4.upstream_loss import load_balancing_loss_func
 
         return load_balancing_loss_func(routers, experts, top_k, valid_mask)
-    counts = torch.zeros(experts, device=routers[0].device, dtype=torch.float32)
-    probabilities = torch.zeros_like(counts)
-    denominator = counts.new_zeros(())
+    probabilities = torch.zeros(experts, device=routers[0].device, dtype=torch.float32)
+    counts = torch.zeros_like(probabilities) if frequency is None else None
+    denominator = probabilities.new_zeros(())
     for logits in routers:
         p = logits.softmax(-1)
         valid = (
@@ -26,11 +26,14 @@ def normalized_router_loss(routers, experts, top_k, valid_mask=None, frequency=N
             if valid_mask is None
             else valid_mask.flatten().bool()
         )
-        selected = p.detach().topk(top_k, dim=-1).indices[valid]
-        counts += torch.bincount(selected.flatten(), minlength=experts)
+        if counts is not None:
+            selected = p.detach().topk(top_k, dim=-1).indices[valid]
+            counts += torch.bincount(selected.flatten(), minlength=experts)
         probabilities = probabilities + (p.float() * valid[:, None]).sum(0)
         denominator += valid.sum()
-    frequency = counts / denominator.clamp_min(1) if frequency is None else frequency
+    if frequency is None:
+        assert counts is not None
+        frequency = counts / denominator.clamp_min(1)
     mean_probability = probabilities / denominator.clamp_min(1)
     return (frequency * mean_probability.unsqueeze(0)).sum() * experts
 

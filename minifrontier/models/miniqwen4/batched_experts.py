@@ -11,9 +11,40 @@ from .upstream_decoder import Qwen4ExpTextExperts
 
 
 class LoopQwenExperts(Qwen4ExpTextExperts):
-    """Move the small expert ID list once instead of testing CUDA scalars per expert."""
+    """Group routes once, retaining upstream slot-major rows and expert sum order."""
 
     def forward(self, hidden_states, top_k_index, top_k_weights):
+        final_hidden_states = torch.zeros_like(hidden_states)
+        with torch.no_grad():
+            # Upstream where([slot, token]) visits all tokens in slot 0 first.
+            # A stable sort of token-major IDs would change each expert's row order.
+            ids = top_k_index.transpose(0, 1).reshape(-1)
+            order = ids.argsort(stable=True)
+            counts = ids.new_zeros(self.num_experts)
+            counts.scatter_add_(0, ids, torch.ones_like(ids))
+            sizes = counts.tolist()  # One fixed-size host transfer, no per-expert nonzero.
+        start = 0
+        for expert_idx, size in enumerate(sizes):
+            if not size:
+                continue
+            positions = order[start : start + size]
+            start += size
+            top_k_pos = positions // hidden_states.shape[0]
+            token_idx = positions % hidden_states.shape[0]
+            current_state = hidden_states[token_idx]
+            gate, up = F.linear(current_state, self.gate_up_proj[expert_idx]).chunk(2, dim=-1)
+            current_hidden_states = self.act_fn(gate) * up
+            current_hidden_states = F.linear(current_hidden_states, self.down_proj[expert_idx])
+            current_hidden_states = (
+                current_hidden_states * top_k_weights[token_idx, top_k_pos, None]
+            )
+            final_hidden_states.index_add_(
+                0, token_idx, current_hidden_states.to(final_hidden_states.dtype)
+            )
+        return final_hidden_states
+
+    def reference(self, hidden_states, top_k_index, top_k_weights):
+        """Previous loop for same-weight numerical and execution comparisons."""
         final_hidden_states = torch.zeros_like(hidden_states)
         with torch.no_grad():
             expert_mask = F.one_hot(top_k_index, num_classes=self.num_experts).permute(2, 1, 0)
