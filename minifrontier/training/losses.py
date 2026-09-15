@@ -1,5 +1,7 @@
 """Model-independent language modeling losses."""
 
+import os
+
 from torch import Tensor
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
@@ -23,8 +25,10 @@ def causal_lm_loss(logits: Tensor, labels: Tensor, ignore_index: int = -100) -> 
     return loss_sum / valid_targets
 
 
-def chunked_linear_ce(hidden, weight, labels, *, chunk_size=128, shift=True):
+def chunked_linear_ce(hidden, weight, labels, *, chunk_size=None, shift=True):
     """Full-vocabulary CE with position chunks and head recomputation in backward."""
+    if chunk_size is None:
+        chunk_size = int(os.environ.get("MINIFRONTIER_CE_CHUNK_SIZE", "128"))
     if chunk_size < 1 or hidden.shape[:2] != labels.shape:
         raise ValueError("invalid chunked head/label shape")
     features = hidden[:, :-1] if shift else hidden

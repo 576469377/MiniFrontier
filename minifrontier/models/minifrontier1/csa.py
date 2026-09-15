@@ -1,6 +1,7 @@
 # Gated overlap pooling derives from DeepSeek 60d8d70 (MIT). Boundary handling is local.
 """CSA-4 reference with media-aware short-block flush and bounded raw/pending cache."""
 
+import os
 from itertools import pairwise
 from typing import cast
 
@@ -97,6 +98,9 @@ class CSA(nn.Module):
         self.indexer.compressor = Compressor(c.hidden_size, c.index_dim, c.rms_norm_eps)
         self.training_phase = "dense_pretrain"
         self.indexer_loss_enabled = True
+        self.dense_prefill_backend = os.environ.get("MINIFRONTIER_MF_DENSE_PREFILL", "reference")
+        if self.dense_prefill_backend not in {"reference", "trimmed"}:
+            raise ValueError("MF dense prefill backend must be reference or trimmed")
 
     def forward(self, x, metadata, state=None, *, cache_output=True):
         if not cache_output and state is None and self.training_phase == "dense_pretrain":
@@ -250,26 +254,39 @@ class CSA(nn.Module):
         raw = rope(self.kv_norm(self.kv(x)), pos, c.csa_rope_dim, c.rope_theta)
         pooled = self.compressor.batched(x, directory)
         pooled = rope(pooled, pos.gather(1, directory["starts"]), c.csa_rope_dim, c.rope_theta)
-        kv = torch.cat((raw, pooled.to(raw.dtype)), 1)[:, None].expand(
-            -1, c.num_attention_heads, -1, -1
+        trim = self.dense_prefill_backend == "trimmed"
+        limits = self._dense_key_limits(metadata, directory, x.shape[1]) if trim else None
+        pooled = pooled.to(raw.dtype)
+        kv = (
+            None
+            if trim
+            else torch.cat((raw, pooled), 1)[:, None].expand(-1, c.num_attention_heads, -1, -1)
         )
         kp = torch.arange(x.shape[1], device=x.device)
         chunks = []
-        for start in range(0, x.shape[1], c.query_chunk_size):
+        for chunk, start in enumerate(range(0, x.shape[1], c.query_chunk_size)):
             stop = min(start + c.query_chunk_size, x.shape[1])
+            raw_start = max(0, start - c.window_size + 1) if trim else 0
+            raw_end = stop if trim else x.shape[1]
+            compressed_end = limits[chunk] if limits is not None else pooled.shape[1]
+            keys = kp[raw_start:raw_end]
             qp = kp[start:stop, None]
             local = (
-                (qp >= kp)
-                & (qp - kp < c.window_size)
-                & (seg[:, start:stop, None] == seg[:, None])
+                (qp >= keys)
+                & (qp - keys < c.window_size)
+                & (seg[:, start:stop, None] == seg[:, None, raw_start:raw_end])
                 & seg[:, start:stop, None].ge(0)
             )
             compressed = (
-                (directory["complete"][:, None] <= qp)
-                & (directory["segments"][:, None] == seg[:, start:stop, None])
+                (directory["complete"][:, None, :compressed_end] <= qp)
+                & (directory["segments"][:, None, :compressed_end] == seg[:, start:stop, None])
                 & seg[:, start:stop, None].ge(0)
             )
             support = torch.cat((local, compressed), -1)[:, None]
+            if trim:
+                kv = torch.cat((raw[:, raw_start:raw_end], pooled[:, :compressed_end]), 1)
+                kv = kv[:, None].expand(-1, c.num_attention_heads, -1, -1)
+            assert kv is not None
             chunks.append(
                 F.scaled_dot_product_attention(
                     q[:, :, start:stop],
@@ -280,3 +297,36 @@ class CSA(nn.Module):
                 )
             )
         return self.out(torch.cat(chunks, 2).transpose(1, 2).flatten(-2))
+
+    def _dense_key_limits(self, metadata, directory, length):
+        """Union of causally reachable compressed prefixes, including media flushes.
+
+        Completion times, not block size or RoPE positions, define visibility.
+        Cache this small CPU derivation in this forward's shared metadata so other
+        CSA layers and checkpoint replay do not synchronize per layer or chunk.
+        No block-directory tensors or visibility semantics are modified.
+        """
+        complete = directory["complete"]
+        version = None if complete.is_inference() else complete._version
+        signature = (id(complete), version, length, self.config.query_chunk_size)
+        cached = metadata.get("_csa_dense_key_limits")
+        if cached is not None and cached[0] == signature:
+            return cached[1]
+        furthest = [0] * length
+        for row in complete.detach().cpu().tolist():
+            for index, time in enumerate(row):
+                if time < length:
+                    position = max(0, time)
+                    furthest[position] = max(furthest[position], index + 1)
+        # This also handles non-monotone external directories conservatively:
+        # an early invisible entry can remain in the prefix, still masked out.
+        end = 0
+        limits = []
+        for position, bound in enumerate(furthest):
+            end = max(end, bound)
+            if (position + 1) % self.config.query_chunk_size == 0 or position + 1 == length:
+                limits.append(end)
+        # Retain the tensor identity as well, so a newly allocated directory
+        # cannot accidentally reuse a freed tensor's Python id.
+        metadata["_csa_dense_key_limits"] = (signature, limits, complete)
+        return limits

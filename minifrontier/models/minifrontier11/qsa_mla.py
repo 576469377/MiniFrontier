@@ -2,6 +2,8 @@
 # MLA originates in Kimi c5d1dd4 (Kimi K3 License); block routing is a local integration.
 """Token MLA with a sparse block directory; raw latent KV is never pooled away."""
 
+import os
+
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -42,6 +44,9 @@ class QSAMLA(nn.Module):
         self.indexer = None if dense_only else BlockIndexer(c)
         self.training_phase = "dense_pretrain"
         self.indexer_loss_enabled = True
+        self.dense_prefill_backend = os.environ.get("MINIFRONTIER_MF_DENSE_PREFILL", "reference")
+        if self.dense_prefill_backend not in {"reference", "trimmed"}:
+            raise ValueError("MF dense prefill backend must be reference or trimmed")
 
     def forward(self, x, metadata, state=None, *, cache_output=True):
         if (
@@ -238,16 +243,19 @@ class QSAMLA(nn.Module):
             chunks = []
             for start in range(0, x.shape[1], c.query_chunk_size):
                 stop = min(start + c.query_chunk_size, x.shape[1])
+                # Every query in this chunk masks positions >= stop, including
+                # media tokens. Keep packed/padding masks and the MLA scale.
+                end = stop if self.dense_prefill_backend == "trimmed" else x.shape[1]
                 support = (
-                    (kp[start:stop, None] >= kp)
-                    & (segments[:, start:stop, None] == segments[:, None])
+                    (kp[start:stop, None] >= kp[:end])
+                    & (segments[:, start:stop, None] == segments[:, None, :end])
                     & segments[:, start:stop, None].ge(0)
                 )
                 chunks.append(
                     F.scaled_dot_product_attention(
                         q[:, :, start:stop],
-                        k,
-                        v,
+                        k[:, :, :end],
+                        v[:, :, :end],
                         attn_mask=support[:, None],
                         dropout_p=0.0,
                         scale=scale,

@@ -112,19 +112,36 @@ def test_visual_language_inputs_are_causal_aligned_and_used(family):
         m(ids, labels=ids, media=media)
 
 
-def test_chunked_lm_head_has_full_ce_value_and_gradient():
+@pytest.mark.parametrize("shift", [True, False])
+@pytest.mark.parametrize("chunk_size", [3, 128, 512])
+def test_chunked_lm_head_has_full_ce_value_and_gradient(monkeypatch, shift, chunk_size):
     torch.manual_seed(16)
     h = torch.randn(2, 11, 8, requires_grad=True)
     w = torch.randn(21, 8, requires_grad=True)
     labels = torch.randint(0, 21, (2, 11))
     labels[0, :9] = -100
-    dense = causal_lm_loss(h @ w.T, labels)
+    dense = (
+        causal_lm_loss(h @ w.T, labels)
+        if shift
+        else torch.nn.functional.cross_entropy((h @ w.T).reshape(-1, 21), labels.reshape(-1))
+    )
     expected = torch.autograd.grad(dense, (h, w))
-    chunked = chunked_linear_ce(h, w, labels, chunk_size=3)
+    monkeypatch.setenv("MINIFRONTIER_CE_CHUNK_SIZE", str(chunk_size))
+    chunked = chunked_linear_ce(h, w, labels, shift=shift)
     actual = torch.autograd.grad(chunked, (h, w))
     torch.testing.assert_close(chunked, dense)
     for a, b in zip(actual, expected, strict=True):
         torch.testing.assert_close(a, b)
+
+
+def test_chunked_lm_head_explicit_size_overrides_environment(monkeypatch):
+    monkeypatch.setenv("MINIFRONTIER_CE_CHUNK_SIZE", "0")
+    h, w, labels = torch.randn(1, 3, 4), torch.randn(8, 4), torch.ones(1, 3, dtype=torch.long)
+    with pytest.raises(ValueError, match="invalid"):
+        chunked_linear_ce(h, w, labels)
+    torch.testing.assert_close(
+        chunked_linear_ce(h, w, labels, chunk_size=2), causal_lm_loss(h @ w.T, labels)
+    )
 
 
 def test_qk_clip_nonshared_rows_and_resume_state():
