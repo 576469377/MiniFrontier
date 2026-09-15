@@ -1,4 +1,7 @@
 import json
+from pathlib import Path
+
+import pytest
 
 from minifrontier.data import sha256
 from minifrontier.training.strategy_gate import continuous_phase_profile, initial_start_authorized
@@ -66,9 +69,17 @@ def test_continuous_main_phase_observation_does_not_skip_attention_conversion():
     assert not continuous_phase_profile(plan, phases["D4"], phases)
     phases["D4"]["depends_on"] = ["D2"]
     assert not continuous_phase_profile(plan, phases["D4"], phases)
+    plan["performance"]["continuous_indexer_phases"] = "observe_during_training"
+    assert not continuous_phase_profile(plan, phases["D3"], phases)
+    phases["D3"]["required_evidence"] = ["indexer_only_gradients", "dense_teacher_quality"]
+    assert continuous_phase_profile(plan, phases["D3"], phases)
+    assert not continuous_phase_profile(plan, phases["D4"], phases)
+    phases["D2"]["attention_phase"] = "sparse_cpt"
+    assert not continuous_phase_profile(plan, phases["D3"], phases)
 
 
-def test_continuation_still_requires_parent_quality_and_current_data(tmp_path, monkeypatch):
+@pytest.mark.parametrize("indexer", [False, True])
+def test_continuation_still_requires_parent_quality_and_current_data(tmp_path, monkeypatch, indexer):
     from minifrontier.training import strategy_gate
 
     document = tmp_path / "strategy.md"
@@ -98,6 +109,14 @@ def test_continuation_still_requires_parent_quality_and_current_data(tmp_path, m
         ],
     )
     plan_path = tmp_path / "plan.json"
+    if indexer:
+        plan["performance"]["continuous_indexer_phases"] = "observe_during_training"
+        plan["phases"][1].update(
+            budget_scope="indexer",
+            objective="input_tokens",
+            attention_phase="dense_distill",
+            required_evidence=["indexer_only_gradients", "dense_teacher_quality"],
+        )
     plan_path.write_text(json.dumps(plan))
     data = tmp_path / "data"
     data.mkdir()
@@ -126,10 +145,16 @@ def test_continuation_still_requires_parent_quality_and_current_data(tmp_path, m
             sealed_test=True,
             readable_200_passed=True,
             minimum_source_holdout_fraction=0.01,
-            periodic_validation_ce_tokens=1000000,
+            periodic_validation_ce_tokens=5000000 if indexer else 1000000,
             phase_end_validation_ce_tokens=5000000,
         ),
     )
+    if indexer:
+        evidence["reports"] = {}
+        for name in plan["phases"][1]["required_evidence"]:
+            report_path = tmp_path / f"{name}.json"
+            report_path.write_text(json.dumps(dict(source_commit="current", passed=True)))
+            evidence["reports"][name] = str(report_path)
     evidence_path = tmp_path / "evidence.json"
     monkeypatch.setattr(strategy_gate, "require_source_checkout", lambda: tmp_path)
     monkeypatch.setattr(
@@ -146,6 +171,13 @@ def test_continuation_still_requires_parent_quality_and_current_data(tmp_path, m
     result = check()
     assert result["allowed"] and result["profile_during_formal_updates"]
     assert not result["independent_production_qualification_passed"]
+    if indexer:
+        for name, path in evidence["reports"].items():
+            Path(path).write_text(json.dumps(dict(source_commit="current", passed=False)))
+            assert any(name in e for e in check()["errors"])
+            Path(path).write_text(json.dumps(dict(source_commit="wrong", passed=True)))
+            assert any(name in e for e in check()["errors"])
+            Path(path).write_text(json.dumps(dict(source_commit="current", passed=True)))
     evidence["completed_phases"]["D1"]["quality_passed"] = False
     assert any("quality pass" in e for e in check()["errors"])
     evidence["completed_phases"]["D1"]["quality_passed"] = True

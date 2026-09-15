@@ -92,22 +92,34 @@ def _pilot_recipe_passed(completed, dependency, phase, phases, commit):
 
 
 def continuous_phase_profile(plan, phase, phases):
-    """Observe performance during continuous main training, keeping stage gates.
+    """Observe explicitly selected continuations without a separate speed trial.
 
-    This policy applies only between main CE phases with the same attention
-    regime. Indexer/sparse conversions and posttraining keep their own evidence.
-    The argument validator additionally requires the continuous program path.
+    Main CE phases keep the same attention regime. A frozen indexer phase may
+    opt in separately, retaining both its gradient and dense-teacher reports.
+    The argument validator still requires the bound continuous program path.
     """
     dependencies = phase["depends_on"]
     if len(dependencies) != 1:
         return False
     parent = phases[dependencies[0]]
-    return (
+    main = (
         plan.get("performance", {}).get("continuous_main_phases") == "observe_during_training"
         and phase["budget_scope"] == parent["budget_scope"] == "main"
         and phase["objective"] == parent["objective"] == "ce_tokens"
         and phase["attention_phase"] == parent["attention_phase"]
     )
+    indexer = (
+        plan.get("performance", {}).get("continuous_indexer_phases") == "observe_during_training"
+        and parent["budget_scope"] == "main"
+        and parent["objective"] == "ce_tokens"
+        and parent["attention_phase"] == "dense_pretrain"
+        and phase["budget_scope"] == "indexer"
+        and phase["objective"] == "input_tokens"
+        and phase["attention_phase"] == "dense_distill"
+        and {"indexer_only_gradients", "dense_teacher_quality"}
+        <= set(phase.get("required_evidence", []))
+    )
+    return main or indexer
 
 
 def check(plan_path, phase_id, evidence_path, *, data, config, output):
