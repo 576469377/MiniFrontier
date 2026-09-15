@@ -5,6 +5,7 @@ import json
 import pytest
 import torch
 from test_mf1_workflow import assert_tree_equal
+from test_pretraining_validation import _ragged
 from test_train_integration import arguments, config_for
 from test_train_integration import corpus as corpus
 
@@ -203,6 +204,115 @@ def test_main_moments_pause_across_indexer_and_resume_exactly(name, corpus, tmp_
         assert finished["config"]["mtp_loss_coef"] == 0.1
         assert finished["pretraining_state"]["main_ce_tokens"] == 762
         assert named_states(finished)[head]["step"] == named_states(after)[head]["step"] + 2
+
+
+def test_token_mixture_main_indexer_main_resets_units_and_preserves_training_state(
+    corpus, tmp_path
+):
+    _ragged(corpus)
+    name = "minideepseekv4"
+    config = config_for(name, tmp_path)
+    program, phases = program_file(tmp_path, name, config, with_indexer=True)
+    mixture = tmp_path / "mixture.json"
+    mixture.write_text(json.dumps({"a": 0.5, "b": 0.5}))
+    sampling = ["--token-mixture", str(mixture), "--max-data-epochs", "1"]
+    first, indexer, recovered, sparse = [
+        tmp_path / p for p in ("main", "indexer", "recovered", "sparse")
+    ]
+    train.main([*phase_args(name, config, corpus, first, program, phases[0]), *sampling])
+    before = load(first)
+    for output in (indexer, recovered):
+        args = phase_args(name, config, corpus, output, program, phases[1], first / "checkpoint.pt")
+        train.main(
+            [*args, *sampling, *(["--stop-after-updates", "1"] if output == recovered else [])]
+        )
+    train.main(
+        [
+            *phase_args(name, config, corpus, recovered, program, phases[1]),
+            *sampling,
+            "--resume",
+            str(recovered / "checkpoint.pt"),
+        ]
+    )
+    teacher, resumed = load(indexer), load(recovered)
+    for key in (
+        "model",
+        "optimizer",
+        "token_ledger",
+        "pretraining_state",
+        "router_balance",
+        "rng",
+        "data_cursor",
+    ):
+        assert_tree_equal(teacher[key], resumed[key])
+    assert teacher["pretraining_state"]["main_ce_tokens"] == 254
+    assert teacher["token_ledger"]["ce_tokens"] == 0
+    assert teacher["token_ledger"]["input_tokens"] == 256
+    for key, value in before["model"].items():
+        if ".indexer." not in key:
+            assert_tree_equal(value, teacher["model"][key])
+    for key, value in named_states(before).items():
+        assert_tree_equal(value, named_states(teacher)[key])
+    train.main(
+        [
+            *phase_args(
+                name, config, corpus, sparse, program, phases[2], indexer / "checkpoint.pt"
+            ),
+            *sampling,
+        ]
+    )
+    after = load(sparse)
+    assert after["pretraining_state"]["main_ce_tokens"] == 508
+    assert (
+        named_states(after)["head.weight"]["step"]
+        == named_states(before)["head.weight"]["step"] + 2
+    )
+    for output, saved, unit, served in (
+        (indexer, teacher, "input", 256),
+        (sparse, after, "ce", 254),
+    ):
+        assert saved["data_cursor"]["denominator"] == unit
+        assert saved["data_cursor"]["offset"] == 2
+        assert sum(saved["data_cursor"]["served"].values()) == served
+        transition = json.loads((output / "pretraining-transition.json").read_text())
+        assert transition["sampler"].startswith("reset:")
+        assert all(transition[key] == "inherit" for key in ("model", "main_ce", "rng", "router"))
+
+
+@pytest.mark.parametrize("next_epoch_limit", [1, 2])
+def test_token_mixture_phase_inherits_only_with_matching_epoch_limit(
+    corpus, tmp_path, next_epoch_limit
+):
+    _ragged(corpus)
+    name = "minikimik3"
+    config = config_for(name, tmp_path)
+    program, phases = program_file(tmp_path, name, config, with_indexer=False)
+    mixture = tmp_path / "mixture.json"
+    mixture.write_text(json.dumps({"a": 0.5, "b": 0.5}))
+    first, second = tmp_path / "first", tmp_path / "second"
+    for phase, output, parent, epoch_limit in (
+        (phases[0], first, None, 1),
+        (phases[1], second, first / "checkpoint.pt", next_epoch_limit),
+    ):
+        train.main(
+            [
+                *phase_args(name, config, corpus, output, program, phase, parent),
+                "--token-mixture",
+                str(mixture),
+                "--max-data-epochs",
+                str(epoch_limit),
+            ]
+        )
+    saved = load(second)
+    inherited = next_epoch_limit == 1
+    assert saved["data_cursor"]["max_epochs"] == next_epoch_limit
+    assert saved["data_cursor"]["offset"] == (4 if inherited else 2)
+    assert (saved["pretraining_state"]["transition"]["sampler"] == "inherit") is inherited
+    assert saved["pretraining_state"]["main_ce_tokens"] == 508
+    assert (
+        named_states(saved)["lm_head.weight"]["step"]
+        == named_states(load(first))["lm_head.weight"]["step"] + 2
+    )
 
 
 def test_program_refuses_legacy_initialization_and_unfinished_predecessor(corpus, tmp_path):

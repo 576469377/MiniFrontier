@@ -716,8 +716,13 @@ def run(args, rank, world, device):
             "seed",
             "batch_size",
             "world_size",
+            "max_data_epochs",
         )
-        same_cursor = all(saved["run_spec"].get(k) == run_spec.get(k) for k in cursor_keys)
+        same_cursor = all(
+            saved["run_spec"].get(k) == run_spec.get(k) for k in cursor_keys
+        ) and bool(saved["run_spec"].get("input_token_budget")) == bool(
+            run_spec.get("input_token_budget")
+        )
         if same_cursor:
             if args.token_mixture or args.media_mixture:
                 cursor.load_state_dict(saved["data_cursor"])
@@ -731,7 +736,7 @@ def run(args, rank, world, device):
             phase_ce="reset",
             sampler="inherit"
             if same_cursor
-            else "reset: data/context/mixture or cursor geometry changed",
+            else "reset: data/context/mixture, token unit, epoch limit or cursor geometry changed",
             rng="inherit",
             parent_checkpoint_sha256=sha256(args.init),
         )
