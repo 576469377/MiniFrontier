@@ -3908,5 +3908,1014 @@
         "git diff --check"
       ]
     }
+  },
+  "phase_continuation_2026_09_16": {
+    "observed_utc": "2026-09-16T05:15:17.703713+00:00",
+    "kind": "MF11_P0_to_P1_formal_continuation",
+    "scope": "Formal stage publication and ordinary logged evaluations; no additional GPU test. Other five active trainers kept running.",
+    "source": {
+      "commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+      "dirty": false,
+      "implementation_sha256": "42e14ef5305fcca720a842f9ecdbf4a582c918c6176beb963f787edb4a1f5133"
+    },
+    "references": [
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/mf11-publisher/plan.json",
+        "sha256": "ebbb172b1034cab6a1833e2db54b7781c8318e1370370ec11f0265010d6eccec"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/mf11-publisher/data-run.json",
+        "sha256": "9c5d8f8f9b8ac1572b07301c8ac19b7d3c22c6266a3d4f0146405e607d4d1c58"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/mf11-publisher/parent-quality.json",
+        "sha256": "3edef8e35dc02f4ca8900b8b31568dbdf34da8b83d3bad74a65860ee65620eb4"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/mf11-publisher/stage-evidence.json",
+        "sha256": "9e9eb8a6ad0c7a00f4bcd33b8f7af3532cc06ba437d6a9feef6a2843523a8fb8"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/mf11-publisher/continuous-program.json",
+        "sha256": "7372d1739d6b355a577740008198400fb5b9e32bcc741346b49e6f0970addf55"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/mf11-publisher/run.json",
+        "sha256": "e594968014dd3973e7e437a88210ed71b1f9154896ab9ed842fee156a4187619"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/mf11-publisher/startup-verification.json",
+        "sha256": "d9aa0a86381d6399920a764fcb17c07642b35e4b46524ba1779c40d7f704294a"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/maintenance-2026-09-16/before.json",
+        "sha256": "8246106f1560f0e6b005af8d2b747cf501170d70074e1695b3a71458e00cdaef"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/maintenance-2026-09-16/after.json",
+        "sha256": "72448c3c98834969d17fb8fe6e144b0a27155697154817d4e09e74f515120398"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/maintenance-2026-09-16/next-stage-actions.json",
+        "sha256": "f381d48811cf0a334c6b6b567cf9c192b48776e532b706145d0dabc79f64e527"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/maintenance-2026-09-16/retired-checkpoints.json",
+        "sha256": "288f6994df5ff3a460313304bf3788de13fd587f5edb1cc51e10ac1abfb0c697"
+      },
+      {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/maintenance-2026-09-16/tensorboard-launch.json",
+        "sha256": "2ec57a4c9a999764d6fa2585cb3d54c261c3f6349a8bbf10576cef623000e408"
+      }
+    ],
+    "parent_evidence": {
+      "kind": "MF11_P0_ordinary_validation_parent_evidence",
+      "dry_run": false,
+      "final_parent_bound": true,
+      "checkpoint_sha256": "e1f6efa788ed2663f3f06edcf995a52a6a3b30e76ba66cc510b5ac07980c6e93",
+      "metrics": {
+        "language_improving": true,
+        "visual_dependency": true,
+        "router_stable": true
+      },
+      "parent_phase": "p0",
+      "successor_phase": "p1",
+      "parent_step": 14599,
+      "parent_ledger": {
+        "input_tokens": 242112661,
+        "ce_tokens": 200012219,
+        "generated_tokens": 0,
+        "vision_tokens": 27616243,
+        "mtp_target_tokens": 0,
+        "index_query_tokens": 0,
+        "replay_ce_tokens": 0,
+        "media_exposures": 595804,
+        "main_ce_tokens": 200012219,
+        "phase_tokens": 200012219,
+        "optimizer_updates": 14599
+      },
+      "source_inputs": [
+        {
+          "path": "outputs/strategy-base-pretraining-v1/minifrontier11/P0/run.json",
+          "sha256": "a93c8e74510de687d04f539ce8c7320bc60dc284f074263ce84dbbb07cdc4e35"
+        },
+        {
+          "path": "outputs/strategy-base-pretraining-v1/minifrontier11/P0/status.json",
+          "sha256": "9055ca7d4cbc214710393fcf1b40adc59989b30cdc2b83c41688355e820ce8bc"
+        },
+        {
+          "path": "outputs/strategy-base-pretraining-v1/minifrontier11/P0/metrics.jsonl",
+          "sha256": "03458e1c4a6dd6c2617954710887b9efc6ee204a14c06fecf694b093cb91d3b9"
+        },
+        {
+          "path": "outputs/strategy-base-pretraining-v1/minifrontier11/P0/router_metrics.jsonl",
+          "sha256": "2e66a5c2c4fd7be30c4ac2b94a1eda2c59e5c62a9c124d8bb99ac72736306346"
+        },
+        {
+          "path": "outputs/strategy-base-pretraining-v1/minifrontier11/P0/evaluation.json",
+          "sha256": "77d17970bd04f1be2fb71b85f5aee5260b4d11c4bcb67439f295a045dd2ca90a"
+        },
+        {
+          "path": "outputs/strategy-base-pretraining-v1/minifrontier11/P0/checkpoint_manifest.json",
+          "sha256": "841314e833ab35069c9486bf8be0641614aec1c2c54ead9c040cae4befb51b41"
+        }
+      ],
+      "finite_training": {
+        "logged_updates": 14599,
+        "nonfinite_steps": [],
+        "final_loss": 3.5905112073450316,
+        "final_grad_norm": 0.870431661605835
+      },
+      "language": {
+        "selection_sha256": "2140ff49fc5fa936cd70f88391e9de4f47678a2eec1f2af47287fcdc1250014b",
+        "matching_periodic_records": 12,
+        "ignored_other_selection_records": 0,
+        "first_step": 0,
+        "last_step": 10950,
+        "first_text_nll": 10.502913707187572,
+        "last_text_nll": 3.9230281153206175,
+        "nll_delta": -6.5798855918669545
+      },
+      "ordinary_final_validation": {
+        "nll": 3.760765550624179,
+        "ce_tokens": 5000500,
+        "per_domain": {
+          "caption": 2.4140762119329175,
+          "chart_table": 1.8638543176667985,
+          "code": 2.3256458526225563,
+          "en_general": 3.892546411510901,
+          "math": 3.6721980237467475,
+          "ocr_document": 4.201531666597603,
+          "structured": 2.8470033731319146,
+          "vqa": 2.508039241884914,
+          "zh_general": 4.3864860836739465
+        },
+        "black_media_nll": {
+          "caption": 2.4636389585894203,
+          "chart_table": 1.9108145378407344,
+          "ocr_document": 4.543334001757106,
+          "vqa": 2.520107289308943
+        },
+        "capability_qualified": false,
+        "examples": 13189,
+        "selection": "fixed_without_replacement",
+        "context_length": 1024,
+        "evaluation_scope": "phase_end",
+        "requested_ce_tokens": 5000000,
+        "selection_sha256": "6577e9439e24d1c700bf2df92961ce1f198eec55a3805672d82e19b9bbb1c3c4",
+        "example_unit": "native answer or text context window",
+        "domain_ce": {
+          "caption": 56221,
+          "chart_table": 123526,
+          "code": 506613,
+          "en_general": 1295789,
+          "math": 588630,
+          "ocr_document": 153935,
+          "structured": 333800,
+          "vqa": 31687,
+          "zh_general": 1910299
+        },
+        "black_media_ce": {
+          "caption": 56221,
+          "chart_table": 123526,
+          "ocr_document": 153935,
+          "vqa": 31687
+        },
+        "micro_batches": 1651,
+        "duration_seconds": 1306.0589741319418,
+        "attention_phase": "dense_pretrain"
+      },
+      "visual_observation": {
+        "kind": "black_media_minus_matched_nll",
+        "per_domain_gap": {
+          "caption": 0.04956274665650273,
+          "chart_table": 0.04696022017393586,
+          "ocr_document": 0.3418023351595032,
+          "vqa": 0.012068047424028894
+        },
+        "ce_weighted_gap": 0.1685556739035993,
+        "additional_model_evaluation_run": false,
+        "capability_qualification": false
+      },
+      "routing": {
+        "records": 14599,
+        "invalid_records": [],
+        "observed_max_cv": 1.8700979948043823,
+        "observed_max_mean_load": 7.921672344207764
+      },
+      "capability_qualified": false,
+      "independent_training_or_gpu_checks": 0
+    },
+    "formal_recipe": {
+      "format": "mf1-run-v1",
+      "model_name": "minifrontier11",
+      "kind": "strategy",
+      "mf1_phase": "p1",
+      "strategy_sha256": "ccf02ffdb7b45466a0181a2ac76db0010610329867563499f7f21805362c5210",
+      "model_config_sha256": "51f6e9793c13f7d0c69a0b0c0cf1b19c0bf3e635496d0870cc3ff6c2db2fa17f",
+      "tokenizer_sha256": "ccd5f6fd47d876a2512bef3cde3296d99d2f7c6ef2f60c379816ca08d13c5362",
+      "processor_sha256": "a153f29008f8afe6fa97af8b69ce6cc12f71e0fc6a04f32c4d89e3c0d42a476a",
+      "template_sha256": "8586a7024d1d130060f63a1e1e4b38373e0566a0b21bf1f7bdc68b2b0776066b",
+      "dataset_manifest_sha256": "6e43f159aa12cf1551ee2a45403116a1057fdcd73e3089da84b172b63460a912",
+      "actual_init_checkpoint_sha256": "e1f6efa788ed2663f3f06edcf995a52a6a3b30e76ba66cc510b5ac07980c6e93",
+      "source": {
+        "commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+        "dirty": false,
+        "implementation_sha256": "42e14ef5305fcca720a842f9ecdbf4a582c918c6176beb963f787edb4a1f5133"
+      },
+      "model_version": "1.1-reference-v1",
+      "seed": 42,
+      "steps": null,
+      "token_budget": 800000000,
+      "unit": "ce_tokens",
+      "input_batch_tokens": 16384,
+      "batch_size": 8,
+      "optimizer_kind": "v41_muon_sinkhorn",
+      "optimizer_groups_sha256": "40599a9128010df0b6916132d0b5c76cc424a45fadde57bf7aac72b946176b03",
+      "mixture": {
+        "zh_general": 0.336,
+        "en_general": 0.22400000000000003,
+        "code": 0.096,
+        "math": 0.08000000000000002,
+        "structured": 0.064,
+        "caption": 0.066,
+        "ocr_document": 0.06999999999999999,
+        "vqa": 0.044000000000000004,
+        "chart_table": 0.010000000000000002,
+        "video": 0.010000000000000002
+      },
+      "chat_template": "mf1-control-v1",
+      "diagnostic_attention": null,
+      "validation": {
+        "policy": {
+          "periodic_ce_tokens": 1000000,
+          "phase_end_ce_tokens": 5000000,
+          "early_interval_ce": 10000000,
+          "early_until_ce": 100000000,
+          "later_interval_ce": 50000000
+        },
+        "seed": 42,
+        "selection": "fixed_without_replacement",
+        "periodic": {
+          "requested_ce_tokens": 1000000,
+          "actual_ce_tokens": 1000976,
+          "examples": 1740,
+          "domain_ce": {
+            "caption": 10627,
+            "ocr_document": 20137,
+            "zh_general": 320746,
+            "chart_table": 16424,
+            "en_general": 163388,
+            "code": 308625,
+            "vqa": 4748,
+            "video": 1327,
+            "math": 117874,
+            "structured": 37080
+          },
+          "indices_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+          "overshoot_bound_ce": 2047
+        },
+        "phase_end": {
+          "requested_ce_tokens": 5000000,
+          "actual_ce_tokens": 5000264,
+          "examples": 8819,
+          "domain_ce": {
+            "caption": 55692,
+            "ocr_document": 99791,
+            "zh_general": 1641608,
+            "chart_table": 82923,
+            "en_general": 891990,
+            "code": 1435778,
+            "vqa": 27758,
+            "video": 6974,
+            "math": 555170,
+            "structured": 202580
+          },
+          "indices_sha256": "95d18a253cf9453d64825a0f2082b2da725a0c3b378b7c5330072cb165002411",
+          "overshoot_bound_ce": 2047
+        },
+        "context_length": 2048,
+        "window_descriptors_sha256": "7ccc21e3f2bc974c4137807402c24fb6a3c0160bbc8c0d3f613ec18894a21dc1",
+        "units": "complete native answers or text context windows with unique CE positions",
+        "attention_phase": "dense_pretrain"
+      }
+    },
+    "continuity": {
+      "kind": "MF11_continuous_main_pretraining_phase_binding",
+      "executor": "MF1 built-in PHASES and init inheritance; no native --pretraining-program argument",
+      "parent_phase": "p0",
+      "parent_checkpoint": {
+        "path": "outputs/strategy-base-pretraining-v1/minifrontier11/P0/checkpoint.pt",
+        "sha256": "e1f6efa788ed2663f3f06edcf995a52a6a3b30e76ba66cc510b5ac07980c6e93"
+      },
+      "parent_ledger": {
+        "input_tokens": 242112661,
+        "ce_tokens": 200012219,
+        "generated_tokens": 0,
+        "vision_tokens": 27616243,
+        "mtp_target_tokens": 0,
+        "index_query_tokens": 0,
+        "replay_ce_tokens": 0,
+        "media_exposures": 595804,
+        "main_ce_tokens": 200012219,
+        "phase_tokens": 200012219,
+        "optimizer_updates": 14599
+      },
+      "new_phase": "p1",
+      "phase_ce": 800000000,
+      "lengths": {
+        "1024": 0.7,
+        "2048": 0.3
+      },
+      "input_batch_tokens": 16384,
+      "microbatch": 8,
+      "optimizer_kind": "v41_muon_sinkhorn",
+      "named_optimizer_state_count": 2143,
+      "router_state_inherited": true,
+      "main_ce_counter_inherited": true,
+      "main_scheduler": "Continue P0 warmup/hold/stable schedule from actual main CE; no warmup restart",
+      "sampler": "New deterministic sampler for changed data and mixture, original P0 trace retained",
+      "dataset_manifest": {
+        "path": "data/pretraining-mf11-p1-admitted-v1/manifest.json",
+        "sha256": "6e43f159aa12cf1551ee2a45403116a1057fdcd73e3089da84b172b63460a912"
+      },
+      "mixture": {
+        "path": "outputs/strategy-pretraining-next-text-v1/phase-queue/mf11-publisher/mixture.json",
+        "sha256": "3e392a106bef699e43a056b8757efb3d29a718c80f49b8436907f24604f778ab"
+      },
+      "source": {
+        "commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+        "dirty": false,
+        "implementation_sha256": "42e14ef5305fcca720a842f9ecdbf4a582c918c6176beb963f787edb4a1f5133"
+      },
+      "independent_training_checks": 0
+    },
+    "data": {
+      "candidate_manifest_sha256": "618f32c17d0400b89fd11fe2f84e08db1f3710cc4a9ee3c95f7f06808786a208",
+      "admitted_manifest_sha256": "6e43f159aa12cf1551ee2a45403116a1057fdcd73e3089da84b172b63460a912",
+      "payload_bytes_added": 0,
+      "train_inventory": {
+        "counts": {
+          "records": 1206733,
+          "input_tokens": 835117771,
+          "ce_tokens": 776620393,
+          "text_documents": 484918,
+          "media_exposures": 721815,
+          "vision_tokens": 41229602,
+          "video_examples": 43243,
+          "frames": 345944
+        },
+        "domain_ce": {
+          "en_general": 161277071,
+          "zh_general": 307690856,
+          "math": 88656073,
+          "structured": 41711919,
+          "code": 123972727,
+          "vqa": 11262828,
+          "caption": 19726155,
+          "chart_table": 5410661,
+          "ocr_document": 14132487,
+          "video": 2779616
+        },
+        "unique_media": 523075
+      },
+      "inventory_scope": "Existing encoded records reused; the stage mixture may repeat domain records."
+    },
+    "startup": {
+      "state": "verified_formal_p1_training",
+      "source_commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+      "started_unix": 1789535319.8407502,
+      "automatic_retry": false,
+      "additional_gpu_test": false,
+      "first_update": {
+        "step": 1,
+        "train_lm_loss": 3.2989587133332785,
+        "grad_norm": 0.8953209519386292,
+        "step_seconds": 15.80128551274538,
+        "ce_per_second": 884.2318549797818,
+        "input_per_second": 1072.9506777359877,
+        "data_preparation_seconds": 3.914979863911867,
+        "ce_fraction": 0.82411230388109,
+        "padding_fraction": 0.17216796875,
+        "input_batch_actual": 16954,
+        "micro_batches": 3,
+        "microbatch_max_samples": 8,
+        "microbatch_samples": [
+          8,
+          8,
+          4
+        ],
+        "input_tokens": 16954,
+        "ce_tokens": 13972,
+        "generated_tokens": 0,
+        "vision_tokens": 2094,
+        "mtp_target_tokens": 0,
+        "index_query_tokens": 0,
+        "replay_ce_tokens": 0,
+        "media_exposures": 37,
+        "main_ce_tokens": 200026191,
+        "phase_tokens": 13972,
+        "optimizer_updates": 1,
+        "peak_allocated_gib": 4.677062511444092,
+        "peak_reserved_gib": 9.384765625
+      },
+      "validation": [
+        {
+          "event": "validation",
+          "step": 0,
+          "main_ce_tokens": 200012219,
+          "nll": 3.3934915182450376,
+          "ce_tokens": 1000976,
+          "per_domain": {
+            "caption": 2.3549306130626864,
+            "chart_table": 1.8583992157064295,
+            "code": 2.1626024552052105,
+            "en_general": 3.8849184146551274,
+            "math": 3.7212814246742285,
+            "ocr_document": 4.204903144469864,
+            "structured": 2.9217876385523662,
+            "video": 2.9937814385170496,
+            "vqa": 2.4026381949868236,
+            "zh_general": 4.339995871883715
+          },
+          "black_media_nll": {
+            "caption": 2.4110483815643766,
+            "chart_table": 1.9055595779587335,
+            "ocr_document": 4.571416241614603,
+            "video": 3.1117522499124717,
+            "vqa": 2.4176356166274786
+          },
+          "capability_qualified": false,
+          "examples": 1740,
+          "selection": "fixed_without_replacement",
+          "context_length": 2048,
+          "evaluation_scope": "periodic",
+          "requested_ce_tokens": 1000000,
+          "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+          "example_unit": "native answer or text context window",
+          "domain_ce": {
+            "caption": 10627,
+            "chart_table": 16424,
+            "code": 308625,
+            "en_general": 163388,
+            "math": 117874,
+            "ocr_document": 20137,
+            "structured": 37080,
+            "video": 1327,
+            "vqa": 4748,
+            "zh_general": 320746
+          },
+          "black_media_ce": {
+            "caption": 10627,
+            "chart_table": 16424,
+            "ocr_document": 20137,
+            "video": 1327,
+            "vqa": 4748
+          },
+          "micro_batches": 221,
+          "duration_seconds": 258.0690664630383,
+          "attention_phase": "dense_pretrain"
+        }
+      ],
+      "parent_checkpoint_sha256": "e1f6efa788ed2663f3f06edcf995a52a6a3b30e76ba66cc510b5ac07980c6e93",
+      "optimizer_groups_sha256": "40599a9128010df0b6916132d0b5c76cc424a45fadde57bf7aac72b946176b03",
+      "completed_unix": 1789535540.655268
+    },
+    "execution_environment": {
+      "MINIFRONTIER_CE_CHUNK_SIZE": "512",
+      "MINIFRONTIER_MF_DENSE_PREFILL": "trimmed",
+      "MINIFRONTIER_PREFETCH_WINDOWS": "1"
+    },
+    "formal_observations": [
+      {
+        "model": "minikimik3",
+        "phase": "K2",
+        "state": "running",
+        "step": 17775,
+        "phase_tokens": 552630059,
+        "phase_token_budget": 1200000000,
+        "budget_unit": "ce_tokens",
+        "main_ce_tokens": 752657570,
+        "phase_progress": 0.4605,
+        "recent_tokens_per_second": 2450.0,
+        "throughput_samples": 20,
+        "estimate_remaining_update_hours": 73.4,
+        "estimate_scope": "recent logged updates only; excludes evaluation, saves, waiting and later phases",
+        "validation": {
+          "step": 17690,
+          "main_ce_tokens": 750017933,
+          "nll": 3.2587548221785085,
+          "ce_tokens": 1000657,
+          "scope": "periodic",
+          "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743"
+        },
+        "source": {
+          "commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "dirty": false,
+          "implementation_sha256": "42e14ef5305fcca720a842f9ecdbf4a582c918c6176beb963f787edb4a1f5133"
+        }
+      },
+      {
+        "model": "miniqwen4",
+        "phase": "Q2",
+        "state": "running",
+        "step": 12290,
+        "phase_tokens": 198885540,
+        "phase_token_budget": 1200000000,
+        "budget_unit": "ce_tokens",
+        "main_ce_tokens": 498901335,
+        "phase_progress": 0.1657,
+        "recent_tokens_per_second": 1562.14,
+        "throughput_samples": 20,
+        "estimate_remaining_update_hours": 178.02,
+        "estimate_scope": "recent logged updates only; excludes evaluation, saves, waiting and later phases",
+        "validation": {
+          "step": 9269,
+          "main_ce_tokens": 450013825,
+          "nll": 3.6174148217189668,
+          "ce_tokens": 1000657,
+          "scope": "periodic",
+          "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743"
+        },
+        "source": {
+          "commit": "8c0d41633f58473fde5ab5e52d8704f9b5dc924e",
+          "dirty": false,
+          "implementation_sha256": "331b9029cbe4678f6bb918f646d8052b9565710adb5741b38570464e39629ec8"
+        }
+      },
+      {
+        "model": "minideepseekv4",
+        "phase": "D4",
+        "state": "running",
+        "step": 4730,
+        "phase_tokens": 158416831,
+        "phase_token_budget": 1500000000,
+        "budget_unit": "ce_tokens",
+        "main_ce_tokens": 908450276,
+        "phase_progress": 0.1056,
+        "recent_tokens_per_second": 2071.45,
+        "throughput_samples": 20,
+        "estimate_remaining_update_hours": 179.9,
+        "estimate_scope": "recent logged updates only; excludes evaluation, saves, waiting and later phases",
+        "validation": {
+          "step": 4478,
+          "main_ce_tokens": 900009111,
+          "nll": 3.059447813664197,
+          "ce_tokens": 1000153,
+          "scope": "periodic",
+          "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b"
+        },
+        "source": {
+          "commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "dirty": false,
+          "implementation_sha256": "42e14ef5305fcca720a842f9ecdbf4a582c918c6176beb963f787edb4a1f5133"
+        }
+      },
+      {
+        "model": "minifrontier1",
+        "phase": "p1",
+        "state": "running",
+        "step": 34366,
+        "phase_tokens": 465812536,
+        "phase_token_budget": 800000000,
+        "budget_unit": "ce_tokens",
+        "main_ce_tokens": 665824755,
+        "phase_progress": 0.5823,
+        "recent_tokens_per_second": 2261.92,
+        "throughput_samples": 20,
+        "estimate_remaining_update_hours": 41.04,
+        "estimate_scope": "recent logged updates only; excludes evaluation, saves, waiting and later phases",
+        "validation": {
+          "step": 33201,
+          "main_ce_tokens": 650008695,
+          "nll": 3.127580424538154,
+          "ce_tokens": 1000976,
+          "scope": "periodic",
+          "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed"
+        },
+        "source": {
+          "commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "dirty": false,
+          "implementation_sha256": "42e14ef5305fcca720a842f9ecdbf4a582c918c6176beb963f787edb4a1f5133"
+        }
+      },
+      {
+        "model": "minideepseekv41",
+        "phase": "D2",
+        "state": "running",
+        "step": 2470,
+        "phase_tokens": 82743555,
+        "phase_token_budget": 500000000,
+        "budget_unit": "ce_tokens",
+        "main_ce_tokens": 332770910,
+        "phase_progress": 0.1655,
+        "recent_tokens_per_second": 1345.24,
+        "throughput_samples": 20,
+        "estimate_remaining_update_hours": 86.16,
+        "estimate_scope": "recent logged updates only; excludes evaluation, saves, waiting and later phases",
+        "validation": {
+          "step": 1493,
+          "main_ce_tokens": 300010058,
+          "nll": 3.2538514417352737,
+          "ce_tokens": 1000153,
+          "scope": "periodic",
+          "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b"
+        },
+        "source": {
+          "commit": "3fd51a672113c97661a89615432cb601d11b61ee",
+          "dirty": false,
+          "implementation_sha256": "68673984cbd391d8e0a99b8dcecfae9b629a270f2a57f722987e5c025a7280dd"
+        }
+      },
+      {
+        "model": "minifrontier11",
+        "phase": "p1",
+        "state": "running",
+        "step": 26,
+        "phase_tokens": 353152,
+        "phase_token_budget": 800000000,
+        "budget_unit": "ce_tokens",
+        "main_ce_tokens": 200365371,
+        "phase_progress": 0.0004,
+        "recent_tokens_per_second": 2015.43,
+        "throughput_samples": 20,
+        "estimate_remaining_update_hours": 110.21,
+        "estimate_scope": "recent logged updates only; excludes evaluation, saves, waiting and later phases",
+        "validation": {
+          "step": 0,
+          "main_ce_tokens": 200012219,
+          "nll": 3.3934915182450376,
+          "ce_tokens": 1000976,
+          "scope": "periodic",
+          "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed"
+        },
+        "source": {
+          "commit": "c726ace78138435f8460351a4215cfc3b3b797b0",
+          "dirty": false,
+          "implementation_sha256": "42e14ef5305fcca720a842f9ecdbf4a582c918c6176beb963f787edb4a1f5133"
+        }
+      }
+    ],
+    "continuing_model_health": [
+      {
+        "model": "minikimik3",
+        "phase": "K2",
+        "health": {
+          "records": 100,
+          "nonfinite": [],
+          "step_seconds": 12.412565039470792,
+          "foreground_data_wait_seconds": 0.006221587769687176,
+          "optimizer_seconds": 0.3156601991504431,
+          "last_metric_age_seconds": 32.44921278953552
+        },
+        "validation_recent": [
+          {
+            "step": 17690,
+            "main_ce_tokens": 750017933,
+            "lm_loss": 3.2587548221785085,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          },
+          {
+            "step": 16081,
+            "main_ce_tokens": 700023795,
+            "lm_loss": 3.277550123323859,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          },
+          {
+            "step": 14473,
+            "main_ce_tokens": 650017651,
+            "lm_loss": 3.3005064029865974,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          },
+          {
+            "step": 12865,
+            "main_ce_tokens": 600002402,
+            "lm_loss": 3.3153735301814913,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          },
+          {
+            "step": 11258,
+            "main_ce_tokens": 550020077,
+            "lm_loss": 3.3352761282468277,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          },
+          {
+            "step": 9649,
+            "main_ce_tokens": 500009803,
+            "lm_loss": 3.360757805974014,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          }
+        ]
+      },
+      {
+        "model": "miniqwen4",
+        "phase": "Q2",
+        "health": {
+          "records": 100,
+          "nonfinite": [],
+          "step_seconds": 10.304290629923344,
+          "foreground_data_wait_seconds": 0.0018470436334609985,
+          "optimizer_seconds": 0.5214770836755633,
+          "last_metric_age_seconds": 5.316581964492798
+        },
+        "validation_recent": [
+          {
+            "step": 9269,
+            "main_ce_tokens": 450013825,
+            "lm_loss": 3.6174148217189668,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          },
+          {
+            "step": 6179,
+            "main_ce_tokens": 400004652,
+            "lm_loss": 3.620695407523995,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          },
+          {
+            "step": 3089,
+            "main_ce_tokens": 350012109,
+            "lm_loss": 3.633176068752517,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          },
+          {
+            "step": 0,
+            "main_ce_tokens": 300015795,
+            "lm_loss": 3.6465617981320255,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "f357fd40e5f99c0ad67070ee53a5782d24a4cfbc2b2f63cbf338ae0b95bcb743",
+            "supervised_tokens": 1000657,
+            "ce_tokens": null
+          }
+        ]
+      },
+      {
+        "model": "minideepseekv4",
+        "phase": "D4",
+        "health": {
+          "records": 100,
+          "nonfinite": [],
+          "step_seconds": 16.38207092974335,
+          "foreground_data_wait_seconds": 0.009371071122586727,
+          "optimizer_seconds": 0.4553222702816129,
+          "last_metric_age_seconds": 14.73434853553772
+        },
+        "validation_recent": [
+          {
+            "step": 4478,
+            "main_ce_tokens": 900009111,
+            "lm_loss": 3.059447813664197,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+            "supervised_tokens": 1000153,
+            "ce_tokens": null
+          },
+          {
+            "step": 2985,
+            "main_ce_tokens": 850018798,
+            "lm_loss": 3.0689426273151303,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+            "supervised_tokens": 1000153,
+            "ce_tokens": null
+          },
+          {
+            "step": 1493,
+            "main_ce_tokens": 800016148,
+            "lm_loss": 3.0746864528555258,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+            "supervised_tokens": 1000153,
+            "ce_tokens": null
+          },
+          {
+            "step": 0,
+            "main_ce_tokens": 750033445,
+            "lm_loss": 3.123164370939137,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+            "supervised_tokens": 1000153,
+            "ce_tokens": null
+          }
+        ]
+      },
+      {
+        "model": "minifrontier1",
+        "phase": "p1",
+        "health": {
+          "records": 100,
+          "nonfinite": [],
+          "step_seconds": 6.068690135143697,
+          "foreground_data_wait_seconds": 0.02455649245530367,
+          "optimizer_seconds": null,
+          "last_metric_age_seconds": 2.1792852878570557
+        },
+        "validation_recent": [
+          {
+            "step": 33201,
+            "main_ce_tokens": 650008695,
+            "lm_loss": null,
+            "nll": 3.127580424538154,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+            "supervised_tokens": null,
+            "ce_tokens": 1000976
+          },
+          {
+            "step": 29510,
+            "main_ce_tokens": 600013301,
+            "lm_loss": null,
+            "nll": 3.1576390359496824,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+            "supervised_tokens": null,
+            "ce_tokens": 1000976
+          },
+          {
+            "step": 25820,
+            "main_ce_tokens": 550003624,
+            "lm_loss": null,
+            "nll": 3.17589397303007,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+            "supervised_tokens": null,
+            "ce_tokens": 1000976
+          },
+          {
+            "step": 22130,
+            "main_ce_tokens": 500008160,
+            "lm_loss": null,
+            "nll": 3.197329168421522,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+            "supervised_tokens": null,
+            "ce_tokens": 1000976
+          },
+          {
+            "step": 18443,
+            "main_ce_tokens": 450011879,
+            "lm_loss": null,
+            "nll": 3.240068472346867,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+            "supervised_tokens": null,
+            "ce_tokens": 1000976
+          },
+          {
+            "step": 14754,
+            "main_ce_tokens": 400013777,
+            "lm_loss": null,
+            "nll": 3.2620683022640047,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "e81ea2044643e89908380f3da3dfd5dff9b4ec913880951d9894d84cd6c439ed",
+            "supervised_tokens": null,
+            "ce_tokens": 1000976
+          }
+        ]
+      },
+      {
+        "model": "minideepseekv41",
+        "phase": "D2",
+        "health": {
+          "records": 100,
+          "nonfinite": [],
+          "step_seconds": 24.903310651890934,
+          "foreground_data_wait_seconds": 0.00452970527112484,
+          "optimizer_seconds": 0.383833940140903,
+          "last_metric_age_seconds": 32.593345403671265
+        },
+        "validation_recent": [
+          {
+            "step": 1493,
+            "main_ce_tokens": 300010058,
+            "lm_loss": 3.2538514417352737,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+            "supervised_tokens": 1000153,
+            "ce_tokens": null
+          },
+          {
+            "step": 0,
+            "main_ce_tokens": 250027355,
+            "lm_loss": 3.318077309269338,
+            "nll": null,
+            "evaluation_scope": "periodic",
+            "selection_sha256": "8a1bb4432b36a9775a2f54f65278c208195330e67694581e99df416b92acf99b",
+            "supervised_tokens": 1000153,
+            "ce_tokens": null
+          }
+        ]
+      }
+    ],
+    "measurement_limits": [
+      "CE/s is recent logged update throughput, not full wall-clock throughput; evaluation, checkpoint saves and waits are excluded.",
+      "MF11 P1 has only 26 updates at this snapshot; its speed and ETA are provisional.",
+      "P0 phase-end and P1 initial evaluations have different selections and context lengths; their NLL values are not a paired comparison.",
+      "Stage continuation is not model capability qualification."
+    ],
+    "tensorboard": {
+      "state": "verified",
+      "groups": 14,
+      "source_logs_modified": false,
+      "training_processes_untouched": true,
+      "recovery_note": "View started successfully; supervisor status-directory race resolved after first sync. No training process was affected.",
+      "new_phase_points": {
+        "train/lm_loss": {
+          "points": 10,
+          "last": [
+            1789535603.699267,
+            10,
+            3.6026320457458496
+          ]
+        },
+        "perf/ce_per_second": {
+          "points": 10,
+          "last": [
+            1789535603.699267,
+            10,
+            2373.015625
+          ]
+        },
+        "eval/lm_loss": {
+          "points": 1,
+          "last": [
+            1789535524.845345,
+            0,
+            3.393491506576538
+          ]
+        }
+      }
+    },
+    "storage": {
+      "reclaimed_gib": 6.86353961750865,
+      "free_gib_at_snapshot": 108.7437973022461,
+      "reserve_gib": 80,
+      "retired_files": [
+        {
+          "path": "outputs/strategy-pretraining-infra-upgrade-v3/miniqwen4/resume-checkpoint.pt",
+          "bytes": 4799895852,
+          "sha256": "6f664b6edcaf1f1a231a846ca187259851b93ecef165587100987b1d9229bdb2",
+          "reason": "Superseded execution-resume snapshot; active Qwen uses v4, completed MF11 P0 and P1 use the final formal P0 checkpoint. No active or pending resume dependency or open descriptor. Historical JSON/source evidence retained."
+        },
+        {
+          "path": "outputs/strategy-pretraining-infra-upgrade-v3/minifrontier11/resume-checkpoint.pt",
+          "bytes": 2569773696,
+          "sha256": "6454105cd7e8e02be9cc00b6b623704c726c181c05d0fba2d7f348add5025007",
+          "reason": "Superseded execution-resume snapshot; active Qwen uses v4, completed MF11 P0 and P1 use the final formal P0 checkpoint. No active or pending resume dependency or open descriptor. Historical JSON/source evidence retained."
+        }
+      ]
+    },
+    "next_stages": {
+      "armed": false,
+      "jobs": [
+        "minifrontier1/indexer",
+        "minikimik3/K3",
+        "miniqwen4/Q3",
+        "minideepseekv4/D5",
+        "minideepseekv41/D3"
+      ],
+      "priority": "MF1 fixed query validation and indexer publication; record actual capture mass/NLL/visual evaluation before P2."
+    }
   }
 }
