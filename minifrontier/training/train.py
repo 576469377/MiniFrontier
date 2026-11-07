@@ -348,6 +348,14 @@ def run(args, rank, world, device):
             )
     config = args.config or (saved["config"] if saved else None)
     model = build_model(args.model, config, phase=phase).to(device)
+    if args.model == "minideepseekv41" and device.type == "cuda":
+        policy = os.environ.get("MINIFRONTIER_V41_ACTIVATIONS", "config")
+        if policy not in {"config", "retain"}:
+            raise ValueError("MINIFRONTIER_V41_ACTIVATIONS must be config or retain")
+        if policy == "retain":
+            model.checkpoint_layers = False
+            if model.vision is not None:
+                model.vision.checkpoint_layers = False
     if args.model == "miniqwen4" and phase == "dense_pretrain" and device.type == "cuda":
         model.set_dense_attention_backend("sdpa")
         model.set_gdn_backend("fla" if find_spec("fla") is not None else "torch")
@@ -1136,6 +1144,11 @@ def run(args, rank, world, device):
             parameters=sum(p.numel() for p in model.parameters() if p.is_floating_point()),
             world_size=world,
             data_prefetch_windows=int(prefetch is not None),
+            v41_activation_policy=(
+                os.environ.get("MINIFRONTIER_V41_ACTIVATIONS", "config")
+                if args.model == "minideepseekv41" and device.type == "cuda"
+                else None
+            ),
             dense_attention_backend=getattr(model, "dense_attention_backend", None),
             gdn_backend=getattr(model, "gdn_backend", None),
             sparse_attention_backend=getattr(model, "sparse_attention_backend", None),

@@ -35,6 +35,12 @@
         <div class="presets" aria-label="测试样例"><button class="preset" data-preset="zh" type="button">中文续写</button><button class="preset" data-preset="en" type="button">英文续写</button><button class="preset" data-preset="code" type="button">代码补全</button><button class="preset" data-preset="chat" type="button">问答示例</button></div>
         <div class="panel-body">
           <label class="visually-hidden" for="prompt">测试文本</label><textarea id="prompt" placeholder="输入要续写的文本或测试问题…" spellcheck="false">人工智能是一种</textarea>
+          <div id="image-field" hidden>
+            <label class="field">图片（最多 3 MiB）<input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp"></label>
+            <div class="row"><button class="preset" type="button" data-shape-color="#db3136">试用红色图形</button>
+              <button class="preset" type="button" data-shape-color="#305bd8">试用蓝色图形</button>
+              <img id="shape-preview" width="48" height="48" alt="选中的示例图形" hidden></div>
+          </div>
           <div class="input-footer"><div class="selection-summary"><strong id="selected-summary">请选择检查点</strong><small id="mode-summary">预训练适合文本续写；后训练可使用对话模板。</small></div><button id="send" class="primary" type="button" disabled>生成</button></div>
           <p id="status" class="status" role="status" aria-live="polite"></p>
         </div>

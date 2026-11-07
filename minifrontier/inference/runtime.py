@@ -111,7 +111,10 @@ def generate_ids(
     return all_ids
 
 
+@torch.inference_mode(False)
+@torch.no_grad()
 def load_checkpoint(path, device="cpu"):
+    # Reference caches use the version counters of loaded parameters.
     path = Path(path).resolve()
     saved = torch.load(path, map_location="cpu", weights_only=True)
     if saved.get("format") == "mf1-export-v1":
@@ -194,12 +197,15 @@ def respond(
         family = {
             "MiniKimiK3ForCausalLM": "minikimik3",
             "MiniQwen4ForCausalLM": "miniqwen4",
+            "MiniDeepSeekV41ForCausalLM": "minideepseekv41",
             "MiniDeepSeekV4ForCausalLM": "minideepseekv4",
         }.get(model_type)
         if family is None:
             raise ValueError(
                 f"native image generation is not supported by this entry point for {model_type}"
             )
+        if family == "minideepseekv41" and model.vision is None:
+            raise ValueError("this MiniDeepSeek-V4.1 checkpoint has no trained vision tower")
         if "<|image|>" not in prompt:
             prompt = "<|image|>" * len(images) + "\n" + prompt
         native = prepare_record(
@@ -214,6 +220,7 @@ def respond(
             family,
             max_features=max_image_features,
             generation_prompt=True,
+            patch_size=model.vision.config.patch_size if family == "minideepseekv41" else 14,
             model_vocab_size=model.config.vocab_size,
         ).to(device)
         inputs, media = native.input_ids, native.extras["media"]

@@ -13,7 +13,7 @@
     "native recipe and training gates"
   ],
   "license_expression": "Apache-2.0 AND MIT AND LicenseRef-Kimi-K3",
-  "evidence": "Model-local attributed copies; reference_adapters record their extraction sources, not runtime imports. Output/gradient parity is checked in tests/test_mf_local_layers.py and tests/test_mf_local_vision.py.",
+  "evidence": "Model-local attributed copies. reference_adapters pin extraction sources at reference_adapters_revision, not runtime imports; local_adapters identify current repository files. Output/gradient parity is checked in tests/test_mf_local_layers.py and tests/test_mf_local_vision.py.",
   "strategy_document": {
     "path": "docs/training-strategies/2026-09-09/04-MiniFrontier1.0-原生多模态融合架构与全流程实现方案.md",
     "sha256": "e0840c97bc5c23823e723af79b27ddb69c6067e74af1fa06fd294b0cc4791ef7"
@@ -117,13 +117,13 @@
   "local_adapters": [
     {
       "path": "minifrontier/models/minifrontier1/kda_primitives.py",
-      "sha256": "a96b63a4a107ba880cd2ecbe332e69dcdb4fb273617d1596b12894e1d5187f61",
+      "sha256": "907667e9896939c134757863ebad0f32f78d5d9f756949501b4e9e94c8cee1d2",
       "source": "kimi",
       "license": "LicenseRef-Kimi-K3"
     },
     {
       "path": "minifrontier/models/minifrontier1/upstream_vision.py",
-      "sha256": "229f3f2489aa6e300104d7f9a1ef11bcc1c8a845e336c38d2b077749b0d28734",
+      "sha256": "7e8e01963b995223db4db16d0437fb60026ff348f502c92a4031bc3291547978",
       "source": "qwen",
       "license": "Apache-2.0"
     },
@@ -147,7 +147,7 @@
     },
     {
       "path": "minifrontier/models/minifrontier11/upstream_vision.py",
-      "sha256": "229f3f2489aa6e300104d7f9a1ef11bcc1c8a845e336c38d2b077749b0d28734",
+      "sha256": "7e8e01963b995223db4db16d0437fb60026ff348f502c92a4031bc3291547978",
       "source": "qwen",
       "license": "Apache-2.0"
     },
@@ -167,5 +167,6 @@
   "model_packages": {
     "minifrontier1": "minifrontier/models/minifrontier1",
     "minifrontier11": "minifrontier/models/minifrontier11"
-  }
+  },
+  "reference_adapters_revision": "5c76fab318aa4ea460561b5223bfc001fc925a1b"
 }

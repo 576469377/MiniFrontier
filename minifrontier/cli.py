@@ -60,7 +60,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         p.add_argument("--tokenizer-path", required=True)
         p.add_argument("--output", required=True)
         p.add_argument("--max-length", type=int, default=4096)
-        p.add_argument("--family", choices=["minikimik3", "miniqwen4", "minideepseekv4"])
+        p.add_argument(
+            "--family", choices=["minikimik3", "miniqwen4", "minideepseekv4", "minideepseekv41"]
+        )
         p.add_argument("--media-root")
         p.add_argument("--max-features", type=int, default=256)
         p.add_argument(
@@ -148,6 +150,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         demo_parser = argparse.ArgumentParser(description="Run the local MiniFrontier browser demo")
         demo_parser.add_argument("--root", default="outputs")
+        demo_parser.add_argument(
+            "--default-stage", default="formal", help="initial checkpoint stage, e.g. sft"
+        )
         demo_parser.add_argument("--host", default="127.0.0.1")
         demo_parser.add_argument("--port", type=int, default=7860)
         devices = demo_parser.add_mutually_exclusive_group()

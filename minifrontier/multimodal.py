@@ -106,6 +106,7 @@ def prepare_record(
     generation_prompt=False,
     model_vocab_size=None,
     min_pixels=None,
+    patch_size=14,
 ):
     if tokenizer.token_to_id("<|image|>") != 7:
         raise ValueError(
@@ -157,14 +158,17 @@ def prepare_record(
             raise ValueError("video requires at least two genuine timestamped source frames")
         if not video and len(images) != 1:
             raise ValueError("multiple frames must be explicitly identified as video")
-        if family == "minideepseekv4":
+        if family in {"minideepseekv4", "minideepseekv41"}:
             if video:
                 raise ValueError("Vision-v1 image route does not claim video support")
-            from minifrontier.models.minideepseekv4.processing import process_image
+            from minifrontier.models.factory import model_processing
+
+            process_image = model_processing(family).process_image
 
             sample = process_image(
                 images[0],
                 start=len(output),
+                patch_size=patch_size,
                 max_features=max_features,
                 min_pixels=resource.get("min_pixels", 3136) if min_pixels is None else min_pixels,
             )
@@ -221,7 +225,7 @@ def prepare_record(
         media.append(sample)
         output.extend(tokens)
         targets.extend([-100] * len(tokens))
-        if family != "minideepseekv4":
+        if family not in {"minideepseekv4", "minideepseekv41"}:
             output.append(10)
             targets.append(-100)
         features += sample["feature_count"]

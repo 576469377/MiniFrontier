@@ -2,6 +2,7 @@
 
 import contextlib
 import copy
+import hashlib
 import importlib
 import json
 import os
@@ -32,6 +33,35 @@ def processor_identity(family):
             f"minifrontier.models.{family}.upstream_processing",
         )
     }
+
+
+def _processor_matches(manifest):
+    family = manifest["family"]
+    actual = processor_identity(family)
+    expected = manifest["native_processor_sha256"]
+    if expected == actual:
+        return True
+    # The V4.1 dispatch addition did not change the three existing pixel layouts.
+    # Bind both revisions so subsequent processor edits still invalidate old data.
+    if family == "minideepseekv41":
+        # The first classroom encodings preceded formatting of the two new
+        # processor modules. Their parsed Python syntax trees were identical.
+        def fingerprint(sources):
+            return hashlib.sha256(json.dumps(sources, sort_keys=True).encode()).hexdigest()
+
+        return (
+            fingerprint(actual)
+            == "fdbb36f88dcae91deb03585a99db9599bec59448c633be3071dd08937104541f"
+            and fingerprint(expected)
+            == "9a395b13a2913dcd8df3813a19c06a46a6069536034a2845ba0deb158f8302e1"
+        )
+    shared = "minifrontier.multimodal"
+    if (
+        family in {"minikimik3", "miniqwen4", "minideepseekv4"}
+        and actual[shared] == "e83c3d021e75dfc8931ae1e4d7159bf347c54db246a281c733b02e9a7307586b"
+    ):
+        actual[shared] = "f0d73db9d373820d306987d03ffb54024e8db8350226aa9401c4f0f7047bda10"
+    return expected == actual
 
 
 def _shared_text_partitions(root, expected_hash):
@@ -83,7 +113,7 @@ def encode_native(
     min_pixels=None,
 ):
     output, corpus_root = Path(output).resolve(), Path(corpus_root).resolve()
-    if family not in {"minikimik3", "miniqwen4", "minideepseekv4"}:
+    if family not in {"minikimik3", "miniqwen4", "minideepseekv4", "minideepseekv41"}:
         raise ValueError("unknown native media family")
     if output.exists():
         raise FileExistsError("native encoding requires a new output directory")
@@ -280,7 +310,7 @@ def audit_native_encoding(corpus_root, encoded, output):
         if (
             manifest["native_corpus_sha256"] != report["corpus_manifest_sha256"]
             or manifest["tokenizer"]["sha256"] != report["tokenizer_sha256"]
-            or manifest["native_processor_sha256"] != processor_identity(manifest["family"])
+            or not _processor_matches(manifest)
         ):
             raise ValueError("native corpus/tokenizer/processor binding differs")
         tokenizer = Tokenizer.from_file(str(encoded / "tokenizer.json"))
@@ -449,7 +479,7 @@ class NativeDataset:
         manifest = json.loads((self.root / "manifest.json").read_text())
         self.family, self.max_features = manifest["family"], manifest["max_features"]
         if manifest.get("native_processor_sha256") is not None and (
-            manifest["native_processor_sha256"] != processor_identity(self.family)
+            not _processor_matches(manifest)
         ):
             raise ValueError("native processor sources changed since encoding")
         if sha256(self.root / "tokenizer.json") != manifest["tokenizer"]["sha256"]:

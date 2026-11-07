@@ -72,7 +72,7 @@ class MiniDeepSeekV41Config:
     engram_n_heads: int = 2
     engram_head_dim: int = 32
     engram_max_ngram_size: int = 4
-    engram_pad_id: int = 2
+    engram_pad_id: int = 0
     pad_token_id: int = 0
     eos_token_id: int = 2
     gradient_checkpointing: bool = True
@@ -204,6 +204,7 @@ class MiniDeepSeekV41ForCausalLM(nn.Module):
             config.vision_config = DeepSeekVisionConfig(**config.vision_config)
         config.validate()
         self.config, self.indexer_loss_enabled = config, True
+        self.checkpoint_layers = config.gradient_checkpointing
         self.embed = nn.Embedding(config.vocab_size, config.dim, config.pad_token_id)
         layout = table_layout(config)
         self.layers = nn.ModuleList(Block(config, i, layout) for i in range(config.n_layers))
@@ -385,7 +386,7 @@ class MiniDeepSeekV41ForCausalLM(nn.Module):
             layer.attn.indexer_loss_enabled = self.indexer_loss_enabled
             if return_taps and i >= self.config.n_layers - 3:
                 taps.append(h.mean(-2))
-            if self.training and self.config.gradient_checkpointing:
+            if self.training and self.checkpoint_layers:
                 h, pre, state, kl, seq = checkpoint(
                     layer, h, pre, state, input_ids, valid, encoder_hidden, use_reentrant=False
                 )

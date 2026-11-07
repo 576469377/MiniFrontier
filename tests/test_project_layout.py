@@ -3,10 +3,12 @@
 import json
 import re
 import tomllib
+from importlib import import_module
 from pathlib import Path
 from urllib.parse import unquote
 
 from minifrontier.catalog import default_manifest_path, inspect_current_models
+from minifrontier.models.factory import model_classes
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,6 +24,9 @@ def test_public_catalog_and_packaged_configuration_paths():
         "minideepseekv41",
         "minifrontier11",
     }
+    for name, entry in result.items():
+        module, class_name = entry["training_module"].rsplit(".", 1)
+        assert getattr(import_module(module), class_name) is model_classes(name)[1]
     config = tomllib.loads((ROOT / "pyproject.toml").read_text())
     assert config["project"]["readme"] == "README.md"
     for filenames in config["tool"]["setuptools"]["data-files"].values():

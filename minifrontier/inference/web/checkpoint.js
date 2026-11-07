@@ -31,9 +31,14 @@ function savedTime(value) {
 }
 function selected() { return models.find(model => model.id === selectedId); }
 function setStatus(message, error = false) { $("status").textContent = message; $("status").classList.toggle("error", error); }
+let shapeExample = null;
 function updateControls() {
   for (const id of ["stage", "family", "search", "mode", "length", "temperature", "top-p", "seed", "prompt", "reset-settings"]) $(id).disabled = busy || !ready;
   for (const button of document.querySelectorAll(".preset, .run-card")) button.disabled = busy || !ready;
+  const canUpload = Boolean(selected()?.supports_image);
+  $("image-field").hidden = !canUpload;
+  $("image-upload").disabled = busy || !canUpload;
+  if (!canUpload) { $("image-upload").value = ""; shapeExample = null; $("shape-preview").hidden = true; }
   $("refresh").disabled = busy || refreshing;
   $("send").disabled = busy || refreshing || !ready || !selected() || !$("prompt").value.trim();
   $("send").textContent = busy ? "正在生成…" : "生成";
@@ -163,6 +168,7 @@ function resultCard(record, compact = false) {
   header.append(identity, node("span", "badge" + (record.state === "done" ? " accent" : ""), record.state === "pending" ? "处理中" : record.state === "error" ? "失败" : (data.generation_mode === "chat" ? "对话" : "续写")));
   const body = node("div", "result-content");
   body.append(node("p", "result-prompt", record.request.prompt));
+  if (record.imageName) body.append(node("p", "hint", "图片 · " + record.imageName));
   if (record.state === "pending") {
     const loading = node("p", "status"); loading.append(node("span", "spinner"), node("span", "", "请求处理中，包含权重加载与生成…")); body.append(loading);
   } else body.append(node("pre", "result-output" + (record.state === "error" ? " error" : ""), record.state === "error" ? record.error : data.text || "（模型立即结束，没有可显示文本）"));
@@ -236,7 +242,26 @@ async function send() {
   setStatus("请求处理中 · 0 秒");
   const timer = setInterval(() => setStatus("请求处理中 · " + Math.floor((performance.now() - start) / 1000) + " 秒（包含加载与生成）"), 1000);
   try {
-    record.response = await request("/api/generate", payload);
+    const requestBody = {...payload};
+    const file = $("image-upload").files[0];
+    if (checkpoint.supports_image && file) {
+      if (file.size > 3 * 1024 * 1024) throw Error("图片超过 3 MiB");
+      requestBody.mode = "chat";
+      requestBody.image_upload = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(Error("无法读取图片"));
+        reader.readAsDataURL(file);
+      });
+      record.request.mode = "chat";
+      record.imageName = file.name;
+    }
+    if (checkpoint.supports_image && !file && shapeExample) {
+      requestBody.mode = record.request.mode = "chat";
+      requestBody.image_upload = shapeExample;
+      record.imageName = "课堂示例";
+    }
+    record.response = await request("/api/generate", requestBody);
     record.state = "done";
     setStatus("生成完成，结果已保存到当前页面记录。");
   } catch (error) {
@@ -271,6 +296,24 @@ $("stage").addEventListener("change", () => { $("checkpoint-notice").hidden = tr
 $("family").addEventListener("change", renderModels);
 $("search").addEventListener("input", renderModels);
 $("mode").addEventListener("change", describe);
+$("image-upload").addEventListener("change", () => {
+  shapeExample = null;
+  $("shape-preview").hidden = true;
+});
+for (const button of document.querySelectorAll("[data-shape-color]")) {
+  button.addEventListener("click", () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 84;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#eef0ee"; ctx.fillRect(0, 0, 84, 84);
+    ctx.fillStyle = button.dataset.shapeColor; ctx.beginPath(); ctx.arc(40, 42, 25, 0, Math.PI * 2); ctx.fill();
+    shapeExample = canvas.toDataURL("image/png");
+    $("shape-preview").src = shapeExample; $("shape-preview").hidden = false;
+    $("image-upload").value = "";
+    $("prompt").value = "What color is the shape? Answer with one word.";
+    $("mode").value = "chat"; describe();
+  });
+}
 $("prompt").addEventListener("input", updateControls);
 $("prompt").addEventListener("keydown", event => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); send(); } });
 $("send").addEventListener("click", send);
