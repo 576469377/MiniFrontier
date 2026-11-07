@@ -241,6 +241,10 @@ class MiniDeepSeekV41ForCausalLM(nn.Module):
             elif not name.endswith(".base"):
                 parameter.zero_()
         self.embed.weight[self.config.pad_token_id].zero_()
+        if self.vision is not None:
+            # These learned markers enter the residual stream before RMS normalization.
+            for marker in (self.image_start, self.image_end, self.image_newline, self.image_pad):
+                nn.init.normal_(marker, std=self.config.initializer_range)
 
     def configure_training_phase(self, phase):
         if phase not in {"sparse_pretrain", "sparse_cpt", "posttrain"}:

@@ -11,6 +11,7 @@ from minifrontier.inference.runtime import load_checkpoint, respond
 from minifrontier.models.minideepseekv41 import MiniDeepSeekV41ForCausalLM
 from minifrontier.models.minideepseekv41.processing import process_image
 from minifrontier.models.minideepseekv41.vision import DeepSeekVisionConfig
+from minifrontier.multimodal import collate, prepare_record
 from minifrontier.training.transitions import load_previous
 
 
@@ -64,3 +65,56 @@ def test_migrate_old_engram_and_generate_with_png(tmp_path, tokenizer):
         )
     with pytest.raises(ValueError, match="vision tower"):
         respond(old, t, "Color?", images=[str(f)], max_new_tokens=1)
+
+
+def test_retaining_v41_activations_preserves_image_sft_gradients(tmp_path, tokenizer):
+    vision = DeepSeekVisionConfig(
+        depth=1, hidden_size=16, num_heads=2, intermediate_size=32, output_size=32
+    )
+    config = tiny(
+        vocab_size=tokenizer.get_vocab_size(), vision_config=vision, gradient_checkpointing=True
+    )
+    model = MiniDeepSeekV41ForCausalLM(config).train()
+    image = tmp_path / "shape.png"
+    Image.new("RGB", (42, 42), "red").save(image)
+    record = dict(
+        stage="sft",
+        turns=[
+            dict(role="user", content="<|image|>\nColor?"),
+            dict(role="assistant", content="red"),
+        ],
+        media=[dict(path=str(image))],
+    )
+    batch = collate(
+        [
+            prepare_record(
+                record,
+                tokenizer,
+                "minideepseekv41",
+                model_vocab_size=config.vocab_size,
+                min_pixels=1,
+            )
+        ],
+        "cpu",
+    )
+
+    def gradients():
+        model.zero_grad(set_to_none=True)
+        loss = model(batch.input_ids, labels=batch.labels, **batch.extras).loss
+        loss.backward()
+        return loss.detach(), {
+            n: p.grad.detach().clone() for n, p in model.named_parameters() if p.grad is not None
+        }
+
+    loss, expected = gradients()
+    for marker in ("image_start", "image_end", "image_newline"):
+        assert 0 < expected[marker].norm().item() < 100
+    for marker in (model.image_start, model.image_end, model.image_newline, model.image_pad):
+        assert marker.std().item() > 0
+    model.retain_activations = True
+    model.vision.retain_activations = True
+    actual_loss, actual = gradients()
+    torch.testing.assert_close(actual_loss, loss, rtol=0, atol=0)
+    assert expected.keys() == actual.keys()
+    for name, grad in expected.items():
+        torch.testing.assert_close(actual[name], grad, rtol=0, atol=0)
