@@ -35,7 +35,7 @@ class DeepSeekVision(nn.Module):
         if config.hidden_size % (4 * config.num_heads) or config.downsample_ratio != 3:
             raise ValueError("invalid native Vision-Exp head/aligner configuration")
         self.config = config
-        self.checkpoint_layers = config.gradient_checkpointing
+        self.retain_activations = False
         args = SimpleNamespace(
             vision_n_layers=config.depth,
             vision_dim=config.hidden_size,
@@ -55,7 +55,7 @@ class DeepSeekVision(nn.Module):
         cos, sin = get_vision_cos_sin(n_h, n_w, self.vit.rope_dim, self.vit.rope_theta)
         cos, sin = cos.to(x.device), sin.to(x.device)
         for block in self.vit.blocks:
-            if self.training and self.checkpoint_layers:
+            if self.training and self.config.gradient_checkpointing and not self.retain_activations:
                 x = checkpoint(block, x, cos, sin, use_reentrant=False)
             else:
                 x = block(x, cos, sin)

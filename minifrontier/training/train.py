@@ -353,9 +353,9 @@ def run(args, rank, world, device):
         if policy not in {"config", "retain"}:
             raise ValueError("MINIFRONTIER_V41_ACTIVATIONS must be config or retain")
         if policy == "retain":
-            model.checkpoint_layers = False
+            model.retain_activations = True
             if model.vision is not None:
-                model.vision.checkpoint_layers = False
+                model.vision.retain_activations = True
     if args.model == "miniqwen4" and phase == "dense_pretrain" and device.type == "cuda":
         model.set_dense_attention_backend("sdpa")
         model.set_gdn_backend("fla" if find_spec("fla") is not None else "torch")
