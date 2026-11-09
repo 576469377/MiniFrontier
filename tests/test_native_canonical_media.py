@@ -654,3 +654,70 @@ def test_native_composition_rejects_mismatched_model_or_shared_text(inputs, tmp_
     (copied / "manifest.json").write_text(json.dumps(manifest))
     with pytest.raises(ValueError, match=match):
         assemble_native_components([child, copied], tmp_path / "invalid")
+
+
+@pytest.mark.parametrize(
+    "family,cap,floor",
+    [
+        ("minikimik3", 64, None),
+        ("miniqwen4", 49, 50176),
+        ("minideepseekv4", 64, 3136),
+        ("minideepseekv41", 64, 3136),
+    ],
+)
+@pytest.mark.parametrize("historical", [False, True])
+def test_respond_replays_bound_native_pixels_and_prompt(
+    corpus, monkeypatch, family, cap, floor, historical
+):
+    from minifrontier.inference import runtime
+    from minifrontier.multimodal import LITERAL_VISUAL, VISUAL_CHAT
+
+    root, tok_path, _, rows = corpus
+    tok = Tokenizer.from_file(str(tok_path))
+    row = rows[0][1]
+    model_name = {
+        "minikimik3": "MiniKimiK3ForCausalLM",
+        "miniqwen4": "MiniQwen4ForCausalLM",
+        "minideepseekv4": "MiniDeepSeekV4ForCausalLM",
+        "minideepseekv41": "MiniDeepSeekV41ForCausalLM",
+    }[family]
+    model = type(model_name, (), {})()
+    model.config = SimpleNamespace(vocab_size=tok.get_vocab_size())
+    model.vision = SimpleNamespace(config=SimpleNamespace(patch_size=14))
+    model.parameters = lambda: iter([torch.zeros(1)])
+    model.inference_media_profile = dict(
+        image_max_features=cap,
+        min_pixels=floor,
+        visual_prompt_counts={"literal-qa" if historical else "control-v1": 1},
+    )
+    reference = prepare_record(
+        row if historical else dict(row, mode="direct", effort="low"),
+        tok,
+        family,
+        root=root,
+        max_features=cap,
+        min_pixels=floor,
+        model_vocab_size=tok.get_vocab_size(),
+        pretrain_encoding=LITERAL_VISUAL if historical else VISUAL_CHAT,
+    )
+    captured = []
+
+    def capture(model, ids, *, media, **kwargs):
+        captured.append((ids, media))
+        return ids
+
+    monkeypatch.setattr(runtime, "generate_ids", capture)
+    runtime.respond(
+        model, tok, row["visual_question"], images=[root / m["path"] for m in row["media"]]
+    )
+    ids, media = captured[0]
+    assert ids.size(1) < reference.input_ids.size(1)
+    assert ids.tolist() == reference.input_ids[:, : ids.size(1)].tolist()
+    assert ids[0, -1] != 2
+    if historical:
+        assert tok.decode(ids[0, -2:].tolist(), skip_special_tokens=False).endswith("Assistant:")
+    else:
+        assert reference.labels[:, : ids.size(1)].eq(-100).all()
+    for trained, served in zip(reference.extras["media"], media, strict=True):
+        torch.testing.assert_close(trained["patches"], served["patches"], atol=0, rtol=0)
+        assert trained["start"] == served["start"]

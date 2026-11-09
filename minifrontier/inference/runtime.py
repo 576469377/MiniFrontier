@@ -10,6 +10,7 @@ import torch
 from tokenizers import Tokenizer
 
 from minifrontier.data import chat_tokens, sha256
+from minifrontier.inference.media_profile import checkpoint_media_profile
 from minifrontier.models.factory import build_model, configure_posttraining
 
 
@@ -138,10 +139,7 @@ def load_checkpoint(path, device="cpu"):
     model.load_state_dict(saved["model"], strict=True)
     configure_posttraining(model)
     run = saved.get("run_spec", {})
-    if saved["model_name"] in {"minifrontier1", "minifrontier11"}:
-        from minifrontier.inference.minifrontier1_export import checkpoint_media_profile
-
-        model.inference_media_profile = checkpoint_media_profile(saved, path)
+    model.inference_media_profile = checkpoint_media_profile(saved, path)
     model.chat_template = saved.get(
         "chat_template",
         run.get("rollout", {}).get("chat_template", run.get("chat_template", "legacy")),
@@ -176,6 +174,8 @@ def respond(
     timestamps=None,
     max_video_features=None,
     image_representation="standard",
+    min_pixels=None,
+    visual_protocol=None,
 ):
     if (
         chat
@@ -189,8 +189,6 @@ def respond(
     device = next(model.parameters()).device
     media = None
     mf1_chat = chat and getattr(model, "chat_template", None) == "mf1-control-v1"
-    if video_frames and not mf1_chat:
-        raise ValueError("frame-video generation requires an MF1 native chat checkpoint")
     if mf1_chat:
         from minifrontier.inference.minifrontier1 import prepare_prompt
 
@@ -213,8 +211,8 @@ def respond(
         from minifrontier.multimodal import move
 
         media = move(media, device)
-    elif images:
-        from minifrontier.multimodal import prepare_record
+    elif images or video_frames:
+        from minifrontier.multimodal import LITERAL_VISUAL, VISUAL_CHAT, prepare_record
 
         model_type = type(model).__name__
         family = {
@@ -227,22 +225,55 @@ def respond(
             raise ValueError(
                 f"native image generation is not supported by this entry point for {model_type}"
             )
-        if family == "minideepseekv41" and getattr(model, "vision", None) is None:
+        if (
+            family in {"minideepseekv4", "minideepseekv41"}
+            and getattr(model, "vision", None) is None
+        ):
             raise ValueError(
                 f"native image generation requires a trained vision tower for {model_type}"
             )
-        resources = [dict(path=str(Path(path).resolve())) for path in images]
+        profile = getattr(model, "inference_media_profile", {})
+        observed = profile.get("visual_prompt_counts", {})
+        if visual_protocol is None and len(observed) == 1:
+            visual_protocol = next(iter(observed))
+        if visual_protocol == "control-v1":
+            mode, effort = mode or "direct", effort or "low"
+        elif visual_protocol in {"literal-qa", "legacy", "raw-document"}:
+            mode, effort = None, None
+        encoding = LITERAL_VISUAL if visual_protocol == "literal-qa" else VISUAL_CHAT
+        resources: list[dict[str, Any]] = [
+            dict(path=str(Path(path).resolve())) for path in images or []
+        ]
+        if video_frames:
+            from PIL import Image
+
+            from minifrontier.data.media_hash import decoded_hashes
+
+            hashes = []
+            for path in video_frames:
+                with Image.open(path) as frame:
+                    hashes.append(decoded_hashes(frame)["rgb_sha256"])
+            resources.append(
+                dict(
+                    kind="video",
+                    frames=list(map(str, video_frames)),
+                    frame_rgb_sha256=hashes,
+                    timestamps=timestamps,
+                )
+            )
         # Plain questions are literal. Explicit markup can place images inside a turn.
         marked = (
             prompt.startswith("<|image|>") if image_placeholders is None else image_placeholders
         )
-        if not marked:
+        if visual_protocol == "raw-document":
+            record = dict(stage="pretrain", text=prompt, media=resources)
+        elif not marked or visual_protocol == "literal-qa":
             record = dict(
                 stage="sft", visual_question=prompt, mode=mode, effort=effort, media=resources
             )
         else:
             if "<|image|>" not in prompt:
-                prompt = "<|image|>" * len(images) + "\n" + prompt
+                prompt = "<|image|>" * len(resources) + "\n" + prompt
             record = dict(
                 stage="sft",
                 mode=mode,
@@ -250,11 +281,16 @@ def respond(
                 turns=[dict(role="user", content=prompt)],
                 media=resources,
             )
+        requested_cap = max_video_features if video_frames and not images else max_image_features
         native = prepare_record(
             record,
             tokenizer,
             family,
-            max_features=64 if max_image_features is None else max_image_features,
+            max_features=profile.get("image_max_features", 64)
+            if requested_cap is None
+            else requested_cap,
+            min_pixels=profile.get("min_pixels") if min_pixels is None else min_pixels,
+            pretrain_encoding=encoding,
             generation_prompt=True,
             patch_size=model.vision.config.patch_size if family == "minideepseekv41" else 14,
             model_vocab_size=model.config.vocab_size,

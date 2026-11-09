@@ -24,6 +24,14 @@ from minifrontier.multimodal import LITERAL_VISUAL, VISUAL_CHAT, prepare_record
 from minifrontier.storage import GIB, require_space, reserve_write
 
 
+def visual_prompt_protocol(row, encoding):
+    if row.get("stage") == "pretrain" and not row.get("visual_question"):
+        return "raw-document"
+    if row.get("stage") == "pretrain" and encoding == LITERAL_VISUAL:
+        return "literal-qa"
+    return record_template(row)
+
+
 def processor_identity(family):
     return {
         name: sha256(importlib.import_module(name).__file__)
@@ -44,7 +52,7 @@ def _processor_matches(manifest):
     if manifest.get("native_pretrain_encoding", LITERAL_VISUAL) == LITERAL_VISUAL:
         # The reader selects the original token/label serializer for old manifests.
         shared = "minifrontier.multimodal"
-        if actual[shared] == "b0d7d13bec7dcf651b0303f1dfea1a0100a053ae653ac59878ddd26a4a523340":
+        if actual[shared] == "ef342e399424cdad69ab2b8a764090cd576550761e0893d970382c1fadc6e6e0":
             actual[shared] = "e83c3d021e75dfc8931ae1e4d7159bf347c54db246a281c733b02e9a7307586b"
             if expected == actual:
                 return True
@@ -178,6 +186,7 @@ def encode_native(
                 offsets = []
                 rejected: Counter[str] = Counter()
                 template_counts: Counter[str] = Counter()
+                protocol_counts: Counter[str] = Counter()
                 domain_ce: Counter[str] = Counter()
                 examples = ce = image_count = video_count = frame_count = features = 0
                 records = db.execute(
@@ -231,7 +240,9 @@ def encode_native(
                             stream.write(serialized)
                         accounted += incoming
                         examples += 1
-                        if stage == "sft":
+                        protocol = visual_prompt_protocol(row, VISUAL_CHAT)
+                        protocol_counts[protocol] += 1
+                        if protocol in {"legacy", "control-v1"}:
                             template_counts[record_template(row)] += 1
                         count = int(prepared.labels[:, 1:].ne(-100).sum())
                         ce += count
@@ -258,6 +269,7 @@ def encode_native(
                     image_features=features,
                     rejected=dict(rejected),
                     chat_template_counts=dict(template_counts),
+                    visual_prompt_counts=dict(protocol_counts),
                 )
                 manifest["stages"][stage][split] = dict(
                     format="hybrid-native-v2",
@@ -529,6 +541,16 @@ class NativeDataset:
             for path, media, child, pin in parts
         ]
         self.ends = list(accumulate(len(d) for d in self.media))
+        protocols = sum((d.prompt_counts for d in self.media), Counter())
+        floors = sum((d.min_pixels_counts for d in self.media), Counter())
+        self.inference_media_profile = {}
+        if protocols:
+            self.inference_media_profile = dict(
+                image_max_features=self.max_features,
+                min_pixels=max(floors, key=floors.__getitem__) if floors else None,
+                min_pixels_counts=dict(floors),
+                visual_prompt_counts=dict(protocols),
+            )
         self.overlength_dialogues = self.text.overlength_dialogues
         self.domains = list(self.text.domains)
         self.ce_counts = list(self.text.ce_counts)
@@ -582,6 +604,8 @@ class _NativeMediaDataset:
         self.index = index[index[:, 2] <= length]
         self.domains, self.ce_counts, self.input_counts = [], [], []
         self.image_counts, self.video_counts = [], []
+        self.prompt_counts: Counter[str] = Counter()
+        self.min_pixels_counts: Counter[int] = Counter()
         with self.path.open("rb") as source:
             for offset, size, positions in self.index:
                 source.seek(int(offset))
@@ -589,7 +613,18 @@ class _NativeMediaDataset:
                 self.domains.append(row["record"]["task"])
                 self.ce_counts.append(sum(value != -100 for value in row["expected_labels"][1:]))
                 self.input_counts.append(int(positions))
-                resources = row["record"].get("media", [])
+                record = row["record"]
+                self.prompt_counts[visual_prompt_protocol(record, self.pretrain_encoding)] += 1
+                resources = record.get("media", [])
+                if self.family != "minikimik3":
+                    default_floor = 65536 if self.family == "miniqwen4" else 3136
+                    for resource in resources:
+                        floor = (
+                            self.min_pixels
+                            if self.min_pixels is not None
+                            else resource.get("min_pixels", default_floor)
+                        )
+                        self.min_pixels_counts[floor] += 1
                 self.image_counts.append(sum(m.get("kind", "image") != "video" for m in resources))
                 self.video_counts.append(sum(m.get("kind") == "video" for m in resources))
 

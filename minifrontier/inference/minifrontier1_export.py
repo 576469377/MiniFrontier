@@ -1,7 +1,6 @@
 """Portable inference exports and explicit weight-only INT8 reference deployment."""
 
 import copy
-import json
 import shutil
 from importlib.metadata import distribution
 from pathlib import Path
@@ -12,6 +11,7 @@ from torch.nn import functional as F
 
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import write_json
+from minifrontier.inference.media_profile import checkpoint_media_profile
 from minifrontier.models.factory import build_model
 from minifrontier.training.runtime import atomic_save
 
@@ -82,20 +82,6 @@ def quantize_experts(model, group_size=64):
             setattr(parent, child, Int8Linear(module, group_size))
             replaced.append(name)
     return replaced
-
-
-def checkpoint_media_profile(saved, path):
-    if "inference_media_profile" in saved:
-        return dict(saved["inference_media_profile"])
-    sidecar = Path(path).parent / "inference_media_profile.json"
-    if not sidecar.is_file():
-        return {}
-    profile = json.loads(sidecar.read_text())
-    if profile.pop("dataset_manifest_sha256") != saved.get("run_spec", {}).get(
-        "dataset_manifest_sha256"
-    ):
-        raise ValueError("media profile belongs to a different training corpus")
-    return profile
 
 
 def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_size=64):

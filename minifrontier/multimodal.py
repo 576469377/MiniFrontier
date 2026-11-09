@@ -94,8 +94,10 @@ def pretraining_tokens(record, tokenizer, *, encoding=VISUAL_CHAT, generation_pr
             return ids, labels
         # Same PT text objective as the canonical serialized document, including
         # the question. This does not apply the assistant-only SFT objective.
+        context = "\nUser: " + record["visual_question"] + "\nAssistant:"
+        # Byte-level BPE attaches the separator space to the first answer word.
         chunks = [""] * len(resources) + [
-            "\nUser: " + record["visual_question"] + "\nAssistant: " + record["visual_answer"]
+            context if generation_prompt else context + " " + record["visual_answer"]
         ]
     elif resources:
         chunks = record["text"].split("<|image|>")
@@ -113,6 +115,8 @@ def pretraining_tokens(record, tokenizer, *, encoding=VISUAL_CHAT, generation_pr
             if index:
                 ids.append(7)
             ids.extend(tokenizer.encode(chunk, add_special_tokens=False).ids)
+        if generation_prompt:
+            return ids, [-100] * len(ids)
         ids.append(2)
         return ids, [-100, *ids[1:]]
     finally:

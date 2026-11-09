@@ -23,6 +23,10 @@ def main(argv=None):
     p.add_argument(
         "--image", action="append", help="local image; repeat for multiple complete images"
     )
+    p.add_argument("--min-pixels", type=int)
+    p.add_argument(
+        "--visual-protocol", choices=["literal-qa", "legacy", "control-v1", "raw-document"]
+    )
     p.add_argument("--max-image-features", type=int)
     p.add_argument("--video-frame", action="append")
     p.add_argument("--timestamps", type=json.loads)
@@ -53,6 +57,8 @@ def main(argv=None):
             effort=args.effort,
             images=args.image,
             max_image_features=args.max_image_features,
+            min_pixels=args.min_pixels,
+            visual_protocol=args.visual_protocol,
             video_frames=args.video_frame,
             timestamps=args.timestamps,
             max_video_features=args.max_video_features,

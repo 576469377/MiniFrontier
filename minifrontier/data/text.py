@@ -71,7 +71,7 @@ def _literal_tokenizer(tokenizer):
 
 def message_tokens(text, tokenizer, *, image_placeholders=False):
     """Only schema-declared controls can interrupt ordinary message text."""
-    if image_placeholders is None or "<|" not in text:
+    if image_placeholders is None or "<" not in text:
         return tokenizer.encode(text, add_special_tokens=False).ids
     literal = tokenizer if tokenizer.encode_special_tokens else _literal_tokenizer(tokenizer)
     chunks = text.split("<|image|>") if image_placeholders else [text]

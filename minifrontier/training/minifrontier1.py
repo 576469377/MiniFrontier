@@ -454,7 +454,7 @@ def train(
     if dataset.tokenizer.get_vocab_size() > c.vocab_size:
         raise ValueError("tokenizer vocabulary exceeds output head")
     from minifrontier.data.minifrontier1_components import inference_media_profile
-    from minifrontier.inference.minifrontier1_export import checkpoint_media_profile
+    from minifrontier.inference.media_profile import checkpoint_media_profile
 
     bound = bindings(c, data, init)
     media_profile = checkpoint_media_profile(saved, resume or init) if saved else {}

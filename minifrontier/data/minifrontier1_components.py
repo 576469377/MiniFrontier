@@ -27,7 +27,7 @@ COMPONENT_FORMAT = "mf1-compact-components-v1"
 
 def inference_media_profile(manifests):
     """Use the most frequent training cap as the default for each modality."""
-    profile = {}
+    profile: dict[str, int | dict[int, int]] = {}
     for kind in ("image", "video"):
         counts: Counter[int] = Counter()
         for manifest in manifests:
