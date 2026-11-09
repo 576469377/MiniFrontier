@@ -341,3 +341,35 @@ def test_bfloat16_training_is_finite():
     out.loss.backward()
     assert torch.isfinite(out.loss)
     assert all(torch.isfinite(p.grad).all() for p in model.parameters() if p.grad is not None)
+
+
+def test_curriculum_hierarchical_decoder_beyond_production_candidate_budget():
+    torch.manual_seed(41)
+    config = tiny(
+        hierarchical_indexing=True,
+        index_candidate_topk_blocks=16,
+        index_candidate_block_size=8,
+        attention_chunk_size=32,
+    )
+    full, reindex = CSA2Attention(config, 3), CSA2Attention(config, 5)
+    x = torch.randn(1, 145, 32, requires_grad=True)
+    mask = torch.ones(1, 145, dtype=torch.bool)
+
+    def run(inputs, keep):
+        _, state, aux = full(inputs, CSA2State(), keep, inputs)
+        y, selected, loss = reindex(inputs, state, keep, inputs)
+        return y, selected, state, aux + loss
+
+    y, selected, state, loss = run(x, mask)
+    keep = state.candidates[0]
+    assert 0 < keep[-1].sum() <= 128 and not keep.triu(1).any()
+    assert selected.indices[0, -1].ge(0).all() and keep[-1, selected.indices[0, -1]].all()
+    changed = x.detach().clone()
+    changed[:, 137:] = torch.randn_like(changed[:, 137:])
+    with torch.no_grad():
+        future, selected_future, _, _ = run(changed, mask)
+    torch.testing.assert_close(y[:, :137], future[:, :137])
+    assert torch.equal(selected.indices[:, :137], selected_future.indices[:, :137])
+    (y.square().mean() + loss).backward()
+    assert x.grad.isfinite().all() and x.grad.norm() > 0
+    assert reindex.indexer.wq_b.weight.grad.norm() > 0
