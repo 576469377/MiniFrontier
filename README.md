@@ -49,6 +49,8 @@ uv run minifrontier mf1 generate \
 
 单独教 V4.1 识别四种颜色时，两个种子在各自的 96 张留出图上都答对 96 张。换图后 96 次跟随新颜色，输入空白图降到 24/96。扩大到颜色、计数、位置和逐行 OCR 后，沿旧数据训到第 14,034 步（2.50 亿监督 token），同一轮综合评测中短答为 0/180，逐行 OCR 完全正确为 0/80。[实验与读数](docs/guides/learning-path.md#看图时模型用了什么) · [其他实验](docs/experiments.md)
 
+11 月 9 日，修正聊天前缀后另开图文微调。相同的综合面板上，正确图短答升到 46/180，换图降到 37/180，逐行 OCR 仍为 0/80。文本分支与官方 MiniMind 的同数据对照也保留了训练前后的原始评测口径。[图文微调](docs/guides/learning-path.md#用聊天模板重新训练图文回答) · [文本与 MiniMind 对照](docs/guides/learning-path.md#同一批对话训练一遍后)
+
 ## 开发与引用
 
 [代码目录](docs/architecture.md) · [贡献指南](CONTRIBUTING.md) · [引用信息](CITATION.cff) · [代码许可](LICENSE) · [上游代码与数据许可](THIRD_PARTY_NOTICES.md)
