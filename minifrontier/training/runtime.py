@@ -12,7 +12,7 @@ from typing import Any, cast
 import torch
 import torch.distributed as dist
 
-from minifrontier.storage import reserve_write, tensor_payload_bytes
+from minifrontier.storage import require_space, reserve_write, tensor_payload_bytes
 
 
 def validation_indices(size, *, limit, seed, rank=0, world_size=1):
@@ -71,12 +71,16 @@ def cpu_tree(value):
 def atomic_save(value, path):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with reserve_write(path, tensor_payload_bytes(value)):
+    incoming_bytes = tensor_payload_bytes(value)
+    require_space(path.parent, incoming_bytes)
+    # Device-to-host staging does not write to the training filesystem.
+    snapshot = cpu_tree(value)
+    with reserve_write(path, incoming_bytes):
         fd, name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
         temporary = Path(name)
         try:
             with os.fdopen(fd, "wb") as f:
-                torch.save(cpu_tree(value), f)
+                torch.save(snapshot, f)
                 f.flush()
                 os.fsync(f.fileno())
             temporary.replace(path)
@@ -121,6 +125,16 @@ class RouterBalance:
             if isinstance(module, (Gate, V41Gate)) and getattr(module, "bias_vl", None) is not None:
                 self.gates.append((module, cast(torch.Tensor, module.bias_vl), 1))
         self.counts = [torch.zeros_like(bias) for _, bias, _ in self.gates]
+        self.reduction_buffers = self.counts
+        layouts = {(count.device, count.dtype) for count in self.counts}
+        if len(self.counts) > 1 and len(layouts) == 1:
+            # Preserve per-gate checkpoint views and reduce the whole replica in one call.
+            flat = torch.cat([count.flatten() for count in self.counts])
+            segments = flat.split([count.numel() for count in self.counts])
+            self.counts = [
+                part.view_as(count) for part, count in zip(segments, self.counts, strict=True)
+            ]
+            self.reduction_buffers = [flat]
         self.handles = []
         self.valid_mask = None
 
@@ -147,8 +161,12 @@ class RouterBalance:
                     image = getattr(mod, "route_image_mask", None)
                     if image is not None:
                         valid &= image if bias is mod.bias_vl else ~image
-                    selected = selected[valid]
-                    counts.add_(torch.bincount(selected.flatten(), minlength=counts.numel()))
+                    # Count excluded routes in an extra bin, keeping all tensor shapes fixed.
+                    mask = valid.view((-1,) + (1,) * (selected.ndim - 1))
+                    routes = torch.where(mask, selected, counts.numel()).flatten().long()
+                    histogram = counts.new_zeros(counts.numel() + 1, dtype=torch.int64)
+                    histogram.scatter_add_(0, routes, torch.ones_like(routes))
+                    counts.add_(histogram[:-1])
 
             self.handles.append(module.register_forward_hook(collect))
         return self
@@ -160,9 +178,10 @@ class RouterBalance:
 
     @torch.no_grad()
     def update(self, rate):
+        if dist.is_initialized():
+            for buffer in self.reduction_buffers:
+                dist.all_reduce(buffer)
         for (_, bias, _), counts in zip(self.gates, self.counts, strict=True):
-            if dist.is_initialized():
-                dist.all_reduce(counts)
             bias.add_(rate * torch.sign(counts.mean() - counts))
             counts.zero_()
 
