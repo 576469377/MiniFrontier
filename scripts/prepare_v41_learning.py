@@ -31,14 +31,12 @@ def identity(value):
 
 
 def prepare(output, tokenizer_path, natural=None, text=None, ocr=None):
-    if tokenizer_path is None and any((natural, text, ocr)):
-        raise ValueError("provide the frozen tokenizer when adding external source records")
     output.mkdir(parents=True, exist_ok=False)
     roots = [output / name for name in ("aligned", "blank")]
     for root in roots:
         (root / "images").mkdir(parents=True)
-    counts = Counter()
-    groups = {}
+    counts: Counter[tuple[str, str, str]] = Counter()
+    groups: dict[str, str] = {}
     blank_paths = {}
     tokenizer = Tokenizer.from_file(str(tokenizer_path)) if tokenizer_path else None
 
@@ -123,6 +121,8 @@ def prepare(output, tokenizer_path, natural=None, text=None, ocr=None):
         for source, limit in ((natural, 384), (ocr, 128)):
             if source is None:
                 continue
+            if tokenizer is None:
+                raise ValueError("external image records require the frozen tokenizer")
             db = stack.enter_context(contextlib.closing(open_corpus(source)))
             pixels = corpus_storage_root(db)
             for split, n in (("train", limit), ("val", 16)):
@@ -148,6 +148,8 @@ def prepare(output, tokenizer_path, natural=None, text=None, ocr=None):
                         break
 
         if text:
+            if tokenizer is None:
+                raise ValueError("external text requires the frozen tokenizer")
             db = stack.enter_context(contextlib.closing(open_corpus(text)))
             for split, n in (("train", 640), ("val", 32)):
                 for group, payload in db.execute(
@@ -167,7 +169,7 @@ def prepare(output, tokenizer_path, natural=None, text=None, ocr=None):
     if tokenizer_path is None:
         tokenizer_path = output / "tokenizer.json"
         train_tokenizer(roots[0], tokenizer_path, 1024)
-        tokenizer = Tokenizer.from_file(str(tokenizer_path))
+    tokenizer = Tokenizer.from_file(str(tokenizer_path))
     config_path = (
         Path(__file__).resolve().parents[1] / "configs/strategies/minideepseekv41-learning.json"
     )

@@ -59,8 +59,8 @@ def prepare(args):
     if args.exclude_prompts:
         blocked = {canonical_question(s) for s in json.loads(args.exclude_prompts.read_text())}
     rng = random.Random(args.seed)
-    pools = defaultdict(list)
-    counts = Counter()
+    pools: dict[tuple[str, str], list[tuple[float, int, list[dict[str, str]]]]] = defaultdict(list)
+    counts: Counter[str] = Counter()
     # Reservoirs prevent the first rows of a source ordered by task from dominating.
     with args.source.open() as f:
         for line_no, line in enumerate(f, 1):
@@ -92,7 +92,7 @@ def prepare(args):
                 heapq.heapreplace(pool, entry)
 
     builder = CorpusBuilder(root / "corpus", seed=args.seed, val_buckets=100, test_buckets=100)
-    used = set()
+    used: set[str] = set()
     for (lang, kind), pool in sorted(pools.items()):
         for _, line_no, turns in sorted(pool, reverse=True):
             ids, _ = chat_tokens(turns, tokenizer, mode="direct", effort="low")
@@ -143,11 +143,11 @@ def prepare(args):
 
 def audit(encoded, manifest, tokenizer, length_limit, blocked):
     checks = {}
-    split_prompts = set()
+    split_prompts: set[str] = set()
     for split in ("train", "val", "test"):
         record = manifest["stages"]["sft"][split]
         dataset = StageDataset(encoded, "sft", split, length_limit).documents
-        rows = Counter()
+        rows: Counter[str] = Counter()
         prompts = set()
         with (encoded / record["metadata_file"]).open() as f:
             for index, line in enumerate(f):

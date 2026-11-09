@@ -27,13 +27,13 @@ def evaluate(checkpoint, corpus, split, device):
     finally:
         db.close()
     samples = [r for r in samples if r["task"] == "shape_color"]
-    by_color = {}
+    by_color: dict[str, list[dict]] = {}
     for r in samples:
         by_color.setdefault(r["visual_answer"], []).append(r)
     colors = sorted(by_color)
     if len(colors) != 4 or len({len(v) for v in by_color.values()}) != 1:
         raise ValueError("color controls require a balanced four-color split")
-    cases = []
+    cases: list[tuple[dict, dict]] = []
     for i, label in enumerate(colors):
         alternate = colors[(i + 1) % len(colors)]
         cases.extend(zip(by_color[label], by_color[alternate], strict=True))
@@ -44,7 +44,7 @@ def evaluate(checkpoint, corpus, split, device):
         with Image.open(cases[0][0]["media"][0]["path"]) as im:
             Image.new("RGB", im.size, (127, 127, 127)).save(blank)
         for variant in ("correct", "swap", "blank"):
-            outputs = []
+            outputs: list[str] = []
             for first in range(0, len(cases), 12):
                 batch = []
                 for r, other in cases[first : first + 12]:

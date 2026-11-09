@@ -74,7 +74,7 @@ def update_manifest(manifest):
     stages = manifest["stages"]
 
     def count_stage(stage):
-        counts = Counter()
+        counts: Counter[str] = Counter()
         for record in stages.get(stage, {}).values():
             nodes = (
                 (record["text"], record["media"])
