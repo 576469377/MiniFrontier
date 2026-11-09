@@ -3,6 +3,8 @@
 import base64
 import hashlib
 import io
+import json
+from dataclasses import asdict, replace
 from types import SimpleNamespace
 
 import pytest
@@ -179,3 +181,106 @@ def test_info_and_generation_stay_bound_to_loaded_version(tmp_path, monkeypatch,
     assert response["value"]["finish_reason"] == "eos"
     assert request("/api/generate", bound | {"checkpoint_sha256": "different"})["code"] == 400
     assert request("/api/prepare", dict(prompt="Hello", media=[None]))["code"] == 400
+
+
+@pytest.mark.parametrize("family", ["minifrontier1", "minifrontier11"])
+def test_bound_training_pixels_match_native_cli_generic_chat_and_browser(
+    tmp_path, monkeypatch, family
+):
+    from minifrontier.commands import minifrontier1 as cli
+    from minifrontier.data import sha256
+    from minifrontier.data.minifrontier1 import prepare_media, train_tokenizer
+    from minifrontier.inference import minifrontier1 as native
+    from minifrontier.inference import runtime
+    from minifrontier.models.factory import build_model
+    from minifrontier.models.minifrontier1 import MiniFrontier1Config
+    from minifrontier.models.minifrontier11 import MiniFrontier11Config
+
+    config_cls = MiniFrontier1Config if family == "minifrontier1" else MiniFrontier11Config
+    config = replace(
+        config_cls.tiny(300), protected_media_tokens=1024, max_position_embeddings=4096
+    )
+    model = build_model(family, asdict(config), phase="dense_pretrain")
+    tok = train_tokenizer([], tmp_path / "tokenizer.json", 300)
+    path = tmp_path / "model.pt"
+    torch.save(
+        dict(
+            model_name=family,
+            model=model.state_dict(),
+            config=asdict(config),
+            chat_template="mf1-control-v1",
+            phase="dense_pretrain",
+            stage="pretrain",
+            step=1,
+            run_spec={"dataset_manifest_sha256": "fixture"},
+            tokenizer_sha256=sha256(tmp_path / "tokenizer.json"),
+        ),
+        path,
+    )
+    (tmp_path / "inference_media_profile.json").write_text(
+        json.dumps(
+            dict(dataset_manifest_sha256="fixture", image_max_features=49, video_max_features=196)
+        )
+    )
+    model, _, _ = runtime.load_checkpoint(path)
+    img = tmp_path / "one.png"
+    Image.new("RGB", (640, 480), color="navy").save(img)
+    image_data = base64.b64encode(img.read_bytes()).decode()
+    seen = []
+
+    def capture(_model, ids, *, media, **kwargs):
+        seen.append((ids, media))
+        return ids
+
+    monkeypatch.setattr(native, "generate_ids", capture)
+    monkeypatch.setattr(runtime, "generate_ids", capture)
+    for kind, cap, representation in [
+        ("image", 49, "standard"),
+        ("image", 100, "standard"),
+        ("video", 196, "standard"),
+        ("image", 49, "document"),
+    ]:
+        video = kind == "video"
+        times = [0.0, 1.0] if video else None
+        frame_count = 2 if video else 1
+        resource = dict(
+            uri=img.name, sha256=sha256(img), max_features=cap, representation=representation
+        )
+        if video:
+            resource.update(
+                frames=[img.name] * frame_count,
+                frame_sha256=[sha256(img)] * frame_count,
+                timestamps=times,
+            )
+        expected = prepare_media(resource, config, tmp_path, 1024)
+        cli_args = ["generate", "--checkpoint", str(path), "--prompt", "Q", "--max-new-tokens", "1"]
+        kwargs = {}
+        web = dict(kind=kind, frames=[image_data] * frame_count)
+        if video:
+            cli_args += ["--video-frame", str(img)] * frame_count + [
+                "--timestamps",
+                json.dumps(times),
+            ]
+            kwargs.update(video_frames=[img] * frame_count, timestamps=times)
+            web.update(timestamps=times)
+        else:
+            cli_args += ["--image", str(img)]
+            kwargs.update(images=[img])
+            if cap == 100:
+                cli_args += ["--max-image-features", "100"]
+                kwargs.update(max_image_features=100)
+                web.update(max_features=100)
+            if representation == "document":
+                cli_args += ["--image-representation", "document"]
+                kwargs.update(image_representation="document")
+                web.update(representation="document")
+        cli.main(cli_args)
+        runtime.respond(model, tok, "Q", **kwargs)
+        web_ids, web_spans, _ = demo.prepare_request(dict(prompt="Q", media=[web]), model, tok)
+        for ids, spans in [*seen, (web_ids, web_spans)]:
+            assert ids.tolist() == web_ids.tolist()
+            assert len(spans) == len(expected)
+            for actual, reference in zip(spans, expected, strict=True):
+                torch.testing.assert_close(actual["patches"], reference["patches"], atol=0, rtol=0)
+                assert actual["feature_count"] == reference["feature_count"]
+        seen.clear()

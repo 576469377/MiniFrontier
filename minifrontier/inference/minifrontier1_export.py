@@ -1,6 +1,7 @@
 """Portable inference exports and explicit weight-only INT8 reference deployment."""
 
 import copy
+import json
 import shutil
 from importlib.metadata import distribution
 from pathlib import Path
@@ -83,6 +84,20 @@ def quantize_experts(model, group_size=64):
     return replaced
 
 
+def checkpoint_media_profile(saved, path):
+    if "inference_media_profile" in saved:
+        return dict(saved["inference_media_profile"])
+    sidecar = Path(path).parent / "inference_media_profile.json"
+    if not sidecar.is_file():
+        return {}
+    profile = json.loads(sidecar.read_text())
+    if profile.pop("dataset_manifest_sha256") != saved.get("run_spec", {}).get(
+        "dataset_manifest_sha256"
+    ):
+        raise ValueError("media profile belongs to a different training corpus")
+    return profile
+
+
 def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_size=64):
     output = Path(output).resolve()
     if output.exists():
@@ -132,6 +147,7 @@ def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_
     artifact.update(
         format="mf1-export-v1",
         model=state,
+        inference_media_profile=checkpoint_media_profile(saved, checkpoint),
         source_checkpoint_sha256=sha256(checkpoint),
         quantization=dict(
             kind="int8-experts-reference" if int8 else "none",
@@ -169,6 +185,7 @@ def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_
             version="mf1-native-v1",
             vision=saved["config"]["vision_config"],
             max_media_tokens=saved["config"]["protected_media_tokens"],
+            inference_media_profile=artifact["inference_media_profile"],
         ),
     )
     (output / "MODEL_CARD.md").write_text(
@@ -192,6 +209,7 @@ def load_export(path, device="cpu"):
     if saved["model_name"] not in {"minifrontier1", "minifrontier11"}:
         raise ValueError("invalid MF1 export family")
     model = build_model(saved["model_name"], saved["config"], phase=saved["phase"])
+    model.inference_media_profile = checkpoint_media_profile(saved, path)
     quant = saved.get("quantization", {})
     if quant.get("kind") == "int8-experts-reference":
         modules = quantize_experts(model, quant["group_size"])

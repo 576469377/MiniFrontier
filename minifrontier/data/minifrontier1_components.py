@@ -25,6 +25,23 @@ from minifrontier.storage import require_space
 COMPONENT_FORMAT = "mf1-compact-components-v1"
 
 
+def inference_media_profile(manifests):
+    """Use the most frequent training cap as the default for each modality."""
+    profile = {}
+    for kind in ("image", "video"):
+        counts: Counter[int] = Counter()
+        for manifest in manifests:
+            transform = manifest.get(kind + "_transform")
+            if transform:
+                count = manifest["splits"]["train"]["counts"].get("records", 0)
+                if count:
+                    counts[int(transform["max_features"])] += count
+        if counts:
+            profile[kind + "_max_features"] = max(sorted(counts), key=counts.__getitem__)
+            profile[kind + "_training_counts"] = dict(sorted(counts.items()))
+    return profile
+
+
 def _resolved_components(root, manifest):
     references = []
     for original in manifest["components"]:

@@ -17,8 +17,9 @@ import torch
 from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.data.minifrontier1 import processing_for, safe_text
+from minifrontier.data.minifrontier1 import safe_text
 from minifrontier.inference.demo_web import page
+from minifrontier.inference.minifrontier1 import append_media
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.multimodal import move
 
@@ -111,31 +112,26 @@ def prepare_request(payload, model, tokenizer):
                     raise ValueError("媒体解码像素超过预算，请减少图片或帧尺寸")
                 images.append(image.convert("RGB"))
             hashes.append(hashlib.sha256(raw).hexdigest())
-        remaining = model.config.protected_media_tokens - sum(s["feature_count"] for s in spans)
-        sample = processing_for(model.config).process_frames(
+        samples = append_media(
+            ids,
+            spans,
+            model,
             images,
-            max_features=remaining,
-            patch_size=model.config.vision_config.patch_size,
-            timestamps=resource.get("timestamps") if video else None,
+            hashes,
+            video=video,
+            timestamps=resource.get("timestamps"),
+            representation=resource.get("representation", "standard"),
+            max_features=resource.get("max_features"),
         )
-        ids.append(20 if video else 9)
-        sample.update(
-            batch_index=0,
-            start=len(ids),
-            resource_kind="video" if video else "image",
-            source_hashes=hashes,
-        )
-        ids.extend([7] * sample["feature_count"] + [21 if video else 10])
-        spans.append(sample)
         plan.append(
             dict(
                 kind=resource["kind"],
                 name=str(resource.get("name", f"媒体 {len(plan) + 1}")),
                 timestamps=resource.get("timestamps", []) if video else [],
                 frames=len(images),
-                width=sample["resized_size"][0],
-                height=sample["resized_size"][1],
-                tokens=sample["feature_count"],
+                width=samples[0]["resized_size"][0],
+                height=samples[0]["resized_size"][1],
+                tokens=sum(s["feature_count"] for s in samples),
             )
         )
     ids.extend(safe_text(tokenizer, payload["prompt"]))

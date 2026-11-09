@@ -152,7 +152,6 @@ def validate_record(record, root, *, allow_sources=None):
 
 def prepare_media(resource, config, root, remaining, *, file_reader=None):
     """Apply the same deterministic pixel transform in record and binary loaders."""
-    processing = processing_for(config)
     frames = []
     for uri, checksum in zip(
         resource.get("frames", [resource.get("uri")]),
@@ -162,15 +161,38 @@ def prepare_media(resource, config, root, remaining, *, file_reader=None):
         source = Path(root) / uri if file_reader is None else io.BytesIO(file_reader(uri, checksum))
         with Image.open(source) as image:
             frames.append(image.convert("RGB"))
+    return transform_media(
+        frames,
+        config,
+        remaining,
+        **{
+            key: resource[key]
+            for key in ("representation", "max_features", "timestamps")
+            if key in resource
+        },
+    )
+
+
+def transform_media(
+    frames, config, remaining, *, representation="standard", max_features=None, timestamps=None
+):
+    """Expand decoded pixels identically for training, CLI and browser input."""
+    processing = processing_for(config)
+    if max_features is not None and (type(max_features) is not int or max_features < 1):
+        raise ValueError("media feature cap must be a positive integer")
+    if representation not in {"standard", "document"} or (
+        representation == "document" and len(frames) != 1
+    ):
+        raise ValueError("document processing requires one image")
     samples = (
         processing.process_document(frames[0], patch_size=config.vision_config.patch_size)
-        if resource.get("representation") == "document"
+        if representation == "document"
         else [
             processing.process_frames(
                 frames,
-                max_features=min(resource.get("max_features", remaining), remaining),
+                max_features=min(remaining if max_features is None else max_features, remaining),
                 patch_size=config.vision_config.patch_size,
-                timestamps=resource.get("timestamps"),
+                timestamps=timestamps,
             )
         ]
     )

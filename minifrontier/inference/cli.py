@@ -1,6 +1,7 @@
 """Arguments for the existing `minifrontier generate` command."""
 
 import argparse
+import json
 
 from minifrontier.inference.runtime import load_checkpoint, respond
 
@@ -22,7 +23,11 @@ def main(argv=None):
     p.add_argument(
         "--image", action="append", help="local image; repeat for multiple complete images"
     )
-    p.add_argument("--max-image-features", type=int, default=64)
+    p.add_argument("--max-image-features", type=int)
+    p.add_argument("--video-frame", action="append")
+    p.add_argument("--timestamps", type=json.loads)
+    p.add_argument("--max-video-features", type=int)
+    p.add_argument("--image-representation", choices=["standard", "document"], default="standard")
     p.add_argument("--device", default="cpu")
     p.add_argument("--completion", action="store_true")
     args = p.parse_args(argv)
@@ -48,6 +53,10 @@ def main(argv=None):
             effort=args.effort,
             images=args.image,
             max_image_features=args.max_image_features,
+            video_frames=args.video_frame,
+            timestamps=args.timestamps,
+            max_video_features=args.max_video_features,
+            image_representation=args.image_representation,
         )
     )
 

@@ -138,6 +138,10 @@ def load_checkpoint(path, device="cpu"):
     model.load_state_dict(saved["model"], strict=True)
     configure_posttraining(model)
     run = saved.get("run_spec", {})
+    if saved["model_name"] in {"minifrontier1", "minifrontier11"}:
+        from minifrontier.inference.minifrontier1_export import checkpoint_media_profile
+
+        model.inference_media_profile = checkpoint_media_profile(saved, path)
     model.chat_template = saved.get(
         "chat_template",
         run.get("rollout", {}).get("chat_template", run.get("chat_template", "legacy")),
@@ -166,8 +170,12 @@ def respond(
     mode=None,
     effort=None,
     images=None,
-    max_image_features=64,
+    max_image_features=None,
     image_placeholders=None,
+    video_frames=None,
+    timestamps=None,
+    max_video_features=None,
+    image_representation="standard",
 ):
     if (
         chat
@@ -176,18 +184,29 @@ def respond(
         and getattr(model, "chat_template", "legacy") == "control-v1"
     ):
         mode, effort = "direct", "low"
-    if not chat and (mode is not None or effort is not None or images):
+    if not chat and (mode is not None or effort is not None or images or video_frames):
         raise ValueError("controlled/native-media generation currently uses the chat template")
     device = next(model.parameters()).device
     media = None
     mf1_chat = chat and getattr(model, "chat_template", None) == "mf1-control-v1"
+    if video_frames and not mf1_chat:
+        raise ValueError("frame-video generation requires an MF1 native chat checkpoint")
     if mf1_chat:
         from minifrontier.inference.minifrontier1 import prepare_prompt
 
         if effort is not None:
             raise ValueError("MF1 uses direct or thinking mode without an effort slot")
         inputs, media = prepare_prompt(
-            model, tokenizer, prompt, images=images, mode=mode or "direct"
+            model,
+            tokenizer,
+            prompt,
+            images=images,
+            mode=mode or "direct",
+            max_image_features=max_image_features,
+            video_frames=video_frames,
+            timestamps=timestamps,
+            max_video_features=max_video_features,
+            image_representation=image_representation,
         )
         ids = inputs[0].tolist()
         inputs = inputs.to(device)
@@ -235,7 +254,7 @@ def respond(
             record,
             tokenizer,
             family,
-            max_features=max_image_features,
+            max_features=64 if max_image_features is None else max_image_features,
             generation_prompt=True,
             patch_size=model.vision.config.patch_size if family == "minideepseekv41" else 14,
             model_vocab_size=model.config.vocab_size,
