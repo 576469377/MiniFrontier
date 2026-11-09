@@ -160,7 +160,20 @@ def restore(args):
     report["encoded_manifest_sha256"] = sha256(toroot / "manifest.json")
     report["tokenizer_sha256"] = sha256(tokenizer_file)
     report["admission"] = audit(toroot, encoded, tokenizer_file, args.lengths)
-    (args.output / "rebuild-audit.json").write_text(json.dumps(report, indent=2))
+    audit_path = args.output / "rebuild-audit.json"
+    audit_path.write_text(json.dumps(report, indent=2))
+    (target / "source-audit.json").write_text(
+        json.dumps(
+            dict(
+                status="candidate_slice_complete_pending_admission",
+                formal_admission=False,
+                records=report["source_rows_restored"],
+                source_manifest_sha256=sha256(target / "corpus-manifest.json"),
+                dialogue_audit_sha256=sha256(audit_path),
+            ),
+            indent=2,
+        )
+    )
     print(json.dumps(report["admission"]), flush=True)
 
 
