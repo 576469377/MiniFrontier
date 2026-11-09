@@ -31,7 +31,7 @@
 
 ## 用文本底座训练双语助手
 
-准备一个 MiniMind 格式的 `conversations` JSONL、它的数据集 revision，以及父权重目录里的 `tokenizer.json`。下面沿用 V4.1 文本底座的分词器，把中英文单轮和多轮对话写成可训练的数据。
+下面可复现 MiniMind 与 V4.1 的同数据对照。准备 [固定版本语料](https://huggingface.co/datasets/jingyaogong/minimind_dataset/tree/312afb4f76391145c6902f765bb51691c09a12f5) 的 `sft_t2t_mini.jsonl`、它的数据集 revision，以及父权重目录里的 `tokenizer.json`。同一份会话可按两个模型各自的分词器和聊天模板训练。
 
 ```bash
 uv run python -m scripts.prepare_chat_sft \
@@ -51,6 +51,8 @@ uv run minifrontier train --device cuda --model minideepseekv41 --stage sft \
 ```
 
 这里按一遍训练集向上凑齐最后一批。用相同留出题分别测试父权重和新权重，同时记下短答准确率、模型自行结束的比例和重复片段。这样能区分回答越来越短、学会按格式回答以及回答内容变正确三种变化。
+
+实际抽出的 14,723 个训练答案中，仅 181 个不超过 4 个正文 token。按用户文本识别为英文的 7,525 个回答中位长度为 144 token，中文的 7,198 个中位长度为 43 token。只按字符长度选择候选，会高估这份语料对一词回答的覆盖。
 
 ## 看图时模型用了什么
 
