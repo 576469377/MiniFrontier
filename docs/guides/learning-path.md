@@ -29,6 +29,31 @@
 
 选择一个断点，先固定提示、解码方式和输出上限，再改变一个条件。记录原始回答、是否主动结束及是否重复。训练损失回答「给定正确前文，下一个 token 有多可预测」；自由生成可以观察模型读到自己生成的文字后会走向哪里。
 
+## 用文本底座训练双语助手
+
+准备一个 MiniMind 格式的 `conversations` JSONL、它的数据集 revision，以及父权重目录里的 `tokenizer.json`。下面沿用 V4.1 文本底座的分词器，把中英文单轮和多轮对话写成可训练的数据。
+
+```bash
+uv run python -m scripts.prepare_chat_sft \
+  --source "$SFT_JSONL" --revision "$DATASET_REVISION" \
+  --tokenizer "$PARENT_DIR/tokenizer.json" --output outputs/chat-data
+```
+
+打开 `outputs/chat-data/chat-audit.json`。每个助手回合都对照实际的生成前缀，只有最终回答标记、正文和该回合的 EOS 参与监督。完整回答超出 384 token 的样本会计数并跳过。已有固定评测题时，用 `--exclude-prompts` 传入问题字符串的 JSON 数组。
+
+```bash
+updates=$(python -c 'import json; n=json.load(open("outputs/chat-data/chat-audit.json"))["splits"]["train"]["examples"]; print((n+7)//8)')
+uv run minifrontier train --device cuda --model minideepseekv41 --stage sft \
+  --init "$PARENT_DIR/model.pt" --data outputs/chat-data/encoded \
+  --output outputs/chat-sft --steps "$updates" --sequence-length 384 \
+  --batch-size 8 --grad-accum 1 --optimizer adamw --lr 0.00005 \
+  --weight-decay 0.01 --warmup-steps 51 --seed 20261109
+```
+
+这里按一遍训练集向上凑齐最后一批。用相同留出题分别测试父权重和新权重，同时记下短答准确率、模型自行结束的比例和重复片段。这样能区分回答越来越短、学会按格式回答以及回答内容变正确三种变化。
+
+
+
 ## 看图时模型用了什么
 
 封面的两张合成图来自 MiniDeepSeek-V4.1 新数据分支在第 8,665 步的真实生成。问题完全相同，标注分别为「黄色」和「红色」，模型均生成「红色」。这个例子展示了一种成对检验。
