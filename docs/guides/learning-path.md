@@ -54,6 +54,13 @@ uv run minifrontier train --device cuda --model minideepseekv41 --stage sft \
 
 实际抽出的 14,723 个训练答案中，仅 181 个不超过 4 个正文 token。按用户文本识别为英文的 7,525 个回答中位长度为 144 token，中文的 7,198 个中位长度为 43 token。只按字符长度选择候选，会高估这份语料对一词回答的覆盖。
 
+### MiniMind、MiniMind-V 与 MiniMind-O 从哪里开始
+
+[MiniMind 的 full_sft 权重](https://huggingface.co/jingyaogong/minimind-3-pytorch/blob/edba70ec15e06bc4280fbb96ac3383d73a7eab91/full_sft_768.pth)、[MiniMind-V 的语言起点](https://huggingface.co/jingyaogong/minimind-3v-pytorch/blob/83ae67a06ec29dc1acf2294d8edacbdef12f4013/llm_768.pth)和 [MiniMind-O 的语言起点](https://huggingface.co/jingyaogong/minimind-3o-pytorch/blob/9e22fb0e51852359ff51bd48d91ec3a345dbd75b/llm_768.pth) 的公开 LFS SHA-256 相同。V/O 的语言部分在接入图像或音频前，已经学过如何按聊天模板回答。MiniMind-V 进一步使用冻结的 SigLIP2 图像编码器。
+
+在单独的 8 道聊天提示上，固定贪心解码，MiniMind 预训练权重有 421/496 个重复三连 token 位置，0/8 次主动结束；公开 full_sft 权重为 20/287 和 5/8。同一次验证还可观察到，采样能打散重复，而回答的事实内容仍需单独评分。
+
+
 ## 看图时模型用了什么
 
 封面的两张合成图来自 MiniDeepSeek-V4.1 新数据分支在第 8,665 步的真实生成。问题完全相同，标注分别为「黄色」和「红色」，模型均生成「红色」。这个例子展示了一种成对检验。
