@@ -8,7 +8,7 @@ MiniDeepSeek-V4.1 是按 DeepSeek-V4.1-Flash 公开结构实现的小规模研�
 | 主干 | 12 层、宽度 512、65,536 词表；前 6 层编码，后 6 层解码 |
 | 专家 | 每层 32 个路由专家选 2 个，加 1 个共享专家 |
 | 上下文 | 配置上限 4096，训练按阶段增加长度 |
-| 状态 | 文本预训练已启动，尚无通过独立能力评估的聊天权重 |
+| 状态 | 文本与图文各有独立训练权重，短答、OCR 与换图结果见[学习路线](../guides/learning-path.md) |
 
 [模型配置](../../configs/minideepseekv41.json) · [实现代码](../../minifrontier/models/minideepseekv41/modeling.py) · [训练方案](../training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md) · [阶段进度](../pretraining-plan.md) · [上游源码与校验记录](../../third_party/upstream/deepseek-v4.1-dba1be0/source.json)
 
@@ -82,7 +82,7 @@ L = L_CE + 1.0 × L_indexer + 0.0001 × L_sequence_balance
 
 主干不含 MTP，也没有 V4 的独立索引器预热阶段。矩阵参数使用 Muon，其中可分离的 Q/K 按头更新；词嵌入、输出头和 Engram 表使用 Sinkhorn 更新，标量等参数使用 AdamW。Engram 表学习率为主学习率的 5 倍。完整学习率、数据配比和恢复约束见[机器可读训练计划](../../configs/strategies/minideepseekv41-plan.json)。
 
-视觉模块的前向、梯度和图像 CE 屏蔽已有测试，但默认配置 `vision_config=null`，当前正式阶段只训练文本。**完整视觉数据编码、文本到视觉迁移和图像推理入口尚待接通**；不能仅设置 `vision_config` 就按现有 CLI 完成视觉接续。[候选视觉阶段](../training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md#视觉阶段)的数据和预算也需另行绑定。
+[文本配置](../../configs/strategies/minideepseekv41-text-v1.json) 的 `vision_config` 为空，D1/D2 权重只接收文本。[图文配置](../../configs/strategies/minideepseekv41-vision.json) 包含视觉塔。训练时可从随机权重开始，也可用 `--init-transition text-to-vision` 接续已有文本主干。图文权重可直接通过 `minifrontier generate --checkpoint "$VISION_CHECKPOINT" --image "$IMAGE" --prompt "What color is the shape?"` 生成答案。[图片处理和生成入口](../../tests/test_v41_image_entry.py) · [原版与本地视觉训练起点](../guides/visual-recipes.md) · [正确图、换图与空白图对照](../guides/learning-path.md#看图时模型用了什么)
 
 ## 实现验证与限制
 
