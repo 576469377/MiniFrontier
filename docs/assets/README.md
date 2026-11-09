@@ -17,8 +17,10 @@
 
 SVG 可直接下载并缩放。Kimi、Qwen、DeepSeek-V4 模型页以 Mermaid 展示本地配置，并附官方报告图作对照；MF1.0 的 MTP 数据流也有单独的 Mermaid 图。V4.1 图按文本配置绘制。
 
-## 封面与图标
+## 封面、标识与实验图片
 
-[首页实验图](minifrontier-cover.png)并排显示了一对 224 × 224 的合成留出图片。MiniDeepSeek-V4.1 新数据分支在第 8,665 步对两图均回答「红色」。左图参考「黄色」，右图参考「红色」。两张图片在评测面板中的样本 ID 以 `cbf20f87`、`87762691` 开头。归一化计分、样本量与换图结果见[学习路线](../guides/learning-path.md#看图时模型用了什么)。
+首页沿用项目的折叠山峰意象，用 ImageGen 生成了蓝绿与金色的层叠纸面双峰。[主页封面](minifrontier-cover.webp)
+
+换图实验并排显示一对 224 × 224 的合成留出图片。MiniDeepSeek-V4.1 新数据分支在第 8,665 步对两图均回答「红色」。左图参考「黄色」，右图参考「红色」。两张图片在评测面板中的样本 ID 以 `cbf20f87`、`87762691` 开头。[换图示例原图](v41-image-swap-example.png) · [评分方法与结果](../guides/learning-path.md#看图时模型用了什么)
 
 [项目标识](minifrontier-mark.svg)可用于引用。项目原创图示随仓库[许可证](../../LICENSE)发布，转载的报告图见[上游素材与来源](upstream/README.md)。

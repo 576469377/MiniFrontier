@@ -6,7 +6,7 @@ recursive-include minifrontier *.py py.typed
 recursive-include minifrontier/inference/web *.html *.css *.js
 recursive-include docs *.md *.json
 recursive-include docs/experiments *.csv *.svg
-recursive-include docs/assets *.png *.svg
+recursive-include docs/assets *.png *.svg *.webp
 recursive-include LICENSES *
 recursive-include tests *.py *.mjs
 recursive-include scripts *.py *.md
