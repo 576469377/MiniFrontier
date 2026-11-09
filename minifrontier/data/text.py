@@ -69,9 +69,9 @@ def _literal_tokenizer(tokenizer):
     return copy
 
 
-def message_tokens(text, tokenizer, *, image_placeholders=False):
+def message_tokens(text, tokenizer, *, image_placeholders=False, escape_angle_tags=True):
     """Only schema-declared controls can interrupt ordinary message text."""
-    if image_placeholders is None or "<" not in text:
+    if image_placeholders is None or ("<" if escape_angle_tags else "<|") not in text:
         return tokenizer.encode(text, add_special_tokens=False).ids
     literal = tokenizer if tokenizer.encode_special_tokens else _literal_tokenizer(tokenizer)
     chunks = text.split("<|image|>") if image_placeholders else [text]
@@ -91,6 +91,7 @@ def chat_tokens(
     mode=None,
     effort=None,
     image_placeholders=False,
+    escape_angle_tags=True,
 ):
     """Explicit role boundaries; only assistant contents and EOS are supervised."""
     if mode is not None or effort is not None:
@@ -103,6 +104,7 @@ def chat_tokens(
             mode=mode,
             effort=effort,
             image_placeholders=image_placeholders,
+            escape_angle_tags=escape_angle_tags,
         )
     ids, labels = [1], [-100]
     for message in messages:
@@ -118,6 +120,7 @@ def chat_tokens(
         payload = message_tokens(
             content,
             tokenizer,
+            escape_angle_tags=escape_angle_tags,
             image_placeholders=(
                 image_placeholders if role == "user" or image_placeholders is None else False
             ),

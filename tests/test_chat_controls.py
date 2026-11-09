@@ -105,3 +105,17 @@ def test_unfinished_or_injected_action_structure_is_not_a_tool_command(tokenizer
     assert parse_action([18, *body], tokenizer, require_eos=True)["kind"] == "truncated"
     assert parse_action([19, *body, 2], tokenizer)["kind"] == "invalid"
     assert parse_action([17, 6, *body, 2], tokenizer)["kind"] == "invalid"
+
+
+@pytest.mark.parametrize("controlled", [True, False])
+def test_cited_thinking_marker_and_historical_row_reader(tokenizer, controlled):
+    settings = {"mode": "direct", "effort": "low"} if controlled else {}
+    turns = [dict(role="user", content="Quote the tag."), dict(role="assistant", content="<think>")]
+    ids, labels = chat_tokens(turns, tokenizer, **settings)
+    assert 15 not in ids
+    assert (
+        tokenizer.decode([v for v in labels if v not in {-100, 2, 17}], skip_special_tokens=True)
+        == "<think>"
+    )
+    old, _ = chat_tokens(turns, tokenizer, escape_angle_tags=False, **settings)
+    assert 15 in old

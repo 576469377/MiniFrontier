@@ -19,7 +19,7 @@ from minifrontier.data import sha256
 from minifrontier.data.encoding_audit import _checked, _compact_records
 from minifrontier.data.minifrontier1 import digest, write_json
 from minifrontier.data.minifrontier1_encoding import FORMAT, _encode_compact_items
-from minifrontier.data.native import _processor_matches
+from minifrontier.data.native import _escape_angle_tags, _processor_matches
 from minifrontier.data.partitions import corpus_storage_root, open_corpus
 from minifrontier.models.factory import mf_config
 from minifrontier.multimodal import LITERAL_VISUAL, prepare_record
@@ -304,6 +304,7 @@ def _filter_native(
             tokenizer,
             old["family"],
             root=old["media_root"],
+            escape_angle_tags=_escape_angle_tags(old),
             pretrain_encoding=old.get("native_pretrain_encoding", LITERAL_VISUAL),
             max_features=old["max_features"],
             min_pixels=old.get("min_pixels"),

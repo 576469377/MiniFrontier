@@ -62,7 +62,9 @@ VISUAL_CHAT = "role_tokens_answer_eos_v1"
 LITERAL_VISUAL = "literal_question_answer_next_token_v1"
 
 
-def pretraining_tokens(record, tokenizer, *, encoding=VISUAL_CHAT, generation_prompt=False):
+def pretraining_tokens(
+    record, tokenizer, *, encoding=VISUAL_CHAT, generation_prompt=False, escape_angle_tags=True
+):
     """Keep raw text literal; only schema-declared media become structural image IDs."""
     if encoding not in {VISUAL_CHAT, LITERAL_VISUAL}:
         raise ValueError(f"unknown native pretraining encoding: {encoding}")
@@ -87,6 +89,7 @@ def pretraining_tokens(record, tokenizer, *, encoding=VISUAL_CHAT, generation_pr
                 generation_prompt=generation_prompt,
                 mode=record.get("mode"),
                 effort=record.get("effort"),
+                escape_angle_tags=escape_angle_tags,
             )
             start = ids.index(4) + 1
             ids[start:start] = [7] * len(resources)
@@ -135,6 +138,7 @@ def prepare_record(
     min_pixels=None,
     patch_size=14,
     pretrain_encoding=VISUAL_CHAT,
+    escape_angle_tags=True,
 ):
     if tokenizer.token_to_id("<|image|>") != 7:
         raise ValueError(
@@ -144,7 +148,11 @@ def prepare_record(
         "visual_question" in record and not record.get("turns")
     ):
         ids, labels = pretraining_tokens(
-            record, tokenizer, encoding=pretrain_encoding, generation_prompt=generation_prompt
+            record,
+            tokenizer,
+            encoding=pretrain_encoding,
+            generation_prompt=generation_prompt,
+            escape_angle_tags=escape_angle_tags,
         )
     else:
         ids, labels = chat_tokens(
@@ -153,6 +161,7 @@ def prepare_record(
             generation_prompt=generation_prompt,
             mode=record.get("mode"),
             effort=record.get("effort"),
+            escape_angle_tags=escape_angle_tags,
             image_placeholders=None
             if pretrain_encoding == LITERAL_VISUAL
             else bool(record.get("media")),

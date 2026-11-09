@@ -43,16 +43,33 @@ def processor_identity(family):
     }
 
 
+# The first role-token writer escaped bracketed controls. Its tokenizer treated
+# a standalone <think> spelling as a reserved token in historical rows.
+_FIRST_ROLE_PROCESSOR = "b0d7d13bec7dcf651b0303f1dfea1a0100a053ae653ac59878ddd26a4a523340"
+
+
+def _escape_angle_tags(manifest):
+    return (
+        manifest.get("native_processor_sha256", {}).get("minifrontier.multimodal")
+        != _FIRST_ROLE_PROCESSOR
+    )
+
+
 def _processor_matches(manifest):
     family = manifest["family"]
     actual = processor_identity(family)
     expected = manifest["native_processor_sha256"]
     if expected == actual:
         return True
-    if manifest.get("native_pretrain_encoding", LITERAL_VISUAL) == LITERAL_VISUAL:
-        # The reader selects the original token/label serializer for old manifests.
-        shared = "minifrontier.multimodal"
-        if actual[shared] == "ef342e399424cdad69ab2b8a764090cd576550761e0893d970382c1fadc6e6e0":
+    shared = "minifrontier.multimodal"
+    current_reader = "79276e974e65856e60cb561f7017ea6262c29f5230d4dba21bfeadacff3c393c"
+    if actual[shared] == current_reader:
+        if expected.get(shared) in {
+            _FIRST_ROLE_PROCESSOR,
+            "ef342e399424cdad69ab2b8a764090cd576550761e0893d970382c1fadc6e6e0",
+        }:
+            return {**actual, shared: expected[shared]} == expected
+        if manifest.get("native_pretrain_encoding", LITERAL_VISUAL) == LITERAL_VISUAL:
             actual[shared] = "e83c3d021e75dfc8931ae1e4d7159bf347c54db246a281c733b02e9a7307586b"
             if expected == actual:
                 return True
@@ -400,6 +417,7 @@ def audit_native_encoding(corpus_root, encoded, output):
                                     "native_pretrain_encoding", LITERAL_VISUAL
                                 ),
                                 root=manifest["media_root"],
+                                escape_angle_tags=_escape_angle_tags(manifest),
                                 max_features=manifest["max_features"],
                                 min_pixels=manifest.get("min_pixels"),
                                 model_vocab_size=manifest["model_vocab_size"],
@@ -584,6 +602,7 @@ class _NativeMediaDataset:
 
     def __init__(self, root, media, manifest, length, tokenizer, *, pin=False):
         self.pretrain_encoding = manifest.get("native_pretrain_encoding", LITERAL_VISUAL)
+        self.escape_angle_tags = _escape_angle_tags(manifest)
         self.root, self.tokenizer = Path(root), tokenizer
         self.family, self.max_features = manifest["family"], manifest["max_features"]
         self.media_root, self.vocab = manifest["media_root"], manifest["model_vocab_size"]
@@ -657,6 +676,7 @@ class _NativeMediaDataset:
                 self.family,
                 root=self.media_root,
                 pretrain_encoding=self.pretrain_encoding,
+                escape_angle_tags=self.escape_angle_tags,
                 max_features=self.max_features,
                 model_vocab_size=self.vocab,
                 min_pixels=self.min_pixels,

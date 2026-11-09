@@ -100,6 +100,7 @@ def encode(
     mode=None,
     effort=None,
     image_placeholders=False,
+    escape_angle_tags=True,
 ):
     from minifrontier.data import ROLES
     from minifrontier.data.text import message_tokens
@@ -115,6 +116,7 @@ def encode(
             value,
             tokenizer,
             image_placeholders=None if image_placeholders is None else placeholders,
+            escape_angle_tags=escape_angle_tags,
         )
 
     control = f"MiniFrontier control-v1: mode={mode}; effort={effort}."
