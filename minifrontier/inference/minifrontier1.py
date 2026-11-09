@@ -9,7 +9,8 @@ import torch
 from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.data.minifrontier1 import safe_text, transform_media
+from minifrontier.data.minifrontier1 import encode_record, safe_text, transform_media
+from minifrontier.inference.history import validate_history
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM
 from minifrontier.models.minifrontier11 import MiniFrontier11ForCausalLM
@@ -51,8 +52,9 @@ def append_media(
 def prepare_prompt(
     model,
     tokenizer,
-    prompt,
+    prompt=None,
     *,
+    messages=None,
     images=None,
     video_frames=None,
     timestamps=None,
@@ -63,6 +65,29 @@ def prepare_prompt(
 ):
     if mode not in {"direct", "thinking"}:
         raise ValueError("MF1 supports direct or thinking control")
+    if messages is not None:
+        validate_history(prompt, messages, media=bool(images or video_frames))
+        turns = []
+        for turn in messages:
+            if turn.keys() - {"role", "content", "channel"} or turn.get("channel", "final") not in {
+                "final",
+                "thinking",
+                "tool_call",
+            }:
+                raise ValueError(
+                    "MF1 history uses role, text content and optional assistant channel"
+                )
+            turns.append({**turn, "content": [{"type": "text", "text": turn["content"]}]})
+        record = dict(
+            messages=turns,
+            mode=mode,
+            supervision={"type": "answer_ce"},
+            sample_id="chat",
+            domain="structured",
+            split_group="chat",
+        )
+        encoded = encode_record(record, tokenizer, model.config, None, generation_prompt=True)
+        return encoded["input_ids"], encoded["media"]
     ids = [1, 4]
     media: list[dict[str, Any]] = []
     resources = [([path], None) for path in images or []]
@@ -92,7 +117,7 @@ def prepare_prompt(
 
 def respond(
     checkpoint,
-    prompt,
+    prompt=None,
     image=None,
     video_frame=None,
     timestamps=None,
@@ -105,6 +130,7 @@ def respond(
     max_image_features=None,
     max_video_features=None,
     image_representation="standard",
+    messages=None,
 ):
     model, tokenizer, _ = load_checkpoint(checkpoint, device)
     if type(model) not in {MiniFrontier1ForCausalLM, MiniFrontier11ForCausalLM}:
@@ -114,6 +140,7 @@ def respond(
         model,
         tokenizer,
         prompt,
+        messages=messages,
         images=image,
         video_frames=video_frame,
         timestamps=times,

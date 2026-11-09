@@ -284,3 +284,30 @@ def test_bound_training_pixels_match_native_cli_generic_chat_and_browser(
                 torch.testing.assert_close(actual["patches"], reference["patches"], atol=0, rtol=0)
                 assert actual["feature_count"] == reference["feature_count"]
         seen.clear()
+
+
+def test_mf1_text_history_uses_training_encoder_on_web_and_runtime(model, tmp_path):
+    from minifrontier.data.minifrontier1 import encode_record, train_tokenizer
+    from minifrontier.inference.minifrontier1 import prepare_prompt
+
+    tok = train_tokenizer([], tmp_path / "tokenizer.json", 300)
+    turns = [
+        dict(role="user", content="Remember 27"),
+        dict(role="assistant", content="27"),
+        dict(role="user", content="What number?"),
+    ]
+    full = [*turns, dict(role="assistant", content="27")]
+    record = dict(
+        sample_id="x",
+        domain="structured",
+        split_group="x",
+        supervision={"type": "answer_ce"},
+        messages=[
+            dict(role=t["role"], content=[dict(type="text", text=t["content"])]) for t in full
+        ],
+    )
+    trained = encode_record(record, tok, model.config, None)["input_ids"][0].tolist()
+    ids, _ = prepare_prompt(model, tok, messages=turns)
+    web, _, plan = demo.prepare_request(dict(messages=turns, max_new_tokens=1), model, tok)
+    assert ids.tolist() == web.tolist() == [trained[: ids.numel()]]
+    assert plan["input_tokens"] == ids.numel()

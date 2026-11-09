@@ -21,6 +21,7 @@ import torch
 from PIL import Image
 
 from minifrontier.inference.demo_web import page
+from minifrontier.inference.history import validate_history
 from minifrontier.inference.runtime import generate_ids, load_checkpoint, respond
 
 PAGE = page("checkpoint")
@@ -293,7 +294,14 @@ def generation_settings(data):
         raise ValueError("请选择检查点")
     if not isinstance(data.get("version"), str) or not data["version"]:
         raise ValueError("缺少检查点版本，请刷新列表后重新选择")
-    if not isinstance(data.get("prompt"), str) or not data["prompt"].strip():
+    if "messages" in data:
+        validate_history(
+            data.get("prompt"),
+            data["messages"],
+            chat=data.get("mode") != "completion",
+            media="image_upload" in data,
+        )
+    elif not isinstance(data.get("prompt"), str) or not data["prompt"].strip():
         raise ValueError("请输入文本")
     if data.get("media") or data.get("images"):
         raise ValueError("此检查点页面仅支持文本；媒体输入请使用 MF1 多媒体页面")
@@ -337,7 +345,17 @@ def verify_version(candidate, expected):
 
 
 def text_response(
-    model, tokenizer, meta, prompt, *, chat, max_new_tokens, temperature, top_p, images=None
+    model,
+    tokenizer,
+    meta,
+    prompt,
+    *,
+    chat,
+    max_new_tokens,
+    temperature,
+    top_p,
+    images=None,
+    messages=None,
 ):
     if meta["model_name"] not in MF1_MODELS:
         return respond(
@@ -345,6 +363,7 @@ def text_response(
             tokenizer,
             prompt,
             chat=chat,
+            messages=messages,
             **({"images": images} if images else {}),
             max_new_tokens=max_new_tokens,
             temperature=temperature,
@@ -355,7 +374,7 @@ def text_response(
     from minifrontier.inference.minifrontier1 import prepare_prompt
 
     ids = (
-        prepare_prompt(model, tokenizer, prompt)[0]
+        prepare_prompt(model, tokenizer, prompt, messages=messages)[0]
         if chat
         else torch.tensor([[1, *safe_text(tokenizer, prompt)]])
     )
@@ -502,6 +521,7 @@ def create_server(
                     load_seconds = time.perf_counter() - load_start
                     chat = (
                         image_bytes is not None
+                        or "messages" in data
                         or settings["mode"] == "chat"
                         or (settings["mode"] == "auto" and meta["stage"] in CHAT_STAGES)
                     )
@@ -528,7 +548,8 @@ def create_server(
                             model,
                             tokenizer,
                             meta,
-                            data["prompt"],
+                            data.get("prompt"),
+                            messages=data.get("messages"),
                             chat=chat,
                             max_new_tokens=settings["max_new_tokens"],
                             temperature=settings["temperature"],

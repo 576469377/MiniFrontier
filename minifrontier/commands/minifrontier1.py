@@ -9,6 +9,7 @@ from pathlib import Path
 import torch
 
 from minifrontier.data.minifrontier1 import RecordDataset, make_fixture, write_json
+from minifrontier.inference.history import add_prompt_arguments
 from minifrontier.models.factory import mf_config
 from minifrontier.models.minifrontier1 import (
     MiniFrontier1ForCausalLM,
@@ -166,7 +167,7 @@ def main(argv=None):
     )
     g = commands.add_parser("generate")
     g.add_argument("--checkpoint", required=True)
-    g.add_argument("--prompt", required=True)
+    add_prompt_arguments(g)
     g.add_argument("--image", action="append")
     g.add_argument("--video-frame", action="append")
     g.add_argument("--max-image-features", type=int)

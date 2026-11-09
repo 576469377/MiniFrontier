@@ -19,7 +19,7 @@ from PIL import Image
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import safe_text
 from minifrontier.inference.demo_web import page
-from minifrontier.inference.minifrontier1 import append_media
+from minifrontier.inference.minifrontier1 import append_media, prepare_prompt
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.multimodal import move
 
@@ -59,7 +59,9 @@ def load_demo_checkpoint(checkpoint, device):
 def prepare_request(payload, model, tokenizer):
     if not isinstance(payload, dict):
         raise ValueError("请求必须为 JSON 对象")
-    if not isinstance(payload.get("prompt"), str) or not payload["prompt"].strip():
+    if "messages" not in payload and (
+        not isinstance(payload.get("prompt"), str) or not payload["prompt"].strip()
+    ):
         raise ValueError("请输入文本问题")
     if payload.get("mode", "direct") not in {"direct", "thinking"}:
         raise ValueError("不支持此回答模式")
@@ -71,6 +73,8 @@ def prepare_request(payload, model, tokenizer):
     media = payload.get("media", [])
     if not isinstance(media, list):
         raise ValueError("媒体必须为列表")
+    if "messages" in payload and (input_mode != "chat" or media or payload.get("messages") is None):
+        raise ValueError("messages requires a text chat without media")
     budget = payload.get("max_new_tokens", 64)
     if type(budget) is not int or not 1 <= budget <= 256:
         raise ValueError("生成预算必须为 1-256")
@@ -134,13 +138,27 @@ def prepare_request(payload, model, tokenizer):
                 tokens=sum(s["feature_count"] for s in samples),
             )
         )
-    ids.extend(safe_text(tokenizer, payload["prompt"]))
-    if input_mode == "chat":
-        ids.extend([2, 5, 15 if payload.get("mode") == "thinking" else 17])
+    if "messages" in payload:
+        history_ids, _ = prepare_prompt(
+            model,
+            tokenizer,
+            payload.get("prompt"),
+            messages=payload["messages"],
+            mode=payload.get("mode", "direct"),
+        )
+        ids = history_ids[0].tolist()
+    else:
+        ids.extend(safe_text(tokenizer, payload["prompt"]))
+        if input_mode == "chat":
+            ids.extend([2, 5, 15 if payload.get("mode") == "thinking" else 17])
     if len(ids) + budget > model.config.max_position_embeddings:
         raise ValueError("输入与回答预算超过上下文，请减少媒体或文本")
     request = dict(
-        prompt=payload["prompt"],
+        **(
+            {"messages": payload["messages"]}
+            if "messages" in payload
+            else {"prompt": payload["prompt"]}
+        ),
         input_mode=input_mode,
         mode=payload.get("mode", "direct") if input_mode == "chat" else None,
         max_new_tokens=budget,
@@ -247,7 +265,11 @@ def serve(checkpoint, *, device="cpu", host="127.0.0.1", port=7861, allow_unqual
                             checkpoint=checkpoint_info,
                             plan=plan,
                             request=dict(
-                                prompt=payload["prompt"],
+                                **(
+                                    {"messages": payload["messages"]}
+                                    if "messages" in payload
+                                    else {"prompt": payload["prompt"]}
+                                ),
                                 input_mode=payload.get("input_mode", "chat"),
                                 mode=(
                                     payload.get("mode", "direct")

@@ -3,13 +3,14 @@
 import argparse
 import json
 
+from minifrontier.inference.history import add_prompt_arguments
 from minifrontier.inference.runtime import load_checkpoint, respond
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--checkpoint", required=True)
-    p.add_argument("--prompt", required=True)
+    add_prompt_arguments(p)
     p.add_argument("--max-new-tokens", type=int, default=64)
     p.add_argument("--temperature", type=float)
     p.add_argument("--top-p", type=float)
@@ -47,6 +48,7 @@ def main(argv=None):
             model,
             tokenizer,
             args.prompt,
+            messages=args.messages,
             chat=not args.completion,
             max_new_tokens=args.max_new_tokens,
             temperature=args.temperature if args.temperature is not None else (1 if draft else 0.8),

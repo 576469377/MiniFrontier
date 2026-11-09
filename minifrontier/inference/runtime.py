@@ -10,6 +10,7 @@ import torch
 from tokenizers import Tokenizer
 
 from minifrontier.data import chat_tokens, sha256
+from minifrontier.inference.history import validate_history
 from minifrontier.inference.media_profile import checkpoint_media_profile
 from minifrontier.models.factory import build_model, configure_posttraining
 
@@ -157,8 +158,9 @@ def load_checkpoint(path, device="cpu"):
 def respond(
     model,
     tokenizer,
-    prompt,
+    prompt=None,
     *,
+    messages=None,
     chat=True,
     max_new_tokens=64,
     temperature=0.8,
@@ -177,6 +179,10 @@ def respond(
     min_pixels=None,
     visual_protocol=None,
 ):
+    if messages is not None:
+        validate_history(prompt, messages, chat=chat, media=bool(images or video_frames))
+    elif not isinstance(prompt, str):
+        raise ValueError("provide prompt text or messages")
     if (
         chat
         and mode is None
@@ -198,6 +204,7 @@ def respond(
             model,
             tokenizer,
             prompt,
+            messages=messages,
             images=images,
             mode=mode or "direct",
             max_image_features=max_image_features,
@@ -298,9 +305,18 @@ def respond(
         inputs, media = native.input_ids, native.extras["media"]
         ids = inputs[0].tolist()
     else:
+        if messages is not None and any("channel" in turn for turn in messages):
+            raise ValueError("channel is an MF1 message field")
+        if (
+            messages is not None
+            and mode is None
+            and effort is None
+            and any(turn.get("reasoning") for turn in messages)
+        ):
+            raise ValueError("reasoning history requires the control-v1 template")
         ids = (
             chat_tokens(
-                [{"role": "user", "content": prompt}],
+                messages if messages is not None else [{"role": "user", "content": prompt}],
                 tokenizer,
                 generation_prompt=True,
                 mode=mode,
