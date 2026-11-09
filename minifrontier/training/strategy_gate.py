@@ -24,6 +24,7 @@ def initial_start_authorized(evidence, *, model, phase, data_sha256, config_sha2
     first_phases = {
         "minifrontier1": "p0",
         "minifrontier11": "p0",
+        "minideepseekv4": "D1",
         "minideepseekv41": "D1",
         "minikimik3": "K1",
         "miniqwen4": "Q1",
