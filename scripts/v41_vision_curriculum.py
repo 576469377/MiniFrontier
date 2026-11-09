@@ -58,9 +58,9 @@ class Pairs(Dataset):
 
     def __getitem__(self, i):
         name, ids = self.rows[i]
-        with Image.open(self.root / name) as image:
+        with Image.open(self.root / name) as original:
             image = ImageOps.pad(
-                image.convert("RGB"),
+                original.convert("RGB"),
                 (self.side, self.side),
                 method=Image.Resampling.BICUBIC,
                 color=(127, 127, 127),

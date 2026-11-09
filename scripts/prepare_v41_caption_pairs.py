@@ -17,14 +17,16 @@ def prepare(source, media_root, output):
         raise ValueError("caption output must be empty")
     if sha256(source / "tokenizer.json") != source_manifest["tokenizer"]["sha256"]:
         raise ValueError("unbound source tokenizer")
-    splits, identities = {}, {}
+    splits = {}
+    identities: dict[str, str] = {}
     for split in ("train", "val", "test"):
         media = source_manifest["stages"]["pretrain"][split]["media"]
         refs = source / media["file"]
         if sha256(refs) != media["sha256"]:
             raise ValueError(f"source native {split} changed")
-        seen, groups = set(), Counter()
-        rows = Counter()
+        seen = set()
+        groups: Counter[str] = Counter()
+        rows: Counter[str] = Counter()
         target = output / f"{split}.jsonl"
         with refs.open() as fp, target.open("x") as out:
             for line in fp:

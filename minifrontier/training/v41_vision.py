@@ -1,13 +1,18 @@
 """Scratch vision-language contrastive training and ViT-only stage handoffs."""
 
 from dataclasses import asdict
-from math import log
+from math import isqrt, log
+from typing import cast
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 
-from minifrontier.models.minideepseekv41.upstream_vision import apply_rotary, get_vision_cos_sin
+from minifrontier.models.minideepseekv41.upstream_vision import (
+    Block,
+    apply_rotary,
+    get_vision_cos_sin,
+)
 from minifrontier.models.minideepseekv41.vision import DeepSeekVision, DeepSeekVisionConfig
 
 
@@ -25,13 +30,14 @@ class CaptionContrast(nn.Module):
         # Stage A has a fixed letterboxed canvas, so all images share one 2-D RoPE grid.
         b, _, side, _ = pixels.shape
         p = self.vit.patch_embed.proj.in_features // 3
-        patch = int(p**0.5)
+        patch = isqrt(p)
         grid = side // patch
         patches = F.unfold(pixels, kernel_size=patch, stride=patch).transpose(1, 2)
         x = self.vit.patch_embed.proj(patches)
         cos, sin = get_vision_cos_sin(grid, grid, self.vit.rope_dim, self.vit.rope_theta)
         cos, sin = cos.to(x.device), sin.to(x.device)
-        for block in self.vit.blocks:
+        for raw_block in self.vit.blocks:
+            block = cast(Block, raw_block)
             attn = block.attn
             norm = block.norm1(x)
             q, k, v = (

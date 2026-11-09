@@ -72,3 +72,28 @@ def test_order_unique_resume_and_true_main_config():
     temp = read(Path("configs/strategies/minideepseekv41-vision-temporary.json"))
     assert main["hierarchical_indexing"] and main["dim"] > temp["dim"]
     assert main["vision_config"]["hidden_size"] == temp["vision_config"]["hidden_size"]
+
+
+def test_midrun_thaw_preserves_text_moments_and_defers_tower_updates():
+    from minifrontier.training.transitions import set_visual_rates
+
+    class Skeleton(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.vision = DeepSeekVision(DeepSeekVisionConfig(**config()))
+            self.embed = torch.nn.Linear(3, 3)
+
+    model = Skeleton()
+    opt = torch.optim.AdamW(model.parameters(), lr=3e-4)
+    set_visual_rates(opt, model, vision_lr=3e-5, projector_lr=3e-4)
+    rgb = model.vision.vit.patch_embed.proj.weight
+    fresh = rgb.clone()
+    for active in (False, False, True):
+        set_main_tower_trainable(model, active)
+        opt.zero_grad(set_to_none=True)
+        sum(p.square().mean() for p in model.parameters() if p.requires_grad).backward()
+        opt.step()
+        if not active:
+            assert torch.equal(fresh, rgb) and rgb not in opt.state
+    assert opt.state[model.embed.weight]["step"] == 3 and opt.state[rgb]["step"] == 1
+    assert not torch.equal(fresh, rgb)
