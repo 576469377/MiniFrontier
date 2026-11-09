@@ -54,6 +54,21 @@ uv run minifrontier train --device cuda --model minideepseekv41 --stage sft \
 
 实际抽出的 14,723 个训练答案中，仅 181 个不超过 4 个正文 token。按用户文本识别为英文的 7,525 个回答中位长度为 144 token，中文的 7,198 个中位长度为 43 token。只按字符长度选择候选，会高估这份语料对一词回答的覆盖。
 
+### 同一批对话训练一遍后
+
+V4.1 取第 11,946 步的文本父权重，MiniMind 取官方 64M `pretrain_768`。两者都按各自模板完整序列化相同样本，按同一顺序做 1,709 次 AdamW 更新，每次 8 条，最后一批跨入下一轮 6 条。固定 20 个中英文提示，贪心生成最多 48 token。16 个提示要求可核验的短答，另外 4 个用于观察问候与解释。
+
+| 权重 | 严格短答 | 48 token 内自行结束 | 重复三连 token 位置占比 |
+|---|---:|---:|---:|
+| V4.1 文本父权重 | 0/16 | 0/20 | 43.4% |
+| V4.1 同数据微调后 | 0/16 | 6/20 | 27.4% |
+| MiniMind 64M 官方预训练权重 | 0/16 | 0/20 | 87.0% |
+| MiniMind 64M 同数据微调后 | 0/16 | 7/20 | 24.3% |
+
+用各自分词器计数，两边的一遍训练实际消费约 179 万和 211 万个助手 token。V4.1 在 132 条完整验证对话上的助手 token NLL 从 3.361 降到 2.071，MiniMind 从 2.250 降到 1.649。两者的分词器与预训练历史不同，表中每组前后结果均使用同一模型和协议。
+
+“晚上好！”让两个微调后的模型都答成了无法查询实时天气。在 6,210 条中文训练首问中，3,207 条命中天气、气温、新闻、实时或时间关键词。从三个划分的命中记录各抽 8 条，24 个标注答案中有 19 个拒答或引导到外部查询，3 个直接报未经题面支持的当前值，1 个明确作了假设，1 个实际是翻译题。另有英语样例能说出 salmon 是 fish，却因继续重复而没满足一词回答。这两种失败需要分别查看原始输出。
+
 ### MiniMind、MiniMind-V 与 MiniMind-O 从哪里开始
 
 [MiniMind 的 full_sft 权重](https://huggingface.co/jingyaogong/minimind-3-pytorch/blob/edba70ec15e06bc4280fbb96ac3383d73a7eab91/full_sft_768.pth)、[MiniMind-V 的语言起点](https://huggingface.co/jingyaogong/minimind-3v-pytorch/blob/83ae67a06ec29dc1acf2294d8edacbdef12f4013/llm_768.pth)和 [MiniMind-O 的语言起点](https://huggingface.co/jingyaogong/minimind-3o-pytorch/blob/9e22fb0e51852359ff51bd48d91ec3a345dbd75b/llm_768.pth) 的公开 LFS SHA-256 相同。V/O 的语言部分在接入图像或音频前，已经学过如何按聊天模板回答。MiniMind-V 进一步使用冻结的 SigLIP2 图像编码器。
