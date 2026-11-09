@@ -99,9 +99,9 @@ def build_recipe_corpus(public_root, output, *, math_documents=8192):
                 row,
                 stage="pretrain",
                 task="dialogue",
+                text_format="chat_turns",
                 text="\n".join(t["role"].capitalize() + ": " + t["content"] for t in row["turns"]),
             )
-            row.pop("turns")
         copied += int(builder.add(row))
         if copied % 5000 == 0:
             print(json.dumps(dict(copied=copied)), flush=True)

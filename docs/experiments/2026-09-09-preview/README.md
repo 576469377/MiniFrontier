@@ -1,5 +1,7 @@
 # 配方实验早期快照（2026-09-09）
 
+[查看这次实验的逐步曲线、原始 JSON 和 CSV](https://github.com/576469377/MiniFrontier/tree/c41c84ba308f98e55997eaee1d2dd7d97a155188/docs/experiments/2026-09-09-preview)
+
 [返回实验索引](../../experiments.md) · [当前训练安排](../../pretraining-plan.md)
 
 **Kimi 和 DeepSeek 的 Muon 对照已完成 20M CE；其余三项配方运行尚未完成。** 本页同时保留四项约 500K CE 的学习诊断，供检查早期曲线与后续配方选择过程。
@@ -20,19 +22,19 @@
 
 | 实验与报告 | 采集时状态 | 累计 CE | 最近验证 LM NLL | 测得 CE/s |
 |---|---|---:|---:|---:|
-| [DeepSeek · AdamW · 20M](strategy-recipe-pilots-v2--minideepseekv4--adamw-20m.json) ([CSV](strategy-recipe-pilots-v2--minideepseekv4--adamw-20m.csv)) | running | 13901894 | 5.855686939924099 | 526.3428746014318 |
-| [DeepSeek · Muon · 20M](strategy-recipe-pilots-v2--minideepseekv4--muon-20m.json) ([CSV](strategy-recipe-pilots-v2--minideepseekv4--muon-20m.csv)) | complete | 20013084 | 5.334631086140065 | 516.8445481960501 |
-| [Kimi · AdamW · 20M](strategy-recipe-pilots-v2--minikimik3--adamw-20m.json) ([CSV](strategy-recipe-pilots-v2--minikimik3--adamw-20m.csv)) | running | 17021901 | 5.632155408497192 | 570.1488719772458 |
-| [Kimi · Muon · 20M](strategy-recipe-pilots-v2--minikimik3--muon-20m.json) ([CSV](strategy-recipe-pilots-v2--minikimik3--muon-20m.csv)) | complete | 20010912 | 5.25667633755248 | 561.3834668387981 |
-| [Qwen · Muon · 20M](strategy-recipe-pilots-v2--miniqwen4-after-q0-extension--muon-20m.json) ([CSV](strategy-recipe-pilots-v2--miniqwen4-after-q0-extension--muon-20m.csv)) | running | 17873675 | 5.230578570976059 | 287.222375773371 |
-| [DeepSeek · 首轮诊断](strategy-diagnostics-v2--minideepseekv4.json) ([CSV](strategy-diagnostics-v2--minideepseekv4.csv)) | complete | 500735 | 1.452930539449056 | 163.5091131107459 |
-| [Kimi · 首轮诊断](strategy-diagnostics-v2--minikimik3.json) ([CSV](strategy-diagnostics-v2--minikimik3.csv)) | complete | 500450 | 1.1787232716878255 | 135.16564801724988 |
-| [Qwen · 首轮诊断](strategy-diagnostics-v2--miniqwen4.json) ([CSV](strategy-diagnostics-v2--miniqwen4.csv)) | complete | 500450 | 1.1579292233784992 | 55.71579888290027 |
-| [Qwen · 续诊断](strategy-diagnostics-v2--miniqwen4-extension-1m.json) ([CSV](strategy-diagnostics-v2--miniqwen4-extension-1m.csv)) | complete | 500450 | 1.254478308359782 | 112.72600286013086 |
+| DeepSeek · AdamW · 20M | running | 13901894 | 5.855686939924099 | 526.3428746014318 |
+| DeepSeek · Muon · 20M | complete | 20013084 | 5.334631086140065 | 516.8445481960501 |
+| Kimi · AdamW · 20M | running | 17021901 | 5.632155408497192 | 570.1488719772458 |
+| Kimi · Muon · 20M | complete | 20010912 | 5.25667633755248 | 561.3834668387981 |
+| Qwen · Muon · 20M | running | 17873675 | 5.230578570976059 | 287.222375773371 |
+| DeepSeek · 首轮诊断 | complete | 500735 | 1.452930539449056 | 163.5091131107459 |
+| Kimi · 首轮诊断 | complete | 500450 | 1.1787232716878255 | 135.16564801724988 |
+| Qwen · 首轮诊断 | complete | 500450 | 1.1579292233784992 | 55.71579888290027 |
+| Qwen · 续诊断 | complete | 500450 | 1.254478308359782 | 112.72600286013086 |
 
 ## 复现与公开范围
 
-JSON 保存命令、seed、源码及数据/tokenizer 校验值，CSV 保存曲线。复现时将 `${WORKSPACE}` 绑定到工作目录，并按对应版本准备数据；本目录仅分发数值和元数据。重建方法见[实验说明](../../experiments.md)。
+JSON 保存命令、seed、源码及数据/tokenizer 校验值，CSV 保存曲线。可在页首归档找到这些文件。复现时将 `${WORKSPACE}` 绑定到工作目录，并按对应版本准备数据。重建方法见[实验说明](../../experiments.md)。
 
 ---
 

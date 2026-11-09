@@ -453,7 +453,14 @@ def train(
         raise ValueError("training and held-out validation must both be nonempty")
     if dataset.tokenizer.get_vocab_size() > c.vocab_size:
         raise ValueError("tokenizer vocabulary exceeds output head")
+    from minifrontier.data.minifrontier1_components import inference_media_profile
+    from minifrontier.inference.media_profile import checkpoint_media_profile
+
     bound = bindings(c, data, init)
+    media_profile = checkpoint_media_profile(saved, resume or init) if saved else {}
+    media_profile.update(
+        inference_media_profile([part.manifest for part in getattr(dataset, "datasets", [dataset])])
+    )
     production_path = run_kind in {"strategy", "performance"}
     if production_path and weights is None:
         if phase == "sft":
@@ -742,6 +749,7 @@ def train(
             tokenizer_sha256=bound["tokenizer_sha256"],
             chat_template=CONTROL_VERSION,
             run_spec=run,
+            inference_media_profile=media_profile,
             optimizer=opt.state_dict(),
             continuous_optimizer_states=continuous_states,
             sampler=prefetch.committed if prefetch is not None else sampler.state_dict(),

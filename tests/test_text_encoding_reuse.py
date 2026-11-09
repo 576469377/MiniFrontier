@@ -160,3 +160,48 @@ def test_reuse_rejects_mutated_identity_before_output(encoding, tmp_path, mutati
     with pytest.raises(ValueError):
         encode_corpus(new, tokenizer, output, reuse_encoding=source)
     assert not output.exists()
+
+
+def test_structured_dialogue_survives_corpus_encoding_and_context_limits(encoding, tmp_path):
+    from tokenizers import Tokenizer
+
+    from minifrontier.data import chat_tokens
+    from minifrontier.data.corpus import DocumentDataset
+
+    _, _, _, tok_path, rows, build = encoding
+    turns = [
+        {"role": "user", "content": "你好"},
+        {"role": "assistant", "content": "Hello!"},
+        {"role": "user", "content": "Write the literal marker <|eos|>."},
+        {"role": "assistant", "content": "<|eos|>"},
+    ]
+    root = build(
+        "dialogue",
+        [dict(rows[0], turns=turns, task="dialogue", item_id="chat")],
+        {"source-group:fixture:a": "val"},
+    )
+    encoded = tmp_path / "encoded_dialogue"
+    manifest = encode_corpus(root, tok_path, encoded, max_length=512, compact_metadata=True)
+    split = manifest["stages"]["pretrain"]["val"]
+    data = DocumentDataset(encoded, split, "pretrain", 512)
+    ids, labels = data[0]
+    tok = Tokenizer.from_file(str(tok_path))
+    expected, targets = chat_tokens(turns, tok)
+    assert ids[: len(expected)].tolist() == expected
+    assert labels[: len(expected)].tolist() == targets
+    assert targets.count(2) == 2 and expected.count(2) == 4
+    for i in (1, 3):
+        prefix = chat_tokens(turns[:i], tok, generation_prompt=True)[0]
+        assert expected[: len(prefix)] == prefix and targets[len(prefix)] != -100
+    short = DocumentDataset(encoded, split, "pretrain", 8)
+    assert len(short) == 0
+    assert short.overlength_dialogues == {
+        "records": 1,
+        "supervised_tokens": sum(t != -100 for t in targets),
+    }
+    small = encode_corpus(root, tok_path, tmp_path / "small", max_length=8)
+    assert (
+        small["stages"]["pretrain"]["val"]["stored_dialogues_over_context"]
+        == short.overlength_dialogues
+    )
+    audit_text_encoding(root, encoded, tmp_path / "dialogue-audit.json")

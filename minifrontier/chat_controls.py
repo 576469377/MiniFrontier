@@ -71,32 +71,53 @@ def record_template(record):
 def update_manifest(manifest):
     from collections import Counter
 
-    counts: Counter[str] = Counter()
-    for record in manifest["stages"].get("sft", {}).values():
-        nodes = (
-            (record["text"], record["media"])
-            if record.get("format") == "hybrid-native-v2"
-            else (record,)
-        )
-        for node in nodes:
-            counts.update(node.get("chat_template_counts", {}))
+    stages = manifest["stages"]
+
+    def count_stage(stage):
+        counts: Counter[str] = Counter()
+        for record in stages.get(stage, {}).values():
+            nodes = (
+                (record["text"], record["media"])
+                if record.get("format") == "hybrid-native-v2"
+                else (record,)
+            )
+            for node in nodes:
+                counts.update(node.get("chat_template_counts", {}))
+        return counts
+
+    counts = count_stage("sft") or count_stage("pretrain")
     manifest["chat_template_counts"] = dict(counts)
     manifest["chat_template"] = (
         next(iter(counts)) if len(counts) == 1 else "mixed" if counts else "legacy"
     )
 
 
-def encode(messages, tokenizer, *, generation_prompt=False, mode=None, effort=None):
+def encode(
+    messages,
+    tokenizer,
+    *,
+    generation_prompt=False,
+    mode=None,
+    effort=None,
+    image_placeholders=False,
+    escape_angle_tags=True,
+):
     from minifrontier.data import ROLES
+    from minifrontier.data.text import message_tokens
 
     required_ids(tokenizer)
     mode, effort = resolve(mode, effort)
     effort_id = {"low": 12, "high": 13, "max": 14}[effort]
 
-    def text(value):
+    def text(value, placeholders=False):
         if not isinstance(value, str):
             raise ValueError("message content/reasoning must be text")
-        return tokenizer.encode(value, add_special_tokens=False).ids
+        return message_tokens(
+            value,
+            tokenizer,
+            image_placeholders=None if image_placeholders is None else placeholders,
+            escape_angle_tags=escape_angle_tags,
+        )
 
     control = f"MiniFrontier control-v1: mode={mode}; effort={effort}."
     ids = [1, ROLES["system"], *text(control), 2]
@@ -135,7 +156,11 @@ def encode(messages, tokenizer, *, generation_prompt=False, mode=None, effort=No
         else:
             if message.get("tools"):
                 content += "\n" + json.dumps(message["tools"], ensure_ascii=False, sort_keys=True)
-            payload = ([19] if role == "tool" else []) + text(content) + [2]
+            payload = (
+                ([19] if role == "tool" else [])
+                + text(content, image_placeholders and role == "user")
+                + [2]
+            )
             labels += [-100] * len(payload)
         ids += payload
     if generation_prompt:

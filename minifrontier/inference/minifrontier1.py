@@ -9,19 +9,85 @@ import torch
 from PIL import Image
 
 from minifrontier.data import sha256
-from minifrontier.data.minifrontier1 import processing_for, safe_text
+from minifrontier.data.minifrontier1 import encode_record, safe_text, transform_media
+from minifrontier.inference.history import validate_history
 from minifrontier.inference.runtime import generate_ids, load_checkpoint
 from minifrontier.models.minifrontier1 import MiniFrontier1ForCausalLM
 from minifrontier.models.minifrontier11 import MiniFrontier11ForCausalLM
 from minifrontier.multimodal import move
 
 
+def append_media(
+    ids,
+    spans,
+    model,
+    frames,
+    hashes,
+    *,
+    video,
+    timestamps=None,
+    representation="standard",
+    max_features=None,
+):
+    remaining = model.config.protected_media_tokens - sum(s["feature_count"] for s in spans)
+    kind = "video" if video else "image"
+    if max_features is None:
+        max_features = getattr(model, "inference_media_profile", {}).get(kind + "_max_features")
+    samples = transform_media(
+        frames,
+        model.config,
+        remaining,
+        representation=representation,
+        max_features=max_features,
+        timestamps=timestamps,
+    )
+    for sample in samples:
+        ids.append(20 if video else 9)
+        sample.update(batch_index=0, start=len(ids), resource_kind=kind, source_hashes=hashes)
+        ids.extend([7] * sample["feature_count"] + [21 if video else 10])
+        spans.append(sample)
+    return samples
+
+
 def prepare_prompt(
-    model, tokenizer, prompt, *, images=None, video_frames=None, timestamps=None, mode="direct"
+    model,
+    tokenizer,
+    prompt=None,
+    *,
+    messages=None,
+    images=None,
+    video_frames=None,
+    timestamps=None,
+    mode="direct",
+    max_image_features=None,
+    max_video_features=None,
+    image_representation="standard",
 ):
     if mode not in {"direct", "thinking"}:
         raise ValueError("MF1 supports direct or thinking control")
-    c = model.config
+    if messages is not None:
+        validate_history(prompt, messages, media=bool(images or video_frames))
+        turns = []
+        for turn in messages:
+            if turn.keys() - {"role", "content", "channel"} or turn.get("channel", "final") not in {
+                "final",
+                "thinking",
+                "tool_call",
+            }:
+                raise ValueError(
+                    "MF1 history uses role, text content and optional assistant channel"
+                )
+            turns.append({**turn, "content": [{"type": "text", "text": turn["content"]}]})
+        record = dict(
+            messages=turns,
+            mode=mode,
+            supervision={"type": "answer_ce"},
+            sample_id="chat",
+            domain="structured",
+            split_group="chat",
+        )
+        encoded = encode_record(record, tokenizer, model.config, None, generation_prompt=True)
+        return encoded["input_ids"], encoded["media"]
     ids = [1, 4]
     media: list[dict[str, Any]] = []
     resources = [([path], None) for path in images or []]
@@ -34,26 +100,24 @@ def prepare_prompt(
         for path in paths:
             with Image.open(path) as image:
                 frames.append(image.convert("RGB"))
-        remaining = c.protected_media_tokens - sum(m["feature_count"] for m in media)
-        sample = processing_for(model.config).process_frames(
-            frames, max_features=remaining, patch_size=c.vision_config.patch_size, timestamps=times
+        append_media(
+            ids,
+            media,
+            model,
+            frames,
+            [sha256(p) for p in paths],
+            video=times is not None,
+            timestamps=times,
+            representation=image_representation if times is None else "standard",
+            max_features=max_image_features if times is None else max_video_features,
         )
-        ids.append(20 if times is not None else 9)
-        sample.update(
-            batch_index=0,
-            start=len(ids),
-            resource_kind="video" if times is not None else "image",
-            source_hashes=[sha256(p) for p in paths],
-        )
-        media.append(sample)
-        ids += [7] * sample["feature_count"] + [21 if times is not None else 10]
     ids += [*safe_text(tokenizer, prompt), 2, 5, 15 if mode == "thinking" else 17]
     return torch.tensor([ids]), media
 
 
 def respond(
     checkpoint,
-    prompt,
+    prompt=None,
     image=None,
     video_frame=None,
     timestamps=None,
@@ -63,6 +127,10 @@ def respond(
     temperature=0,
     draft_checkpoint=None,
     draft_steps=4,
+    max_image_features=None,
+    max_video_features=None,
+    image_representation="standard",
+    messages=None,
 ):
     model, tokenizer, _ = load_checkpoint(checkpoint, device)
     if type(model) not in {MiniFrontier1ForCausalLM, MiniFrontier11ForCausalLM}:
@@ -72,10 +140,14 @@ def respond(
         model,
         tokenizer,
         prompt,
+        messages=messages,
         images=image,
         video_frames=video_frame,
         timestamps=times,
         mode=mode,
+        max_image_features=max_image_features,
+        max_video_features=max_video_features,
+        image_representation=image_representation,
     )
     ids, media = ids.to(device), move(media, device)
     start = time.perf_counter()

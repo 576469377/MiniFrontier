@@ -49,6 +49,12 @@ Docmatix 的问答由上游模型生成，不标为人工标注。当前读取�
 
 **系统性的逐来源人工质量复核尚未完成。** 首阶段按主计划记录的条件开展研究训练，机械检查不替代人工复核，也不构成数据或权重的发布验收。后续变更及已知限制保存在各组件清单中。
 
+## 双语对话微调
+
+11 月的 V4.1 文本微调使用 [MiniMind 语料的固定版本](https://huggingface.co/datasets/jingyaogong/minimind_dataset/tree/312afb4f76391145c6902f765bb51691c09a12f5)。从 `sft_t2t_mini.jsonl` 的 905,718 行选择完整的中英文单轮和多轮对话，按问题排除已有评测面板并跨划分去重。最终为训练 13,666、验证 132、测试 134 条。训练集有 14,723 个助手答案、1,792,925 个受监督 token。语言按用户文本中的汉字与拉丁字母估计。
+
+新数据将角色、回答和每轮结束符分别编码。用户问题、图像占位和填充都从对话损失中排除。普通文档继续预测下一个文本 token。学习路线给出[生成语料和开始训练的命令](learning-path.md#用文本底座训练双语助手)。
+
 ## 固定版本
 
 读取器固定以下版本；上游更新不会改变已有实验。每次构造的 manifest 另行记录实际样本库存。
@@ -92,3 +98,50 @@ uv run python -m minifrontier.data.pretraining merge \
 ```
 
 `--inputs` 需要预先构造、使用同一参考 tokenizer 的候选目录，每次输出到新目录。合并保留已有留出组，同源组连接时 test 优先于 val；得到候选库存后，再绑定正式 tokenizer 和阶段编码。`data/` 不随 Git 仓库或安装包分发。
+
+## 从原始 UltraChat 恢复多轮对话
+
+2026 年 11 月 9 日的迁移保留旧训练库中的全部 32,953 条英文对话，训练、验证、测试分别为 32,305、308、340 条。转换器按 Parquet 行组和行号读取原始角色，逐条比对 prompt_id、原文与规范化文本哈希、sample_id 以及冻结划分。原文有一处 NUL 字符，训练文本删除该字符，记录它在原回合中的位置。[固定版 UltraChat 分片](https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k/blob/8049631c405ae6576f93f445c6b8166f76f5505a/data/train_sft-00002-of-00003-ee46ed25cfae92c6.parquet)
+
+从仓库根目录运行以下命令。DATA 指向历史训练数据根目录，UPSTREAM 指向固定分片所在目录，OUT 指向新产物的父目录。第一条命令生成单独的规范对话库及 64K 词表分片；第二条命令把新对话放回旧数据中的对应位置，逐段校验其余 463,819 个样本的 token 和标签字节。
+
+```bash
+python -m scripts.rebuild_ultrachat \
+  --corpus "$DATA/pretraining-canonical-text-v2" \
+  --previous "$DATA/pretraining-text-64k-v5" \
+  --parquet "$UPSTREAM/train_sft-00002-of-00003-ee46ed25cfae92c6.parquet" \
+  --output "$OUT/ultrachat-dialogue"
+
+python -m scripts.merge_ultrachat \
+  --previous "$DATA/pretraining-text-64k-v5" \
+  --restored "$OUT/ultrachat-dialogue/encoded" \
+  --output "$OUT/pretraining-text-64k-aligned"
+```
+
+MF1 可以直接从第一条命令生成的 corpus 编译 32K 分片。把词表和模型配置一同交给原生编码器，才能得到与聊天入口相同的角色和回答边界。
+
+```bash
+python - "$OUT/ultrachat-dialogue/corpus" "$DATA/pretraining-mf1-text-v4/tokenizer.json" "$OUT/mf1-ultrachat" <<'PYCODE'
+import json
+import sys
+from pathlib import Path
+from minifrontier.data.minifrontier1_encoding import encode_canonical_text
+from minifrontier.models.factory import mf_config
+
+config = mf_config(json.loads(Path("configs/minifrontier1/model_228m_native.json").read_text()))
+encode_canonical_text(sys.argv[1], sys.argv[2], sys.argv[3], config)
+PYCODE
+```
+
+同一批对话共有 104,086 个助手回合。64K 版本对助手正文与回答 EOS 计算损失，共 31,288,602 个监督 token。MF1 的 32K 编码在助手角色后加入本族的 final 标记并监督它，共 33,169,964 个监督 token。MF1.0 和 MF1.1 共享这份学习数据并各自校验配置。下表按完整会话计数，每个单元格依次为训练、验证、测试的准入条数。
+
+| 上下文长度 | 64K 词表 | MF1 32K 词表 |
+|---:|---:|---:|
+| 384 | 1,189 / 13 / 16 | 944 / 11 / 11 |
+| 512 | 2,742 / 34 / 34 | 2,310 / 31 / 26 |
+| 1,024 | 13,771 / 146 / 159 | 12,380 / 131 / 143 |
+| 2,048 | 29,482 / 274 / 318 | 28,723 / 265 / 301 |
+| 4,096 | 32,292 / 308 / 340 | 32,267 / 308 / 340 |
+| 8,192 | 32,305 / 308 / 340 | 32,305 / 308 / 340 |
+
+所有对话完整写盘，训练器在选定上下文内取能放下的会话。用 384 token 训练时，这批数据只有约 3%–4% 的训练会话可用。普通网页、数学与代码文档沿用各自的续写窗口。运行后的 rebuild-audit.json 列出每档准入与扣除的监督 token，合并目录下的 corpus-manifest.json 记录每个划分的复用量和校验值。

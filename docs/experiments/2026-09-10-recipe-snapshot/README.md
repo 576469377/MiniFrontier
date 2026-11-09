@@ -1,5 +1,7 @@
 # 三个来源模型的配方实验（2026-09-10）
 
+[查看这次实验的逐步曲线、原始 JSON 和 CSV](https://github.com/576469377/MiniFrontier/tree/c41c84ba308f98e55997eaee1d2dd7d97a155188/docs/experiments/2026-09-10-recipe-snapshot)
+
 [返回实验索引](../../experiments.md) · [当前训练安排](../../pretraining-plan.md)
 
 **已完成的 Kimi、DeepSeek 对照支持保留 Muon 候选，学习率和 MTP 的收益仍需联合验证。** Qwen 的 AdamW 及部分 MTP 对照在采集时尚未结束。
@@ -37,33 +39,33 @@ uv run --no-project --with matplotlib==3.10.7 python scripts/plot_experiments.py
 
 ## 完整实验明细
 
-展开查看原精度的数值。实验名链接到 JSON，CSV 保存逐次曲线；`running` 表示采集时仍在运行。前四项为独立学习诊断，其 NLL 不与后面的 20M 配方结果混比。
+展开查看原精度的数值。历史归档中的 CSV 保存逐次曲线；`running` 表示采集时仍在运行。前四项为独立学习诊断，其 NLL 不与后面的 20M 配方结果混比。
 
 <details>
 <summary>20 条实验记录：配方 16 条、早期诊断 4 条</summary>
 
 | 实验与报告 | 采集时状态 | 累计 CE | 最近验证 LM NLL | 测得 CE/s |
 |---|---|---:|---:|---:|
-| [DeepSeek · 首轮诊断](strategy-diagnostics-v2--minideepseekv4.json) ([CSV](strategy-diagnostics-v2--minideepseekv4.csv)) | complete | 500735 | 1.452930539449056 | 163.5091131107459 |
-| [Kimi · 首轮诊断](strategy-diagnostics-v2--minikimik3.json) ([CSV](strategy-diagnostics-v2--minikimik3.csv)) | complete | 500450 | 1.1787232716878255 | 135.16564801724988 |
-| [Qwen · 首轮诊断](strategy-diagnostics-v2--miniqwen4.json) ([CSV](strategy-diagnostics-v2--miniqwen4.csv)) | complete | 500450 | 1.1579292233784992 | 55.71579888290027 |
-| [Qwen · 续诊断](strategy-diagnostics-v2--miniqwen4-extension-1m.json) ([CSV](strategy-diagnostics-v2--miniqwen4-extension-1m.csv)) | complete | 500450 | 1.254478308359782 | 112.72600286013086 |
-| [DeepSeek · AdamW · 20M](strategy-recipe-pilots-v2--minideepseekv4--adamw-20m.json) ([CSV](strategy-recipe-pilots-v2--minideepseekv4--adamw-20m.csv)) | complete | 20013084 | 5.498143784134394 | 526.3428746014318 |
-| [DeepSeek · Muon · 20M](strategy-recipe-pilots-v2--minideepseekv4--muon-20m.json) ([CSV](strategy-recipe-pilots-v2--minideepseekv4--muon-20m.csv)) | complete | 20013084 | 5.334631086140065 | 516.8445481960501 |
-| [Kimi · AdamW · 20M](strategy-recipe-pilots-v2--minikimik3--adamw-20m.json) ([CSV](strategy-recipe-pilots-v2--minikimik3--adamw-20m.csv)) | complete | 20010912 | 5.463168602161199 | 570.1488719772458 |
-| [Kimi · Muon · 20M](strategy-recipe-pilots-v2--minikimik3--muon-20m.json) ([CSV](strategy-recipe-pilots-v2--minikimik3--muon-20m.csv)) | complete | 20010912 | 5.25667633755248 | 561.3834668387981 |
-| [Qwen · AdamW · 20M](strategy-recipe-pilots-v2--miniqwen4-after-q0-extension--adamw-20m.json) ([CSV](strategy-recipe-pilots-v2--miniqwen4-after-q0-extension--adamw-20m.csv)) | running | 19212637 | 5.848418437576233 | 244.4018053020977 |
-| [Qwen · Muon · 20M](strategy-recipe-pilots-v2--miniqwen4-after-q0-extension--muon-20m.json) ([CSV](strategy-recipe-pilots-v2--miniqwen4-after-q0-extension--muon-20m.csv)) | complete | 20012550 | 5.017851688746724 | 287.222375773371 |
-| [DeepSeek · MTP 0](strategy-shared-gpu-v2--minideepseekv4--mtp-0.json) ([CSV](strategy-shared-gpu-v2--minideepseekv4--mtp-0.csv)) | complete | 20013084 | 5.334226843876047 | 503.4105322542753 |
-| [DeepSeek · MTP 0.1](strategy-shared-gpu-v2--minideepseekv4--mtp-0.1.json) ([CSV](strategy-shared-gpu-v2--minideepseekv4--mtp-0.1.csv)) | complete | 20013084 | 5.330807047457807 | 466.06439897155093 |
-| [Kimi · MTP 0](strategy-shared-gpu-v2--minikimik3--mtp-0.json) ([CSV](strategy-shared-gpu-v2--minikimik3--mtp-0.csv)) | complete | 20010912 | 5.289296183661418 | 548.8928905376886 |
-| [Kimi · MTP 0.2](strategy-shared-gpu-v2--minikimik3--mtp-0.2.json) ([CSV](strategy-shared-gpu-v2--minikimik3--mtp-0.2.csv)) | complete | 20010912 | 5.215082979486988 | 508.55441988661386 |
-| [Qwen · MTP 0](strategy-shared-gpu-v2--miniqwen4--mtp-0.json) ([CSV](strategy-shared-gpu-v2--miniqwen4--mtp-0.csv)) | running | 19546239 | 5.260053761240519 | 209.2897203502699 |
-| [Qwen · MTP 0.2](strategy-shared-gpu-v2--miniqwen4--mtp-0.2.json) ([CSV](strategy-shared-gpu-v2--miniqwen4--mtp-0.2.csv)) | running | 18041550 | 5.235745998607435 | 196.8388169293865 |
-| [DeepSeek · 低 LR](strategy-single-gpu-v2--minideepseekv4--lower-lr.json) ([CSV](strategy-single-gpu-v2--minideepseekv4--lower-lr.csv)) | complete | 20013084 | 6.0565902774399945 | 475.1350875442292 |
-| [DeepSeek · 参考 LR](strategy-single-gpu-v2--minideepseekv4--reference.json) ([CSV](strategy-single-gpu-v2--minideepseekv4--reference.csv)) | complete | 20013084 | 5.333452095412703 | 474.58811979007544 |
-| [Kimi · 低 LR](strategy-single-gpu-v2--minikimik3--lower-lr.json) ([CSV](strategy-single-gpu-v2--minikimik3--lower-lr.csv)) | complete | 20010912 | 5.080175087209892 | 528.1002065176235 |
-| [Kimi · 参考 LR](strategy-single-gpu-v2--minikimik3--reference.json) ([CSV](strategy-single-gpu-v2--minikimik3--reference.csv)) | complete | 20010912 | 5.256071488071545 | 531.151021157216 |
+| DeepSeek · 首轮诊断 | complete | 500735 | 1.452930539449056 | 163.5091131107459 |
+| Kimi · 首轮诊断 | complete | 500450 | 1.1787232716878255 | 135.16564801724988 |
+| Qwen · 首轮诊断 | complete | 500450 | 1.1579292233784992 | 55.71579888290027 |
+| Qwen · 续诊断 | complete | 500450 | 1.254478308359782 | 112.72600286013086 |
+| DeepSeek · AdamW · 20M | complete | 20013084 | 5.498143784134394 | 526.3428746014318 |
+| DeepSeek · Muon · 20M | complete | 20013084 | 5.334631086140065 | 516.8445481960501 |
+| Kimi · AdamW · 20M | complete | 20010912 | 5.463168602161199 | 570.1488719772458 |
+| Kimi · Muon · 20M | complete | 20010912 | 5.25667633755248 | 561.3834668387981 |
+| Qwen · AdamW · 20M | running | 19212637 | 5.848418437576233 | 244.4018053020977 |
+| Qwen · Muon · 20M | complete | 20012550 | 5.017851688746724 | 287.222375773371 |
+| DeepSeek · MTP 0 | complete | 20013084 | 5.334226843876047 | 503.4105322542753 |
+| DeepSeek · MTP 0.1 | complete | 20013084 | 5.330807047457807 | 466.06439897155093 |
+| Kimi · MTP 0 | complete | 20010912 | 5.289296183661418 | 548.8928905376886 |
+| Kimi · MTP 0.2 | complete | 20010912 | 5.215082979486988 | 508.55441988661386 |
+| Qwen · MTP 0 | running | 19546239 | 5.260053761240519 | 209.2897203502699 |
+| Qwen · MTP 0.2 | running | 18041550 | 5.235745998607435 | 196.8388169293865 |
+| DeepSeek · 低 LR | complete | 20013084 | 6.0565902774399945 | 475.1350875442292 |
+| DeepSeek · 参考 LR | complete | 20013084 | 5.333452095412703 | 474.58811979007544 |
+| Kimi · 低 LR | complete | 20010912 | 5.080175087209892 | 528.1002065176235 |
+| Kimi · 参考 LR | complete | 20010912 | 5.256071488071545 | 531.151021157216 |
 
 </details>
 

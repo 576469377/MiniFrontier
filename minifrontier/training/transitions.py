@@ -25,10 +25,18 @@ def load_previous(model, saved, *, transition="exact", stage="pretrain", resume=
         if changed != {"mtp_loss_coef"} or not 0 <= target["mtp_loss_coef"] <= 1:
             raise ValueError("MTP-weight transition may only change its loss coefficient")
     elif transition == "text-to-vision":
-        if saved["model_name"] != "minideepseekv4" or stage != "pretrain":
+        if saved["model_name"] not in {"minideepseekv4", "minideepseekv41"} or stage != "pretrain":
             raise ValueError("native Text-to-Vision is a DeepSeek continued-pretraining transition")
         from minifrontier.models.minideepseekv4.migration import migrate_text_state
 
+        if saved["model_name"] == "minideepseekv41" and "engram_pad_id" in changed:
+            # The old Engram tables were trained on this boundary ID. A tower-only
+            # migration must preserve which rows are used at sequence boundaries.
+            if changed - {"engram_pad_id", "vision_config"}:
+                raise ValueError("vision migration cannot change the text backbone")
+            model.config.engram_pad_id = source["engram_pad_id"]
+            report["inherited_engram_pad_id"] = model.config.engram_pad_id
+            report["changed"] = ["vision_config"]
         report["migration"] = migrate_text_state(model, saved["config"], saved["model"])
         return report
     else:

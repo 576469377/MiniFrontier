@@ -405,7 +405,7 @@ def audit_text_encoding(corpus, encoded, output):
                     if (
                         reference["stage"] != "pretrain"
                         or reference.get("media")
-                        or reference.get("turns")
+                        or (reference.get("turns") and reference.get("text_format") != "chat_turns")
                     ):
                         raise ValueError("reference is not a pure pretraining document")
                     if domain != (DOMAINS[reference["task"]] if compact else reference["task"]) or (
@@ -424,26 +424,50 @@ def audit_text_encoding(corpus, encoded, output):
                         or ids[-1] != 2
                     ):
                         raise ValueError("token bounds or complete document boundary differs")
-                    if mask[0] or not mask[1:].all():
-                        raise ValueError(
-                            "continuation loss mask does not cover exactly the document CE positions"
-                        )
                     failures = []
-                    if np.any(ids[1:-1] < len(controls)):
-                        failures.append("literal_control_encoded_as_protocol")
-                    text = reference["text"]
-                    if compact:
-                        for control in controls:
-                            text = text.replace(control, control[0] + "\u2060" + control[1:])
-                    if tokenizer.decode(ids[1:-1].tolist(), skip_special_tokens=False) != text:
-                        failures.append("decoded_text_differs")
+                    if reference.get("text_format") == "chat_turns":
+                        if compact:
+                            from minifrontier.data.minifrontier1_encoding import (
+                                canonical_text_tokens,
+                            )
+
+                            tokens, labels = canonical_text_tokens(reference, tokenizer)
+                            exp_ids, exp_labels = tokens[0].numpy(), labels[0].numpy()
+                        else:
+                            from minifrontier.data.text import chat_tokens
+
+                            exp_ids, exp_labels = chat_tokens(
+                                reference["turns"],
+                                tokenizer,
+                                mode=reference.get("mode"),
+                                effort=reference.get("effort"),
+                            )
+                        if not np.array_equal(ids, exp_ids) or not np.array_equal(
+                            mask, np.asarray(exp_labels) != -100
+                        ):
+                            raise ValueError(
+                                "dialogue roles, turn boundaries or answer labels differ"
+                            )
+                    else:
+                        if mask[0] or not mask[1:].all():
+                            raise ValueError(
+                                "continuation loss mask does not cover exactly the document CE positions"
+                            )
+                        if np.any(ids[1:-1] < len(controls)):
+                            failures.append("literal_control_encoded_as_protocol")
+                        text = reference["text"]
+                        if compact:
+                            for control in controls:
+                                text = text.replace(control, control[0] + "\u2060" + control[1:])
+                        if tokenizer.decode(ids[1:-1].tolist(), skip_special_tokens=False) != text:
+                            failures.append("decoded_text_differs")
                     errors.update(failures)
                     if failures and len(report["error_samples"]) < 20:
                         report["error_samples"].append(
                             dict(sample_id=identity, split=split, errors=failures)
                         )
-                    counts.update(records=1, input_tokens=len(ids), ce_tokens=len(ids) - 1)
-                    domains[domain] += len(ids) - 1
+                    counts.update(records=1, input_tokens=len(ids), ce_tokens=int(mask[1:].sum()))
+                    domains[domain] += int(mask[1:].sum())
                     lengths[
                         str(
                             next(

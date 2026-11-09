@@ -8,6 +8,8 @@
 
 阅读重点：[固定窗口 Kimi 对照](#固定全局-batch-后的-kimi-复验) · [14 组矩阵结果](#执行矩阵结果) · [失败、更正与停止决定](#处理决定)。
 
+当时各机器的调度队列和分卡计划可在[原始快照](https://github.com/576469377/MiniFrontier/tree/c41c84ba308f98e55997eaee1d2dd7d97a155188/docs/experiments/2026-09-10-batch-frontier)中查阅。
+
 ## 实测与解释
 
 这里的 **microbatch** 是一次前后向的样本上限，**input** 是非 padding 输入量，**CE** 是参与语言损失的监督 token。`reserved` 表示 PyTorch 分配器保留的显存；表中速度为指定更新窗口内的 CE/s。

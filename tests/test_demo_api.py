@@ -347,3 +347,30 @@ def test_mf1_text_uses_native_prompt_protocol(monkeypatch, chat, expected, famil
         )
         == "output"
     )
+
+
+def test_generate_http_history_selects_chat_and_passes_turns(api, monkeypatch):
+    payload = selected_request(api)
+    payload.pop("prompt")
+    history = [
+        dict(role="user", content="Remember 27."),
+        dict(role="assistant", content="27"),
+        dict(role="user", content="Which number?"),
+    ]
+
+    def generate(model, tokenizer, meta, prompt, *, chat, messages, **opts):
+        assert chat and prompt is None and messages == history
+        return "27"
+
+    monkeypatch.setattr(demo, "text_response", generate)
+    status, result = api("POST", "/api/generate", dict(payload, messages=history))
+    assert status == 200 and result["text"] == "27" and result["generation_mode"] == "chat"
+    for change in (
+        {"prompt": "overlap"},
+        {"mode": "completion"},
+        {"messages": []},
+        {"messages": history[:-1]},
+        {"messages": None},
+    ):
+        status, _ = api("POST", "/api/generate", dict(payload, messages=history) | change)
+        assert status == 400

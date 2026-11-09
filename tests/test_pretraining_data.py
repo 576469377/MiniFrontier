@@ -19,7 +19,12 @@ def test_pretraining_dialogue_keeps_all_turns_in_continuation_text():
         ),
     ]
     row, reason = clean_record("ultrachat", dict(messages=turns, prompt_id="origin"), "row:7")
-    assert reason is None and row["stage"] == "pretrain" and "turns" not in row
+    assert (
+        reason is None
+        and row["stage"] == "pretrain"
+        and row["turns"] == turns
+        and row["text_format"] == "chat_turns"
+    )
     assert all(turn["content"] in row["text"] for turn in turns)
     assert row["group_id"] == "origin"
     assert row["raw_text_sha256"] == hashlib.sha256(row["text"].encode()).hexdigest()

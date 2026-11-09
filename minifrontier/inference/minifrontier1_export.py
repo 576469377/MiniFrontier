@@ -11,6 +11,7 @@ from torch.nn import functional as F
 
 from minifrontier.data import sha256
 from minifrontier.data.minifrontier1 import write_json
+from minifrontier.inference.media_profile import checkpoint_media_profile
 from minifrontier.models.factory import build_model
 from minifrontier.training.runtime import atomic_save
 
@@ -132,6 +133,7 @@ def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_
     artifact.update(
         format="mf1-export-v1",
         model=state,
+        inference_media_profile=checkpoint_media_profile(saved, checkpoint),
         source_checkpoint_sha256=sha256(checkpoint),
         quantization=dict(
             kind="int8-experts-reference" if int8 else "none",
@@ -169,6 +171,7 @@ def export_checkpoint(checkpoint, output, *, dtype="float32", int8=False, group_
             version="mf1-native-v1",
             vision=saved["config"]["vision_config"],
             max_media_tokens=saved["config"]["protected_media_tokens"],
+            inference_media_profile=artifact["inference_media_profile"],
         ),
     )
     (output / "MODEL_CARD.md").write_text(
@@ -192,6 +195,7 @@ def load_export(path, device="cpu"):
     if saved["model_name"] not in {"minifrontier1", "minifrontier11"}:
         raise ValueError("invalid MF1 export family")
     model = build_model(saved["model_name"], saved["config"], phase=saved["phase"])
+    model.inference_media_profile = checkpoint_media_profile(saved, path)
     quant = saved.get("quantization", {})
     if quant.get("kind") == "int8-experts-reference":
         modules = quantize_experts(model, quant["group_size"])

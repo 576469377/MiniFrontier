@@ -227,6 +227,26 @@ def encode_compact_dataset(data, output, config, *, max_gib=16, shard_tokens=64_
     )
 
 
+def canonical_text_tokens(row, tokenizer):
+    if row.get("text_format") == "chat_turns":
+        record = dict(
+            sample_id=row["sample_id"],
+            split_group=row["group_id"],
+            domain="structured",
+            supervision={"type": "answer_ce"},
+            messages=[
+                dict(role=t["role"], content=[dict(type="text", text=t["content"])])
+                for t in row["turns"]
+            ],
+        )
+        encoded = encode_record(record, tokenizer, None, None)
+        return encoded["input_ids"], encoded["labels"]
+    ids = torch.tensor([[1, *safe_text(tokenizer, row["text"]), 2]])
+    labels = ids.clone()
+    labels[:, 0] = -100
+    return ids, labels
+
+
 def encode_canonical_text(
     corpus, tokenizer_path, output, config, *, max_gib=3, shard_tokens=64_000_000
 ):
@@ -266,7 +286,8 @@ def encode_canonical_text(
         formal_admission=False,
         source_corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
         source_audit_sha256=sha256(corpus / "source-audit.json"),
-        boundary_protocol="BOS + control-escaped text + EOS; one-token context overlap between windows",
+        boundary_protocol="BOS/document/EOS or MF1 role-marked dialogue with assistant-only CE",
+        dialogue_template="mf1-control-v1",
         raw_text_copied=False,
     )
 
@@ -275,14 +296,18 @@ def encode_canonical_text(
             "SELECT payload,group_root FROM samples WHERE split=? ORDER BY id", (split,)
         ):
             row = json.loads(payload)
-            if row["stage"] != "pretrain" or row.get("media") or row.get("turns"):
+            if (
+                row["stage"] != "pretrain"
+                or row.get("media")
+                or (row.get("turns") and row.get("text_format") != "chat_turns")
+            ):
                 raise ValueError("canonical text component only accepts pure pretraining documents")
-            ids = torch.tensor([[1, *safe_text(tokenizer, row["text"]), 2]])
-            labels = ids.clone()
-            labels[:, 0] = -100
+            ids, labels = canonical_text_tokens(row, tokenizer)
             origin = {
                 k: row[k] for k in ("source", "revision", "item_id", "license", "content_hash")
             }
+            if row.get("text_format") == "chat_turns":
+                origin["text_format"] = "chat_turns"
             yield (
                 dict(origin=origin),
                 dict(
@@ -361,9 +386,16 @@ def extend_canonical_text(corpus, parent, output, config, *, max_gib=3, shard_to
             "SELECT id,stage,task,split,group_root,payload FROM samples"
         ):
             row = json.loads(payload)
-            if stage != "pretrain" or row.get("media") or row.get("turns"):
+            if (
+                stage != "pretrain"
+                or row.get("media")
+                or (row.get("turns") and row.get("text_format") != "chat_turns")
+            ):
                 raise ValueError("text extension only accepts pure pretraining documents")
-            remaining[identity] = (split, group, domain_map[task], {k: row[k] for k in provenance})
+            origin = {k: row[k] for k in provenance}
+            if row.get("text_format") == "chat_turns":
+                origin["text_format"] = "chat_turns"
+            remaining[identity] = (split, group, domain_map[task], origin)
         require_space(output, min(int(max_gib * 1024**3), 16 * 1024**2))
         output.mkdir(parents=True)
         os.link(parent / "tokenizer.json", output / "tokenizer.json")
@@ -393,11 +425,15 @@ def extend_canonical_text(corpus, parent, output, config, *, max_gib=3, shard_to
                         if identity in seen:
                             raise ValueError("duplicate sample in parent text encoding")
                         seen.add(identity)
-                        target = remaining.pop(identity, None)
+                        target = remaining.get(identity)
                         if target is None:
                             stats["old_documents_excluded"] += 1
                             continue
                         split, group, domain, origin = target
+                        # Structured rows must reproduce the newly bound turn protocol and CE mask.
+                        if origin.get("text_format") == "chat_turns":
+                            continue
+                        remaining.pop(identity)
                         if any(old["origin"][k] != origin[k] for k in provenance):
                             raise ValueError("retained document source/content changed")
                         if original["domains"][int(indexes[local_index]["domain"])] != domain:
@@ -475,9 +511,7 @@ def extend_canonical_text(corpus, parent, output, config, *, max_gib=3, shard_to
                 _, expected_group, domain, origin = remaining.pop(identity)
                 if group != expected_group:
                     raise ValueError("new corpus group changed during encoding")
-                ids = torch.tensor([[1, *safe_text(tokenizer, row["text"]), 2]])
-                labels = ids.clone()
-                labels[:, 0] = -100
+                ids, labels = canonical_text_tokens(row, tokenizer)
                 stats["new_documents_tokenized"] += 1
                 yield (
                     dict(origin=origin),
@@ -528,10 +562,11 @@ def extend_canonical_text(corpus, parent, output, config, *, max_gib=3, shard_to
         result = dict(
             new,
             kind="canonical_text_component",
+            dialogue_template="mf1-control-v1",
             splits=splits,
             source_corpus_manifest_sha256=sha256(corpus / "corpus-manifest.json"),
             source_audit_sha256=sha256(corpus / "source-audit.json"),
-            boundary_protocol=original["boundary_protocol"],
+            boundary_protocol="BOS/document/EOS or MF1 role-marked dialogue with assistant-only CE",
             raw_text_copied=False,
             parent_encoding_manifest_sha256=parent_hash,
             incremental_reuse=dict(
@@ -933,6 +968,13 @@ def _encode_compact_items(
                     )
                 if text_document:
                     counts["text_documents"] += 1
+                    if record.get("origin", {}).get("text_format") == "chat_turns":
+                        counts["complete_dialogues"] += 1
+                        if len(ids) > config.max_position_embeddings:
+                            counts["dialogues_over_model_context"] += 1
+                            counts["dialogue_ce_over_model_context"] += int(
+                                (labels[1:] != -100).sum()
+                            )
                 domain_ce[domain] += int((labels[1:] != -100).sum())
             _close_part(parts, handles, paths, counts)
         finally:
@@ -1050,7 +1092,14 @@ class CompactDataset:
         return self.manifest["domains"][int(self._entry(index)[1]["domain"])]
 
     def windowable_at(self, index):
-        counts = self.parts[self._entry(index)[0]]["counts"]
+        part, entry = self._entry(index)
+        counts = self.parts[part]["counts"]
+        if (
+            counts.get("complete_dialogues")
+            and self.domain_at(index) == "structured"
+            and self._metadata(part, entry).get("origin", {}).get("text_format") == "chat_turns"
+        ):
+            return False
         return counts.get("text_documents", 0) == counts["records"]
 
     def _loss_mask(self, index, start=0, capacity=None):
@@ -1091,6 +1140,16 @@ class CompactDataset:
     def __getitem__(self, index):
         return self._read_item(index)
 
+    def _metadata(self, part, entry):
+        metadata_offset = int(entry["metadata_offset"])
+        return json.loads(
+            bytes(
+                self._open_part(part)["metadata.jsonl"][
+                    metadata_offset : metadata_offset + int(entry["metadata_bytes"])
+                ]
+            )
+        )
+
     def _read_item(self, index, *, start=0, capacity=None):
         part, entry = self._entry(index)
         arrays = self._open_part(part)
@@ -1103,14 +1162,7 @@ class CompactDataset:
         ]
         mask = self._loss_mask(index, start, capacity)
         labels = ids.clone().masked_fill(~torch.from_numpy(mask)[None], -100)
-        metadata_offset = int(entry["metadata_offset"])
-        metadata = json.loads(
-            bytes(
-                arrays["metadata.jsonl"][
-                    metadata_offset : metadata_offset + int(entry["metadata_bytes"])
-                ]
-            )
-        )
+        metadata = self._metadata(part, entry)
         resources = {r["media_id"]: r for r in metadata["resources"]}
         spans, loaded = [], {}
         remaining = self.config.protected_media_tokens

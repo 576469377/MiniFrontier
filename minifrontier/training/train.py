@@ -20,6 +20,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from minifrontier.data import StageDataset, sha256
+from minifrontier.inference.media_profile import checkpoint_media_profile
 from minifrontier.models.factory import build_model, configure_posttraining
 from minifrontier.training.batching import input_target, microbatch_count, parse_schedule
 from minifrontier.training.budgets import TokenLedger, scaled_ce, window_counts
@@ -348,6 +349,14 @@ def run(args, rank, world, device):
             )
     config = args.config or (saved["config"] if saved else None)
     model = build_model(args.model, config, phase=phase).to(device)
+    if args.model == "minideepseekv41" and device.type == "cuda":
+        policy = os.environ.get("MINIFRONTIER_V41_ACTIVATIONS", "config")
+        if policy not in {"config", "retain"}:
+            raise ValueError("MINIFRONTIER_V41_ACTIVATIONS must be config or retain")
+        if policy == "retain":
+            model.retain_activations = True
+            if model.vision is not None:
+                model.vision.retain_activations = True
     if args.model == "miniqwen4" and phase == "dense_pretrain" and device.type == "cuda":
         model.set_dense_attention_backend("sdpa")
         model.set_gdn_backend("fla" if find_spec("fla") is not None else "torch")
@@ -477,6 +486,9 @@ def run(args, rank, world, device):
     dataset_stage = args.stage if args.stage in {"sft", "dpo"} else "pretrain"
     train: Any = StageDataset(data_dir, dataset_stage, "train", args.sequence_length)
     val: Any = StageDataset(data_dir, dataset_stage, "val", args.sequence_length)
+    media_profile = getattr(train.documents, "inference_media_profile", {}) or (
+        checkpoint_media_profile(saved, args.resume or args.init) if saved else {}
+    )
     rollout = validation_rollout = None
     if args.stage in {"grpo", "mopd", "opd"}:
         from tokenizers import Tokenizer
@@ -778,6 +790,12 @@ def run(args, rank, world, device):
             json.dumps(
                 dict(
                     **run_spec,
+                    overlength_dialogues={
+                        name: dict(
+                            getattr(getattr(dataset, "documents", None), "overlength_dialogues", {})
+                        )
+                        for name, dataset in (("train", train), ("val", val))
+                    },
                     started_at=time.time(),
                     kind=args.run_kind,
                     data=str(data_dir),
@@ -1013,6 +1031,7 @@ def run(args, rank, world, device):
                     step=step,
                     token_ledger=ledger.state_dict(),
                     tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
+                    inference_media_profile=media_profile,
                     chat_template=run_spec.get("rollout", {}).get(
                         "chat_template", run_spec["chat_template"]
                     ),
@@ -1097,6 +1116,7 @@ def run(args, rank, world, device):
                 data_cursor=consumed_cursor() if args.token_mixture or args.media_mixture else None,
                 rng=states,
                 run_spec=run_spec,
+                inference_media_profile=media_profile,
                 tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
                 token_ledger=ledger.state_dict(),
                 router_balance=balance.state_dict(),
@@ -1136,6 +1156,11 @@ def run(args, rank, world, device):
             parameters=sum(p.numel() for p in model.parameters() if p.is_floating_point()),
             world_size=world,
             data_prefetch_windows=int(prefetch is not None),
+            v41_activation_policy=(
+                os.environ.get("MINIFRONTIER_V41_ACTIVATIONS", "config")
+                if args.model == "minideepseekv41" and device.type == "cuda"
+                else None
+            ),
             dense_attention_backend=getattr(model, "dense_attention_backend", None),
             gdn_backend=getattr(model, "gdn_backend", None),
             sparse_attention_backend=getattr(model, "sparse_attention_backend", None),
@@ -1671,6 +1696,7 @@ def run(args, rank, world, device):
                 step=step,
                 token_ledger=ledger.state_dict(),
                 tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
+                inference_media_profile=media_profile,
                 chat_template=run_spec.get("rollout", {}).get(
                     "chat_template", run_spec["chat_template"]
                 ),

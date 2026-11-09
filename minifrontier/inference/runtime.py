@@ -10,6 +10,8 @@ import torch
 from tokenizers import Tokenizer
 
 from minifrontier.data import chat_tokens, sha256
+from minifrontier.inference.history import validate_history
+from minifrontier.inference.media_profile import checkpoint_media_profile
 from minifrontier.models.factory import build_model, configure_posttraining
 
 
@@ -111,7 +113,10 @@ def generate_ids(
     return all_ids
 
 
+@torch.inference_mode(False)
+@torch.no_grad()
 def load_checkpoint(path, device="cpu"):
+    # Reference caches use the version counters of loaded parameters.
     path = Path(path).resolve()
     saved = torch.load(path, map_location="cpu", weights_only=True)
     if saved.get("format") == "mf1-export-v1":
@@ -135,6 +140,7 @@ def load_checkpoint(path, device="cpu"):
     model.load_state_dict(saved["model"], strict=True)
     configure_posttraining(model)
     run = saved.get("run_spec", {})
+    model.inference_media_profile = checkpoint_media_profile(saved, path)
     model.chat_template = saved.get(
         "chat_template",
         run.get("rollout", {}).get("chat_template", run.get("chat_template", "legacy")),
@@ -152,8 +158,9 @@ def load_checkpoint(path, device="cpu"):
 def respond(
     model,
     tokenizer,
-    prompt,
+    prompt=None,
     *,
+    messages=None,
     chat=True,
     max_new_tokens=64,
     temperature=0.8,
@@ -163,8 +170,19 @@ def respond(
     mode=None,
     effort=None,
     images=None,
-    max_image_features=64,
+    max_image_features=None,
+    image_placeholders=None,
+    video_frames=None,
+    timestamps=None,
+    max_video_features=None,
+    image_representation="standard",
+    min_pixels=None,
+    visual_protocol=None,
 ):
+    if messages is not None:
+        validate_history(prompt, messages, chat=chat, media=bool(images or video_frames))
+    elif not isinstance(prompt, str):
+        raise ValueError("provide prompt text or messages")
     if (
         chat
         and mode is None
@@ -172,53 +190,141 @@ def respond(
         and getattr(model, "chat_template", "legacy") == "control-v1"
     ):
         mode, effort = "direct", "low"
-    if not chat and (mode is not None or effort is not None or images):
+    if not chat and (mode is not None or effort is not None or images or video_frames):
         raise ValueError("controlled/native-media generation currently uses the chat template")
-    ids = (
-        chat_tokens(
-            [{"role": "user", "content": prompt}],
-            tokenizer,
-            generation_prompt=True,
-            mode=mode,
-            effort=effort,
-        )[0]
-        if chat
-        else [1, *tokenizer.encode(prompt).ids]
-    )
     device = next(model.parameters()).device
     media = None
-    if images:
-        from minifrontier.multimodal import prepare_record
+    mf1_chat = chat and getattr(model, "chat_template", None) == "mf1-control-v1"
+    if mf1_chat:
+        from minifrontier.inference.minifrontier1 import prepare_prompt
+
+        if effort is not None:
+            raise ValueError("MF1 uses direct or thinking mode without an effort slot")
+        inputs, media = prepare_prompt(
+            model,
+            tokenizer,
+            prompt,
+            messages=messages,
+            images=images,
+            mode=mode or "direct",
+            max_image_features=max_image_features,
+            video_frames=video_frames,
+            timestamps=timestamps,
+            max_video_features=max_video_features,
+            image_representation=image_representation,
+        )
+        ids = inputs[0].tolist()
+        inputs = inputs.to(device)
+        from minifrontier.multimodal import move
+
+        media = move(media, device)
+    elif images or video_frames:
+        from minifrontier.multimodal import LITERAL_VISUAL, VISUAL_CHAT, prepare_record
 
         model_type = type(model).__name__
         family = {
             "MiniKimiK3ForCausalLM": "minikimik3",
             "MiniQwen4ForCausalLM": "miniqwen4",
+            "MiniDeepSeekV41ForCausalLM": "minideepseekv41",
             "MiniDeepSeekV4ForCausalLM": "minideepseekv4",
         }.get(model_type)
         if family is None:
             raise ValueError(
                 f"native image generation is not supported by this entry point for {model_type}"
             )
-        if "<|image|>" not in prompt:
-            prompt = "<|image|>" * len(images) + "\n" + prompt
-        native = prepare_record(
-            dict(
+        if (
+            family in {"minideepseekv4", "minideepseekv41"}
+            and getattr(model, "vision", None) is None
+        ):
+            raise ValueError(
+                f"native image generation requires a trained vision tower for {model_type}"
+            )
+        profile = getattr(model, "inference_media_profile", {})
+        observed = profile.get("visual_prompt_counts", {})
+        if visual_protocol is None and len(observed) == 1:
+            visual_protocol = next(iter(observed))
+        if visual_protocol == "control-v1":
+            mode, effort = mode or "direct", effort or "low"
+        elif visual_protocol in {"literal-qa", "legacy", "raw-document"}:
+            mode, effort = None, None
+        encoding = LITERAL_VISUAL if visual_protocol == "literal-qa" else VISUAL_CHAT
+        resources: list[dict[str, Any]] = [
+            dict(path=str(Path(path).resolve())) for path in images or []
+        ]
+        if video_frames:
+            from PIL import Image
+
+            from minifrontier.data.media_hash import decoded_hashes
+
+            hashes = []
+            for path in video_frames:
+                with Image.open(path) as frame:
+                    hashes.append(decoded_hashes(frame)["rgb_sha256"])
+            resources.append(
+                dict(
+                    kind="video",
+                    frames=list(map(str, video_frames)),
+                    frame_rgb_sha256=hashes,
+                    timestamps=timestamps,
+                )
+            )
+        # Plain questions are literal. Explicit markup can place images inside a turn.
+        marked = (
+            prompt.startswith("<|image|>") if image_placeholders is None else image_placeholders
+        )
+        if visual_protocol == "raw-document":
+            record = dict(stage="pretrain", text=prompt, media=resources)
+        elif not marked or visual_protocol == "literal-qa":
+            record = dict(
+                stage="sft", visual_question=prompt, mode=mode, effort=effort, media=resources
+            )
+        else:
+            if "<|image|>" not in prompt:
+                prompt = "<|image|>" * len(resources) + "\n" + prompt
+            record = dict(
                 stage="sft",
                 mode=mode,
                 effort=effort,
                 turns=[dict(role="user", content=prompt)],
-                media=[dict(path=str(Path(path).resolve())) for path in images],
-            ),
+                media=resources,
+            )
+        requested_cap = max_video_features if video_frames and not images else max_image_features
+        native = prepare_record(
+            record,
             tokenizer,
             family,
-            max_features=max_image_features,
+            max_features=profile.get("image_max_features", 64)
+            if requested_cap is None
+            else requested_cap,
+            min_pixels=profile.get("min_pixels") if min_pixels is None else min_pixels,
+            pretrain_encoding=encoding,
             generation_prompt=True,
+            patch_size=model.vision.config.patch_size if family == "minideepseekv41" else 14,
             model_vocab_size=model.config.vocab_size,
         ).to(device)
         inputs, media = native.input_ids, native.extras["media"]
         ids = inputs[0].tolist()
     else:
+        if messages is not None and any("channel" in turn for turn in messages):
+            raise ValueError("channel is an MF1 message field")
+        if (
+            messages is not None
+            and mode is None
+            and effort is None
+            and any(turn.get("reasoning") for turn in messages)
+        ):
+            raise ValueError("reasoning history requires the control-v1 template")
+        ids = (
+            chat_tokens(
+                messages if messages is not None else [{"role": "user", "content": prompt}],
+                tokenizer,
+                generation_prompt=True,
+                mode=mode,
+                effort=effort,
+            )[0]
+            if chat
+            else [1, *tokenizer.encode(prompt).ids]
+        )
         inputs = torch.tensor([ids], device=device)
     if draft is None:
         result = generate_ids(
@@ -245,7 +351,7 @@ def respond(
             media=media,
         )
     response_ids = result[0, len(ids) :].tolist()
-    if mode is not None or effort is not None:
+    if not mf1_chat and (mode is not None or effort is not None):
         from minifrontier.chat_controls import parse_action
 
         parsed = parse_action(response_ids, tokenizer)

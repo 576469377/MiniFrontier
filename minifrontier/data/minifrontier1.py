@@ -152,7 +152,6 @@ def validate_record(record, root, *, allow_sources=None):
 
 def prepare_media(resource, config, root, remaining, *, file_reader=None):
     """Apply the same deterministic pixel transform in record and binary loaders."""
-    processing = processing_for(config)
     frames = []
     for uri, checksum in zip(
         resource.get("frames", [resource.get("uri")]),
@@ -162,15 +161,38 @@ def prepare_media(resource, config, root, remaining, *, file_reader=None):
         source = Path(root) / uri if file_reader is None else io.BytesIO(file_reader(uri, checksum))
         with Image.open(source) as image:
             frames.append(image.convert("RGB"))
+    return transform_media(
+        frames,
+        config,
+        remaining,
+        **{
+            key: resource[key]
+            for key in ("representation", "max_features", "timestamps")
+            if key in resource
+        },
+    )
+
+
+def transform_media(
+    frames, config, remaining, *, representation="standard", max_features=None, timestamps=None
+):
+    """Expand decoded pixels identically for training, CLI and browser input."""
+    processing = processing_for(config)
+    if max_features is not None and (type(max_features) is not int or max_features < 1):
+        raise ValueError("media feature cap must be a positive integer")
+    if representation not in {"standard", "document"} or (
+        representation == "document" and len(frames) != 1
+    ):
+        raise ValueError("document processing requires one image")
     samples = (
         processing.process_document(frames[0], patch_size=config.vision_config.patch_size)
-        if resource.get("representation") == "document"
+        if representation == "document"
         else [
             processing.process_frames(
                 frames,
-                max_features=min(resource.get("max_features", remaining), remaining),
+                max_features=min(remaining if max_features is None else max_features, remaining),
                 patch_size=config.vision_config.patch_size,
-                timestamps=resource.get("timestamps"),
+                timestamps=timestamps,
             )
         ]
     )
@@ -186,10 +208,11 @@ def encode_record(record, tokenizer, config, root, *, generation_prompt=False):
     spans: list[dict[str, Any]] = []
     resources = {m["media_id"]: m for m in record.get("media", [])}
     roles = {"system": 3, "user": 4, "assistant": 5, "tool": 6}
-    for message in record["messages"]:
+    messages = record["messages"]
+    if generation_prompt and messages[-1]["role"] == "assistant":
+        messages = messages[:-1]
+    for message in messages:
         role = message["role"]
-        if generation_prompt and role == "assistant":
-            break
         ids.append(roles[role])
         labels.append(-100)
         if role == "assistant":
@@ -234,13 +257,13 @@ def encode_record(record, tokenizer, config, root, *, generation_prompt=False):
             2 if role == "assistant" or record["supervision"]["type"] == "continuation_ce" else -100
         )
     if generation_prompt:
-        thinking = record.get("mode") == "thinking" or any(
-            m.get("channel") == "thinking" for m in record["messages"]
+        thinking = record.get("mode") == "thinking" or (
+            record["messages"][-1].get("channel") == "thinking"
         )
         prefix = [5] if record.get("tool_environment") else [5, 15 if thinking else 17]
         ids.extend(prefix)
         labels.extend([-100] * len(prefix))
-    if len(ids) > config.max_position_embeddings:
+    if config is not None and len(ids) > config.max_position_embeddings:
         raise ValueError(
             "expanded sample exceeds context; truncation requires a traceable data transform"
         )

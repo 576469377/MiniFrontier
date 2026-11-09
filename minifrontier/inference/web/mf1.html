@@ -66,7 +66,7 @@
 <p id="status" class="status" role="status" aria-live="polite">正在读取检查点信息…</p>
 </div>
 </section>
-<section class="panel"><div class="panel-heading"><h2>生成记录</h2><span id="result-count" class="muted">0 次</span><button id="clear-results" class="secondary" disabled>清空记录</button></div><div class="panel-body"><p class="hint">仅保留本页最近 8 次结果，刷新即清空；记录不保存媒体文件。</p><div id="answer" aria-live="polite"><p class="empty-state">输入预算检查通过后，即可生成。</p></div></div></section>
+<section class="panel"><div class="panel-heading"><h2>生成记录</h2><span id="result-count" class="muted">0 次</span><button id="clear-results" class="secondary" disabled>清空记录</button></div><div class="panel-body"><p class="hint">每次生成只读取当前输入和所选媒体。最近 8 次结果保留在本页，刷新后清空。</p><div id="answer" aria-live="polite"><p class="empty-state">输入预算检查通过后，即可生成。</p></div></div></section>
 </main>
 <aside class="inspector"><details id="budget-panel" class="panel collapsible-panel" open><summary class="panel-heading"><h2>输入预算</h2></summary><div class="panel-body"><p id="plan" class="muted">尚未检查。修改输入后需要重新检查。</p><progress id="usage" value="0" max="1" hidden></progress><div id="media-preview" class="media-grid"></div><p id="preview-note" class="hint" hidden>缩略图展示所选图片与实际采样帧；标注尺寸为模型处理后的大小。视频只输入这些帧。</p></div></details></aside>
 </div>

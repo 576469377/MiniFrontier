@@ -1,6 +1,6 @@
 # 脚本导航
 
-本目录提供 Git checkout 中的观测、调度、诊断和开发工具，命令在仓库根目录执行。日常训练与推理使用 CLI，见[MF1 指南](../docs/guides/minifrontier1.md)、[来源模型最小示例](../docs/guides/quickstart.md)及新增 [V4.1 模型页](../docs/models/minideepseekv41.md)；wheel 的支持范围见[版本说明](../docs/releases/v0.1.0.md#分发支持范围)。
+本目录提供 Git checkout 中的观测、调度、诊断和开发工具，命令在仓库根目录执行。日常训练与推理使用 CLI，见[MF1 指南](../docs/guides/minifrontier1.md)、[来源模型最小示例](../docs/guides/quickstart.md)及 [V4.1 模型页](../docs/models/minideepseekv41.md)；wheel 的支持范围见[版本说明](../docs/releases/v0.1.0.md#分发支持范围)。
 
 [返回文档导航](../docs/README.md) · [实验管理](../docs/operations/experiment-management.md) · [当前训练计划](../docs/pretraining-plan.md)
 
@@ -44,6 +44,6 @@
 
 | 任务 | 脚本与说明 |
 |---|---|
-| 验收已安装 wheel | [`check_installed_wheel.py`](check_installed_wheel.py)，按脚本说明在 checkout 外运行 |
+| 验收已安装 wheel | [`check_installed_wheel.py`](check_installed_wheel.py)：六版本配置与页面资源、原三个来源模型及 MF1.0 离线流程、MF1.1 训练的 Git 限制；按脚本说明在 checkout 外运行 |
 | 提取固定上游源码 | [`extract_training_sources.py`](extract_training_sources.py)、[`extract_vision_sources.py`](extract_vision_sources.py)；保留来源与归属，见[第三方说明](../THIRD_PARTY_NOTICES.md) |
 | 从原始方案生成来源模型计划 | [`build_strategy_plans.py`](build_strategy_plans.py)；原文绑定方式见[方案索引](../docs/training-strategies/README.md#原文与复现) |

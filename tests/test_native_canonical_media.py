@@ -115,8 +115,8 @@ def test_canonical_literals_stay_text_and_full_pt_targets_reach_vision(corpus, f
     root, tokenizer_path, _, rows = corpus
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
     row = rows[0][1]
-    expected = "\nUser: " + row["visual_question"] + "\nAssistant: " + row["visual_answer"]
-    assert "<|image|>" in expected and "<|eos|>" in expected
+    expected = row["visual_answer"]
+    assert "<|eos|>" in expected
     before = tokenizer.encode_special_tokens
     batch = prepare_record(
         row,
@@ -130,7 +130,7 @@ def test_canonical_literals_stay_text_and_full_pt_targets_reach_vision(corpus, f
     target = batch.labels[0][batch.labels[0].ne(-100)].tolist()
     assert tokenizer.decode(target, skip_special_tokens=True) == expected
     assert set(target).intersection(range(20)) == {2}
-    assert batch.labels[0, -1] == 2 and batch.input_ids.eq(2).sum() == 1
+    assert batch.labels[0, -1] == 2 and batch.input_ids.eq(2).sum() == 2
     assert batch.input_ids.eq(7).sum() == batch.image_features
     if family == "minikimik3":
         vision = KimiVisionConfig(
@@ -169,6 +169,33 @@ def test_canonical_literals_stay_text_and_full_pt_targets_reach_vision(corpus, f
             max_features=4,
             min_pixels=1024 if family == "miniqwen4" else None,
         )
+
+
+@pytest.mark.parametrize("family", ["minideepseekv4", "minideepseekv41", "minikimik3", "miniqwen4"])
+@pytest.mark.parametrize("control", [False, True])
+def test_visual_answer_starts_at_served_prompt(corpus, family, control):
+    root, tokenizer_path, _, rows = corpus
+    tokenizer = Tokenizer.from_file(str(tokenizer_path))
+    row = rows[0][1]
+    if control:
+        row = dict(row, mode="direct", effort="low")
+    opts = dict(
+        root=root, max_features=4, model_vocab_size=tokenizer.get_vocab_size(), min_pixels=784
+    )
+    full = prepare_record(row, tokenizer, family, **opts)
+    question = dict(row)
+    del question["visual_answer"]
+    prompt = prepare_record(question, tokenizer, family, generation_prompt=True, **opts)
+    boundary = prompt.input_ids.shape[1]
+    assert torch.equal(full.input_ids[:, :boundary], prompt.input_ids)
+    assert full.labels[:, :boundary].eq(-100).all()
+    assert prompt.labels.eq(-100).all()
+    assert full.labels[:, boundary:].equal(full.input_ids[:, boundary:])
+    assert full.labels[0, -1].item() == 2
+    assert full.image_features == prompt.image_features
+    for trained, served in zip(full.extras["media"], prompt.extras["media"], strict=True):
+        assert trained["start"] == served["start"]
+        torch.testing.assert_close(trained["patches"], served["patches"])
 
 
 @pytest.mark.parametrize("family", ["minikimik3", "miniqwen4"])
@@ -627,3 +654,70 @@ def test_native_composition_rejects_mismatched_model_or_shared_text(inputs, tmp_
     (copied / "manifest.json").write_text(json.dumps(manifest))
     with pytest.raises(ValueError, match=match):
         assemble_native_components([child, copied], tmp_path / "invalid")
+
+
+@pytest.mark.parametrize(
+    "family,cap,floor",
+    [
+        ("minikimik3", 64, None),
+        ("miniqwen4", 49, 50176),
+        ("minideepseekv4", 64, 3136),
+        ("minideepseekv41", 64, 3136),
+    ],
+)
+@pytest.mark.parametrize("historical", [False, True])
+def test_respond_replays_bound_native_pixels_and_prompt(
+    corpus, monkeypatch, family, cap, floor, historical
+):
+    from minifrontier.inference import runtime
+    from minifrontier.multimodal import LITERAL_VISUAL, VISUAL_CHAT
+
+    root, tok_path, _, rows = corpus
+    tok = Tokenizer.from_file(str(tok_path))
+    row = rows[0][1]
+    model_name = {
+        "minikimik3": "MiniKimiK3ForCausalLM",
+        "miniqwen4": "MiniQwen4ForCausalLM",
+        "minideepseekv4": "MiniDeepSeekV4ForCausalLM",
+        "minideepseekv41": "MiniDeepSeekV41ForCausalLM",
+    }[family]
+    model = type(model_name, (), {})()
+    model.config = SimpleNamespace(vocab_size=tok.get_vocab_size())
+    model.vision = SimpleNamespace(config=SimpleNamespace(patch_size=14))
+    model.parameters = lambda: iter([torch.zeros(1)])
+    model.inference_media_profile = dict(
+        image_max_features=cap,
+        min_pixels=floor,
+        visual_prompt_counts={"literal-qa" if historical else "control-v1": 1},
+    )
+    reference = prepare_record(
+        row if historical else dict(row, mode="direct", effort="low"),
+        tok,
+        family,
+        root=root,
+        max_features=cap,
+        min_pixels=floor,
+        model_vocab_size=tok.get_vocab_size(),
+        pretrain_encoding=LITERAL_VISUAL if historical else VISUAL_CHAT,
+    )
+    captured = []
+
+    def capture(model, ids, *, media, **kwargs):
+        captured.append((ids, media))
+        return ids
+
+    monkeypatch.setattr(runtime, "generate_ids", capture)
+    runtime.respond(
+        model, tok, row["visual_question"], images=[root / m["path"] for m in row["media"]]
+    )
+    ids, media = captured[0]
+    assert ids.size(1) < reference.input_ids.size(1)
+    assert ids.tolist() == reference.input_ids[:, : ids.size(1)].tolist()
+    assert ids[0, -1] != 2
+    if historical:
+        assert tok.decode(ids[0, -2:].tolist(), skip_special_tokens=False).endswith("Assistant:")
+    else:
+        assert reference.labels[:, : ids.size(1)].eq(-100).all()
+    for trained, served in zip(reference.extras["media"], media, strict=True):
+        torch.testing.assert_close(trained["patches"], served["patches"], atol=0, rtol=0)
+        assert trained["start"] == served["start"]

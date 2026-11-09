@@ -63,3 +63,19 @@ uv run minifrontier mf1 demo --checkpoint outputs/mf1-export/model.pt \
 此入口在启动时加载并绑定一个检查点，详情和生成记录显示该版本。磁盘上的文件随后被替换不会更新内存中的模型；切换权重需重新启动并刷新页面。
 
 实验浏览器的生成请求串行执行，单次完成后释放加载的权重与 CUDA 缓存；独立 MF1 媒体 Demo 持续保留启动时的模型。两者均不更新训练权重或改写训练状态。
+
+## 在同一段对话中追问
+
+网页每次提交一项独立实验。命令行可用 `--messages` 提供完整的文本对话，最后一条是用户问题或工具结果。上一轮助手的原文也要放进数组。
+
+```bash
+minifrontier generate --checkpoint "$CHECKPOINT" --messages '[
+  {"role":"user","content":"请记住编号 GX-714。"},
+  {"role":"assistant","content":"记住了。"},
+  {"role":"user","content":"刚才的编号是什么？"}
+]'
+```
+
+Python 入口 `respond(model, tokenizer, messages=turns)` 和 `POST /api/generate` 使用同一数组。HTTP 请求沿用页面返回的模型标识与版本，将 `prompt` 字段替换为 `messages`。MF1 的专用生成命令也接受 `--messages`。图片、视频或原始文本续写沿用单轮 `--prompt`。
+
+control-v1 的历史按训练格式传入：已有推理放在助手的 `reasoning` 字段，调用放在 `tool_calls`，执行结果是 `role: "tool"` 的文本消息。MF1 使用自己的助手 `channel`（`final`、`thinking` 或 `tool_call`）。

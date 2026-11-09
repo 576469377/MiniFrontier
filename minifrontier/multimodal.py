@@ -58,21 +58,49 @@ class TrainingBatch:
         )
 
 
-def pretraining_tokens(record, tokenizer):
+VISUAL_CHAT = "role_tokens_answer_eos_v1"
+LITERAL_VISUAL = "literal_question_answer_next_token_v1"
+
+
+def pretraining_tokens(
+    record, tokenizer, *, encoding=VISUAL_CHAT, generation_prompt=False, escape_angle_tags=True
+):
     """Keep raw text literal; only schema-declared media become structural image IDs."""
+    if encoding not in {VISUAL_CHAT, LITERAL_VISUAL}:
+        raise ValueError(f"unknown native pretraining encoding: {encoding}")
     resources = record.get("media", [])
     if "visual_question" in record or "visual_answer" in record:
         if not resources or any(
             not isinstance(record.get(key), str) or not record[key].strip()
-            for key in ("visual_question", "visual_answer")
+            for key in (
+                ("visual_question",) if generation_prompt else ("visual_question", "visual_answer")
+            )
         ):
             raise ValueError(
                 "canonical visual pretraining requires complete question/answer and media"
             )
+        if encoding == VISUAL_CHAT:
+            turns = [dict(role="user", content="\n" + record["visual_question"])]
+            if not generation_prompt:
+                turns.append(dict(role="assistant", content=record["visual_answer"]))
+            ids, labels = chat_tokens(
+                turns,
+                tokenizer,
+                generation_prompt=generation_prompt,
+                mode=record.get("mode"),
+                effort=record.get("effort"),
+                escape_angle_tags=escape_angle_tags,
+            )
+            start = ids.index(4) + 1
+            ids[start:start] = [7] * len(resources)
+            labels[start:start] = [-100] * len(resources)
+            return ids, labels
         # Same PT text objective as the canonical serialized document, including
         # the question. This does not apply the assistant-only SFT objective.
+        context = "\nUser: " + record["visual_question"] + "\nAssistant:"
+        # Byte-level BPE attaches the separator space to the first answer word.
         chunks = [""] * len(resources) + [
-            "\nUser: " + record["visual_question"] + "\nAssistant: " + record["visual_answer"]
+            context if generation_prompt else context + " " + record["visual_answer"]
         ]
     elif resources:
         chunks = record["text"].split("<|image|>")
@@ -90,6 +118,8 @@ def pretraining_tokens(record, tokenizer):
             if index:
                 ids.append(7)
             ids.extend(tokenizer.encode(chunk, add_special_tokens=False).ids)
+        if generation_prompt:
+            return ids, [-100] * len(ids)
         ids.append(2)
         return ids, [-100, *ids[1:]]
     finally:
@@ -106,13 +136,24 @@ def prepare_record(
     generation_prompt=False,
     model_vocab_size=None,
     min_pixels=None,
+    patch_size=14,
+    pretrain_encoding=VISUAL_CHAT,
+    escape_angle_tags=True,
 ):
     if tokenizer.token_to_id("<|image|>") != 7:
         raise ValueError(
             "native media requires the frozen strategy tokenizer special-token mapping"
         )
-    if record.get("stage") == "pretrain":
-        ids, labels = pretraining_tokens(record, tokenizer)
+    if record.get("stage") == "pretrain" or (
+        "visual_question" in record and not record.get("turns")
+    ):
+        ids, labels = pretraining_tokens(
+            record,
+            tokenizer,
+            encoding=pretrain_encoding,
+            generation_prompt=generation_prompt,
+            escape_angle_tags=escape_angle_tags,
+        )
     else:
         ids, labels = chat_tokens(
             record["turns"],
@@ -120,6 +161,10 @@ def prepare_record(
             generation_prompt=generation_prompt,
             mode=record.get("mode"),
             effort=record.get("effort"),
+            escape_angle_tags=escape_angle_tags,
+            image_placeholders=None
+            if pretrain_encoding == LITERAL_VISUAL
+            else bool(record.get("media")),
         )
     resources = record.get("media", [])
     if ids.count(7) != len(resources):
@@ -157,14 +202,17 @@ def prepare_record(
             raise ValueError("video requires at least two genuine timestamped source frames")
         if not video and len(images) != 1:
             raise ValueError("multiple frames must be explicitly identified as video")
-        if family == "minideepseekv4":
+        if family in {"minideepseekv4", "minideepseekv41"}:
             if video:
                 raise ValueError("Vision-v1 image route does not claim video support")
-            from minifrontier.models.minideepseekv4.processing import process_image
+            from minifrontier.models.factory import model_processing
+
+            process_image = model_processing(family).process_image
 
             sample = process_image(
                 images[0],
                 start=len(output),
+                patch_size=patch_size,
                 max_features=max_features,
                 min_pixels=resource.get("min_pixels", 3136) if min_pixels is None else min_pixels,
             )
@@ -221,7 +269,7 @@ def prepare_record(
         media.append(sample)
         output.extend(tokens)
         targets.extend([-100] * len(tokens))
-        if family != "minideepseekv4":
+        if family not in {"minideepseekv4", "minideepseekv41"}:
             output.append(10)
             targets.append(-100)
         features += sample["feature_count"]

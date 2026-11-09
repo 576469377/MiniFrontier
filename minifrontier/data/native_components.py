@@ -15,7 +15,12 @@ from minifrontier.data import sha256
 from minifrontier.data.encoding_audit import _checked
 from minifrontier.data.media_cache import validate_policy
 from minifrontier.data.minifrontier1 import write_json
-from minifrontier.data.native import _check_text_origin, _shared_text_partitions, processor_identity
+from minifrontier.data.native import (
+    _check_text_origin,
+    _processor_matches,
+    _shared_text_partitions,
+    visual_prompt_protocol,
+)
 from minifrontier.storage import require_space
 
 PASSED = "mechanical_checks_passed_pending_quality_admission"
@@ -37,7 +42,7 @@ COUNT_KEYS = (
     "frames",
     "image_features",
 )
-MAP_KEYS = ("domain_ce", "rejected", "chat_template_counts")
+MAP_KEYS = ("domain_ce", "rejected", "chat_template_counts", "visual_prompt_counts")
 
 
 def _encoding_proof(root):
@@ -168,6 +173,7 @@ def rebind_native_components(components, text_encoding, output, *, max_gib=1, me
                     row["split_group"] in excluded
                     for _raw, row, _n in rows(root, old, stage, split)
                 )
+                protocols: Counter[str] = Counter()
                 target_file = target / media["file"]
                 writer = target_file.open("wb") if drop else None
                 try:
@@ -196,6 +202,9 @@ def rebind_native_components(components, text_encoding, output, *, max_gib=1, me
                             image_features=row["expected_ids"].count(7),
                         )
                         domains[record["task"]] += ce
+                        protocols[
+                            visual_prompt_protocol(record, old["native_pretrain_encoding"])
+                        ] += 1
                 finally:
                     if writer is not None:
                         writer.close()
@@ -209,6 +218,12 @@ def rebind_native_components(components, text_encoding, output, *, max_gib=1, me
                     media.update(
                         {key: kept[key] for key in COUNT_KEYS},
                         domain_ce=dict(domains),
+                        visual_prompt_counts=dict(protocols),
+                        chat_template_counts={
+                            key: n
+                            for key, n in protocols.items()
+                            if key in {"legacy", "control-v1"}
+                        },
                         sha256=sha256(target_file),
                         index_sha256=sha256(target / media["index_file"]),
                     )
@@ -298,7 +313,7 @@ def _component(root, baseline=None):
         or not manifest.get("text_source")
     ):
         raise ValueError("native composition requires standalone shared-text media encodings")
-    if manifest["native_processor_sha256"] != processor_identity(manifest["family"]):
+    if not _processor_matches(manifest):
         raise ValueError("native component processor changed")
     if sha256(root / "tokenizer.json") != manifest["tokenizer"]["sha256"]:
         raise ValueError("native component tokenizer changed")
@@ -453,7 +468,7 @@ def assemble_native_components(components, output, *, max_bytes=64 * 1024**2, me
                 counts.update({key: media[key] for key in COUNT_KEYS})
                 counts["input_tokens"] += inputs
                 for key in MAP_KEYS:
-                    maps[key].update(media[key])
+                    maps[key].update(media.get(key, {}))
             text = baseline["stages"][stage][split]["text"]
             stages[stage][split] = dict(
                 format="hybrid-native-v2",

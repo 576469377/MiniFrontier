@@ -1,11 +1,15 @@
 # ruff: noqa: RUF001
 """Discover saved runs and serve version-bound, single-device text diagnostics."""
 
+import base64
+import binascii
 import gc
+import io
 import json
 import math
 import os
 import pickle
+import tempfile
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,8 +18,10 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import torch
+from PIL import Image
 
 from minifrontier.inference.demo_web import page
+from minifrontier.inference.history import validate_history
 from minifrontier.inference.runtime import generate_ids, load_checkpoint, respond
 
 PAGE = page("checkpoint")
@@ -227,6 +233,11 @@ def checkpoints(root, stage=None, *, include_experiments=False, experiment_roots
             step=state.get("step"),
             state=state.get("state", "saved"),
             metadata_scope="saved_checkpoint",
+            supports_image=(
+                family == "minideepseekv41"
+                and isinstance(run.get("config"), dict)
+                and bool(run["config"].get("vision_config"))
+            ),
             artifact=ckpt.name,
             version=checkpoint_version(ckpt, stat),
             path=ckpt,
@@ -253,6 +264,29 @@ def demo_device(device="cpu", gpu=None):
     return "cuda:0", f"GPU {gpu} · {selected.name}"
 
 
+def uploaded_image(value):
+    if not isinstance(value, str):
+        raise ValueError("请选择 PNG、JPEG 或 WebP 图片")
+    header, separator, encoded = value.partition(",")
+    if not separator or header not in {
+        "data:image/png;base64",
+        "data:image/jpeg;base64",
+        "data:image/webp;base64",
+    }:
+        raise ValueError("请选择 PNG、JPEG 或 WebP 图片")
+    try:
+        raw = base64.b64decode(encoded, validate=True)
+        if len(raw) > 3 * 1024**2:
+            raise ValueError("图片超过 3 MiB")
+        with Image.open(io.BytesIO(raw)) as im:
+            if im.format not in {"PNG", "JPEG", "WEBP"} or im.width * im.height > 8_000_000:
+                raise ValueError("图片格式或像素数超出限制")
+            im.verify()
+    except (OSError, binascii.Error, Image.DecompressionBombError) as error:
+        raise ValueError("无法读取图片") from error
+    return raw
+
+
 def generation_settings(data):
     if not isinstance(data, dict):
         raise ValueError("请求必须是 JSON 对象")
@@ -260,7 +294,14 @@ def generation_settings(data):
         raise ValueError("请选择检查点")
     if not isinstance(data.get("version"), str) or not data["version"]:
         raise ValueError("缺少检查点版本，请刷新列表后重新选择")
-    if not isinstance(data.get("prompt"), str) or not data["prompt"].strip():
+    if "messages" in data:
+        validate_history(
+            data.get("prompt"),
+            data["messages"],
+            chat=data.get("mode") != "completion",
+            media="image_upload" in data,
+        )
+    elif not isinstance(data.get("prompt"), str) or not data["prompt"].strip():
         raise ValueError("请输入文本")
     if data.get("media") or data.get("images"):
         raise ValueError("此检查点页面仅支持文本；媒体输入请使用 MF1 多媒体页面")
@@ -303,13 +344,27 @@ def verify_version(candidate, expected):
         raise CheckpointChanged("所选检查点已更新，请刷新列表后重新选择")
 
 
-def text_response(model, tokenizer, meta, prompt, *, chat, max_new_tokens, temperature, top_p):
+def text_response(
+    model,
+    tokenizer,
+    meta,
+    prompt,
+    *,
+    chat,
+    max_new_tokens,
+    temperature,
+    top_p,
+    images=None,
+    messages=None,
+):
     if meta["model_name"] not in MF1_MODELS:
         return respond(
             model,
             tokenizer,
             prompt,
             chat=chat,
+            messages=messages,
+            **({"images": images} if images else {}),
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
@@ -319,7 +374,7 @@ def text_response(model, tokenizer, meta, prompt, *, chat, max_new_tokens, tempe
     from minifrontier.inference.minifrontier1 import prepare_prompt
 
     ids = (
-        prepare_prompt(model, tokenizer, prompt)[0]
+        prepare_prompt(model, tokenizer, prompt, messages=messages)[0]
         if chat
         else torch.tensor([[1, *safe_text(tokenizer, prompt)]])
     )
@@ -342,6 +397,7 @@ def create_server(
     gpu=None,
     include_experiments=False,
     experiment_roots=None,
+    default_stage="formal",
 ):
     """Build a server without starting its loop or loading a checkpoint."""
     if experiment_roots and not include_experiments:
@@ -349,7 +405,10 @@ def create_server(
     experiment_roots = experiment_directories(root, experiment_roots)
     device, device_label = demo_device(device, gpu)
     lock = threading.Lock()
-    default_stage = "formal"
+    if default_stage not in STAGES or (
+        default_stage in {"experiments", "history"} and not include_experiments
+    ):
+        raise ValueError("invalid initial demo stage")
 
     def discover(stage):
         return checkpoints(
@@ -413,10 +472,15 @@ def create_server(
             owns_slot = False
             try:
                 length = int(self.headers.get("Content-Length", 0))
-                if not 0 < length <= 32768:
-                    raise ValueError("请求内容须在 32 KiB 以内")
+                if not 0 < length <= 4 * 1024**2 + 32768:
+                    raise ValueError("请求过大")
                 data = json.loads(self.rfile.read(length))
                 settings = generation_settings(data)
+                image_bytes = (
+                    uploaded_image(data["image_upload"]) if "image_upload" in data else None
+                )
+                if image_bytes is None and length > 32768:
+                    raise ValueError("文本请求须在 32 KiB 以内")
                 started = time.perf_counter()
                 lock.acquire()
                 owns_slot = True
@@ -425,6 +489,10 @@ def create_server(
                 if candidate is None:
                     raise CheckpointChanged("所选检查点已不可用，请刷新列表后重新选择")
                 verify_version(candidate, data["version"])
+                if image_bytes is not None and not candidate["supports_image"]:
+                    raise ValueError("此检查点没有可用的 V4.1 视觉塔")
+                if image_bytes is not None and settings["mode"] == "completion":
+                    raise ValueError("图片问答请使用对话模式")
                 model = None
                 try:
                     load_start = time.perf_counter()
@@ -451,8 +519,11 @@ def create_server(
                     ):
                         raise CheckpointChanged("检查点与保存记录暂不一致，请刷新列表后重试")
                     load_seconds = time.perf_counter() - load_start
-                    chat = settings["mode"] == "chat" or (
-                        settings["mode"] == "auto" and meta["stage"] in CHAT_STAGES
+                    chat = (
+                        image_bytes is not None
+                        or "messages" in data
+                        or settings["mode"] == "chat"
+                        or (settings["mode"] == "auto" and meta["stage"] in CHAT_STAGES)
                     )
                     generation_start = time.perf_counter()
                     target = torch.device(device)
@@ -461,7 +532,15 @@ def create_server(
                         if target.type == "cuda"
                         else []
                     )
-                    with torch.random.fork_rng(devices=devices):
+                    with (
+                        tempfile.TemporaryDirectory() as tmp,
+                        torch.random.fork_rng(devices=devices),
+                    ):
+                        image_args = {}
+                        if image_bytes is not None:
+                            path = Path(tmp) / "upload.image"
+                            path.write_bytes(image_bytes)
+                            image_args["images"] = [str(path)]
                         torch.random.default_generator.manual_seed(settings["seed"])
                         for index in devices:
                             torch.cuda.default_generators[index].manual_seed(settings["seed"])
@@ -469,11 +548,13 @@ def create_server(
                             model,
                             tokenizer,
                             meta,
-                            data["prompt"],
+                            data.get("prompt"),
+                            messages=data.get("messages"),
                             chat=chat,
                             max_new_tokens=settings["max_new_tokens"],
                             temperature=settings["temperature"],
                             top_p=settings["top_p"],
+                            **image_args,
                         )
                     generation_seconds = time.perf_counter() - generation_start
                     completed = True
@@ -539,6 +620,7 @@ def serve(
     gpu=None,
     include_experiments=False,
     experiment_roots=None,
+    default_stage="formal",
 ):
     server = create_server(
         root=root,
@@ -548,8 +630,9 @@ def serve(
         gpu=gpu,
         include_experiments=include_experiments,
         experiment_roots=experiment_roots,
+        default_stage=default_stage,
     )
-    print(f"MiniFrontier demo: http://{host}:{server.server_port} · formal", flush=True)
+    print(f"MiniFrontier demo: http://{host}:{server.server_port} · {default_stage}", flush=True)
     try:
         server.serve_forever()
     finally:

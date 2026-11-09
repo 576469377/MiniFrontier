@@ -1,6 +1,6 @@
 # 文档导航
 
-MiniFrontier 文档分为模型说明、操作指南和实验记录。当前包含六个模型版本，结构与能力状态分别记录。首次使用从[首页 CPU 示例](../README.md#快速开始)开始，可在本地完成 MF1.0 的数据生成、训练、恢复和推理。
+首次阅读可从[一条样本到一次回答](guides/learning-path.md)入手，在 CPU 上跑通 MF1.0，随后比较训练前缀、助手标签和模型的实际生成。
 
 [项目首页](../README.md) · [预训练主计划](pretraining-plan.md) · [实验结果](experiments.md) · [发布范围](releases/v0.1.0.md)
 

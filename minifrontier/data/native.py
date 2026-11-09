@@ -2,6 +2,7 @@
 
 import contextlib
 import copy
+import hashlib
 import importlib
 import json
 import os
@@ -19,8 +20,16 @@ from minifrontier.data import sha256
 from minifrontier.data.corpus import DocumentDataset, encode_corpus
 from minifrontier.data.media_cache import MediaCache
 from minifrontier.data.partitions import corpus_storage_root, open_corpus
-from minifrontier.multimodal import prepare_record
+from minifrontier.multimodal import LITERAL_VISUAL, VISUAL_CHAT, prepare_record
 from minifrontier.storage import GIB, require_space, reserve_write
+
+
+def visual_prompt_protocol(row, encoding):
+    if row.get("stage") == "pretrain" and not row.get("visual_question"):
+        return "raw-document"
+    if row.get("stage") == "pretrain" and encoding == LITERAL_VISUAL:
+        return "literal-qa"
+    return record_template(row)
 
 
 def processor_identity(family):
@@ -32,6 +41,59 @@ def processor_identity(family):
             f"minifrontier.models.{family}.upstream_processing",
         )
     }
+
+
+# The first role-token writer escaped bracketed controls. Its tokenizer treated
+# a standalone <think> spelling as a reserved token in historical rows.
+_FIRST_ROLE_PROCESSOR = "b0d7d13bec7dcf651b0303f1dfea1a0100a053ae653ac59878ddd26a4a523340"
+
+
+def _escape_angle_tags(manifest):
+    return (
+        manifest.get("native_processor_sha256", {}).get("minifrontier.multimodal")
+        != _FIRST_ROLE_PROCESSOR
+    )
+
+
+def _processor_matches(manifest):
+    family = manifest["family"]
+    actual = processor_identity(family)
+    expected = manifest["native_processor_sha256"]
+    if expected == actual:
+        return True
+    shared = "minifrontier.multimodal"
+    current_reader = "79276e974e65856e60cb561f7017ea6262c29f5230d4dba21bfeadacff3c393c"
+    if actual[shared] == current_reader:
+        if expected.get(shared) in {
+            _FIRST_ROLE_PROCESSOR,
+            "ef342e399424cdad69ab2b8a764090cd576550761e0893d970382c1fadc6e6e0",
+        }:
+            return {**actual, shared: expected[shared]} == expected
+        if manifest.get("native_pretrain_encoding", LITERAL_VISUAL) == LITERAL_VISUAL:
+            actual[shared] = "e83c3d021e75dfc8931ae1e4d7159bf347c54db246a281c733b02e9a7307586b"
+            if expected == actual:
+                return True
+    # The V4.1 dispatch addition did not change the three existing pixel layouts.
+    # Bind both revisions so subsequent processor edits still invalidate old data.
+    if family == "minideepseekv41":
+        # The first classroom encodings preceded formatting of the two new
+        # processor modules. Their parsed Python syntax trees were identical.
+        def fingerprint(sources):
+            return hashlib.sha256(json.dumps(sources, sort_keys=True).encode()).hexdigest()
+
+        return (
+            fingerprint(actual)
+            == "fdbb36f88dcae91deb03585a99db9599bec59448c633be3071dd08937104541f"
+            and fingerprint(expected)
+            == "9a395b13a2913dcd8df3813a19c06a46a6069536034a2845ba0deb158f8302e1"
+        )
+    shared = "minifrontier.multimodal"
+    if (
+        family in {"minikimik3", "miniqwen4", "minideepseekv4"}
+        and actual[shared] == "e83c3d021e75dfc8931ae1e4d7159bf347c54db246a281c733b02e9a7307586b"
+    ):
+        actual[shared] = "f0d73db9d373820d306987d03ffb54024e8db8350226aa9401c4f0f7047bda10"
+    return expected == actual
 
 
 def _shared_text_partitions(root, expected_hash):
@@ -83,7 +145,7 @@ def encode_native(
     min_pixels=None,
 ):
     output, corpus_root = Path(output).resolve(), Path(corpus_root).resolve()
-    if family not in {"minikimik3", "miniqwen4", "minideepseekv4"}:
+    if family not in {"minikimik3", "miniqwen4", "minideepseekv4", "minideepseekv41"}:
         raise ValueError("unknown native media family")
     if output.exists():
         raise FileExistsError("native encoding requires a new output directory")
@@ -141,6 +203,7 @@ def encode_native(
                 offsets = []
                 rejected: Counter[str] = Counter()
                 template_counts: Counter[str] = Counter()
+                protocol_counts: Counter[str] = Counter()
                 domain_ce: Counter[str] = Counter()
                 examples = ce = image_count = video_count = frame_count = features = 0
                 records = db.execute(
@@ -194,7 +257,9 @@ def encode_native(
                             stream.write(serialized)
                         accounted += incoming
                         examples += 1
-                        if stage == "sft":
+                        protocol = visual_prompt_protocol(row, VISUAL_CHAT)
+                        protocol_counts[protocol] += 1
+                        if protocol in {"legacy", "control-v1"}:
                             template_counts[record_template(row)] += 1
                         count = int(prepared.labels[:, 1:].ne(-100).sum())
                         ce += count
@@ -221,6 +286,7 @@ def encode_native(
                     image_features=features,
                     rejected=dict(rejected),
                     chat_template_counts=dict(template_counts),
+                    visual_prompt_counts=dict(protocol_counts),
                 )
                 manifest["stages"][stage][split] = dict(
                     format="hybrid-native-v2",
@@ -238,8 +304,8 @@ def encode_native(
         model_vocab_size=vocab,
         sequence_length=max_length,
         native_corpus_sha256=sha256(corpus_root / "corpus-manifest.json"),
-        native_pretrain_encoding="literal_question_answer_next_token_v1",
-        native_pretrain_objective="all textual next-token targets including question and answer; media features and media markers masked",
+        native_pretrain_encoding=VISUAL_CHAT,
+        native_pretrain_objective="chat answers and assistant EOS for canonical QA; document continuation for raw text",
         native_processor_sha256=processor_identity(family),
         shared_text_files_copied=0 if text_encoding is not None else None,
         raw_media_copied=False,
@@ -280,7 +346,7 @@ def audit_native_encoding(corpus_root, encoded, output):
         if (
             manifest["native_corpus_sha256"] != report["corpus_manifest_sha256"]
             or manifest["tokenizer"]["sha256"] != report["tokenizer_sha256"]
-            or manifest["native_processor_sha256"] != processor_identity(manifest["family"])
+            or not _processor_matches(manifest)
         ):
             raise ValueError("native corpus/tokenizer/processor binding differs")
         tokenizer = Tokenizer.from_file(str(encoded / "tokenizer.json"))
@@ -347,7 +413,11 @@ def audit_native_encoding(corpus_root, encoded, output):
                                 row,
                                 tokenizer,
                                 manifest["family"],
+                                pretrain_encoding=manifest.get(
+                                    "native_pretrain_encoding", LITERAL_VISUAL
+                                ),
                                 root=manifest["media_root"],
+                                escape_angle_tags=_escape_angle_tags(manifest),
                                 max_features=manifest["max_features"],
                                 min_pixels=manifest.get("min_pixels"),
                                 model_vocab_size=manifest["model_vocab_size"],
@@ -384,12 +454,15 @@ def audit_native_encoding(corpus_root, encoded, output):
                                 )
                             targets = item.labels[0][item.labels[0].ne(-100)].tolist()
                             if stage == "pretrain" and "visual_answer" in row:
-                                expected_text = (
-                                    "\nUser: "
-                                    + row["visual_question"]
-                                    + "\nAssistant: "
-                                    + row["visual_answer"]
-                                )
+                                if manifest.get("native_pretrain_encoding") == VISUAL_CHAT:
+                                    expected_text = row["visual_answer"]
+                                else:
+                                    expected_text = (
+                                        "\nUser: "
+                                        + row["visual_question"]
+                                        + "\nAssistant: "
+                                        + row["visual_answer"]
+                                    )
                                 if (
                                     tokenizer.decode(targets, skip_special_tokens=True)
                                     != expected_text
@@ -449,7 +522,7 @@ class NativeDataset:
         manifest = json.loads((self.root / "manifest.json").read_text())
         self.family, self.max_features = manifest["family"], manifest["max_features"]
         if manifest.get("native_processor_sha256") is not None and (
-            manifest["native_processor_sha256"] != processor_identity(self.family)
+            not _processor_matches(manifest)
         ):
             raise ValueError("native processor sources changed since encoding")
         if sha256(self.root / "tokenizer.json") != manifest["tokenizer"]["sha256"]:
@@ -486,6 +559,17 @@ class NativeDataset:
             for path, media, child, pin in parts
         ]
         self.ends = list(accumulate(len(d) for d in self.media))
+        protocols = sum((d.prompt_counts for d in self.media), Counter())
+        floors = sum((d.min_pixels_counts for d in self.media), Counter())
+        self.inference_media_profile = {}
+        if protocols:
+            self.inference_media_profile = dict(
+                image_max_features=self.max_features,
+                min_pixels=max(floors, key=floors.__getitem__) if floors else None,
+                min_pixels_counts=dict(floors),
+                visual_prompt_counts=dict(protocols),
+            )
+        self.overlength_dialogues = self.text.overlength_dialogues
         self.domains = list(self.text.domains)
         self.ce_counts = list(self.text.ce_counts)
         self.input_counts = list(self.text.input_counts)
@@ -517,6 +601,8 @@ class _NativeMediaDataset:
     """Read one existing media shard without reopening or resampling shared text."""
 
     def __init__(self, root, media, manifest, length, tokenizer, *, pin=False):
+        self.pretrain_encoding = manifest.get("native_pretrain_encoding", LITERAL_VISUAL)
+        self.escape_angle_tags = _escape_angle_tags(manifest)
         self.root, self.tokenizer = Path(root), tokenizer
         self.family, self.max_features = manifest["family"], manifest["max_features"]
         self.media_root, self.vocab = manifest["media_root"], manifest["model_vocab_size"]
@@ -537,6 +623,8 @@ class _NativeMediaDataset:
         self.index = index[index[:, 2] <= length]
         self.domains, self.ce_counts, self.input_counts = [], [], []
         self.image_counts, self.video_counts = [], []
+        self.prompt_counts: Counter[str] = Counter()
+        self.min_pixels_counts: Counter[int] = Counter()
         with self.path.open("rb") as source:
             for offset, size, positions in self.index:
                 source.seek(int(offset))
@@ -544,7 +632,18 @@ class _NativeMediaDataset:
                 self.domains.append(row["record"]["task"])
                 self.ce_counts.append(sum(value != -100 for value in row["expected_labels"][1:]))
                 self.input_counts.append(int(positions))
-                resources = row["record"].get("media", [])
+                record = row["record"]
+                self.prompt_counts[visual_prompt_protocol(record, self.pretrain_encoding)] += 1
+                resources = record.get("media", [])
+                if self.family != "minikimik3":
+                    default_floor = 65536 if self.family == "miniqwen4" else 3136
+                    for resource in resources:
+                        floor = (
+                            self.min_pixels
+                            if self.min_pixels is not None
+                            else resource.get("min_pixels", default_floor)
+                        )
+                        self.min_pixels_counts[floor] += 1
                 self.image_counts.append(sum(m.get("kind", "image") != "video" for m in resources))
                 self.video_counts.append(sum(m.get("kind") == "video" for m in resources))
 
@@ -576,6 +675,8 @@ class _NativeMediaDataset:
                 self.tokenizer,
                 self.family,
                 root=self.media_root,
+                pretrain_encoding=self.pretrain_encoding,
+                escape_angle_tags=self.escape_angle_tags,
                 max_features=self.max_features,
                 model_vocab_size=self.vocab,
                 min_pixels=self.min_pixels,

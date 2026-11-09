@@ -3,7 +3,7 @@
   "model": "minideepseekv41",
   "source_document": "docs/training-strategies/2026-09-14/07-v41-mf11-implementation-and-training.md",
   "source_document_sha256": "4862fcccbbee46f7f1a1f133f5a824e0b550a7bf5c8818da79245667ce0f946b",
-  "config": "configs/minideepseekv41.json",
+  "config": "configs/strategies/minideepseekv41-text-v1.json",
   "gpu_ids": [
     3
   ],
@@ -117,7 +117,7 @@
           "adam_eps": 1e-20,
           "clip_grad": 1.0,
           "router_bias_rate": 0.001,
-          "config": "configs/minideepseekv41.json",
+          "config": "configs/strategies/minideepseekv41-text-v1.json",
           "phases": [
             {
               "id": "D1",

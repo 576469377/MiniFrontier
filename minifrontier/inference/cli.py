@@ -1,14 +1,16 @@
 """Arguments for the existing `minifrontier generate` command."""
 
 import argparse
+import json
 
+from minifrontier.inference.history import add_prompt_arguments
 from minifrontier.inference.runtime import load_checkpoint, respond
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--checkpoint", required=True)
-    p.add_argument("--prompt", required=True)
+    add_prompt_arguments(p)
     p.add_argument("--max-new-tokens", type=int, default=64)
     p.add_argument("--temperature", type=float)
     p.add_argument("--top-p", type=float)
@@ -22,7 +24,15 @@ def main(argv=None):
     p.add_argument(
         "--image", action="append", help="local image; repeat for multiple complete images"
     )
-    p.add_argument("--max-image-features", type=int, default=64)
+    p.add_argument("--min-pixels", type=int)
+    p.add_argument(
+        "--visual-protocol", choices=["literal-qa", "legacy", "control-v1", "raw-document"]
+    )
+    p.add_argument("--max-image-features", type=int)
+    p.add_argument("--video-frame", action="append")
+    p.add_argument("--timestamps", type=json.loads)
+    p.add_argument("--max-video-features", type=int)
+    p.add_argument("--image-representation", choices=["standard", "document"], default="standard")
     p.add_argument("--device", default="cpu")
     p.add_argument("--completion", action="store_true")
     args = p.parse_args(argv)
@@ -38,6 +48,7 @@ def main(argv=None):
             model,
             tokenizer,
             args.prompt,
+            messages=args.messages,
             chat=not args.completion,
             max_new_tokens=args.max_new_tokens,
             temperature=args.temperature if args.temperature is not None else (1 if draft else 0.8),
@@ -48,6 +59,12 @@ def main(argv=None):
             effort=args.effort,
             images=args.image,
             max_image_features=args.max_image_features,
+            min_pixels=args.min_pixels,
+            visual_protocol=args.visual_protocol,
+            video_frames=args.video_frame,
+            timestamps=args.timestamps,
+            max_video_features=args.max_video_features,
+            image_representation=args.image_representation,
         )
     )
 
