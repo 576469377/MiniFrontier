@@ -37,12 +37,13 @@ def test_manual_review_waiver_can_bind_pretraining_indexer_but_not_posttraining(
     )
 
 
-def test_initial_permission_is_bound_and_never_qualifies_a_later_phase(tmp_path):
+@pytest.mark.parametrize(("model", "phase"), [("minifrontier1", "p0"), ("minideepseekv4", "D1")])
+def test_initial_permission_is_bound_and_never_qualifies_a_later_phase(tmp_path, model, phase):
     prior = tmp_path / "prior.json"
     prior.write_text(json.dumps({"historical_result": "retained"}))
     actual = dict(
-        model="minifrontier1",
-        phase="p0",
+        model=model,
+        phase=phase,
         data_sha256="data",
         config_sha256="config",
         source_commit="source",

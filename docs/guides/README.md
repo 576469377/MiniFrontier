@@ -10,7 +10,7 @@
 |---|---|
 | 使用 MF1.0 / MF1.1：版本选择、数据、训练、评估、导出与多媒体 Demo | [MF1 全流程](minifrontier1.md) |
 | 使用 Kimi、Qwen、DeepSeek-V4：离线 CPU / 单卡示例 | [来源模型最小示例](quickstart.md) |
-| 使用 DeepSeek-V4.1：配置与文本训练入口 | [V4.1 模型页](../models/minideepseekv41.md) |
+| 训练 DeepSeek-V4.1 的语言主干与视觉塔 | [模型结构](../models/minideepseekv41.md) · [从图文对比到主干预训练](v41-vision-curriculum.md) |
 
 ## 数据与后续流程
 

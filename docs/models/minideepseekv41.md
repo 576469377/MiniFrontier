@@ -14,6 +14,8 @@ MiniDeepSeek-V4.1 是按 DeepSeek-V4.1-Flash 公开结构实现的小规模研�
 
 本版本与 [MiniDeepSeek-V4](minideepseekv4.md) 是分别初始化、分别计量的实验。V4 的交替 CSA/HCA、浅层 hash 路由和文本 MTP，并非 V4.1 当前配置的组成部分；两个版本的检查点不能直接互换。
 
+视觉课程从独立的图文对比开始，经过临时解码器训练，只将视觉塔接入新主干。阶段交接、冻结与解冻的代码和运行示例见[视觉课程](../guides/v41-vision-curriculum.md)。
+
 ## 模型结构
 
 ![MiniDeepSeek-V4.1：文字进入四路残差，前六层因果编码，后六层从编码器终态读取共享全局 KV；CSA2 层分别新建、重索引或复用历史；第二、第五层加入 Engram。](../assets/minideepseekv41-architecture.svg)
@@ -41,7 +43,7 @@ CSA2 每层保留最近 **128 token** 的局部窗口，并根据层类型构建
 
 2:1 压缩采用不重叠的两 token 门控池化，只允许已完成、因果可见的块参与注意力。1:1 不合并序列位置，仍投影为全局 KV。索引器使用 **4 个 32 维头**，从可见历史中选择最多 **16 个位置**；局部窗口另计。主注意力为 **8 个 64 维头**，查询低秩 128，KV 跨头共享，16 维使用 RoPE。
 
-分层候选池已有实现开关，默认 `hierarchical_indexing=false`。当前预训练不会使用候选块的二次筛选。查询按 64 个位置分块计算，以限制临时张量大小；共享历史和索引评分的成本仍随序列增长。
+默认文本配置关闭分层候选池。新一轮[图文主干配置](../../configs/strategies/minideepseekv41-vision-main.json)启用 `hierarchical_indexing`，候选池最多保留 16 个块，每块 8 个位置。查询按 64 个位置分块计算，以限制临时张量大小；共享历史和索引评分的成本仍随序列增长。
 
 ### Single-Pass mHC 与专家层
 

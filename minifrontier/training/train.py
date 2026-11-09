@@ -125,6 +125,10 @@ def parser():
         default="exact",
     )
     p.add_argument(
+        "--v41-thaw-ce", type=int, help="CE milestone for V4.1 ViT thaw and global WSD decay"
+    )
+    p.add_argument("--v41-freeze-vit", action="store_true")
+    p.add_argument(
         "--visual-warmup",
         action="store_true",
         help="DeepSeek V1: freeze text, train random native vision and aligner",
@@ -398,6 +402,30 @@ def run(args, rank, world, device):
             (output / "initialization.json").write_text(json.dumps(transition_report, indent=2))
     if args.stage in {"sft", "dpo", "grpo", "mopd", "opd"}:
         configure_posttraining(model)
+    if args.v41_thaw_ce is not None and (
+        args.model != "minideepseekv41"
+        or args.stage != "pretrain"
+        or world != 1
+        or args.v41_freeze_vit
+        or args.visual_warmup
+        or program
+        or args.schedule != "wsd"
+        or not args.ce_tokens
+        or not 0 < args.v41_thaw_ce < args.ce_tokens
+        or args.vision_lr is None
+        or args.vision_lr >= args.lr
+        or model.vision is None
+        or (args.warmup_tokens or max(1, int(args.ce_tokens * 0.01))) > args.v41_thaw_ce
+    ):
+        raise ValueError(
+            "V4.1 ViT thaw requires a single-device mixed CE/WSD run and a lower vision LR"
+        )
+    if args.v41_freeze_vit:
+        if args.model != "minideepseekv41" or args.visual_warmup or args.stage != "pretrain":
+            raise ValueError("--v41-freeze-vit requires V4.1 pretraining")
+        from .v41_vision import set_main_tower_trainable
+
+        set_main_tower_trainable(model, False)
     if args.visual_warmup:
         from minifrontier.models.minideepseekv4.migration import configure_visual_warmup
 
@@ -613,6 +641,13 @@ def run(args, rank, world, device):
     )
     from minifrontier.provenance import source_identity
 
+    curriculum = saved.get("vision_curriculum") if saved else None
+    if args.v41_thaw_ce is not None:
+        run_spec["v41_thaw_ce"] = args.v41_thaw_ce
+    if curriculum:
+        run_spec["vision_curriculum"] = curriculum
+    if args.v41_freeze_vit:
+        run_spec["v41_freeze_vit"] = True
     run_spec["source"] = source_identity()
     if ce_validation:
         run_spec["validation"] = ce_validation.binding
@@ -1031,6 +1066,7 @@ def run(args, rank, world, device):
                     step=step,
                     token_ledger=ledger.state_dict(),
                     tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
+                    **({"vision_curriculum": curriculum} if curriculum else {}),
                     inference_media_profile=media_profile,
                     chat_template=run_spec.get("rollout", {}).get(
                         "chat_template", run_spec["chat_template"]
@@ -1116,6 +1152,7 @@ def run(args, rank, world, device):
                 data_cursor=consumed_cursor() if args.token_mixture or args.media_mixture else None,
                 rng=states,
                 run_spec=run_spec,
+                **({"vision_curriculum": curriculum} if curriculum else {}),
                 inference_media_profile=media_profile,
                 tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
                 token_ledger=ledger.state_dict(),
@@ -1176,7 +1213,23 @@ def run(args, rank, world, device):
     step = first_step
     empty_windows = 0
     empty_rl_windows = 0
+    thawed = None
     while step < args.steps and not finished(step):
+        if args.v41_thaw_ce is not None:
+            active = ledger.ce_tokens >= args.v41_thaw_ce
+            if active != thawed:
+                from .v41_vision import set_main_tower_trainable
+
+                set_main_tower_trainable(model, active)
+                record(
+                    dict(
+                        event="v41_vit_trainability",
+                        step=step,
+                        ce_tokens=ledger.ce_tokens,
+                        trainable=active,
+                    )
+                )
+                thawed = active
         next_step = step + 1
         previous_main_ce = program.main_ce(ledger) if program else ledger.ce_tokens
         started = time.monotonic()
@@ -1354,6 +1407,8 @@ def run(args, rank, world, device):
                 factor = max(progress, 1 / token_budget) / warmup
             else:
                 cooldown_start = 0.8 if args.schedule == "wsd" else warmup
+                if args.v41_thaw_ce is not None:
+                    cooldown_start = args.v41_thaw_ce / token_budget
                 cooldown = max(0.0, min(1.0, (progress - cooldown_start) / (1 - cooldown_start)))
                 factor = 0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * cooldown))
         for group in optimizer.param_groups:
@@ -1696,6 +1751,7 @@ def run(args, rank, world, device):
                 step=step,
                 token_ledger=ledger.state_dict(),
                 tokenizer_sha256=data_manifest["tokenizer"]["sha256"],
+                **({"vision_curriculum": curriculum} if curriculum else {}),
                 inference_media_profile=media_profile,
                 chat_template=run_spec.get("rollout", {}).get(
                     "chat_template", run_spec["chat_template"]
