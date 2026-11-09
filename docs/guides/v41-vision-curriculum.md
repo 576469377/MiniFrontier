@@ -48,3 +48,22 @@ python -m minifrontier.training.train --model minideepseekv41 --stage pretrain \
 对比阶段加 `--resume` 会从同一目录的 checkpoint 恢复优化器和由步数决定的样本顺序。通用训练阶段用 `--resume path/to/checkpoint.pt` 替换 `--init`。传入 `--next-plan` 可在 V-C 完成后校验塔的 SHA、初末留出检索和各阶段输入，顺序执行同一设备的后续命令，各自保存进度。主干的动态解冻当前支持单设备。
 
 这里的学习范围包括原生 2D RoPE ViT、3×3 合并投影、阶段隔离和层次索引。图文来源、文本编码器、分辨率、训练量和上下文均有缩减。长上下文增量推理会重新运算已有前缀。2.5B 的计数是实际受监督 CE 位置，原报告 45T 的分母是预训练 tokens。
+
+## 同一张设备自动衔接
+
+先生成可检查的运行计划。计划记录本机数据、配比、模型配置的 SHA-256 以及每个阶段的参数和输出位置。以下命令替代上面的分段启动。
+
+```bash
+python -m scripts.prepare_v41_continuation --pairs "$PAIRS" --visual "$VISUAL" \
+  --mixed "$MIXED" --run "$RUN" --output "$PLAN_DIR/continuation.json"
+python -m scripts.v41_vision_curriculum contrastive --data "$PAIRS" \
+  --config configs/strategies/minideepseekv41-vision-main.json --output "$RUN/V-C" \
+  --next-plan "$PLAN_DIR/continuation.json"
+```
+
+完成 V-C 后，进程会释放自己的 CUDA 上下文、进入控制器，并在原设备上依次运行后续阶段。若下游训练中断，确保旧进程已退出，沿用同一设备和计划恢复，控制器会读取已完成的收据并从中断阶段最近一次完整 checkpoint 接续。
+
+```bash
+python -m scripts.run_v41_visual_stages --plan "$PLAN_DIR/continuation.json" \
+  --contrastive-output "$RUN/V-C"
+```
