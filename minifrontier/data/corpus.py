@@ -130,7 +130,9 @@ class CorpusBuilder:
             self.counts["reserved_official_split"] += 1
             return False
         turns = record.get("turns", [])
-        if record["stage"] == "sft":
+        if turns and record["stage"] == "pretrain" and not record.get("media"):
+            record = dict(record, text_format="chat_turns")
+        if record["stage"] == "sft" or record.get("text_format") == "chat_turns":
             if not turns or turns[-1].get("role") != "assistant" or not turns[-1].get("content"):
                 self.counts["incomplete_response"] += 1
                 return False
@@ -155,6 +157,8 @@ class CorpusBuilder:
                 else ""
             )
             text = "\n".join(t["role"] + ":" + semantic_content(t) for t in turns)
+            if record.get("text_format") == "chat_turns" and "text" not in record:
+                record = dict(record, text=text)
         else:
             text = (
                 record.get("text", "")
@@ -163,7 +167,7 @@ class CorpusBuilder:
             )
             question = ""
             record = dict(record, text=text)
-        if not 20 <= len(text) <= 2_000_000 or "\ufffd" in text:
+        if len(text) > 2_000_000 or (not turns and len(text) < 20) or "\ufffd" in text:
             self.counts["invalid_text"] += 1
             return False
         lines = [line.strip() for line in text.splitlines() if len(line.strip()) > 20]
@@ -574,10 +578,11 @@ def _reusable_text_spans(root, tokenizer_path):
                     identity in spans
                     or row["stage"] != "pretrain"
                     or row.get("media")
-                    or row.get("turns")
+                    or (row.get("turns") and row.get("text_format") != "chat_turns")
                 ):
                     raise ValueError("reused documents must be distinct pure pretraining text")
-                spans[identity] = (_text_encoding_identity(row), tokens, labels, offset, length)
+                if row.get("text_format") != "chat_turns":
+                    spans[identity] = (_text_encoding_identity(row), tokens, labels, offset, length)
                 end += length
         if end != positions:
             raise ValueError("reused token storage has unindexed positions")
@@ -647,6 +652,7 @@ def encode_corpus(
             rejected: Counter[str] = Counter()
             template_counts: Counter[str] = Counter()
             reused_documents = encoded_documents = 0
+            overlength_dialogues: Counter[str] = Counter()
             records = db.execute(
                 "SELECT payload FROM samples WHERE stage=? AND split=? ORDER BY id", (stage, split)
             )
@@ -660,7 +666,8 @@ def encode_corpus(
                     if row.get("media"):
                         rejected["requires_native_media_encoder"] += 1
                         continue
-                    if stage == "pretrain":
+                    conversation = stage == "sft" or row.get("text_format") == "chat_turns"
+                    if not conversation:
                         old = None
                         if reuse_binding is not None:
                             if not isinstance(row.get("sample_id"), str) or not row["sample_id"]:
@@ -693,7 +700,7 @@ def encode_corpus(
                         ids, targets = chat_tokens(
                             row["turns"], tokenizer, mode=row.get("mode"), effort=row.get("effort")
                         )
-                        if len(ids) > max_length:
+                        if stage == "sft" and len(ids) > max_length:
                             rejected["complete_answer_exceeds_largest_bucket"] += 1
                             continue
                     ce = (
@@ -701,6 +708,8 @@ def encode_corpus(
                         if isinstance(targets, np.ndarray)
                         else sum(value != -100 for value in targets[1:])
                     )
+                    if conversation and len(ids) > max_length:
+                        overlength_dialogues.update(records=1, supervised_tokens=ce)
                     if stage == "sft" and IDENTITY.search(
                         next((t["content"] for t in row["turns"] if t["role"] == "user"), "")
                     ):
@@ -729,7 +738,7 @@ def encode_corpus(
                         metadata.write(payload + "\n")
                     accounted_bytes += incoming
                     index.append((token_count, len(ids)))
-                    if stage == "sft":
+                    if conversation:
                         template_counts[record_template(row)] += 1
                     token_count += len(ids)
                     supervised += ce
@@ -752,6 +761,10 @@ def encode_corpus(
                 metadata_sha256=sha256(output / f"{prefix}.jsonl"),
                 chat_template_counts=dict(template_counts),
             )
+            if overlength_dialogues:
+                manifest["stages"][stage][split]["stored_dialogues_over_context"] = dict(
+                    overlength_dialogues
+                )
             if reuse_binding is not None and stage == "pretrain":
                 manifest["stages"][stage][split]["document_reuse"] = dict(
                     copied=reused_documents,
@@ -791,25 +804,34 @@ class DocumentDataset:
         self.domains: list[str] = []
         self.ce_counts: list[int] = []
         self.input_counts: list[int] = []
-        domains = []
+        tags = []
+        self.overlength_dialogues: Counter[str] = Counter()
         if record.get("metadata_file"):
             metadata_path = root / record["metadata_file"]
             if sha256(metadata_path) != record["metadata_sha256"]:
                 raise ValueError("document metadata hash mismatch")
             with metadata_path.open() as metadata:
-                domains = [json.loads(line)["task"] for line in metadata]
+                records = (json.loads(line) for line in metadata)
+                tags = [(row["task"], row.get("text_format")) for row in records]
         for doc_index, (start, size) in enumerate(self.documents):
             first = len(self.rows)
-            if stage == "pretrain":
+            if stage == "pretrain" and (not tags or tags[doc_index][1] != "chat_turns"):
                 self.rows.extend(
                     (int(start + offset), int(min(length, size - offset)))
                     for offset in range(0, int(size) - 1, length - 1)
                 )
             elif size <= length:
                 self.rows.append((int(start), int(size)))
+            else:
+                self.overlength_dialogues.update(
+                    records=1,
+                    supervised_tokens=int(
+                        np.count_nonzero(self.labels[start + 1 : start + size] != -100)
+                    ),
+                )
 
             for row_start, row_size in self.rows[first:]:
-                self.domains.append(domains[doc_index] if domains else "unspecified")
+                self.domains.append(tags[doc_index][0] if tags else "unspecified")
                 self.ce_counts.append(
                     int(np.count_nonzero(self.labels[row_start + 1 : row_start + row_size] != -100))
                 )

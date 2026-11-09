@@ -13,6 +13,7 @@ import random
 import re
 import unicodedata
 import urllib.request
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -61,13 +62,47 @@ def split_for(key, seed):
     )
 
 
-def chat_tokens(messages, tokenizer, *, generation_prompt=False, mode=None, effort=None):
+@lru_cache(maxsize=4)
+def _literal_tokenizer(tokenizer):
+    copy = Tokenizer.from_str(tokenizer.to_str())
+    copy.encode_special_tokens = True
+    return copy
+
+
+def message_tokens(text, tokenizer, *, image_placeholders=False):
+    """Only schema-declared controls can interrupt ordinary message text."""
+    if image_placeholders is None or "<|" not in text:
+        return tokenizer.encode(text, add_special_tokens=False).ids
+    literal = tokenizer if tokenizer.encode_special_tokens else _literal_tokenizer(tokenizer)
+    chunks = text.split("<|image|>") if image_placeholders else [text]
+    ids = []
+    for i, chunk in enumerate(chunks):
+        if i:
+            ids.append(7)
+        ids.extend(literal.encode(chunk, add_special_tokens=False).ids)
+    return ids
+
+
+def chat_tokens(
+    messages,
+    tokenizer,
+    *,
+    generation_prompt=False,
+    mode=None,
+    effort=None,
+    image_placeholders=False,
+):
     """Explicit role boundaries; only assistant contents and EOS are supervised."""
     if mode is not None or effort is not None:
         from minifrontier.chat_controls import encode
 
         return encode(
-            messages, tokenizer, generation_prompt=generation_prompt, mode=mode, effort=effort
+            messages,
+            tokenizer,
+            generation_prompt=generation_prompt,
+            mode=mode,
+            effort=effort,
+            image_placeholders=image_placeholders,
         )
     ids, labels = [1], [-100]
     for message in messages:
@@ -80,7 +115,14 @@ def chat_tokens(messages, tokenizer, *, generation_prompt=False, mode=None, effo
             content += "\n" + json.dumps(message["tool_calls"], ensure_ascii=False)
         if message.get("tools"):
             content += "\n" + json.dumps(message["tools"], ensure_ascii=False)
-        value = [*tokenizer.encode(content, add_special_tokens=False).ids, 2]
+        payload = message_tokens(
+            content,
+            tokenizer,
+            image_placeholders=(
+                image_placeholders if role == "user" or image_placeholders is None else False
+            ),
+        )
+        value = [*payload, 2]
         ids += [ROLES[role], *value]
         labels += [-100, *(value if role == "assistant" else [-100] * len(value))]
     if generation_prompt:
@@ -210,7 +252,11 @@ def prepare_data(
                     key = "\n".join(
                         m.get("content", "") or "" for m in messages if m.get("role") == "user"
                     )
-                    if not any(m.get("role") == "assistant" and m.get("content") for m in messages):
+                    if (
+                        not messages
+                        or messages[-1].get("role") != "assistant"
+                        or not messages[-1].get("content")
+                    ):
                         rejected += 1
                         continue
                 else:
@@ -226,13 +272,15 @@ def prepare_data(
                     if (
                         not row["chosen"]
                         or not row["rejected"]
-                        or row["chosen"][:-1] != row["rejected"][:-1]
                         or row["chosen"][-1].get("role") != "assistant"
                         or row["rejected"][-1].get("role") != "assistant"
                     ):
                         rejected += 1
                         continue
-                    if row["chosen"] == row["rejected"]:
+                    if (
+                        row["chosen"][:-1] != row["rejected"][:-1]
+                        or row["chosen"] == row["rejected"]
+                    ):
                         rejected += 1
                         continue
                 if not 20 <= len(text) <= 24000 or not key.strip():
@@ -287,6 +335,7 @@ def prepare_data(
             with text_path.open("w") as f:
                 for row in rows:
                     f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            too_long = 0
             if stage == "pretrain":
                 path = output / f"{stage}.{split}.bin"
                 tokens = 0
@@ -305,7 +354,9 @@ def prepare_data(
                     pair = []
                     for chat in messages:
                         ids, labels = chat_tokens(chat, tokenizer)
-                        ids, labels = ids[:sequence_length], labels[:sequence_length]
+                        if len(ids) > sequence_length:
+                            too_long += 1
+                            break
                         if all(x == -100 for x in labels[1:]):
                             break
                         pad = sequence_length - len(ids)
@@ -323,7 +374,11 @@ def prepare_data(
                     int((np.asarray(p[1])[1:] != -100).sum()) for pair in encoded for p in pair
                 )
             manifest["stages"][stage][split] = dict(
-                file=path.name, sha256=sha256(path), examples=count, supervised_tokens=tokens
+                file=path.name,
+                sha256=sha256(path),
+                examples=count,
+                supervised_tokens=tokens,
+                rejected_overlength=too_long,
             )
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
     print(json.dumps(dict(prepared=str(output), tokenizer=manifest["tokenizer"])), flush=True)

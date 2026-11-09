@@ -167,6 +167,7 @@ def respond(
     effort=None,
     images=None,
     max_image_features=64,
+    image_placeholders=None,
 ):
     if (
         chat
@@ -177,20 +178,23 @@ def respond(
         mode, effort = "direct", "low"
     if not chat and (mode is not None or effort is not None or images):
         raise ValueError("controlled/native-media generation currently uses the chat template")
-    ids = (
-        chat_tokens(
-            [{"role": "user", "content": prompt}],
-            tokenizer,
-            generation_prompt=True,
-            mode=mode,
-            effort=effort,
-        )[0]
-        if chat
-        else [1, *tokenizer.encode(prompt).ids]
-    )
     device = next(model.parameters()).device
     media = None
-    if images:
+    mf1_chat = chat and getattr(model, "chat_template", None) == "mf1-control-v1"
+    if mf1_chat:
+        from minifrontier.inference.minifrontier1 import prepare_prompt
+
+        if effort is not None:
+            raise ValueError("MF1 uses direct or thinking mode without an effort slot")
+        inputs, media = prepare_prompt(
+            model, tokenizer, prompt, images=images, mode=mode or "direct"
+        )
+        ids = inputs[0].tolist()
+        inputs = inputs.to(device)
+        from minifrontier.multimodal import move
+
+        media = move(media, device)
+    elif images:
         from minifrontier.multimodal import prepare_record
 
         model_type = type(model).__name__
@@ -204,18 +208,31 @@ def respond(
             raise ValueError(
                 f"native image generation is not supported by this entry point for {model_type}"
             )
-        if family == "minideepseekv41" and model.vision is None:
-            raise ValueError("this MiniDeepSeek-V4.1 checkpoint has no trained vision tower")
-        if "<|image|>" not in prompt:
-            prompt = "<|image|>" * len(images) + "\n" + prompt
-        native = prepare_record(
-            dict(
+        if family == "minideepseekv41" and getattr(model, "vision", None) is None:
+            raise ValueError(
+                f"native image generation requires a trained vision tower for {model_type}"
+            )
+        resources = [dict(path=str(Path(path).resolve())) for path in images]
+        # Plain questions are literal. Explicit markup can place images inside a turn.
+        marked = (
+            prompt.startswith("<|image|>") if image_placeholders is None else image_placeholders
+        )
+        if not marked:
+            record = dict(
+                stage="sft", visual_question=prompt, mode=mode, effort=effort, media=resources
+            )
+        else:
+            if "<|image|>" not in prompt:
+                prompt = "<|image|>" * len(images) + "\n" + prompt
+            record = dict(
                 stage="sft",
                 mode=mode,
                 effort=effort,
                 turns=[dict(role="user", content=prompt)],
-                media=[dict(path=str(Path(path).resolve())) for path in images],
-            ),
+                media=resources,
+            )
+        native = prepare_record(
+            record,
             tokenizer,
             family,
             max_features=max_image_features,
@@ -226,6 +243,17 @@ def respond(
         inputs, media = native.input_ids, native.extras["media"]
         ids = inputs[0].tolist()
     else:
+        ids = (
+            chat_tokens(
+                [{"role": "user", "content": prompt}],
+                tokenizer,
+                generation_prompt=True,
+                mode=mode,
+                effort=effort,
+            )[0]
+            if chat
+            else [1, *tokenizer.encode(prompt).ids]
+        )
         inputs = torch.tensor([ids], device=device)
     if draft is None:
         result = generate_ids(
@@ -252,7 +280,7 @@ def respond(
             media=media,
         )
     response_ids = result[0, len(ids) :].tolist()
-    if mode is not None or effort is not None:
+    if not mf1_chat and (mode is not None or effort is not None):
         from minifrontier.chat_controls import parse_action
 
         parsed = parse_action(response_ids, tokenizer)

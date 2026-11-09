@@ -20,7 +20,7 @@ from minifrontier.data import sha256
 from minifrontier.data.corpus import DocumentDataset, encode_corpus
 from minifrontier.data.media_cache import MediaCache
 from minifrontier.data.partitions import corpus_storage_root, open_corpus
-from minifrontier.multimodal import prepare_record
+from minifrontier.multimodal import LITERAL_VISUAL, VISUAL_CHAT, prepare_record
 from minifrontier.storage import GIB, require_space, reserve_write
 
 
@@ -41,6 +41,13 @@ def _processor_matches(manifest):
     expected = manifest["native_processor_sha256"]
     if expected == actual:
         return True
+    if manifest.get("native_pretrain_encoding", LITERAL_VISUAL) == LITERAL_VISUAL:
+        # The reader selects the original token/label serializer for old manifests.
+        shared = "minifrontier.multimodal"
+        if actual[shared] == "b0d7d13bec7dcf651b0303f1dfea1a0100a053ae653ac59878ddd26a4a523340":
+            actual[shared] = "e83c3d021e75dfc8931ae1e4d7159bf347c54db246a281c733b02e9a7307586b"
+            if expected == actual:
+                return True
     # The V4.1 dispatch addition did not change the three existing pixel layouts.
     # Bind both revisions so subsequent processor edits still invalidate old data.
     if family == "minideepseekv41":
@@ -268,8 +275,8 @@ def encode_native(
         model_vocab_size=vocab,
         sequence_length=max_length,
         native_corpus_sha256=sha256(corpus_root / "corpus-manifest.json"),
-        native_pretrain_encoding="literal_question_answer_next_token_v1",
-        native_pretrain_objective="all textual next-token targets including question and answer; media features and media markers masked",
+        native_pretrain_encoding=VISUAL_CHAT,
+        native_pretrain_objective="chat answers and assistant EOS for canonical QA; document continuation for raw text",
         native_processor_sha256=processor_identity(family),
         shared_text_files_copied=0 if text_encoding is not None else None,
         raw_media_copied=False,
@@ -377,6 +384,9 @@ def audit_native_encoding(corpus_root, encoded, output):
                                 row,
                                 tokenizer,
                                 manifest["family"],
+                                pretrain_encoding=manifest.get(
+                                    "native_pretrain_encoding", LITERAL_VISUAL
+                                ),
                                 root=manifest["media_root"],
                                 max_features=manifest["max_features"],
                                 min_pixels=manifest.get("min_pixels"),
@@ -414,12 +424,15 @@ def audit_native_encoding(corpus_root, encoded, output):
                                 )
                             targets = item.labels[0][item.labels[0].ne(-100)].tolist()
                             if stage == "pretrain" and "visual_answer" in row:
-                                expected_text = (
-                                    "\nUser: "
-                                    + row["visual_question"]
-                                    + "\nAssistant: "
-                                    + row["visual_answer"]
-                                )
+                                if manifest.get("native_pretrain_encoding") == VISUAL_CHAT:
+                                    expected_text = row["visual_answer"]
+                                else:
+                                    expected_text = (
+                                        "\nUser: "
+                                        + row["visual_question"]
+                                        + "\nAssistant: "
+                                        + row["visual_answer"]
+                                    )
                                 if (
                                     tokenizer.decode(targets, skip_special_tokens=True)
                                     != expected_text
@@ -516,6 +529,7 @@ class NativeDataset:
             for path, media, child, pin in parts
         ]
         self.ends = list(accumulate(len(d) for d in self.media))
+        self.overlength_dialogues = self.text.overlength_dialogues
         self.domains = list(self.text.domains)
         self.ce_counts = list(self.text.ce_counts)
         self.input_counts = list(self.text.input_counts)
@@ -547,6 +561,7 @@ class _NativeMediaDataset:
     """Read one existing media shard without reopening or resampling shared text."""
 
     def __init__(self, root, media, manifest, length, tokenizer, *, pin=False):
+        self.pretrain_encoding = manifest.get("native_pretrain_encoding", LITERAL_VISUAL)
         self.root, self.tokenizer = Path(root), tokenizer
         self.family, self.max_features = manifest["family"], manifest["max_features"]
         self.media_root, self.vocab = manifest["media_root"], manifest["model_vocab_size"]
@@ -606,6 +621,7 @@ class _NativeMediaDataset:
                 self.tokenizer,
                 self.family,
                 root=self.media_root,
+                pretrain_encoding=self.pretrain_encoding,
                 max_features=self.max_features,
                 model_vocab_size=self.vocab,
                 min_pixels=self.min_pixels,

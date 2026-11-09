@@ -15,7 +15,7 @@ from minifrontier.data import sha256
 from minifrontier.data.encoding_audit import _checked
 from minifrontier.data.media_cache import validate_policy
 from minifrontier.data.minifrontier1 import write_json
-from minifrontier.data.native import _check_text_origin, _shared_text_partitions, processor_identity
+from minifrontier.data.native import _check_text_origin, _processor_matches, _shared_text_partitions
 from minifrontier.storage import require_space
 
 PASSED = "mechanical_checks_passed_pending_quality_admission"
@@ -298,7 +298,7 @@ def _component(root, baseline=None):
         or not manifest.get("text_source")
     ):
         raise ValueError("native composition requires standalone shared-text media encodings")
-    if manifest["native_processor_sha256"] != processor_identity(manifest["family"]):
+    if not _processor_matches(manifest):
         raise ValueError("native component processor changed")
     if sha256(root / "tokenizer.json") != manifest["tokenizer"]["sha256"]:
         raise ValueError("native component tokenizer changed")

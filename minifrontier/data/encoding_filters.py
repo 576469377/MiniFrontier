@@ -19,10 +19,10 @@ from minifrontier.data import sha256
 from minifrontier.data.encoding_audit import _checked, _compact_records
 from minifrontier.data.minifrontier1 import digest, write_json
 from minifrontier.data.minifrontier1_encoding import FORMAT, _encode_compact_items
-from minifrontier.data.native import processor_identity
+from minifrontier.data.native import _processor_matches
 from minifrontier.data.partitions import corpus_storage_root, open_corpus
 from minifrontier.models.factory import mf_config
-from minifrontier.multimodal import prepare_record
+from minifrontier.multimodal import LITERAL_VISUAL, prepare_record
 from minifrontier.storage import GIB, reserve_write
 
 PASSED = "mechanical_checks_passed_pending_quality_admission"
@@ -289,7 +289,7 @@ def _filter_native(
 ):
     if old["format"] != "hybrid-native-v2" or not old.get("text_source"):
         raise ValueError("native filtering requires a canonical shared-text encoding")
-    if old["native_processor_sha256"] != processor_identity(old["family"]):
+    if not _processor_matches(old):
         raise ValueError("native processor changed since parent encoding")
     tokenizer = Tokenizer.from_file(
         str(_checked(encoded, "tokenizer.json", old["tokenizer"]["sha256"]))
@@ -304,6 +304,7 @@ def _filter_native(
             tokenizer,
             old["family"],
             root=old["media_root"],
+            pretrain_encoding=old.get("native_pretrain_encoding", LITERAL_VISUAL),
             max_features=old["max_features"],
             min_pixels=old.get("min_pixels"),
             model_vocab_size=old["model_vocab_size"],

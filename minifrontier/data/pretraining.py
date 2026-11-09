@@ -85,10 +85,13 @@ def clean_record(name, row, identity):
                 for t in record["turns"]
             ):
                 return None, "invalid_dialogue"
+            if record["turns"][-1]["role"] != "assistant":
+                return None, "incomplete_dialogue"
             record["text"] = "\n\n".join(
-                t["role"].capitalize() + ": " + t["content"] for t in record.pop("turns")
+                t["role"].capitalize() + ": " + t["content"] for t in record["turns"]
             )
             record["stage"] = "pretrain"
+            record["text_format"] = "chat_turns"
     raw = record["text"]
     text = normalized(raw)
     if not 100 <= len(text) <= 100_000:

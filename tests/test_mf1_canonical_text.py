@@ -243,3 +243,43 @@ def test_audit_rejects_wrong_mask_or_partition_even_when_file_hashes_match(
     with pytest.raises(ValueError, match=r"loss mask|wrong partition"):
         audit_text_encoding(root.parent / "canonical", root, output)
     assert json.loads(output.read_text())["status"] == "failed"
+
+
+@pytest.mark.parametrize("version", ["1.0-reference-v1", "1.1-reference-v1"])
+def test_native_chat_matches_full_turn_and_preserves_history(encoded, monkeypatch, version):
+    from minifrontier.data.minifrontier1 import encode_record
+    from minifrontier.inference import runtime
+
+    output, config, _ = encoded
+    tok = Tokenizer.from_file(str(output / "tokenizer.json"))
+    model = SimpleNamespace(
+        config=SimpleNamespace(**dict(asdict(config), model_version=version)),
+        chat_template="mf1-control-v1",
+        parameters=lambda: iter([torch.zeros(1)]),
+    )
+    turns = [("user", "你好"), ("assistant", "Hi"), ("user", "再见"), ("assistant", "Bye")]
+    messages = [dict(role=role, content=[dict(type="text", text=text)]) for role, text in turns]
+    messages[1]["channel"] = "thinking"
+    record = dict(
+        sample_id="chat",
+        split_group="chat",
+        domain="structured",
+        supervision={"type": "answer_ce"},
+        messages=messages,
+    )
+    full = encode_record(record, tok, config, None)["input_ids"][0]
+    history = encode_record(record, tok, config, None, generation_prompt=True)["input_ids"][0]
+    assert history.tolist() == full[: len(history)].tolist() and history[-2:].tolist() == [5, 17]
+    cap = []
+
+    def capture(model, inputs, **kwargs):
+        cap.append(inputs[0].tolist())
+        response = [*tok.encode("Hi").ids, 2]
+        return torch.cat((inputs, torch.tensor([response])), dim=1)
+
+    monkeypatch.setattr(runtime, "generate_ids", capture)
+    assert runtime.respond(model, tok, "你好", mode="thinking") == "Hi"
+    first = encode_record(
+        dict(record, messages=messages[:2]), tok, config, None, generation_prompt=True
+    )["input_ids"][0]
+    assert cap == [first.tolist()] and first[-2:].tolist() == [5, 15]

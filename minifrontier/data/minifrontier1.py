@@ -186,10 +186,11 @@ def encode_record(record, tokenizer, config, root, *, generation_prompt=False):
     spans: list[dict[str, Any]] = []
     resources = {m["media_id"]: m for m in record.get("media", [])}
     roles = {"system": 3, "user": 4, "assistant": 5, "tool": 6}
-    for message in record["messages"]:
+    messages = record["messages"]
+    if generation_prompt and messages[-1]["role"] == "assistant":
+        messages = messages[:-1]
+    for message in messages:
         role = message["role"]
-        if generation_prompt and role == "assistant":
-            break
         ids.append(roles[role])
         labels.append(-100)
         if role == "assistant":
@@ -234,13 +235,13 @@ def encode_record(record, tokenizer, config, root, *, generation_prompt=False):
             2 if role == "assistant" or record["supervision"]["type"] == "continuation_ce" else -100
         )
     if generation_prompt:
-        thinking = record.get("mode") == "thinking" or any(
-            m.get("channel") == "thinking" for m in record["messages"]
+        thinking = record.get("mode") == "thinking" or (
+            record["messages"][-1].get("channel") == "thinking"
         )
         prefix = [5] if record.get("tool_environment") else [5, 15 if thinking else 17]
         ids.extend(prefix)
         labels.extend([-100] * len(prefix))
-    if len(ids) > config.max_position_embeddings:
+    if config is not None and len(ids) > config.max_position_embeddings:
         raise ValueError(
             "expanded sample exceeds context; truncation requires a traceable data transform"
         )

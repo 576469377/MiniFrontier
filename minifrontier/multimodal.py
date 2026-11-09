@@ -58,17 +58,40 @@ class TrainingBatch:
         )
 
 
-def pretraining_tokens(record, tokenizer):
+VISUAL_CHAT = "role_tokens_answer_eos_v1"
+LITERAL_VISUAL = "literal_question_answer_next_token_v1"
+
+
+def pretraining_tokens(record, tokenizer, *, encoding=VISUAL_CHAT, generation_prompt=False):
     """Keep raw text literal; only schema-declared media become structural image IDs."""
+    if encoding not in {VISUAL_CHAT, LITERAL_VISUAL}:
+        raise ValueError(f"unknown native pretraining encoding: {encoding}")
     resources = record.get("media", [])
     if "visual_question" in record or "visual_answer" in record:
         if not resources or any(
             not isinstance(record.get(key), str) or not record[key].strip()
-            for key in ("visual_question", "visual_answer")
+            for key in (
+                ("visual_question",) if generation_prompt else ("visual_question", "visual_answer")
+            )
         ):
             raise ValueError(
                 "canonical visual pretraining requires complete question/answer and media"
             )
+        if encoding == VISUAL_CHAT:
+            turns = [dict(role="user", content="\n" + record["visual_question"])]
+            if not generation_prompt:
+                turns.append(dict(role="assistant", content=record["visual_answer"]))
+            ids, labels = chat_tokens(
+                turns,
+                tokenizer,
+                generation_prompt=generation_prompt,
+                mode=record.get("mode"),
+                effort=record.get("effort"),
+            )
+            start = ids.index(4) + 1
+            ids[start:start] = [7] * len(resources)
+            labels[start:start] = [-100] * len(resources)
+            return ids, labels
         # Same PT text objective as the canonical serialized document, including
         # the question. This does not apply the assistant-only SFT objective.
         chunks = [""] * len(resources) + [
@@ -107,13 +130,18 @@ def prepare_record(
     model_vocab_size=None,
     min_pixels=None,
     patch_size=14,
+    pretrain_encoding=VISUAL_CHAT,
 ):
     if tokenizer.token_to_id("<|image|>") != 7:
         raise ValueError(
             "native media requires the frozen strategy tokenizer special-token mapping"
         )
-    if record.get("stage") == "pretrain":
-        ids, labels = pretraining_tokens(record, tokenizer)
+    if record.get("stage") == "pretrain" or (
+        "visual_question" in record and not record.get("turns")
+    ):
+        ids, labels = pretraining_tokens(
+            record, tokenizer, encoding=pretrain_encoding, generation_prompt=generation_prompt
+        )
     else:
         ids, labels = chat_tokens(
             record["turns"],
@@ -121,6 +149,9 @@ def prepare_record(
             generation_prompt=generation_prompt,
             mode=record.get("mode"),
             effort=record.get("effort"),
+            image_placeholders=None
+            if pretrain_encoding == LITERAL_VISUAL
+            else bool(record.get("media")),
         )
     resources = record.get("media", [])
     if ids.count(7) != len(resources):

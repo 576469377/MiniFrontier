@@ -115,8 +115,8 @@ def test_canonical_literals_stay_text_and_full_pt_targets_reach_vision(corpus, f
     root, tokenizer_path, _, rows = corpus
     tokenizer = Tokenizer.from_file(str(tokenizer_path))
     row = rows[0][1]
-    expected = "\nUser: " + row["visual_question"] + "\nAssistant: " + row["visual_answer"]
-    assert "<|image|>" in expected and "<|eos|>" in expected
+    expected = row["visual_answer"]
+    assert "<|eos|>" in expected
     before = tokenizer.encode_special_tokens
     batch = prepare_record(
         row,
@@ -130,7 +130,7 @@ def test_canonical_literals_stay_text_and_full_pt_targets_reach_vision(corpus, f
     target = batch.labels[0][batch.labels[0].ne(-100)].tolist()
     assert tokenizer.decode(target, skip_special_tokens=True) == expected
     assert set(target).intersection(range(20)) == {2}
-    assert batch.labels[0, -1] == 2 and batch.input_ids.eq(2).sum() == 1
+    assert batch.labels[0, -1] == 2 and batch.input_ids.eq(2).sum() == 2
     assert batch.input_ids.eq(7).sum() == batch.image_features
     if family == "minikimik3":
         vision = KimiVisionConfig(
@@ -169,6 +169,33 @@ def test_canonical_literals_stay_text_and_full_pt_targets_reach_vision(corpus, f
             max_features=4,
             min_pixels=1024 if family == "miniqwen4" else None,
         )
+
+
+@pytest.mark.parametrize("family", ["minideepseekv4", "minideepseekv41", "minikimik3", "miniqwen4"])
+@pytest.mark.parametrize("control", [False, True])
+def test_visual_answer_starts_at_served_prompt(corpus, family, control):
+    root, tokenizer_path, _, rows = corpus
+    tokenizer = Tokenizer.from_file(str(tokenizer_path))
+    row = rows[0][1]
+    if control:
+        row = dict(row, mode="direct", effort="low")
+    opts = dict(
+        root=root, max_features=4, model_vocab_size=tokenizer.get_vocab_size(), min_pixels=784
+    )
+    full = prepare_record(row, tokenizer, family, **opts)
+    question = dict(row)
+    del question["visual_answer"]
+    prompt = prepare_record(question, tokenizer, family, generation_prompt=True, **opts)
+    boundary = prompt.input_ids.shape[1]
+    assert torch.equal(full.input_ids[:, :boundary], prompt.input_ids)
+    assert full.labels[:, :boundary].eq(-100).all()
+    assert prompt.labels.eq(-100).all()
+    assert full.labels[:, boundary:].equal(full.input_ids[:, boundary:])
+    assert full.labels[0, -1].item() == 2
+    assert full.image_features == prompt.image_features
+    for trained, served in zip(full.extras["media"], prompt.extras["media"], strict=True):
+        assert trained["start"] == served["start"]
+        torch.testing.assert_close(trained["patches"], served["patches"])
 
 
 @pytest.mark.parametrize("family", ["minikimik3", "miniqwen4"])

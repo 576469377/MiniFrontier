@@ -786,6 +786,12 @@ def run(args, rank, world, device):
             json.dumps(
                 dict(
                     **run_spec,
+                    overlength_dialogues={
+                        name: dict(
+                            getattr(getattr(dataset, "documents", None), "overlength_dialogues", {})
+                        )
+                        for name, dataset in (("train", train), ("val", val))
+                    },
                     started_at=time.time(),
                     kind=args.run_kind,
                     data=str(data_dir),
