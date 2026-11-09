@@ -39,6 +39,11 @@ def main():
     assert dist.metadata["License-Expression"] == "Apache-2.0 AND MIT AND LicenseRef-Kimi-K3"
     for name in ("Apache-2.0.txt", "MIT-DeepSeek.txt", "LicenseRef-Kimi-K3.txt"):
         assert any(str(path).endswith("LICENSES/" + name) for path in dist.files or [])
+    for recipe in ("learning", "text-v1", "vision"):
+        assert any(
+            str(path).endswith(f"configs/strategies/minideepseekv41-{recipe}.json")
+            for path in dist.files or []
+        )
     models = json.loads(run_cli("models", capture_output=True).stdout)
     assert set(models) == {
         "minikimik3",
